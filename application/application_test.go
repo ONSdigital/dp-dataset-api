@@ -10,7 +10,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
-	"github.com/smartystreets/goconvey/convey"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 var testContext = context.Background()
@@ -90,7 +90,7 @@ func setUpStatesTransitions() ([]State, []Transition) {
 
 func TestAmendVersionInvalidState(t *testing.T) {
 	t.Parallel()
-	convey.Convey("When a version tries to transition from created to published", t, func() {
+	Convey("When a version tries to transition from created to published", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
 			GenerateFunc: func(context.Context, string, string, string, string) error {
 				return nil
@@ -124,19 +124,19 @@ func TestAmendVersionInvalidState(t *testing.T) {
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 
 		err := smDS.AmendVersion(testContext, vars, publishVersionUpdate)
-		convey.So(err, convey.ShouldNotBeNil)
-		convey.So(err.Error(), convey.ShouldContainSubstring, "state not allowed to transition")
-		convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 0)
-		convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.GetVersionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.AcquireInstanceLockCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.UnlockInstanceCalls()), convey.ShouldEqual, 1)
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "state not allowed to transition")
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.AcquireInstanceLockCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UnlockInstanceCalls()), ShouldEqual, 1)
 	})
 }
 
 func TestAmendVersionPopulateModelsFails(t *testing.T) {
 	t.Parallel()
-	convey.Convey("When a version tries to transition from associated to published and the edition is not found", t, func() {
+	Convey("When a version tries to transition from associated to published and the edition is not found", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
 			GenerateFunc: func(context.Context, string, string, string, string) error {
 				return nil
@@ -164,17 +164,17 @@ func TestAmendVersionPopulateModelsFails(t *testing.T) {
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 
 		err := smDS.AmendVersion(testContext, vars, publishVersionUpdate)
-		convey.So(err, convey.ShouldNotBeNil)
-		convey.So(err.Error(), convey.ShouldContainSubstring, "edition not found")
-		convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.AcquireInstanceLockCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.UnlockInstanceCalls()), convey.ShouldEqual, 1)
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "edition not found")
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.AcquireInstanceLockCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UnlockInstanceCalls()), ShouldEqual, 1)
 	})
 }
 
 func TestAmendVersionPopulateVersionFails(t *testing.T) {
 	t.Parallel()
-	convey.Convey("When a version tries to transition from edition-confirmed to associated and the model is not valid", t, func() {
+	Convey("When a version tries to transition from edition-confirmed to associated and the model is not valid", t, func() {
 		versionUpdateInvalid := &models.Version{
 			State:        models.AssociatedState,
 			Version:      1,
@@ -232,13 +232,13 @@ func TestAmendVersionPopulateVersionFails(t *testing.T) {
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 
 		err := smDS.AmendVersion(testContext, vars, versionUpdateInvalid)
-		convey.So(err, convey.ShouldNotBeNil)
-		convey.So(err.Error(), convey.ShouldContainSubstring, "missing mandatory fields: [release_date]")
-		convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.AcquireInstanceLockCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.UnlockInstanceCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.GetVersionCalls()), convey.ShouldEqual, 1)
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "missing mandatory fields: [release_date]")
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.AcquireInstanceLockCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UnlockInstanceCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 	})
 }
 
@@ -256,7 +256,7 @@ func TestAmendVersionSuccess(t *testing.T) {
 	vars["edition"] = "2021"
 	vars["version"] = "1"
 
-	convey.Convey("When a request is made to change a version from associated to published but the dataset is not found", t, func() {
+	Convey("When a request is made to change a version from associated to published but the dataset is not found", t, func() {
 		mockedDataStore := &storetest.StorerMock{
 			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return nil
@@ -304,13 +304,13 @@ func TestAmendVersionSuccess(t *testing.T) {
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 
 		err := smDS.AmendVersion(testContext, vars, versionUpdateAssociated)
-		convey.So(err, convey.ShouldBeNil)
-		convey.So(len(mockedDataStore.AcquireInstanceLockCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.UnlockInstanceCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.GetVersionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), convey.ShouldEqual, 1)
+		So(err, ShouldBeNil)
+		So(len(mockedDataStore.AcquireInstanceLockCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UnlockInstanceCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
 	})
 }
 
@@ -328,7 +328,7 @@ func TestAmendVersionErrorLockFails(t *testing.T) {
 	vars["edition"] = "2021"
 	vars["version"] = "1"
 
-	convey.Convey("When a request is made to change state from associated to published but the database lock fails", t, func() {
+	Convey("When a request is made to change state from associated to published but the database lock fails", t, func() {
 		mockedDataStore := &storetest.StorerMock{
 			AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
 				return "", errors.New("Unable to acquire lock")
@@ -343,8 +343,8 @@ func TestAmendVersionErrorLockFails(t *testing.T) {
 
 		err := smDS.AmendVersion(testContext, vars, publishVersionUpdate)
 
-		convey.So(err, convey.ShouldNotBeNil)
-		convey.So(err.Error(), convey.ShouldContainSubstring, "Unable to acquire lock")
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "Unable to acquire lock")
 	})
 }
 
@@ -357,7 +357,7 @@ func TestAssociateVersionInvalidVersion(t *testing.T) {
 		},
 	}
 
-	convey.Convey("When a version is set to associated from edition-confirmed and the version is invalid", t, func() {
+	Convey("When a version is set to associated from edition-confirmed and the version is invalid", t, func() {
 		invalidVersionDetails := VersionDetails{
 			datasetID: "123",
 			version:   "bob",
@@ -373,8 +373,8 @@ func TestAssociateVersionInvalidVersion(t *testing.T) {
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 		err := AssociateVersion(testContext, smDS, currentVersionEditionConfirmed, versionUpdateAssociated, invalidVersionDetails, "")
 
-		convey.So(err, convey.ShouldNotBeNil)
-		convey.So(err.Error(), convey.ShouldContainSubstring, "invalid version requested")
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "invalid version requested")
 	})
 }
 
@@ -387,7 +387,7 @@ func TestAssociateVersionInvalidType(t *testing.T) {
 		},
 	}
 
-	convey.Convey("When a version is set to published from associated with an incorrect type", t, func() {
+	Convey("When a version is set to published from associated with an incorrect type", t, func() {
 		currentVersion := &models.Version{
 			State:        models.EditionConfirmedState,
 			CollectionID: "3434",
@@ -419,10 +419,10 @@ func TestAssociateVersionInvalidType(t *testing.T) {
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 		err := AssociateVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
 
-		convey.So(err, convey.ShouldNotBeNil)
-		convey.So(err.Error(), convey.ShouldContainSubstring, "error getting type of version: invalid dataset type")
-		convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), convey.ShouldEqual, 1)
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "error getting type of version: invalid dataset type")
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
 	})
 }
 
@@ -435,7 +435,7 @@ func TestAssociateVersionInvalidRequest(t *testing.T) {
 		},
 	}
 
-	convey.Convey("When a version is set to associated from edition-confirmed and is missing a release date", t, func() {
+	Convey("When a version is set to associated from edition-confirmed and is missing a release date", t, func() {
 		versionUpdate := &models.Version{
 			State:        models.AssociatedState,
 			Version:      1,
@@ -452,8 +452,8 @@ func TestAssociateVersionInvalidRequest(t *testing.T) {
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 		err := AssociateVersion(testContext, smDS, currentVersionEditionConfirmed, versionUpdate, versionDetails, "")
 
-		convey.So(err, convey.ShouldNotBeNil)
-		convey.So(err.Error(), convey.ShouldContainSubstring, "missing mandatory fields: [release_date]")
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "missing mandatory fields: [release_date]")
 	})
 }
 
@@ -466,7 +466,7 @@ func TestAssociateStaticVersionNoErrors(t *testing.T) {
 		},
 	}
 
-	convey.Convey("When a version is set to associated from edition-confirmed for a type which does not generate downloads", t, func() {
+	Convey("When a version is set to associated from edition-confirmed for a type which does not generate downloads", t, func() {
 		currentStaticVersion := &models.Version{
 			State:        models.CreatedState,
 			CollectionID: "3434",
@@ -495,8 +495,8 @@ func TestAssociateStaticVersionNoErrors(t *testing.T) {
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 		err := AssociateVersion(testContext, smDS, currentStaticVersion, versionstaticUpdate, versionDetails, "")
 
-		convey.So(err, convey.ShouldBeNil)
-		convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 1)
+		So(err, ShouldBeNil)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
 	})
 }
 
@@ -509,7 +509,7 @@ func TestAssociateVersionErrors(t *testing.T) {
 		},
 	}
 
-	convey.Convey("When a version is set to associated from edition-confirmed but the dataset is not found", t, func() {
+	Convey("When a version is set to associated from edition-confirmed but the dataset is not found", t, func() {
 		versionUpdate := &models.Version{
 			State:        models.AssociatedState,
 			Version:      1,
@@ -534,16 +534,16 @@ func TestAssociateVersionErrors(t *testing.T) {
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 		err := AssociateVersion(testContext, smDS, currentVersionEditionConfirmed, versionUpdate, versionDetails, "")
 
-		convey.So(err, convey.ShouldNotBeNil)
-		convey.So(err.Error(), convey.ShouldContainSubstring, "dataset not found")
-		convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), convey.ShouldEqual, 1)
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "dataset not found")
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
 	})
 }
 
 func TestAssociateVersionFailedToGenerateDownloads(t *testing.T) {
 	t.Parallel()
-	convey.Convey("When a version is set to published from associated and the downloads fail to generate", t, func() {
+	Convey("When a version is set to published from associated and the downloads fail to generate", t, func() {
 		currentVersion := &models.Version{
 			State:        models.EditionConfirmedState,
 			CollectionID: "3434",
@@ -627,16 +627,16 @@ func TestAssociateVersionFailedToGenerateDownloads(t *testing.T) {
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 		err := AssociateVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
 
-		convey.So(err, convey.ShouldNotBeNil)
-		convey.So(err.Error(), convey.ShouldContainSubstring, "error while attempting to marshal generateDownloadsEvent")
-		convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), convey.ShouldEqual, 1)
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "error while attempting to marshal generateDownloadsEvent")
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
 	})
 }
 
 func TestEditionConfirmVersionReturnsOK(t *testing.T) {
 	t.Parallel()
-	convey.Convey("When a version is set to edition-confirmed from completed", t, func() {
+	Convey("When a version is set to edition-confirmed from completed", t, func() {
 		currentVersion := &models.Version{
 			State:        models.CompletedState,
 			CollectionID: "3434",
@@ -661,14 +661,14 @@ func TestEditionConfirmVersionReturnsOK(t *testing.T) {
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 		err := EditionConfirmVersion(testContext, smDS, currentVersion, versionUpdateEditionConfirmed, versionDetails, "")
 
-		convey.So(err, convey.ShouldEqual, nil)
-		convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 1)
+		So(err, ShouldEqual, nil)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
 	})
 }
 
 func TestEditionConfirmVersionUpdateVersionFails(t *testing.T) {
 	t.Parallel()
-	convey.Convey("When a version is set to edition-confirmed from completed but the dataset is not found", t, func() {
+	Convey("When a version is set to edition-confirmed from completed but the dataset is not found", t, func() {
 		currentVersion := &models.Version{
 			State:        models.CompletedState,
 			CollectionID: "3434",
@@ -717,16 +717,16 @@ func TestEditionConfirmVersionUpdateVersionFails(t *testing.T) {
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 		err := EditionConfirmVersion(testContext, smDS, currentVersion, versionUpdateEditionConfirmed, versionDetails, "")
 
-		convey.So(err, convey.ShouldNotBeNil)
-		convey.So(err.Error(), convey.ShouldContainSubstring, "dataset not found")
-		convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 2)
-		convey.So(len(mockedDataStore.GetVersionCalls()), convey.ShouldEqual, 1)
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "dataset not found")
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 	})
 }
 
 func TestEditionConfirmVersionReturnsInvalidRequest(t *testing.T) {
 	t.Parallel()
-	convey.Convey("When the updated version is supplied without a state", t, func() {
+	Convey("When the updated version is supplied without a state", t, func() {
 		currentVersion := &models.Version{
 			State:        models.CompletedState,
 			CollectionID: "3434",
@@ -753,14 +753,14 @@ func TestEditionConfirmVersionReturnsInvalidRequest(t *testing.T) {
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 		err := EditionConfirmVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
 
-		convey.So(err, convey.ShouldNotBeNil)
-		convey.So(err.Error(), convey.ShouldContainSubstring, "missing state")
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "missing state")
 	})
 }
 
 func TestPopulateVersonLinksIsNil(t *testing.T) {
 	t.Parallel()
-	convey.Convey("When the version links are nil and require populating", t, func() {
+	Convey("When the version links are nil and require populating", t, func() {
 		versionLinks := models.VersionLinks{
 			Spatial: &models.LinkObject{
 				HRef: "http://this.is.alink",
@@ -768,13 +768,13 @@ func TestPopulateVersonLinksIsNil(t *testing.T) {
 		}
 
 		updatedLinks := populateVersionLinks(&versionLinks, nil)
-		convey.So(updatedLinks.Spatial.HRef, convey.ShouldEqual, versionLinks.Spatial.HRef)
+		So(updatedLinks.Spatial.HRef, ShouldEqual, versionLinks.Spatial.HRef)
 	})
 }
 
 func TestPopulateXLSDownloads(t *testing.T) {
 	t.Parallel()
-	convey.Convey("When the xls link requires populating", t, func() {
+	Convey("When the xls link requires populating", t, func() {
 		currentVersionDownload := models.DownloadList{
 			XLS: &models.DownloadObject{
 				HRef: "http://links.to.download.xls",
@@ -784,13 +784,13 @@ func TestPopulateXLSDownloads(t *testing.T) {
 		versionDownload := models.DownloadList{}
 
 		updatedDownloads := populateDownloads(&versionDownload, &currentVersionDownload)
-		convey.So(updatedDownloads.XLS, convey.ShouldEqual, currentVersionDownload.XLS)
+		So(updatedDownloads.XLS, ShouldEqual, currentVersionDownload.XLS)
 	})
 }
 
 func TestPopulateVersionInfoFailsVersion(t *testing.T) {
 	t.Parallel()
-	convey.Convey("When the version number is invalid", t, func() {
+	Convey("When the version number is invalid", t, func() {
 		invalidVersionDetails := VersionDetails{
 			datasetID: "123",
 			version:   "bob",
@@ -813,10 +813,10 @@ func TestPopulateVersionInfoFailsVersion(t *testing.T) {
 
 		currentVersion, combinedVersionUpdate, err := smDS.PopulateVersionInfo(testContext, publishVersionUpdate, invalidVersionDetails)
 
-		convey.So(err, convey.ShouldNotBeNil)
-		convey.So(err.Error(), convey.ShouldContainSubstring, "invalid version request")
-		convey.So(currentVersion, convey.ShouldBeNil)
-		convey.So(combinedVersionUpdate, convey.ShouldBeNil)
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "invalid version request")
+		So(currentVersion, ShouldBeNil)
+		So(combinedVersionUpdate, ShouldBeNil)
 	})
 }
 
@@ -829,7 +829,7 @@ func TestPopulateVersionInfoNilBody(t *testing.T) {
 		},
 	}
 
-	convey.Convey("When the combined version can't be validated as the version update body is nil", t, func() {
+	Convey("When the combined version can't be validated as the version update body is nil", t, func() {
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(_ context.Context, _ string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{
@@ -852,10 +852,10 @@ func TestPopulateVersionInfoNilBody(t *testing.T) {
 
 		currentVersion, combinedVersionUpdate, err := smDS.PopulateVersionInfo(testContext, nil, versionDetails)
 
-		convey.So(err, convey.ShouldNotBeNil)
-		convey.So(err.Error(), convey.ShouldContainSubstring, "copy from must be non-nil and addressable")
-		convey.So(currentVersion, convey.ShouldBeNil)
-		convey.So(combinedVersionUpdate, convey.ShouldBeNil)
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "copy from must be non-nil and addressable")
+		So(currentVersion, ShouldBeNil)
+		So(combinedVersionUpdate, ShouldBeNil)
 	})
 }
 
@@ -868,7 +868,7 @@ func TestPopulateVersionInfoVersionNotFound(t *testing.T) {
 		},
 	}
 
-	convey.Convey("When the version can't be found", t, func() {
+	Convey("When the version can't be found", t, func() {
 		mockedDataStore := &storetest.StorerMock{
 			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return nil
@@ -886,12 +886,12 @@ func TestPopulateVersionInfoVersionNotFound(t *testing.T) {
 
 		currentVersion, combinedVersionUpdate, err := smDS.PopulateVersionInfo(testContext, publishVersionUpdate, versionDetails)
 
-		convey.So(err, convey.ShouldNotBeNil)
-		convey.So(err.Error(), convey.ShouldContainSubstring, "version not found")
-		convey.So(currentVersion, convey.ShouldBeNil)
-		convey.So(combinedVersionUpdate, convey.ShouldBeNil)
-		convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.GetVersionCalls()), convey.ShouldEqual, 1)
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "version not found")
+		So(currentVersion, ShouldBeNil)
+		So(combinedVersionUpdate, ShouldBeNil)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 	})
 }
 
@@ -904,7 +904,7 @@ func TestPopulateVersionInfoErrors(t *testing.T) {
 		},
 	}
 
-	convey.Convey("When the edition can't be found", t, func() {
+	Convey("When the edition can't be found", t, func() {
 		mockedDataStore := &storetest.StorerMock{
 			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return errs.ErrEditionNotFound
@@ -919,17 +919,17 @@ func TestPopulateVersionInfoErrors(t *testing.T) {
 
 		currentVersion, combinedVersionUpdate, err := smDS.PopulateVersionInfo(testContext, publishVersionUpdate, versionDetails)
 
-		convey.So(err, convey.ShouldNotBeNil)
-		convey.So(err.Error(), convey.ShouldContainSubstring, "edition not found")
-		convey.So(currentVersion, convey.ShouldBeNil)
-		convey.So(combinedVersionUpdate, convey.ShouldBeNil)
-		convey.So(len(mockedDataStore.CheckEditionExistsCalls()), convey.ShouldEqual, 1)
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "edition not found")
+		So(currentVersion, ShouldBeNil)
+		So(combinedVersionUpdate, ShouldBeNil)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 	})
 }
 
 func TestPopulateNewVersionDocWithDownloads(t *testing.T) {
 	t.Parallel()
-	convey.Convey("Valid versions provided with downloads", t, func() {
+	Convey("Valid versions provided with downloads", t, func() {
 		currentVersion := &models.Version{
 			State:         models.PublishedState,
 			ReleaseDate:   "2024-12-31",
@@ -949,18 +949,18 @@ func TestPopulateNewVersionDocWithDownloads(t *testing.T) {
 		}
 
 		version, err := populateNewVersionDoc(currentVersion, originalVersion)
-		convey.So(err, convey.ShouldBeNil)
-		convey.So(version, convey.ShouldNotBeNil)
-		convey.So(version.ReleaseDate, convey.ShouldEqual, currentVersion.ReleaseDate)
-		convey.So(version.State, convey.ShouldEqual, currentVersion.State)
-		convey.So(version.Downloads.XLS, convey.ShouldEqual, currentVersion.Downloads.XLS)
-		convey.So(len(*version.LatestChanges), convey.ShouldEqual, len(*currentVersion.LatestChanges)+len(*originalVersion.LatestChanges))
+		So(err, ShouldBeNil)
+		So(version, ShouldNotBeNil)
+		So(version.ReleaseDate, ShouldEqual, currentVersion.ReleaseDate)
+		So(version.State, ShouldEqual, currentVersion.State)
+		So(version.Downloads.XLS, ShouldEqual, currentVersion.Downloads.XLS)
+		So(len(*version.LatestChanges), ShouldEqual, len(*currentVersion.LatestChanges)+len(*originalVersion.LatestChanges))
 	})
 }
 
 func TestPublishCMDVersionFailsToPublish(t *testing.T) {
 	t.Parallel()
-	convey.Convey("When a version is set to published from associated and the graph errors", t, func() {
+	Convey("When a version is set to published from associated and the graph errors", t, func() {
 		currentVersion := &models.Version{
 			State:        models.AssociatedState,
 			CollectionID: "3434",
@@ -1068,18 +1068,18 @@ func TestPublishCMDVersionFailsToPublish(t *testing.T) {
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
 
-		convey.So(err, convey.ShouldNotBeNil)
-		convey.So(err.Error(), convey.ShouldContainSubstring, "failed to set is_published on the instance node")
-		convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.GetEditionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.UpsertEditionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.SetInstanceIsPublishedCalls()), convey.ShouldEqual, 1)
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "failed to set is_published on the instance node")
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 1)
 	})
 }
 
 func TestPublishVersionDatabaseFails(t *testing.T) {
 	t.Parallel()
-	convey.Convey("When a version is set to published from associated and the dataset is not found", t, func() {
+	Convey("When a version is set to published from associated and the dataset is not found", t, func() {
 		currentVersion := &models.Version{
 			State:        models.AssociatedState,
 			CollectionID: "3434",
@@ -1191,19 +1191,19 @@ func TestPublishVersionDatabaseFails(t *testing.T) {
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
 
-		convey.So(err, convey.ShouldNotBeNil)
-		convey.So(err.Error(), convey.ShouldContainSubstring, "dataset not found")
-		convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.GetEditionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.UpsertEditionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.SetInstanceIsPublishedCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.UpsertDatasetCalls()), convey.ShouldEqual, 1)
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "dataset not found")
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
 	})
 }
 
 func TestPublishVersionDatasetNotFound(t *testing.T) {
 	t.Parallel()
-	convey.Convey("When a version is set to published from associated and the dataset is not found", t, func() {
+	Convey("When a version is set to published from associated and the dataset is not found", t, func() {
 		currentVersion := &models.Version{
 			State:        models.AssociatedState,
 			CollectionID: "3434",
@@ -1308,19 +1308,19 @@ func TestPublishVersionDatasetNotFound(t *testing.T) {
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
 
-		convey.So(err, convey.ShouldNotBeNil)
-		convey.So(err.Error(), convey.ShouldContainSubstring, "dataset not found")
-		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.GetEditionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.UpsertEditionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.SetInstanceIsPublishedCalls()), convey.ShouldEqual, 1)
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "dataset not found")
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 1)
 	})
 }
 
 func TestPublishVersionInvalidType(t *testing.T) {
 	t.Parallel()
-	convey.Convey("When a version is set to published from associated with an incorrect type", t, func() {
+	Convey("When a version is set to published from associated with an incorrect type", t, func() {
 		currentVersion := &models.Version{
 			State:        models.AssociatedState,
 			CollectionID: "3434",
@@ -1437,17 +1437,17 @@ func TestPublishVersionInvalidType(t *testing.T) {
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
 
-		convey.So(err, convey.ShouldNotBeNil)
-		convey.So(err.Error(), convey.ShouldContainSubstring, "invalid dataset type")
-		convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.GetEditionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.UpsertEditionCalls()), convey.ShouldEqual, 1)
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "invalid dataset type")
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
 	})
 }
 
 func TestPublishVersionDatasetDownloadsOK(t *testing.T) {
 	t.Parallel()
-	convey.Convey("When a version is set to published from associated", t, func() {
+	Convey("When a version is set to published from associated", t, func() {
 		currentVersion := &models.Version{
 			State:        models.AssociatedState,
 			CollectionID: "3434",
@@ -1577,19 +1577,19 @@ func TestPublishVersionDatasetDownloadsOK(t *testing.T) {
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
 
-		convey.So(err, convey.ShouldBeNil)
-		convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.GetEditionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.UpsertEditionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.SetInstanceIsPublishedCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.UpsertDatasetCalls()), convey.ShouldEqual, 1)
+		So(err, ShouldBeNil)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
 	})
 }
 
 func TestPublishVersionFailedToUpdate(t *testing.T) {
 	t.Parallel()
-	convey.Convey("When a version is set to published from associated but the dataset is not found", t, func() {
+	Convey("When a version is set to published from associated but the dataset is not found", t, func() {
 		currentVersion := &models.Version{
 			State: models.AssociatedState,
 			Type:  models.CantabularFlexibleTable.String(),
@@ -1672,16 +1672,16 @@ func TestPublishVersionFailedToUpdate(t *testing.T) {
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
 
-		convey.So(err, convey.ShouldNotBeNil)
-		convey.So(err.Error(), convey.ShouldContainSubstring, "version not found")
-		convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.GetVersionCalls()), convey.ShouldEqual, 1)
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "version not found")
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 	})
 }
 
 func TestPublishVersionPublishLinksFails(t *testing.T) {
 	t.Parallel()
-	convey.Convey("When a version is set to published from associated, but amending the links fails", t, func() {
+	Convey("When a version is set to published from associated, but amending the links fails", t, func() {
 		currentVersion := &models.Version{
 			State: models.AssociatedState,
 			Type:  models.CantabularFlexibleTable.String(),
@@ -1781,16 +1781,16 @@ func TestPublishVersionPublishLinksFails(t *testing.T) {
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
 
-		convey.So(err, convey.ShouldNotBeNil)
-		convey.So(err.Error(), convey.ShouldContainSubstring, "invalid arguments to PublishLinks - versionLink empty")
-		convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.GetEditionCalls()), convey.ShouldEqual, 1)
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "invalid arguments to PublishLinks - versionLink empty")
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 	})
 }
 
 func TestPublishVersionUpsertEditionFails(t *testing.T) {
 	t.Parallel()
-	convey.Convey("When a version is set to published from associated but the edition is not found", t, func() {
+	Convey("When a version is set to published from associated but the edition is not found", t, func() {
 		currentVersion := &models.Version{
 			State: models.AssociatedState,
 			Type:  models.CantabularFlexibleTable.String(),
@@ -1901,17 +1901,17 @@ func TestPublishVersionUpsertEditionFails(t *testing.T) {
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
 
-		convey.So(err, convey.ShouldNotBeNil)
-		convey.So(err.Error(), convey.ShouldContainSubstring, "edition not found")
-		convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.GetEditionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.UpsertEditionCalls()), convey.ShouldEqual, 1)
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "edition not found")
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
 	})
 }
 
 func TestPublishVersionFailedToGenerateDownloads(t *testing.T) {
 	t.Parallel()
-	convey.Convey("When a version is set to published from associated but the downloads fail to generate", t, func() {
+	Convey("When a version is set to published from associated but the downloads fail to generate", t, func() {
 		currentVersion := &models.Version{
 			State:        models.AssociatedState,
 			CollectionID: "3434",
@@ -2036,20 +2036,20 @@ func TestPublishVersionFailedToGenerateDownloads(t *testing.T) {
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
 
-		convey.So(err, convey.ShouldNotBeNil)
-		convey.So(err.Error(), convey.ShouldContainSubstring, "error while attempting to marshal generateDownloadsEvent")
-		convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.GetEditionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.GetDatasetCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.UpsertEditionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.SetInstanceIsPublishedCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.UpsertDatasetCalls()), convey.ShouldEqual, 1)
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "error while attempting to marshal generateDownloadsEvent")
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
 	})
 }
 
 func TestPublishVersionFailedToFindEdition(t *testing.T) {
 	t.Parallel()
-	convey.Convey("When a version is set to published from associated", t, func() {
+	Convey("When a version is set to published from associated", t, func() {
 		currentVersion := &models.Version{
 			State:        models.AssociatedState,
 			CollectionID: "3434",
@@ -2126,16 +2126,16 @@ func TestPublishVersionFailedToFindEdition(t *testing.T) {
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
 
-		convey.So(err, convey.ShouldNotBeNil)
-		convey.So(err.Error(), convey.ShouldContainSubstring, "edition not found")
-		convey.So(len(mockedDataStore.UpdateVersionCalls()), convey.ShouldEqual, 1)
-		convey.So(len(mockedDataStore.GetEditionCalls()), convey.ShouldEqual, 1)
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "edition not found")
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 	})
 }
 
 func TestPublishMissingRequiredField(t *testing.T) {
 	t.Parallel()
-	convey.Convey("When a version is set to published from associated and the release date is missing", t, func() {
+	Convey("When a version is set to published from associated and the release date is missing", t, func() {
 		currentVersion := &models.Version{
 			State:        models.AssociatedState,
 			CollectionID: "3434",
@@ -2163,8 +2163,8 @@ func TestPublishMissingRequiredField(t *testing.T) {
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 		err := PublishVersion(testContext, smDS, currentVersion, invalidVersionUpdate, versionDetails, trueStringified)
 
-		convey.So(err, convey.ShouldNotBeNil)
-		convey.So(err.Error(), convey.ShouldContainSubstring, "missing mandatory fields: [release_date]")
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "missing mandatory fields: [release_date]")
 	})
 }
 

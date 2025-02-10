@@ -22,7 +22,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/url"
 	dprequest "github.com/ONSdigital/dp-net/v2/request"
 	"github.com/gorilla/mux"
-	"github.com/smartystreets/goconvey/convey"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 var (
@@ -54,54 +54,54 @@ func createRequestWithToken(method, requestURL string, body io.Reader) (*http.Re
 func validateDimensionUpdates(mockedDataStore *storetest.StorerMock, expected []*models.DimensionOption, expectedIfMatch string) {
 	// Gets called twice as there is a check wrapper around this route which
 	// checks the instance is not published before entering handler
-	convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 2)
-	convey.So(mockedDataStore.GetInstanceCalls()[0].ID, convey.ShouldEqual, expected[0].InstanceID)
-	convey.So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, convey.ShouldEqual, expectedIfMatch)
-	convey.So(mockedDataStore.GetInstanceCalls()[1].ID, convey.ShouldEqual, expected[0].InstanceID)
-	convey.So(mockedDataStore.GetInstanceCalls()[1].ETagSelector, convey.ShouldEqual, expectedIfMatch)
+	So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 2)
+	So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, expected[0].InstanceID)
+	So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, expectedIfMatch)
+	So(mockedDataStore.GetInstanceCalls()[1].ID, ShouldEqual, expected[0].InstanceID)
+	So(mockedDataStore.GetInstanceCalls()[1].ETagSelector, ShouldEqual, expectedIfMatch)
 	validateLock(mockedDataStore, expected[0].InstanceID)
 
-	convey.So(mockedDataStore.UpdateETagForOptionsCalls(), convey.ShouldHaveLength, 1)
-	convey.So(mockedDataStore.UpdateETagForOptionsCalls()[0].CurrentInstance.InstanceID, convey.ShouldEqual, expected[0].InstanceID)
-	convey.So(mockedDataStore.UpdateETagForOptionsCalls()[0].ETagSelector, convey.ShouldEqual, expectedIfMatch)
+	So(mockedDataStore.UpdateETagForOptionsCalls(), ShouldHaveLength, 1)
+	So(mockedDataStore.UpdateETagForOptionsCalls()[0].CurrentInstance.InstanceID, ShouldEqual, expected[0].InstanceID)
+	So(mockedDataStore.UpdateETagForOptionsCalls()[0].ETagSelector, ShouldEqual, expectedIfMatch)
 
-	convey.So(mockedDataStore.UpdateDimensionsNodeIDAndOrderCalls(), convey.ShouldHaveLength, 1)
-	convey.So(mockedDataStore.UpdateDimensionsNodeIDAndOrderCalls()[0].Updates, convey.ShouldResemble, expected)
+	So(mockedDataStore.UpdateDimensionsNodeIDAndOrderCalls(), ShouldHaveLength, 1)
+	So(mockedDataStore.UpdateDimensionsNodeIDAndOrderCalls()[0].Updates, ShouldResemble, expected)
 }
 
 // validateDimensionsUpserted validates that the provided expectedUpserts were performed sequentially in the provided order
 func validateDimensionsUpserted(mockedDataStore *storetest.StorerMock, instanceID string, expectedUpserts [][]*models.CachedDimensionOption, expectedIfMatch []string) {
-	convey.So(len(expectedUpserts), convey.ShouldEqual, len(expectedIfMatch))
+	So(len(expectedUpserts), ShouldEqual, len(expectedIfMatch))
 
 	// Gets called is called an extra time, as there is a check wrapper around this route which
 	// checks the instance is not published before entering handler
-	convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, len(expectedUpserts)+1)
-	convey.So(mockedDataStore.GetInstanceCalls()[0].ID, convey.ShouldEqual, instanceID)
-	convey.So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, convey.ShouldEqual, expectedIfMatch[0])
+	So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, len(expectedUpserts)+1)
+	So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, instanceID)
+	So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, expectedIfMatch[0])
 	for i := range expectedUpserts {
-		convey.So(mockedDataStore.GetInstanceCalls()[i+1].ID, convey.ShouldEqual, instanceID)
-		convey.So(mockedDataStore.GetInstanceCalls()[i+1].ETagSelector, convey.ShouldEqual, expectedIfMatch[i])
+		So(mockedDataStore.GetInstanceCalls()[i+1].ID, ShouldEqual, instanceID)
+		So(mockedDataStore.GetInstanceCalls()[i+1].ETagSelector, ShouldEqual, expectedIfMatch[i])
 	}
 
 	// validate UpdateETag calls
-	convey.So(mockedDataStore.UpdateETagForOptionsCalls(), convey.ShouldHaveLength, len(expectedUpserts))
+	So(mockedDataStore.UpdateETagForOptionsCalls(), ShouldHaveLength, len(expectedUpserts))
 	for i := range expectedUpserts {
-		convey.So(mockedDataStore.UpdateETagForOptionsCalls()[i].CurrentInstance.InstanceID, convey.ShouldEqual, instanceID)
-		convey.So(mockedDataStore.UpdateETagForOptionsCalls()[i].ETagSelector, convey.ShouldEqual, expectedIfMatch[i])
+		So(mockedDataStore.UpdateETagForOptionsCalls()[i].CurrentInstance.InstanceID, ShouldEqual, instanceID)
+		So(mockedDataStore.UpdateETagForOptionsCalls()[i].ETagSelector, ShouldEqual, expectedIfMatch[i])
 	}
 
 	// validate Upsert calls
-	convey.So(mockedDataStore.UpsertDimensionsToInstanceCalls(), convey.ShouldHaveLength, len(expectedUpserts))
+	So(mockedDataStore.UpsertDimensionsToInstanceCalls(), ShouldHaveLength, len(expectedUpserts))
 	for i, expected := range expectedUpserts {
-		convey.So(mockedDataStore.UpsertDimensionsToInstanceCalls()[i].Dimensions, convey.ShouldResemble, expected)
+		So(mockedDataStore.UpsertDimensionsToInstanceCalls()[i].Dimensions, ShouldResemble, expected)
 	}
 }
 
 func validateLock(mockedDataStore *storetest.StorerMock, expectedInstanceID string) {
-	convey.So(mockedDataStore.AcquireInstanceLockCalls(), convey.ShouldHaveLength, 1)
-	convey.So(mockedDataStore.AcquireInstanceLockCalls()[0].InstanceID, convey.ShouldEqual, expectedInstanceID)
-	convey.So(mockedDataStore.UnlockInstanceCalls(), convey.ShouldHaveLength, 1)
-	convey.So(mockedDataStore.UnlockInstanceCalls()[0].LockID, convey.ShouldEqual, testLockID)
+	So(mockedDataStore.AcquireInstanceLockCalls(), ShouldHaveLength, 1)
+	So(mockedDataStore.AcquireInstanceLockCalls()[0].InstanceID, ShouldEqual, expectedInstanceID)
+	So(mockedDataStore.UnlockInstanceCalls(), ShouldHaveLength, 1)
+	So(mockedDataStore.UnlockInstanceCalls()[0].LockID, ShouldEqual, testLockID)
 }
 
 func storeMockWithLock(expectFirstGetUnlocked bool) (storerTestMock *storetest.StorerMock, isLockedPointer *bool) {
@@ -118,9 +118,9 @@ func storeMockWithLock(expectFirstGetUnlocked bool) (storerTestMock *storetest.S
 		GetInstanceFunc: func(_ context.Context, ID string, _ string) (*models.Instance, error) {
 			if expectFirstGetUnlocked {
 				if numGetCall > 0 {
-					convey.So(isLocked, convey.ShouldBeTrue)
+					So(isLocked, ShouldBeTrue)
 				} else {
-					convey.So(isLocked, convey.ShouldBeFalse)
+					So(isLocked, ShouldBeFalse)
 				}
 			}
 			numGetCall++
@@ -138,31 +138,31 @@ func storeMockWithLock(expectFirstGetUnlocked bool) (storerTestMock *storetest.S
 func TestAddNodeIDToDimensionReturnsOK(t *testing.T) {
 	t.Parallel()
 
-	convey.Convey("Given a dataset API with a successful store mock and auth", t, func() {
+	Convey("Given a dataset API with a successful store mock and auth", t, func() {
 		mockedDataStore, isLocked := storeMockWithLock(true)
 		mockedDataStore.UpdateETagForOptionsFunc = func(context.Context, *models.Instance, []*models.CachedDimensionOption, []*models.DimensionOption, string) (string, error) {
-			convey.So(*isLocked, convey.ShouldBeTrue)
+			So(*isLocked, ShouldBeTrue)
 			return testETag, nil
 		}
 		mockedDataStore.UpdateDimensionsNodeIDAndOrderFunc = func(context.Context, []*models.DimensionOption) error {
-			convey.So(*isLocked, convey.ShouldBeTrue)
+			So(*isLocked, ShouldBeTrue)
 			return nil
 		}
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 
-		convey.Convey("When a PUT request to update the nodeID for an option is made, with a valid If-Match header", func() {
+		Convey("When a PUT request to update the nodeID for an option is made, with a valid If-Match header", func() {
 			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55/node_id/11", nil)
 			r.Header.Add("If-Match", testIfMatch)
-			convey.So(err, convey.ShouldBeNil)
+			So(err, ShouldBeNil)
 			w := httptest.NewRecorder()
 			datasetAPI.Router.ServeHTTP(w, r)
 
-			convey.Convey("Then the response status is 200 OK, with the expected ETag header", func() {
-				convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
-				convey.So(w.Header().Get("ETag"), convey.ShouldEqual, testETag)
+			Convey("Then the response status is 200 OK, with the expected ETag header", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+				So(w.Header().Get("ETag"), ShouldEqual, testETag)
 			})
 
-			convey.Convey("Then the expected functions are called", func() {
+			Convey("Then the expected functions are called", func() {
 				validateDimensionUpdates(mockedDataStore, []*models.DimensionOption{
 					{
 						InstanceID: "123",
@@ -174,24 +174,24 @@ func TestAddNodeIDToDimensionReturnsOK(t *testing.T) {
 				}, testIfMatch)
 			})
 
-			convey.Convey("Then the db lock is acquired and released as expected", func() {
+			Convey("Then the db lock is acquired and released as expected", func() {
 				validateLock(mockedDataStore, "123")
-				convey.So(*isLocked, convey.ShouldBeFalse)
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
-		convey.Convey("When a PUT request to update the nodeID for an option is made, without an If-Match header", func() {
+		Convey("When a PUT request to update the nodeID for an option is made, without an If-Match header", func() {
 			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55/node_id/11", nil)
-			convey.So(err, convey.ShouldBeNil)
+			So(err, ShouldBeNil)
 			w := httptest.NewRecorder()
 			datasetAPI.Router.ServeHTTP(w, r)
 
-			convey.Convey("Then the response status is 200 OK, with the expected ETag header", func() {
-				convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
-				convey.So(w.Header().Get("ETag"), convey.ShouldEqual, testETag)
+			Convey("Then the response status is 200 OK, with the expected ETag header", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+				So(w.Header().Get("ETag"), ShouldEqual, testETag)
 			})
 
-			convey.Convey("Then the expected functions are called, with the '*' wildchar when validting the provided If-Match value", func() {
+			Convey("Then the expected functions are called, with the '*' wildchar when validting the provided If-Match value", func() {
 				validateDimensionUpdates(mockedDataStore, []*models.DimensionOption{
 					{
 						InstanceID: "123",
@@ -203,9 +203,9 @@ func TestAddNodeIDToDimensionReturnsOK(t *testing.T) {
 				}, AnyETag)
 			})
 
-			convey.Convey("Then the db lock is acquired and released as expected", func() {
+			Convey("Then the db lock is acquired and released as expected", func() {
 				validateLock(mockedDataStore, "123")
-				convey.So(*isLocked, convey.ShouldBeFalse)
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 	})
@@ -214,39 +214,39 @@ func TestAddNodeIDToDimensionReturnsOK(t *testing.T) {
 func TestPatchOptionReturnsOK(t *testing.T) {
 	t.Parallel()
 
-	convey.Convey("Given a Dataset API instance with a mocked data store", t, func() {
+	Convey("Given a Dataset API instance with a mocked data store", t, func() {
 		w := httptest.NewRecorder()
 
 		numUpdateCall := 0
 
 		mockedDataStore, isLocked := storeMockWithLock(true)
 		mockedDataStore.UpdateETagForOptionsFunc = func(context.Context, *models.Instance, []*models.CachedDimensionOption, []*models.DimensionOption, string) (string, error) {
-			convey.So(*isLocked, convey.ShouldBeTrue)
+			So(*isLocked, ShouldBeTrue)
 			newETag := fmt.Sprintf("%s_%d", testETag, numUpdateCall)
 			numUpdateCall++
 			return newETag, nil
 		}
 		mockedDataStore.UpdateDimensionsNodeIDAndOrderFunc = func(context.Context, []*models.DimensionOption) error {
-			convey.So(*isLocked, convey.ShouldBeTrue)
+			So(*isLocked, ShouldBeTrue)
 			return nil
 		}
 
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 
-		convey.Convey("Then patch dimension option with a valid node_id returns ok", func() {
+		Convey("Then patch dimension option with a valid node_id returns ok", func() {
 			body := strings.NewReader(`[
 				{"op": "add", "path": "/node_id", "value": "11"}
 			]`)
 			r, err := createRequestWithToken(http.MethodPatch, "http://localhost:21800/instances/123/dimensions/age/options/55", body)
 			r.Header.Set("If-Match", testIfMatch)
-			convey.So(err, convey.ShouldBeNil)
+			So(err, ShouldBeNil)
 
 			datasetAPI.Router.ServeHTTP(w, r)
-			convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
+			So(w.Code, ShouldEqual, http.StatusOK)
 			expectedETag := fmt.Sprintf("%s_0", testETag)
-			convey.So(w.Header().Get("ETag"), convey.ShouldEqual, expectedETag)
+			So(w.Header().Get("ETag"), ShouldEqual, expectedETag)
 
-			convey.Convey("And the expected database calls are performed to update node_id", func() {
+			Convey("And the expected database calls are performed to update node_id", func() {
 				validateDimensionUpdates(mockedDataStore, []*models.DimensionOption{
 					{
 						InstanceID: "123",
@@ -257,25 +257,25 @@ func TestPatchOptionReturnsOK(t *testing.T) {
 				}, testIfMatch)
 			})
 
-			convey.Convey("Then the db lock is acquired and released as expected", func() {
+			Convey("Then the db lock is acquired and released as expected", func() {
 				validateLock(mockedDataStore, "123")
-				convey.So(*isLocked, convey.ShouldBeFalse)
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
-		convey.Convey("Then patch dimension option with a valid node_id, without an If-Match header, returns ok", func() {
+		Convey("Then patch dimension option with a valid node_id, without an If-Match header, returns ok", func() {
 			body := strings.NewReader(`[
 				{"op": "add", "path": "/node_id", "value": "11"}
 			]`)
 			r, err := createRequestWithToken(http.MethodPatch, "http://localhost:21800/instances/123/dimensions/age/options/55", body)
-			convey.So(err, convey.ShouldBeNil)
+			So(err, ShouldBeNil)
 
 			datasetAPI.Router.ServeHTTP(w, r)
-			convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
+			So(w.Code, ShouldEqual, http.StatusOK)
 			expectedETag := fmt.Sprintf("%s_0", testETag)
-			convey.So(w.Header().Get("ETag"), convey.ShouldEqual, expectedETag)
+			So(w.Header().Get("ETag"), ShouldEqual, expectedETag)
 
-			convey.Convey("And the expected database calls are performed to update node_id without checking any eTag", func() {
+			Convey("And the expected database calls are performed to update node_id without checking any eTag", func() {
 				validateDimensionUpdates(mockedDataStore, []*models.DimensionOption{
 					{
 						InstanceID: "123",
@@ -286,26 +286,26 @@ func TestPatchOptionReturnsOK(t *testing.T) {
 				}, AnyETag)
 			})
 
-			convey.Convey("Then the db lock is acquired and released as expected", func() {
+			Convey("Then the db lock is acquired and released as expected", func() {
 				validateLock(mockedDataStore, "123")
-				convey.So(*isLocked, convey.ShouldBeFalse)
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
-		convey.Convey("Then patch dimension option with a valid order returns ok", func() {
+		Convey("Then patch dimension option with a valid order returns ok", func() {
 			body := strings.NewReader(`[
 				{"op": "add", "path": "/order", "value": 0}
 			]`)
 			r, err := createRequestWithToken(http.MethodPatch, "http://localhost:21800/instances/123/dimensions/age/options/55", body)
 			r.Header.Set("If-Match", testIfMatch)
-			convey.So(err, convey.ShouldBeNil)
+			So(err, ShouldBeNil)
 
 			datasetAPI.Router.ServeHTTP(w, r)
-			convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
+			So(w.Code, ShouldEqual, http.StatusOK)
 			expectedETag := fmt.Sprintf("%s_0", testETag)
-			convey.So(w.Header().Get("ETag"), convey.ShouldEqual, expectedETag)
+			So(w.Header().Get("ETag"), ShouldEqual, expectedETag)
 
-			convey.Convey("And the expected database calls are performed to update order", func() {
+			Convey("And the expected database calls are performed to update order", func() {
 				expectedOrder := 0
 				validateDimensionUpdates(mockedDataStore, []*models.DimensionOption{
 					{
@@ -317,52 +317,52 @@ func TestPatchOptionReturnsOK(t *testing.T) {
 				}, testIfMatch)
 			})
 
-			convey.Convey("Then the db lock is acquired and released as expected", func() {
+			Convey("Then the db lock is acquired and released as expected", func() {
 				validateLock(mockedDataStore, "123")
-				convey.So(*isLocked, convey.ShouldBeFalse)
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
-		convey.Convey("Then patch dimension option with a valid order and node_id returns ok", func() {
+		Convey("Then patch dimension option with a valid order and node_id returns ok", func() {
 			body := strings.NewReader(`[
 				{"op": "add", "path": "/order", "value": 0},
 				{"op": "add", "path": "/node_id", "value": "11"}
 			]`)
 			r, err := createRequestWithToken(http.MethodPatch, "http://localhost:21800/instances/123/dimensions/age/options/55", body)
 			r.Header.Set("If-Match", testIfMatch)
-			convey.So(err, convey.ShouldBeNil)
+			So(err, ShouldBeNil)
 
 			expectedETag0 := fmt.Sprintf("%s_0", testETag)
 			expectedETag1 := fmt.Sprintf("%s_1", testETag)
 
 			datasetAPI.Router.ServeHTTP(w, r)
-			convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
-			convey.So(w.Header().Get("ETag"), convey.ShouldEqual, expectedETag1)
+			So(w.Code, ShouldEqual, http.StatusOK)
+			So(w.Header().Get("ETag"), ShouldEqual, expectedETag1)
 
-			convey.Convey("And the expected database calls are performed to update node_id and order", func() {
-				convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 3)
-				convey.So(mockedDataStore.GetInstanceCalls()[0].ID, convey.ShouldEqual, "123")
-				convey.So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, convey.ShouldEqual, testIfMatch)
-				convey.So(mockedDataStore.GetInstanceCalls()[1].ID, convey.ShouldEqual, "123")
-				convey.So(mockedDataStore.GetInstanceCalls()[1].ETagSelector, convey.ShouldEqual, testIfMatch)
-				convey.So(mockedDataStore.GetInstanceCalls()[2].ID, convey.ShouldEqual, "123")
-				convey.So(mockedDataStore.GetInstanceCalls()[2].ETagSelector, convey.ShouldEqual, expectedETag0)
+			Convey("And the expected database calls are performed to update node_id and order", func() {
+				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 3)
+				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
+				So(mockedDataStore.GetInstanceCalls()[1].ID, ShouldEqual, "123")
+				So(mockedDataStore.GetInstanceCalls()[1].ETagSelector, ShouldEqual, testIfMatch)
+				So(mockedDataStore.GetInstanceCalls()[2].ID, ShouldEqual, "123")
+				So(mockedDataStore.GetInstanceCalls()[2].ETagSelector, ShouldEqual, expectedETag0)
 
 				expectedOrder := 0
-				convey.So(mockedDataStore.UpdateDimensionsNodeIDAndOrderCalls(), convey.ShouldHaveLength, 2)
-				convey.So(mockedDataStore.UpdateDimensionsNodeIDAndOrderCalls()[0].Updates[0], convey.ShouldResemble, &models.DimensionOption{
+				So(mockedDataStore.UpdateDimensionsNodeIDAndOrderCalls(), ShouldHaveLength, 2)
+				So(mockedDataStore.UpdateDimensionsNodeIDAndOrderCalls()[0].Updates[0], ShouldResemble, &models.DimensionOption{
 					InstanceID: "123",
 					Name:       "age",
 					Option:     "55",
 					Order:      &expectedOrder,
 				})
-				convey.So(mockedDataStore.UpdateDimensionsNodeIDAndOrderCalls()[1].Updates[0], convey.ShouldResemble, &models.DimensionOption{
+				So(mockedDataStore.UpdateDimensionsNodeIDAndOrderCalls()[1].Updates[0], ShouldResemble, &models.DimensionOption{
 					InstanceID: "123",
 					Name:       "age",
 					NodeID:     "11",
 					Option:     "55",
 				})
-				convey.So(*isLocked, convey.ShouldBeFalse)
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 	})
@@ -372,30 +372,30 @@ func TestPatchOptionReturnsOK(t *testing.T) {
 func TestAddNodeIDToDimensionReturnsNotFound(t *testing.T) {
 	t.Parallel()
 
-	convey.Convey("Given a mocked Dataset API that fails to update dimension node ID due to DimensionNodeNotFound error", t, func() {
+	Convey("Given a mocked Dataset API that fails to update dimension node ID due to DimensionNodeNotFound error", t, func() {
 		w := httptest.NewRecorder()
 
 		mockedDataStore, isLocked := storeMockWithLock(true)
 		mockedDataStore.UpdateETagForOptionsFunc = func(context.Context, *models.Instance, []*models.CachedDimensionOption, []*models.DimensionOption, string) (string, error) {
-			convey.So(*isLocked, convey.ShouldBeTrue)
+			So(*isLocked, ShouldBeTrue)
 			return testETag, nil
 		}
 		mockedDataStore.UpdateDimensionsNodeIDAndOrderFunc = func(context.Context, []*models.DimensionOption) error {
-			convey.So(*isLocked, convey.ShouldBeTrue)
+			So(*isLocked, ShouldBeTrue)
 			return errs.ErrDimensionNodeNotFound
 		}
 
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 
-		convey.Convey("Add node id to a dimension returns status not found", func() {
+		Convey("Add node id to a dimension returns status not found", func() {
 			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55/node_id/11", nil)
 			r.Header.Set("If-Match", testIfMatch)
-			convey.So(err, convey.ShouldBeNil)
+			So(err, ShouldBeNil)
 
 			datasetAPI.Router.ServeHTTP(w, r)
-			convey.So(w.Code, convey.ShouldEqual, http.StatusNotFound)
+			So(w.Code, ShouldEqual, http.StatusNotFound)
 
-			convey.Convey("And the expected database calls are performed to update nodeID", func() {
+			Convey("And the expected database calls are performed to update nodeID", func() {
 				validateDimensionUpdates(mockedDataStore, []*models.DimensionOption{
 					{
 						InstanceID: "123",
@@ -407,9 +407,9 @@ func TestAddNodeIDToDimensionReturnsNotFound(t *testing.T) {
 				}, testIfMatch)
 			})
 
-			convey.Convey("Then the db lock is acquired and released as expected", func() {
+			Convey("Then the db lock is acquired and released as expected", func() {
 				validateLock(mockedDataStore, "123")
-				convey.So(*isLocked, convey.ShouldBeFalse)
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 	})
@@ -418,33 +418,33 @@ func TestAddNodeIDToDimensionReturnsNotFound(t *testing.T) {
 func TestPatchOptionReturnsNotFound(t *testing.T) {
 	t.Parallel()
 
-	convey.Convey("Given a Dataset API instance with a mocked data store that fails to update dimension node ID due to DimensionNodeNotFound error", t, func() {
+	Convey("Given a Dataset API instance with a mocked data store that fails to update dimension node ID due to DimensionNodeNotFound error", t, func() {
 		w := httptest.NewRecorder()
 
 		mockedDataStore, isLocked := storeMockWithLock(true)
 		mockedDataStore.UpdateETagForOptionsFunc = func(context.Context, *models.Instance, []*models.CachedDimensionOption, []*models.DimensionOption, string) (string, error) {
-			convey.So(*isLocked, convey.ShouldBeTrue)
+			So(*isLocked, ShouldBeTrue)
 			return testETag, nil
 		}
 		mockedDataStore.UpdateDimensionsNodeIDAndOrderFunc = func(context.Context, []*models.DimensionOption) error {
-			convey.So(*isLocked, convey.ShouldBeTrue)
+			So(*isLocked, ShouldBeTrue)
 			return errs.ErrDimensionNodeNotFound
 		}
 
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 
-		convey.Convey("Then patch dimension option returns status not found", func() {
+		Convey("Then patch dimension option returns status not found", func() {
 			body := strings.NewReader(`[
 				{"op": "add", "path": "/node_id", "value": "11"}
 			]`)
 			r, err := createRequestWithToken(http.MethodPatch, "http://localhost:21800/instances/123/dimensions/age/options/55", body)
 			r.Header.Set("If-Match", testIfMatch)
-			convey.So(err, convey.ShouldBeNil)
+			So(err, ShouldBeNil)
 
 			datasetAPI.Router.ServeHTTP(w, r)
-			convey.So(w.Code, convey.ShouldEqual, http.StatusNotFound)
+			So(w.Code, ShouldEqual, http.StatusNotFound)
 
-			convey.Convey("And the expected database calls are performed to update nodeID", func() {
+			Convey("And the expected database calls are performed to update nodeID", func() {
 				validateDimensionUpdates(mockedDataStore, []*models.DimensionOption{
 					{
 						InstanceID: "123",
@@ -456,9 +456,9 @@ func TestPatchOptionReturnsNotFound(t *testing.T) {
 				}, testIfMatch)
 			})
 
-			convey.Convey("Then the db lock is acquired and released as expected", func() {
+			Convey("Then the db lock is acquired and released as expected", func() {
 				validateLock(mockedDataStore, "123")
-				convey.So(*isLocked, convey.ShouldBeFalse)
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 	})
@@ -467,7 +467,7 @@ func TestPatchOptionReturnsNotFound(t *testing.T) {
 func TestPatchOptionReturnsBadRequest(t *testing.T) {
 	t.Parallel()
 
-	convey.Convey("Given a Dataset API instance with a mocked datastore GetInstance", t, func() {
+	Convey("Given a Dataset API instance with a mocked datastore GetInstance", t, func() {
 		w := httptest.NewRecorder()
 
 		mockedDataStore, isLocked := storeMockWithLock(false)
@@ -482,14 +482,14 @@ func TestPatchOptionReturnsBadRequest(t *testing.T) {
 		}
 
 		for msg, body := range bodies {
-			convey.Convey(msg, func() {
+			Convey(msg, func() {
 				r, err := createRequestWithToken(http.MethodPatch, "http://localhost:21800/instances/123/dimensions/age/options/55", body)
-				convey.So(err, convey.ShouldBeNil)
+				So(err, ShouldBeNil)
 
 				datasetAPI.Router.ServeHTTP(w, r)
-				convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
-				convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 1)
-				convey.So(*isLocked, convey.ShouldBeFalse)
+				So(w.Code, ShouldEqual, http.StatusBadRequest)
+				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+				So(*isLocked, ShouldBeFalse)
 			})
 		}
 	})
@@ -498,9 +498,9 @@ func TestPatchOptionReturnsBadRequest(t *testing.T) {
 // Deprecated
 func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 	t.Parallel()
-	convey.Convey("Given an internal error is returned from mongo, then response returns an internal error", t, func() {
+	Convey("Given an internal error is returned from mongo, then response returns an internal error", t, func() {
 		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55/node_id/11", nil)
-		convey.So(err, convey.ShouldBeNil)
+		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
 
@@ -513,13 +513,13 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
-		convey.So(w.Code, convey.ShouldEqual, http.StatusInternalServerError)
-		convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 1)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 	})
 
-	convey.Convey("Given instance state is invalid, then response returns an internal error", t, func() {
+	Convey("Given instance state is invalid, then response returns an internal error", t, func() {
 		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55/node_id/11", nil)
-		convey.So(err, convey.ShouldBeNil)
+		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
 
@@ -532,10 +532,10 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
-		convey.So(w.Code, convey.ShouldEqual, http.StatusInternalServerError)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		// Gets called twice as there is a check wrapper around this route which
 		// checks the instance is not published before entering handler
-		convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 1)
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 	})
 }
 
@@ -547,28 +547,28 @@ func TestPatchOptionReturnsInternalError(t *testing.T) {
 		{"op": "add", "path": "/node_id", "value": "11"}
 	]`)
 
-	convey.Convey("Given an internal error is returned from mongo, then response returns an internal error", t, func() {
+	Convey("Given an internal error is returned from mongo, then response returns an internal error", t, func() {
 		mockedDataStore, isLocked := storeMockWithLock(false)
 		mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 			return nil, errs.ErrInternalServer
 		}
 
 		r, err := createRequestWithToken(http.MethodPatch, "http://localhost:21800/instances/123/dimensions/age/options/55", body)
-		convey.So(err, convey.ShouldBeNil)
+		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
 
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
-		convey.So(w.Code, convey.ShouldEqual, http.StatusInternalServerError)
-		convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 1)
-		convey.So(*isLocked, convey.ShouldBeFalse)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+		So(*isLocked, ShouldBeFalse)
 	})
 
-	convey.Convey("Given instance state is invalid, then response returns an internal error", t, func() {
+	Convey("Given instance state is invalid, then response returns an internal error", t, func() {
 		r, err := createRequestWithToken(http.MethodPatch, "http://localhost:21800/instances/123/dimensions/age/options/55", body)
-		convey.So(err, convey.ShouldBeNil)
+		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
 
@@ -580,14 +580,14 @@ func TestPatchOptionReturnsInternalError(t *testing.T) {
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
-		convey.So(w.Code, convey.ShouldEqual, http.StatusInternalServerError)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		// Gets called twice as there is a check wrapper around this route which
 		// checks the instance is not published before entering handler
-		convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 1)
-		convey.So(*isLocked, convey.ShouldBeFalse)
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+		So(*isLocked, ShouldBeFalse)
 	})
 
-	convey.Convey("Given an internal error is returned from mongo GetInstance on the second call, then response returns an internal error", t, func() {
+	Convey("Given an internal error is returned from mongo GetInstance on the second call, then response returns an internal error", t, func() {
 		mockedDataStore, isLocked := storeMockWithLock(true)
 		mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 			if len(mockedDataStore.GetInstanceCalls()) == 1 {
@@ -597,25 +597,25 @@ func TestPatchOptionReturnsInternalError(t *testing.T) {
 		}
 
 		r, err := createRequestWithToken(http.MethodPatch, "http://localhost:21800/instances/123/dimensions/age/options/55", body)
-		convey.So(err, convey.ShouldBeNil)
+		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
 
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
-		convey.So(w.Code, convey.ShouldEqual, http.StatusInternalServerError)
-		convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 2)
-		convey.So(*isLocked, convey.ShouldBeFalse)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 2)
+		So(*isLocked, ShouldBeFalse)
 	})
 }
 
 // Deprecated
 func TestAddNodeIDToDimensionReturnsForbidden(t *testing.T) {
 	t.Parallel()
-	convey.Convey("Add node id to a dimension of a published instance returns forbidden", t, func() {
+	Convey("Add node id to a dimension of a published instance returns forbidden", t, func() {
 		r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55/node_id/11", nil)
-		convey.So(err, convey.ShouldBeNil)
+		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
 
@@ -628,20 +628,20 @@ func TestAddNodeIDToDimensionReturnsForbidden(t *testing.T) {
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
-		convey.So(w.Code, convey.ShouldEqual, http.StatusForbidden)
-		convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 1)
+		So(w.Code, ShouldEqual, http.StatusForbidden)
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 	})
 }
 
 func TestPatchOptionReturnsForbidden(t *testing.T) {
 	t.Parallel()
-	convey.Convey("Patch dimension option of a published instance returns forbidden", t, func() {
+	Convey("Patch dimension option of a published instance returns forbidden", t, func() {
 		body := strings.NewReader(`[
 			{"op": "add", "path": "/order", "value": 0},
 			{"op": "add", "path": "/node_id", "value": "11"}
 		]`)
 		r, err := createRequestWithToken(http.MethodPatch, "http://localhost:21800/instances/123/dimensions/age/options/55", body)
-		convey.So(err, convey.ShouldBeNil)
+		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
 
@@ -654,17 +654,17 @@ func TestPatchOptionReturnsForbidden(t *testing.T) {
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
-		convey.So(w.Code, convey.ShouldEqual, http.StatusForbidden)
-		convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 1)
+		So(w.Code, ShouldEqual, http.StatusForbidden)
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 	})
 }
 
 // Deprecated
 func TestAddNodeIDToDimensionReturnsUnauthorized(t *testing.T) {
 	t.Parallel()
-	convey.Convey("Add node id to a dimension of an instance returns unauthorized", t, func() {
+	Convey("Add node id to a dimension of an instance returns unauthorized", t, func() {
 		r, err := http.NewRequest("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55/node_id/11", http.NoBody)
-		convey.So(err, convey.ShouldBeNil)
+		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
 
@@ -673,19 +673,19 @@ func TestAddNodeIDToDimensionReturnsUnauthorized(t *testing.T) {
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
-		convey.So(w.Code, convey.ShouldEqual, http.StatusUnauthorized)
+		So(w.Code, ShouldEqual, http.StatusUnauthorized)
 	})
 }
 
 func TestPatchOptionReturnsUnauthorized(t *testing.T) {
 	t.Parallel()
-	convey.Convey("Patch option of an instance returns unauthorized", t, func() {
+	Convey("Patch option of an instance returns unauthorized", t, func() {
 		body := strings.NewReader(`[
 			{"op": "add", "path": "/order", "value": 0},
 			{"op": "add", "path": "/node_id", "value": "11"}
 		]`)
 		r, err := http.NewRequest(http.MethodPatch, "http://localhost:21800/instances/123/dimensions/age/options/55", body)
-		convey.So(err, convey.ShouldBeNil)
+		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
 
@@ -694,7 +694,7 @@ func TestPatchOptionReturnsUnauthorized(t *testing.T) {
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
-		convey.So(w.Code, convey.ShouldEqual, http.StatusUnauthorized)
+		So(w.Code, ShouldEqual, http.StatusUnauthorized)
 	})
 }
 
@@ -710,78 +710,78 @@ func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
 		Order:      &expectedOrder,
 	}
 
-	convey.Convey("Given a dataset API with a successful store mock and auth", t, func() {
+	Convey("Given a dataset API with a successful store mock and auth", t, func() {
 		mockedDataStore, isLocked := storeMockWithLock(true)
 		mockedDataStore.UpdateETagForOptionsFunc = func(context.Context, *models.Instance, []*models.CachedDimensionOption, []*models.DimensionOption, string) (string, error) {
-			convey.So(*isLocked, convey.ShouldBeTrue)
+			So(*isLocked, ShouldBeTrue)
 			return testETag, nil
 		}
 		mockedDataStore.UpsertDimensionsToInstanceFunc = func(context.Context, []*models.CachedDimensionOption) error {
-			convey.So(*isLocked, convey.ShouldBeTrue)
+			So(*isLocked, ShouldBeTrue)
 			return nil
 		}
 
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 
-		convey.Convey("When a POST request to add dimensions to an instance resource is made, with a valid If-Match header", func() {
+		Convey("When a POST request to add dimensions to an instance resource is made, with a valid If-Match header", func() {
 			json := strings.NewReader(bodyStr)
 			r, err := createRequestWithToken("POST", "http://localhost:22000/instances/123/dimensions", json)
 			r.Header.Set("If-Match", testIfMatch)
-			convey.So(err, convey.ShouldBeNil)
+			So(err, ShouldBeNil)
 			w := httptest.NewRecorder()
 			datasetAPI.Router.ServeHTTP(w, r)
 
-			convey.Convey("Then the response status is 200 OK, with the expected ETag header", func() {
-				convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
-				convey.So(w.Header().Get("ETag"), convey.ShouldEqual, testETag)
+			Convey("Then the response status is 200 OK, with the expected ETag header", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+				So(w.Header().Get("ETag"), ShouldEqual, testETag)
 			})
 
-			convey.Convey("Then the expected functions are called", func() {
+			Convey("Then the expected functions are called", func() {
 				// Gets called twice as there is a check wrapper around this route which
 				// checks the instance is not published before entering handler
-				convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 2)
-				convey.So(mockedDataStore.GetInstanceCalls()[0].ID, convey.ShouldEqual, "123")
-				convey.So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, convey.ShouldEqual, testIfMatch)
-				convey.So(mockedDataStore.GetInstanceCalls()[1].ID, convey.ShouldEqual, "123")
-				convey.So(mockedDataStore.GetInstanceCalls()[1].ETagSelector, convey.ShouldEqual, testIfMatch)
-				convey.So(mockedDataStore.UpdateETagForOptionsCalls(), convey.ShouldHaveLength, 1)
-				convey.So(mockedDataStore.UpdateETagForOptionsCalls()[0].ETagSelector, convey.ShouldEqual, testIfMatch)
-				convey.So(mockedDataStore.UpdateETagForOptionsCalls()[0].Upserts[0], convey.ShouldResemble, expected)
-				convey.So(mockedDataStore.UpsertDimensionsToInstanceCalls(), convey.ShouldHaveLength, 1)
-				convey.So(mockedDataStore.UpsertDimensionsToInstanceCalls()[0].Dimensions[0], convey.ShouldResemble, expected)
+				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 2)
+				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
+				So(mockedDataStore.GetInstanceCalls()[1].ID, ShouldEqual, "123")
+				So(mockedDataStore.GetInstanceCalls()[1].ETagSelector, ShouldEqual, testIfMatch)
+				So(mockedDataStore.UpdateETagForOptionsCalls(), ShouldHaveLength, 1)
+				So(mockedDataStore.UpdateETagForOptionsCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
+				So(mockedDataStore.UpdateETagForOptionsCalls()[0].Upserts[0], ShouldResemble, expected)
+				So(mockedDataStore.UpsertDimensionsToInstanceCalls(), ShouldHaveLength, 1)
+				So(mockedDataStore.UpsertDimensionsToInstanceCalls()[0].Dimensions[0], ShouldResemble, expected)
 			})
 
-			convey.Convey("Then the db lock is acquired and released as expected", func() {
+			Convey("Then the db lock is acquired and released as expected", func() {
 				validateLock(mockedDataStore, "123")
-				convey.So(*isLocked, convey.ShouldBeFalse)
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
-		convey.Convey("When a POST request to add dimensions to an instance resource is made, without an If-Match header", func() {
+		Convey("When a POST request to add dimensions to an instance resource is made, without an If-Match header", func() {
 			json := strings.NewReader(bodyStr)
 			r, err := createRequestWithToken("POST", "http://localhost:22000/instances/123/dimensions", json)
-			convey.So(err, convey.ShouldBeNil)
+			So(err, ShouldBeNil)
 			w := httptest.NewRecorder()
 			datasetAPI.Router.ServeHTTP(w, r)
 
-			convey.Convey("Then the response status is 200 OK, with the expected ETag header", func() {
-				convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
-				convey.So(w.Header().Get("ETag"), convey.ShouldEqual, testETag)
+			Convey("Then the response status is 200 OK, with the expected ETag header", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+				So(w.Header().Get("ETag"), ShouldEqual, testETag)
 			})
 
-			convey.Convey("Then the expected functions are called, with the '*' wildchar when validting the provided If-Match value", func() {
+			Convey("Then the expected functions are called, with the '*' wildchar when validting the provided If-Match value", func() {
 				// Gets called twice as there is a check wrapper around this route which
 				// checks the instance is not published before entering handler
-				convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 2)
-				convey.So(mockedDataStore.GetInstanceCalls()[0].ID, convey.ShouldEqual, "123")
-				convey.So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, convey.ShouldEqual, AnyETag)
-				convey.So(mockedDataStore.GetInstanceCalls()[1].ID, convey.ShouldEqual, "123")
-				convey.So(mockedDataStore.GetInstanceCalls()[1].ETagSelector, convey.ShouldEqual, AnyETag)
-				convey.So(mockedDataStore.UpdateETagForOptionsCalls(), convey.ShouldHaveLength, 1)
-				convey.So(mockedDataStore.UpdateETagForOptionsCalls()[0].ETagSelector, convey.ShouldEqual, AnyETag)
-				convey.So(mockedDataStore.UpdateETagForOptionsCalls()[0].Upserts[0], convey.ShouldResemble, expected)
-				convey.So(mockedDataStore.UpsertDimensionsToInstanceCalls(), convey.ShouldHaveLength, 1)
-				convey.So(mockedDataStore.UpsertDimensionsToInstanceCalls()[0].Dimensions[0], convey.ShouldResemble, expected)
+				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 2)
+				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, AnyETag)
+				So(mockedDataStore.GetInstanceCalls()[1].ID, ShouldEqual, "123")
+				So(mockedDataStore.GetInstanceCalls()[1].ETagSelector, ShouldEqual, AnyETag)
+				So(mockedDataStore.UpdateETagForOptionsCalls(), ShouldHaveLength, 1)
+				So(mockedDataStore.UpdateETagForOptionsCalls()[0].ETagSelector, ShouldEqual, AnyETag)
+				So(mockedDataStore.UpdateETagForOptionsCalls()[0].Upserts[0], ShouldResemble, expected)
+				So(mockedDataStore.UpsertDimensionsToInstanceCalls(), ShouldHaveLength, 1)
+				So(mockedDataStore.UpsertDimensionsToInstanceCalls()[0].Dimensions[0], ShouldResemble, expected)
 			})
 		})
 	})
@@ -789,10 +789,10 @@ func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
 
 func TestAddDimensionToInstanceReturnsNotFound(t *testing.T) {
 	t.Parallel()
-	convey.Convey("Add a dimension to an instance returns not found", t, func() {
+	Convey("Add a dimension to an instance returns not found", t, func() {
 		json := strings.NewReader(`{"value":"24", "code_list":"123-456", "dimension": "test"}`)
 		r, err := createRequestWithToken("POST", "http://localhost:21800/instances/123/dimensions", json)
-		convey.So(err, convey.ShouldBeNil)
+		So(err, ShouldBeNil)
 
 		expected := &models.CachedDimensionOption{
 			InstanceID: "123",
@@ -804,43 +804,43 @@ func TestAddDimensionToInstanceReturnsNotFound(t *testing.T) {
 
 		mockedDataStore, isLocked := storeMockWithLock(true)
 		mockedDataStore.UpdateETagForOptionsFunc = func(context.Context, *models.Instance, []*models.CachedDimensionOption, []*models.DimensionOption, string) (string, error) {
-			convey.So(*isLocked, convey.ShouldBeTrue)
+			So(*isLocked, ShouldBeTrue)
 			return testETag, nil
 		}
 		mockedDataStore.UpsertDimensionsToInstanceFunc = func(context.Context, []*models.CachedDimensionOption) error {
-			convey.So(*isLocked, convey.ShouldBeTrue)
+			So(*isLocked, ShouldBeTrue)
 			return errs.ErrDimensionNodeNotFound
 		}
 
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
-		convey.So(w.Code, convey.ShouldEqual, http.StatusNotFound)
-		convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrDimensionNodeNotFound.Error())
+		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrDimensionNodeNotFound.Error())
 		// Gets called twice as there is a check wrapper around this route which
 		// checks the instance is not published before entering handler
-		convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 2)
-		convey.So(mockedDataStore.GetInstanceCalls()[0].ID, convey.ShouldEqual, "123")
-		convey.So(mockedDataStore.GetInstanceCalls()[1].ID, convey.ShouldEqual, "123")
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 2)
+		So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+		So(mockedDataStore.GetInstanceCalls()[1].ID, ShouldEqual, "123")
 
 		validateLock(mockedDataStore, "123")
 
-		convey.So(mockedDataStore.UpdateETagForOptionsCalls(), convey.ShouldHaveLength, 1)
-		convey.So(mockedDataStore.UpdateETagForOptionsCalls()[0].ETagSelector, convey.ShouldEqual, "*")
-		convey.So(mockedDataStore.UpdateETagForOptionsCalls()[0].Upserts[0], convey.ShouldResemble, expected)
+		So(mockedDataStore.UpdateETagForOptionsCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpdateETagForOptionsCalls()[0].ETagSelector, ShouldEqual, "*")
+		So(mockedDataStore.UpdateETagForOptionsCalls()[0].Upserts[0], ShouldResemble, expected)
 
-		convey.So(mockedDataStore.UpsertDimensionsToInstanceCalls(), convey.ShouldHaveLength, 1)
-		convey.So(mockedDataStore.UpsertDimensionsToInstanceCalls()[0].Dimensions[0], convey.ShouldResemble, expected)
-		convey.So(*isLocked, convey.ShouldBeFalse)
+		So(mockedDataStore.UpsertDimensionsToInstanceCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpsertDimensionsToInstanceCalls()[0].Dimensions[0], ShouldResemble, expected)
+		So(*isLocked, ShouldBeFalse)
 	})
 }
 
 func TestAddDimensionToInstanceReturnsForbidden(t *testing.T) {
 	t.Parallel()
-	convey.Convey("Add a dimension to a published instance returns forbidden", t, func() {
+	Convey("Add a dimension to a published instance returns forbidden", t, func() {
 		json := strings.NewReader(`{"value":"24", "code_list":"123-456", "dimension": "test"}`)
 		r, err := createRequestWithToken("POST", "http://localhost:21800/instances/123/dimensions", json)
-		convey.So(err, convey.ShouldBeNil)
+		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
 
@@ -853,18 +853,18 @@ func TestAddDimensionToInstanceReturnsForbidden(t *testing.T) {
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
-		convey.So(w.Code, convey.ShouldEqual, http.StatusForbidden)
-		convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrResourcePublished.Error())
-		convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 1)
+		So(w.Code, ShouldEqual, http.StatusForbidden)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrResourcePublished.Error())
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 	})
 }
 
 func TestAddDimensionToInstanceReturnsUnauthorized(t *testing.T) {
 	t.Parallel()
-	convey.Convey("Add a dimension to a instance returns unauthorized", t, func() {
+	Convey("Add a dimension to a instance returns unauthorized", t, func() {
 		json := strings.NewReader(`{"value":"24", "code_list":"123-456", "dimension": "test"}`)
 		r, err := http.NewRequest("POST", "http://localhost:21800/instances/123/dimensions", json)
-		convey.So(err, convey.ShouldBeNil)
+		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
 
@@ -873,18 +873,18 @@ func TestAddDimensionToInstanceReturnsUnauthorized(t *testing.T) {
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
-		convey.So(w.Code, convey.ShouldEqual, http.StatusUnauthorized)
-		convey.So(w.Body.String(), convey.ShouldContainSubstring, "unauthenticated request")
+		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+		So(w.Body.String(), ShouldContainSubstring, "unauthenticated request")
 	})
 }
 
 func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 	t.Parallel()
 
-	convey.Convey("Given an internal error is returned from mongo GetInstance, then response returns an internal error", t, func() {
+	Convey("Given an internal error is returned from mongo GetInstance, then response returns an internal error", t, func() {
 		json := strings.NewReader(`{"value":"24", "code_list":"123-456", "dimension": "test"}`)
 		r, err := createRequestWithToken("POST", "http://localhost:21800/instances/123/dimensions", json)
-		convey.So(err, convey.ShouldBeNil)
+		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
 
@@ -897,16 +897,16 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
-		convey.So(w.Code, convey.ShouldEqual, http.StatusInternalServerError)
-		convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrInternalServer.Error())
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 
-		convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 1)
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 	})
 
-	convey.Convey("Given instance state is invalid, then response returns an internal error", t, func() {
+	Convey("Given instance state is invalid, then response returns an internal error", t, func() {
 		json := strings.NewReader(`{"value":"24", "code_list":"123-456", "dimension": "test"}`)
 		r, err := createRequestWithToken("POST", "http://localhost:21800/instances/123/dimensions", json)
-		convey.So(err, convey.ShouldBeNil)
+		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
 
@@ -919,77 +919,77 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
-		convey.So(w.Code, convey.ShouldEqual, http.StatusInternalServerError)
-		convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrInternalServer.Error())
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		// Gets called twice as there is a check wrapper around this route which
 		// checks the instance is not published before entering handler
-		convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 1)
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 	})
 }
 
 func TestGetDimensionsReturnsOk(t *testing.T) {
 	t.Parallel()
 
-	convey.Convey("Given a dataset API with a successful store mock and auth", t, func() {
+	Convey("Given a dataset API with a successful store mock and auth", t, func() {
 		mockedDataStore, isLocked := storeMockWithLock(false)
 		mockedDataStore.GetDimensionsFromInstanceFunc = func(context.Context, string, int, int) ([]*models.DimensionOption, int, error) {
-			convey.So(*isLocked, convey.ShouldBeTrue)
+			So(*isLocked, ShouldBeTrue)
 			return []*models.DimensionOption{}, 0, nil
 		}
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 
-		convey.Convey("When a GET request to retrieve an instance resource is made, with a valid If-Match header", func() {
+		Convey("When a GET request to retrieve an instance resource is made, with a valid If-Match header", func() {
 			r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123/dimensions", nil)
 			r.Header.Set("If-Match", testIfMatch)
-			convey.So(err, convey.ShouldBeNil)
+			So(err, ShouldBeNil)
 			w := httptest.NewRecorder()
 			datasetAPI.Router.ServeHTTP(w, r)
 
-			convey.Convey("Then the response status is 200 OK, with the expected ETag header", func() {
-				convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
-				convey.So(w.Header().Get("ETag"), convey.ShouldEqual, testETag)
+			Convey("Then the response status is 200 OK, with the expected ETag header", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+				So(w.Header().Get("ETag"), ShouldEqual, testETag)
 			})
 
-			convey.Convey("Then the expected functions are called", func() {
-				convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 1)
-				convey.So(mockedDataStore.GetInstanceCalls()[0].ID, convey.ShouldEqual, "123")
-				convey.So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, convey.ShouldEqual, testIfMatch)
-				convey.So(mockedDataStore.GetDimensionsFromInstanceCalls(), convey.ShouldHaveLength, 1)
-				convey.So(mockedDataStore.GetDimensionsFromInstanceCalls()[0].ID, convey.ShouldEqual, "123")
-				convey.So(mockedDataStore.GetDimensionsFromInstanceCalls()[0].Offset, convey.ShouldEqual, 0)
-				convey.So(mockedDataStore.GetDimensionsFromInstanceCalls()[0].Limit, convey.ShouldEqual, 20)
+			Convey("Then the expected functions are called", func() {
+				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
+				So(mockedDataStore.GetDimensionsFromInstanceCalls(), ShouldHaveLength, 1)
+				So(mockedDataStore.GetDimensionsFromInstanceCalls()[0].ID, ShouldEqual, "123")
+				So(mockedDataStore.GetDimensionsFromInstanceCalls()[0].Offset, ShouldEqual, 0)
+				So(mockedDataStore.GetDimensionsFromInstanceCalls()[0].Limit, ShouldEqual, 20)
 			})
 
-			convey.Convey("Then the db lock is acquired and released as expected", func() {
+			Convey("Then the db lock is acquired and released as expected", func() {
 				validateLock(mockedDataStore, "123")
-				convey.So(*isLocked, convey.ShouldBeFalse)
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
-		convey.Convey("When a GET request to retrieve an instance resource is made, without an If-Match header", func() {
+		Convey("When a GET request to retrieve an instance resource is made, without an If-Match header", func() {
 			r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123/dimensions", nil)
-			convey.So(err, convey.ShouldBeNil)
+			So(err, ShouldBeNil)
 			w := httptest.NewRecorder()
 			datasetAPI.Router.ServeHTTP(w, r)
 
-			convey.Convey("Then the response status is 200 OK, with the expected ETag header", func() {
-				convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
-				convey.So(w.Header().Get("ETag"), convey.ShouldEqual, testETag)
+			Convey("Then the response status is 200 OK, with the expected ETag header", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+				So(w.Header().Get("ETag"), ShouldEqual, testETag)
 			})
 
-			convey.Convey("Then the expected functions are called", func() {
-				convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 1)
-				convey.So(mockedDataStore.GetInstanceCalls()[0].ID, convey.ShouldEqual, "123")
-				convey.So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, convey.ShouldEqual, AnyETag)
-				convey.So(mockedDataStore.GetDimensionsFromInstanceCalls(), convey.ShouldHaveLength, 1)
-				convey.So(mockedDataStore.GetDimensionsFromInstanceCalls()[0].ID, convey.ShouldEqual, "123")
-				convey.So(mockedDataStore.GetDimensionsFromInstanceCalls()[0].Offset, convey.ShouldEqual, 0)
-				convey.So(mockedDataStore.GetDimensionsFromInstanceCalls()[0].Limit, convey.ShouldEqual, 20)
+			Convey("Then the expected functions are called", func() {
+				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, AnyETag)
+				So(mockedDataStore.GetDimensionsFromInstanceCalls(), ShouldHaveLength, 1)
+				So(mockedDataStore.GetDimensionsFromInstanceCalls()[0].ID, ShouldEqual, "123")
+				So(mockedDataStore.GetDimensionsFromInstanceCalls()[0].Offset, ShouldEqual, 0)
+				So(mockedDataStore.GetDimensionsFromInstanceCalls()[0].Limit, ShouldEqual, 20)
 			})
 
-			convey.Convey("Then the db lock is acquired and released as expected", func() {
+			Convey("Then the db lock is acquired and released as expected", func() {
 				validateLock(mockedDataStore, "123")
-				convey.So(*isLocked, convey.ShouldBeFalse)
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 	})
@@ -997,164 +997,164 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 
 func TestGetDimensionsReturnsNotFound(t *testing.T) {
 	t.Parallel()
-	convey.Convey("Get dimensions returns not found", t, func() {
+	Convey("Get dimensions returns not found", t, func() {
 		r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123/dimensions", nil)
-		convey.So(err, convey.ShouldBeNil)
+		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
 		mockedDataStore, isLocked := storeMockWithLock(false)
 		mockedDataStore.GetDimensionsFromInstanceFunc = func(context.Context, string, int, int) ([]*models.DimensionOption, int, error) {
-			convey.So(*isLocked, convey.ShouldBeTrue)
+			So(*isLocked, ShouldBeTrue)
 			return nil, 0, errs.ErrDimensionNodeNotFound
 		}
 
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
-		convey.So(w.Code, convey.ShouldEqual, http.StatusNotFound)
-		convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrDimensionNodeNotFound.Error())
-		convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 1)
-		convey.So(mockedDataStore.GetInstanceCalls()[0].ID, convey.ShouldEqual, "123")
-		convey.So(mockedDataStore.GetDimensionsFromInstanceCalls(), convey.ShouldHaveLength, 1)
-		convey.So(mockedDataStore.GetDimensionsFromInstanceCalls()[0].ID, convey.ShouldEqual, "123")
+		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrDimensionNodeNotFound.Error())
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+		So(mockedDataStore.GetDimensionsFromInstanceCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetDimensionsFromInstanceCalls()[0].ID, ShouldEqual, "123")
 		validateLock(mockedDataStore, "123")
-		convey.So(*isLocked, convey.ShouldBeFalse)
+		So(*isLocked, ShouldBeFalse)
 	})
 }
 
 func TestGetDimensionsReturnsConflict(t *testing.T) {
 	t.Parallel()
-	convey.Convey("Get dimensions returns conflict", t, func() {
+	Convey("Get dimensions returns conflict", t, func() {
 		r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123/dimensions", nil)
 		r.Header.Set("If-Match", "wrong")
-		convey.So(err, convey.ShouldBeNil)
+		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
 		mockedDataStore, isLocked := storeMockWithLock(false)
 		mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
-			convey.So(*isLocked, convey.ShouldBeTrue)
+			So(*isLocked, ShouldBeTrue)
 			return nil, errs.ErrInstanceConflict
 		}
 
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
-		convey.So(w.Code, convey.ShouldEqual, http.StatusConflict)
-		convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrInstanceConflict.Error())
-		convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 1)
-		convey.So(mockedDataStore.GetInstanceCalls()[0].ID, convey.ShouldEqual, "123")
-		convey.So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, convey.ShouldEqual, "wrong")
+		So(w.Code, ShouldEqual, http.StatusConflict)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInstanceConflict.Error())
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+		So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, "wrong")
 		validateLock(mockedDataStore, "123")
-		convey.So(*isLocked, convey.ShouldBeFalse)
+		So(*isLocked, ShouldBeFalse)
 	})
 }
 
 func TestGetDimensionsAndOptionsReturnsInternalError(t *testing.T) {
 	t.Parallel()
-	convey.Convey("Given an internal error is returned from mongo, then response returns an internal error", t, func() {
+	Convey("Given an internal error is returned from mongo, then response returns an internal error", t, func() {
 		r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123/dimensions", nil)
-		convey.So(err, convey.ShouldBeNil)
+		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
 		mockedDataStore, isLocked := storeMockWithLock(false)
 		mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
-			convey.So(*isLocked, convey.ShouldBeTrue)
+			So(*isLocked, ShouldBeTrue)
 			return nil, errs.ErrInternalServer
 		}
 
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
-		convey.So(w.Code, convey.ShouldEqual, http.StatusInternalServerError)
-		convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrInternalServer.Error())
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 
-		convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 1)
-		convey.So(mockedDataStore.GetInstanceCalls()[0].ID, convey.ShouldEqual, "123")
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
 		validateLock(mockedDataStore, "123")
-		convey.So(*isLocked, convey.ShouldBeFalse)
+		So(*isLocked, ShouldBeFalse)
 	})
 
-	convey.Convey("Given instance state is invalid, then response returns an internal error", t, func() {
+	Convey("Given instance state is invalid, then response returns an internal error", t, func() {
 		r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123/dimensions", nil)
-		convey.So(err, convey.ShouldBeNil)
+		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
 		mockedDataStore, isLocked := storeMockWithLock(true)
 		mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
-			convey.So(*isLocked, convey.ShouldBeTrue)
+			So(*isLocked, ShouldBeTrue)
 			return &models.Instance{State: "gobbly gook"}, nil
 		}
 
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
-		convey.So(w.Code, convey.ShouldEqual, http.StatusInternalServerError)
-		convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrInternalServer.Error())
-		convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 1)
-		convey.So(mockedDataStore.GetInstanceCalls()[0].ID, convey.ShouldEqual, "123")
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
 		validateLock(mockedDataStore, "123")
-		convey.So(*isLocked, convey.ShouldBeFalse)
+		So(*isLocked, ShouldBeFalse)
 	})
 }
 
 func TestGetUniqueDimensionAndOptionsReturnsOk(t *testing.T) {
 	t.Parallel()
 
-	convey.Convey("Given a dataset API with a successful store mock and auth", t, func() {
+	Convey("Given a dataset API with a successful store mock and auth", t, func() {
 		mockedDataStore, isLocked := storeMockWithLock(false)
 		mockedDataStore.GetUniqueDimensionAndOptionsFunc = func(context.Context, string, string) ([]*string, int, error) {
-			convey.So(*isLocked, convey.ShouldBeTrue)
+			So(*isLocked, ShouldBeTrue)
 			return []*string{}, 0, nil
 		}
 
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 
-		convey.Convey("When a GET request to retrieve an instance resource is made, with a valid If-Match header", func() {
+		Convey("When a GET request to retrieve an instance resource is made, with a valid If-Match header", func() {
 			r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123/dimensions/age/options", nil)
 			r.Header.Set("If-Match", testIfMatch)
-			convey.So(err, convey.ShouldBeNil)
+			So(err, ShouldBeNil)
 			w := httptest.NewRecorder()
 			datasetAPI.Router.ServeHTTP(w, r)
 
-			convey.Convey("Then the response status is 200 OK, with the expected ETag header", func() {
-				convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
-				convey.So(w.Header().Get("ETag"), convey.ShouldEqual, testETag)
+			Convey("Then the response status is 200 OK, with the expected ETag header", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+				So(w.Header().Get("ETag"), ShouldEqual, testETag)
 			})
 
-			convey.Convey("Then the expected functions are called", func() {
-				convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 1)
-				convey.So(mockedDataStore.GetInstanceCalls()[0].ID, convey.ShouldEqual, "123")
-				convey.So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, convey.ShouldEqual, testIfMatch)
-				convey.So(mockedDataStore.GetUniqueDimensionAndOptionsCalls(), convey.ShouldHaveLength, 1)
+			Convey("Then the expected functions are called", func() {
+				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
+				So(mockedDataStore.GetUniqueDimensionAndOptionsCalls(), ShouldHaveLength, 1)
 			})
 
-			convey.Convey("Then the db lock is acquired and released as expected", func() {
+			Convey("Then the db lock is acquired and released as expected", func() {
 				validateLock(mockedDataStore, "123")
-				convey.So(*isLocked, convey.ShouldBeFalse)
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
-		convey.Convey("When a GET request to retrieve an instance resource is made, without an If-Match header", func() {
+		Convey("When a GET request to retrieve an instance resource is made, without an If-Match header", func() {
 			r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123/dimensions/age/options", nil)
-			convey.So(err, convey.ShouldBeNil)
+			So(err, ShouldBeNil)
 			w := httptest.NewRecorder()
 			datasetAPI.Router.ServeHTTP(w, r)
 
-			convey.Convey("Then the response status is 200 OK, with the expected ETag header", func() {
-				convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
-				convey.So(w.Header().Get("ETag"), convey.ShouldEqual, testETag)
+			Convey("Then the response status is 200 OK, with the expected ETag header", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+				So(w.Header().Get("ETag"), ShouldEqual, testETag)
 			})
 
-			convey.Convey("Then the expected functions are called, with the '*' wildchar when validting the provided If-Match value", func() {
-				convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 1)
-				convey.So(mockedDataStore.GetInstanceCalls()[0].ID, convey.ShouldEqual, "123")
-				convey.So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, convey.ShouldEqual, AnyETag)
-				convey.So(mockedDataStore.GetUniqueDimensionAndOptionsCalls(), convey.ShouldHaveLength, 1)
+			Convey("Then the expected functions are called, with the '*' wildchar when validting the provided If-Match value", func() {
+				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, AnyETag)
+				So(mockedDataStore.GetUniqueDimensionAndOptionsCalls(), ShouldHaveLength, 1)
 			})
 
-			convey.Convey("Then the db lock is acquired and released as expected", func() {
+			Convey("Then the db lock is acquired and released as expected", func() {
 				validateLock(mockedDataStore, "123")
-				convey.So(*isLocked, convey.ShouldBeFalse)
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 	})
@@ -1162,37 +1162,37 @@ func TestGetUniqueDimensionAndOptionsReturnsOk(t *testing.T) {
 
 func TestGetUniqueDimensionAndOptionsReturnsNotFound(t *testing.T) {
 	t.Parallel()
-	convey.Convey("Get all unique dimensions returns not found", t, func() {
+	Convey("Get all unique dimensions returns not found", t, func() {
 		r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123/dimensions/age/options", nil)
-		convey.So(err, convey.ShouldBeNil)
+		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
 
 		mockedDataStore, isLocked := storeMockWithLock(false)
 		mockedDataStore.GetUniqueDimensionAndOptionsFunc = func(context.Context, string, string) ([]*string, int, error) {
-			convey.So(*isLocked, convey.ShouldBeTrue)
+			So(*isLocked, ShouldBeTrue)
 			return nil, 0, errs.ErrInstanceNotFound
 		}
 
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
-		convey.So(w.Code, convey.ShouldEqual, http.StatusNotFound)
-		convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrInstanceNotFound.Error())
-		convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 1)
-		convey.So(mockedDataStore.GetInstanceCalls()[0].ID, convey.ShouldEqual, "123")
-		convey.So(mockedDataStore.GetUniqueDimensionAndOptionsCalls(), convey.ShouldHaveLength, 1)
+		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInstanceNotFound.Error())
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+		So(mockedDataStore.GetUniqueDimensionAndOptionsCalls(), ShouldHaveLength, 1)
 		validateLock(mockedDataStore, "123")
-		convey.So(*isLocked, convey.ShouldBeFalse)
+		So(*isLocked, ShouldBeFalse)
 	})
 }
 
 func TestGetUniqueDimensionAndOptionsReturnsConflict(t *testing.T) {
 	t.Parallel()
-	convey.Convey("Get all unique dimensions returns conflict", t, func() {
+	Convey("Get all unique dimensions returns conflict", t, func() {
 		r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123/dimensions/age/options", nil)
 		r.Header.Set("If-Match", "wrong")
-		convey.So(err, convey.ShouldBeNil)
+		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
 
@@ -1204,84 +1204,84 @@ func TestGetUniqueDimensionAndOptionsReturnsConflict(t *testing.T) {
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
-		convey.So(w.Code, convey.ShouldEqual, http.StatusConflict)
-		convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrInstanceConflict.Error())
-		convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 1)
-		convey.So(mockedDataStore.GetInstanceCalls()[0].ID, convey.ShouldEqual, "123")
-		convey.So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, convey.ShouldEqual, "wrong")
+		So(w.Code, ShouldEqual, http.StatusConflict)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInstanceConflict.Error())
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
+		So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, "wrong")
 		validateLock(mockedDataStore, "123")
-		convey.So(*isLocked, convey.ShouldBeFalse)
+		So(*isLocked, ShouldBeFalse)
 	})
 }
 
 func TestGetUniqueDimensionAndOptionsReturnsInternalError(t *testing.T) {
 	t.Parallel()
-	convey.Convey("Given an internal error is returned from mongo, then response returns an internal error", t, func() {
+	Convey("Given an internal error is returned from mongo, then response returns an internal error", t, func() {
 		r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123/dimensions/age/options", nil)
-		convey.So(err, convey.ShouldBeNil)
+		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
 		mockedDataStore, isLocked := storeMockWithLock(false)
 		mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
-			convey.So(*isLocked, convey.ShouldBeTrue)
+			So(*isLocked, ShouldBeTrue)
 			return nil, errs.ErrInternalServer
 		}
 
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
-		convey.So(w.Code, convey.ShouldEqual, http.StatusInternalServerError)
-		convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrInternalServer.Error())
-		convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 1)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 		validateLock(mockedDataStore, "123")
-		convey.So(*isLocked, convey.ShouldBeFalse)
+		So(*isLocked, ShouldBeFalse)
 	})
 
-	convey.Convey("Given instance state is invalid, then response returns an internal error", t, func() {
+	Convey("Given instance state is invalid, then response returns an internal error", t, func() {
 		r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123/dimensions/age/options", nil)
-		convey.So(err, convey.ShouldBeNil)
+		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
 		mockedDataStore, isLocked := storeMockWithLock(false)
 		mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
-			convey.So(*isLocked, convey.ShouldBeTrue)
+			So(*isLocked, ShouldBeTrue)
 			return &models.Instance{State: "gobbly gook"}, nil
 		}
 
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 		datasetAPI.Router.ServeHTTP(w, r)
 
-		convey.So(w.Code, convey.ShouldEqual, http.StatusInternalServerError)
-		convey.So(w.Body.String(), convey.ShouldContainSubstring, errs.ErrInternalServer.Error())
-		convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 1)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 		validateLock(mockedDataStore, "123")
-		convey.So(*isLocked, convey.ShouldBeFalse)
+		So(*isLocked, ShouldBeFalse)
 	})
 }
 
 func TestPatchDimensions(t *testing.T) {
 	t.Parallel()
 
-	convey.Convey("Given a Dataset API instance with a mocked data store", t, func() {
+	Convey("Given a Dataset API instance with a mocked data store", t, func() {
 		w := httptest.NewRecorder()
 
 		numUpdateCall := 0
 
 		mockedDataStore, isLocked := storeMockWithLock(true)
 		mockedDataStore.UpdateETagForOptionsFunc = func(context.Context, *models.Instance, []*models.CachedDimensionOption, []*models.DimensionOption, string) (string, error) {
-			convey.So(*isLocked, convey.ShouldBeTrue)
+			So(*isLocked, ShouldBeTrue)
 			newETag := fmt.Sprintf("%s_%d", testETag, numUpdateCall)
 			numUpdateCall++
 			return newETag, nil
 		}
 		mockedDataStore.UpdateETagForOptionsFunc = func(context.Context, *models.Instance, []*models.CachedDimensionOption, []*models.DimensionOption, string) (string, error) {
-			convey.So(*isLocked, convey.ShouldBeTrue)
+			So(*isLocked, ShouldBeTrue)
 			newETag := fmt.Sprintf("%s_%d", testETag, numUpdateCall)
 			numUpdateCall++
 			return newETag, nil
 		}
 		mockedDataStore.UpsertDimensionsToInstanceFunc = func(context.Context, []*models.CachedDimensionOption) error {
-			convey.So(*isLocked, convey.ShouldBeTrue)
+			So(*isLocked, ShouldBeTrue)
 			return nil
 		}
 		mockedDataStore.UpdateDimensionsNodeIDAndOrderFunc = func(context.Context, []*models.DimensionOption) error {
@@ -1290,23 +1290,23 @@ func TestPatchDimensions(t *testing.T) {
 
 		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
 
-		convey.Convey("When calling patch dimension with a valid single patch 'upsert' operation", func() {
+		Convey("When calling patch dimension with a valid single patch 'upsert' operation", func() {
 			body := strings.NewReader(`[
 				{"op": "add", "path": "/-", "value": [{"option": "op1", "dimension": "TestDim"},{"option": "op2", "dimension": "TestDim"}]}
 			]`)
 			r, err := createRequestWithToken(http.MethodPatch, "http://localhost:21800/instances/123/dimensions", body)
 			r.Header.Set("If-Match", testIfMatch)
-			convey.So(err, convey.ShouldBeNil)
+			So(err, ShouldBeNil)
 
 			datasetAPI.Router.ServeHTTP(w, r)
 
-			convey.Convey("Then the response is 200 OK, with the expected ETag (updated once)", func() {
-				convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
+			Convey("Then the response is 200 OK, with the expected ETag (updated once)", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
 				expectedETag := fmt.Sprintf("%s_0", testETag)
-				convey.So(w.Header().Get("ETag"), convey.ShouldEqual, expectedETag)
+				So(w.Header().Get("ETag"), ShouldEqual, expectedETag)
 			})
 
-			convey.Convey("Then the expected database calls are performed to upsert the dimension optins in a single transaction", func() {
+			Convey("Then the expected database calls are performed to upsert the dimension optins in a single transaction", func() {
 				validateDimensionsUpserted(mockedDataStore, "123", [][]*models.CachedDimensionOption{
 					{ // single call
 						{
@@ -1323,30 +1323,30 @@ func TestPatchDimensions(t *testing.T) {
 				}, []string{testIfMatch})
 			})
 
-			convey.Convey("Then the db lock is acquired and released as expected, only once", func() {
+			Convey("Then the db lock is acquired and released as expected, only once", func() {
 				validateLock(mockedDataStore, "123")
-				convey.So(*isLocked, convey.ShouldBeFalse)
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
-		convey.Convey("When calling patch dimension with a valid array of multiple patch 'upsert' operations", func() {
+		Convey("When calling patch dimension with a valid array of multiple patch 'upsert' operations", func() {
 			body := strings.NewReader(`[
 				{"op": "add", "path": "/-", "value": [{"option": "op1", "dimension": "TestDim"}]},
 				{"op": "add", "path": "/-", "value": [{"option": "op2", "dimension": "TestDim"}]}
 			]`)
 			r, err := createRequestWithToken(http.MethodPatch, "http://localhost:21800/instances/123/dimensions", body)
 			r.Header.Set("If-Match", testIfMatch)
-			convey.So(err, convey.ShouldBeNil)
+			So(err, ShouldBeNil)
 
 			datasetAPI.Router.ServeHTTP(w, r)
 
-			convey.Convey("Then the response is 200 OK, with the expected ETag (updated once)", func() {
-				convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
+			Convey("Then the response is 200 OK, with the expected ETag (updated once)", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
 				expectedETag := fmt.Sprintf("%s_0", testETag)
-				convey.So(w.Header().Get("ETag"), convey.ShouldEqual, expectedETag)
+				So(w.Header().Get("ETag"), ShouldEqual, expectedETag)
 			})
 
-			convey.Convey("Then the expected database calls are performed to update node_id", func() {
+			Convey("Then the expected database calls are performed to update node_id", func() {
 				validateDimensionsUpserted(mockedDataStore, "123", [][]*models.CachedDimensionOption{
 					{ // single call
 						{
@@ -1363,30 +1363,30 @@ func TestPatchDimensions(t *testing.T) {
 				}, []string{testIfMatch})
 			})
 
-			convey.Convey("Then the db lock is acquired and released as expected, only once", func() {
+			Convey("Then the db lock is acquired and released as expected, only once", func() {
 				validateLock(mockedDataStore, "123")
-				convey.So(*isLocked, convey.ShouldBeFalse)
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 
-		convey.Convey("When calling patch dimension with a valid array of multiple patch 'update' operations", func() {
+		Convey("When calling patch dimension with a valid array of multiple patch 'update' operations", func() {
 			body := strings.NewReader(`[
 				{"op": "add", "path": "/dim1/options/op1/node_id", "value": "testNode"},
 				{"op": "add", "path": "/dim2/options/op2/order", "value": 7}
 			]`)
 			r, err := createRequestWithToken(http.MethodPatch, "http://localhost:21800/instances/123/dimensions", body)
 			r.Header.Set("If-Match", testIfMatch)
-			convey.So(err, convey.ShouldBeNil)
+			So(err, ShouldBeNil)
 
 			datasetAPI.Router.ServeHTTP(w, r)
 
-			convey.Convey("Then the response is 200 OK, with the expected ETag (updated once)", func() {
-				convey.So(w.Code, convey.ShouldEqual, http.StatusOK)
+			Convey("Then the response is 200 OK, with the expected ETag (updated once)", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
 				expectedETag := fmt.Sprintf("%s_0", testETag)
-				convey.So(w.Header().Get("ETag"), convey.ShouldEqual, expectedETag)
+				So(w.Header().Get("ETag"), ShouldEqual, expectedETag)
 			})
 
-			convey.Convey("Then the expected database calls are performed to update node_id and order", func() {
+			Convey("Then the expected database calls are performed to update node_id and order", func() {
 				ord := 7
 				validateDimensionUpdates(mockedDataStore, []*models.DimensionOption{
 					{
@@ -1404,9 +1404,9 @@ func TestPatchDimensions(t *testing.T) {
 				}, testIfMatch)
 			})
 
-			convey.Convey("Then the db lock is acquired and released as expected, only once", func() {
+			Convey("Then the db lock is acquired and released as expected, only once", func() {
 				validateLock(mockedDataStore, "123")
-				convey.So(*isLocked, convey.ShouldBeFalse)
+				So(*isLocked, ShouldBeFalse)
 			})
 		})
 	})
@@ -1415,7 +1415,7 @@ func TestPatchDimensions(t *testing.T) {
 func TestPatchDimensionsReturnsBadRequest(t *testing.T) {
 	t.Parallel()
 
-	convey.Convey("Given a Dataset API instance with a mocked datastore GetInstance", t, func() {
+	Convey("Given a Dataset API instance with a mocked datastore GetInstance", t, func() {
 		w := httptest.NewRecorder()
 
 		mockedDataStore, isLocked := storeMockWithLock(false)
@@ -1506,14 +1506,14 @@ func TestPatchDimensionsReturnsBadRequest(t *testing.T) {
 		}
 
 		for msg, body := range bodies {
-			convey.Convey(msg, func() {
+			Convey(msg, func() {
 				r, err := createRequestWithToken(http.MethodPatch, "http://localhost:21800/instances/123/dimensions", body)
-				convey.So(err, convey.ShouldBeNil)
+				So(err, ShouldBeNil)
 
 				datasetAPI.Router.ServeHTTP(w, r)
-				convey.So(w.Code, convey.ShouldEqual, http.StatusBadRequest)
-				convey.So(mockedDataStore.GetInstanceCalls(), convey.ShouldHaveLength, 1)
-				convey.So(*isLocked, convey.ShouldBeFalse)
+				So(w.Code, ShouldEqual, http.StatusBadRequest)
+				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+				So(*isLocked, ShouldBeFalse)
 			})
 		}
 	})
@@ -1536,7 +1536,7 @@ func getAPIWithCMDMocks(ctx context.Context, mockedDataStore store.Storer, mocke
 	defer mu.Unlock()
 
 	cfg, err := config.Get()
-	convey.So(err, convey.ShouldBeNil)
+	So(err, ShouldBeNil)
 	cfg.ServiceAuthToken = "dataset"
 	cfg.DatasetAPIURL = "http://localhost:22000"
 	cfg.EnablePrivateEndpoints = true

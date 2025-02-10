@@ -11,7 +11,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
-	"github.com/smartystreets/goconvey/convey"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 const (
@@ -22,7 +22,7 @@ const (
 )
 
 func Test_ConfirmEditionReturnsOK(t *testing.T) {
-	convey.Convey("given no edition exists", t, func() {
+	Convey("given no edition exists", t, func() {
 		mockedDataStore := &storetest.StorerMock{
 			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
 				return nil, errs.ErrEditionNotFound
@@ -37,18 +37,18 @@ func Test_ConfirmEditionReturnsOK(t *testing.T) {
 			Host:   testHost,
 		}
 
-		convey.Convey("when confirmEdition is called", func() {
+		Convey("when confirmEdition is called", func() {
 			edition, err := s.confirmEdition(ctx, testDatasetID, testEditionName, testInstanceID)
 
-			convey.Convey("then an edition is created and the version ID is 1", func() {
-				convey.So(edition, convey.ShouldNotBeNil)
-				convey.So(err, convey.ShouldBeNil)
+			Convey("then an edition is created and the version ID is 1", func() {
+				So(edition, ShouldNotBeNil)
+				So(err, ShouldBeNil)
 
-				convey.So(len(edition.ID), convey.ShouldBeGreaterThan, 0)
-				convey.So(edition.Current, convey.ShouldBeNil)
-				convey.So(edition.Next, convey.ShouldNotBeNil)
+				So(len(edition.ID), ShouldBeGreaterThan, 0)
+				So(edition.Current, ShouldBeNil)
+				So(edition.Next, ShouldNotBeNil)
 
-				convey.So(edition.Next, convey.ShouldResemble, &models.Edition{
+				So(edition.Next, ShouldResemble, &models.Edition{
 					Edition: testEditionName,
 					State:   models.EditionConfirmedState,
 					Links: &models.EditionUpdateLinks{
@@ -76,7 +76,7 @@ func Test_ConfirmEditionReturnsOK(t *testing.T) {
 	featureEnvString := os.Getenv("ENABLE_DETACH_DATASET")
 	featureOn, _ := strconv.ParseBool(featureEnvString)
 	if featureOn {
-		convey.Convey("given an edition exists with 1 unpublished version", t, func() {
+		Convey("given an edition exists with 1 unpublished version", t, func() {
 			mockedDataStore := &storetest.StorerMock{
 				GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
 					return &models.EditionUpdate{
@@ -100,19 +100,19 @@ func Test_ConfirmEditionReturnsOK(t *testing.T) {
 				Host:                testHost,
 			}
 
-			convey.Convey("when confirmEdition is called again", func() {
+			Convey("when confirmEdition is called again", func() {
 				editionName := "unpublished-only"
 
 				_, err := s.confirmEdition(context.Background(), testDatasetID, editionName, testInstanceID)
 
-				convey.Convey("then an internal server error is returned.", func() {
-					convey.So(err, convey.ShouldEqual, errs.ErrVersionAlreadyExists)
+				Convey("then an internal server error is returned.", func() {
+					So(err, ShouldEqual, errs.ErrVersionAlreadyExists)
 				})
 			})
 		})
 	}
 
-	convey.Convey("given an edition exists with a published version 10", t, func() {
+	Convey("given an edition exists with a published version 10", t, func() {
 		mockedDataStore := &storetest.StorerMock{
 			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
 				return &models.EditionUpdate{
@@ -162,29 +162,29 @@ func Test_ConfirmEditionReturnsOK(t *testing.T) {
 			Storer: mockedDataStore,
 			Host:   testHost,
 		}
-		convey.Convey("when confirmEdition is called", func() {
+		Convey("when confirmEdition is called", func() {
 			edition, err := s.confirmEdition(ctx, testDatasetID, testEditionName, testInstanceID)
 
-			convey.Convey("then the edition is updated and the latest version ID is 11", func() {
-				convey.So(err, convey.ShouldBeNil)
-				convey.So(edition, convey.ShouldNotBeNil)
+			Convey("then the edition is updated and the latest version ID is 11", func() {
+				So(err, ShouldBeNil)
+				So(edition, ShouldNotBeNil)
 
-				convey.So(edition.Current, convey.ShouldNotBeNil)
-				convey.So(edition.Current.Links, convey.ShouldNotBeNil)
-				convey.So(edition.Current.Links.LatestVersion, convey.ShouldNotBeNil)
-				convey.So(edition.Current.Links.LatestVersion.ID, convey.ShouldEqual, "10")
+				So(edition.Current, ShouldNotBeNil)
+				So(edition.Current.Links, ShouldNotBeNil)
+				So(edition.Current.Links.LatestVersion, ShouldNotBeNil)
+				So(edition.Current.Links.LatestVersion.ID, ShouldEqual, "10")
 
-				convey.So(edition.Next, convey.ShouldNotBeNil)
-				convey.So(edition.Next.Links, convey.ShouldNotBeNil)
-				convey.So(edition.Next.Links.LatestVersion, convey.ShouldNotBeNil)
-				convey.So(edition.Next.Links.LatestVersion.ID, convey.ShouldEqual, "11")
+				So(edition.Next, ShouldNotBeNil)
+				So(edition.Next.Links, ShouldNotBeNil)
+				So(edition.Next.Links.LatestVersion, ShouldNotBeNil)
+				So(edition.Next.Links.LatestVersion.ID, ShouldEqual, "11")
 			})
 		})
 	})
 }
 
 func Test_ConfirmEditionReturnsError(t *testing.T) {
-	convey.Convey("given the datastore is unavailable", t, func() {
+	Convey("given the datastore is unavailable", t, func() {
 		mockedDataStore := &storetest.StorerMock{
 			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
 				return nil, errs.ErrInternalServer
@@ -195,17 +195,17 @@ func Test_ConfirmEditionReturnsError(t *testing.T) {
 			Storer: mockedDataStore,
 			Host:   testHost,
 		}
-		convey.Convey("when confirmEdition is called", func() {
+		Convey("when confirmEdition is called", func() {
 			_, err := s.confirmEdition(ctx, testDatasetID, testEditionName, testInstanceID)
 
-			convey.Convey("then an error is returned", func() {
-				convey.So(err, convey.ShouldNotBeNil)
-				convey.So(err, convey.ShouldResemble, errs.ErrInternalServer)
+			Convey("then an error is returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err, ShouldResemble, errs.ErrInternalServer)
 			})
 		})
 	})
 
-	convey.Convey("given an invalid edition exists", t, func() {
+	Convey("given an invalid edition exists", t, func() {
 		mockedDataStore := &storetest.StorerMock{
 			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
 				return &models.EditionUpdate{
@@ -231,17 +231,17 @@ func Test_ConfirmEditionReturnsError(t *testing.T) {
 			Host:   testHost,
 		}
 
-		convey.Convey("when confirmEdition is called", func() {
+		Convey("when confirmEdition is called", func() {
 			_, err := s.confirmEdition(ctx, testDatasetID, testEditionName, testInstanceID)
 
-			convey.Convey("then updating links fails and an error is returned", func() {
-				convey.So(err, convey.ShouldNotBeNil)
-				convey.So(err, convey.ShouldResemble, models.ErrEditionLinksInvalid)
+			Convey("then updating links fails and an error is returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err, ShouldResemble, models.ErrEditionLinksInvalid)
 			})
 		})
 	})
 
-	convey.Convey("given an edition exists with nil current doc", t, func() {
+	Convey("given an edition exists with nil current doc", t, func() {
 		mockedDataStore := &storetest.StorerMock{
 			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
 				return &models.EditionUpdate{
@@ -262,17 +262,17 @@ func Test_ConfirmEditionReturnsError(t *testing.T) {
 			EnableDetachDataset: true,
 		}
 
-		convey.Convey("when confirmEdition is called", func() {
+		Convey("when confirmEdition is called", func() {
 			_, err := s.confirmEdition(ctx, testDatasetID, testEditionName, testInstanceID)
 
-			convey.Convey("then updating links fails and an error is returned", func() {
-				convey.So(err, convey.ShouldNotBeNil)
-				convey.So(err, convey.ShouldResemble, models.ErrEditionLinksInvalid)
+			Convey("then updating links fails and an error is returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err, ShouldResemble, models.ErrEditionLinksInvalid)
 			})
 		})
 	})
 
-	convey.Convey("given an edition exists with nil next doc", t, func() {
+	Convey("given an edition exists with nil next doc", t, func() {
 		mockedDataStore := &storetest.StorerMock{
 			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
 				return &models.EditionUpdate{
@@ -293,17 +293,17 @@ func Test_ConfirmEditionReturnsError(t *testing.T) {
 			EnableDetachDataset: true,
 		}
 
-		convey.Convey("when confirmEdition is called", func() {
+		Convey("when confirmEdition is called", func() {
 			_, err := s.confirmEdition(ctx, testDatasetID, testEditionName, testInstanceID)
 
-			convey.Convey("then updating links fails and an error is returned", func() {
-				convey.So(err, convey.ShouldNotBeNil)
-				convey.So(err, convey.ShouldResemble, models.ErrEditionLinksInvalid)
+			Convey("then updating links fails and an error is returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err, ShouldResemble, models.ErrEditionLinksInvalid)
 			})
 		})
 	})
 
-	convey.Convey("given intermittent datastore failures", t, func() {
+	Convey("given intermittent datastore failures", t, func() {
 		mockedDataStore := &storetest.StorerMock{
 			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
 				return &models.EditionUpdate{
@@ -354,12 +354,12 @@ func Test_ConfirmEditionReturnsError(t *testing.T) {
 			Host:   testHost,
 		}
 
-		convey.Convey("when confirmEdition is called and updating the datastore for the edition fails", func() {
+		Convey("when confirmEdition is called and updating the datastore for the edition fails", func() {
 			_, err := s.confirmEdition(ctx, testDatasetID, testEditionName, testInstanceID)
 
-			convey.Convey("then an error is returned", func() {
-				convey.So(err, convey.ShouldNotBeNil)
-				convey.So(err, convey.ShouldResemble, errs.ErrInternalServer)
+			Convey("then an error is returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err, ShouldResemble, errs.ErrInternalServer)
 			})
 		})
 	})

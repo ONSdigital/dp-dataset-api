@@ -4,28 +4,28 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/smartystreets/goconvey/convey"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCreateEventWithBadReader(t *testing.T) {
-	convey.Convey("Create an event with an invalid reader", t, func() {
+	Convey("Create an event with an invalid reader", t, func() {
 		_, err := unmarshalEvent(Reader{})
-		convey.So(err, convey.ShouldNotBeNil)
+		So(err, ShouldNotBeNil)
 	})
 }
 
 func TestCreateEventWithEmptyJson(t *testing.T) {
-	convey.Convey("Create an event with empty json", t, func() {
+	Convey("Create an event with empty json", t, func() {
 		event, err := unmarshalEvent(strings.NewReader("{ }"))
-		convey.So(err, convey.ShouldBeNil)
-		convey.So(event.Validate(), convey.ShouldNotBeNil)
+		So(err, ShouldBeNil)
+		So(event.Validate(), ShouldNotBeNil)
 	})
 }
 
 func TestEventInstance(t *testing.T) {
-	convey.Convey("Create an event with the required fields", t, func() {
+	Convey("Create an event with the required fields", t, func() {
 		event, err := unmarshalEvent(strings.NewReader(`{"message": "321", "type": "error", "message_offset":"00", "time":"2017-08-25T15:09:11.829+01:00" }`))
-		convey.So(err, convey.ShouldBeNil)
-		convey.So(event.Validate(), convey.ShouldBeNil)
+		So(err, ShouldBeNil)
+		So(event.Validate(), ShouldBeNil)
 	})
 }
