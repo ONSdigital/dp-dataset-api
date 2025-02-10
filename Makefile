@@ -38,7 +38,6 @@ acceptance-web: build
 
 .PHONY: lint
 lint:
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.63.4
 	golangci-lint run ./...
 
 .PHONY: test
