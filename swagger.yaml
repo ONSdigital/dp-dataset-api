@@ -1554,10 +1554,6 @@ definitions:
         example: "2017"
         readOnly: true
         type: string
-      id:
-        description: "An unique id for a dataset edition"
-        readOnly: true
-        type: string
       links:
         $ref: "#/definitions/EditionLinks"
       state:
@@ -2236,10 +2232,6 @@ definitions:
         readOnly: true
         type: string
         example: 2017
-      id:
-        description: "The dataset identifier of the dataset this version is an instance of."
-        type: string
-        example: my-dataset
       is_based_on:
         $ref: "#/definitions/IsBasedOn"
       dataset_id:
