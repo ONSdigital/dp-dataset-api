@@ -2211,8 +2211,16 @@ definitions:
         type: array
         items:
           $ref: "#/definitions/Dimension"
+      distributions:
+        description: A list of representations of the dataset available and how to access them.
+        type: array
+        items:
+          $ref: "#/definitions/Distribution"
       downloads:
-        description: "A selection of download objects containing information of downloadable files."
+        description: |
+          **Deprecated:** These fields have been deprecated and replaced by the `distributions` list.
+
+          A selection of download objects containing information of downloadable files.
         type: object
         properties:
           csv:
@@ -2248,6 +2256,19 @@ definitions:
       lowest_geography:
         description: "The lowest geography this dataset is available at (Census datasets only)"
         type: string
+      quality_designation:
+        description: |
+          The official statistics quality designation level of this dataset version.
+
+          Possible quality designations:
+            * `accredited-official`
+            * `official`
+            * `official-in-development`
+        type: string
+        enum:
+          - accredited-official
+          - official
+          - official-in-development
       release_date:
         description: "The release date of this version of the dataset"
         type: string
@@ -2268,6 +2289,61 @@ definitions:
         type: array
         items:
           $ref: "#/definitions/UsageNotes"
+  Distribution:
+    description: The details of specific representation of a dataset and how to access it.
+    type: object
+    properties:
+      title:
+        description: The title or label of the distribution.
+        type: string
+        example: Full Dataset (CSV)
+      download_url:
+        description: URL to directly download a file for the distribution in the specified format.
+        type: string
+        example: https://download.ons.gov.uk/my-dataset-download.csv
+      byte_size:
+        description: The size in bytes of the download file referenced by `download_url`.
+        type: integer
+        minimum: 0
+        example: 4300000
+      format:
+        description: |
+          The format for the download file referenced by `download_url`.
+
+          Formats supported:
+            * `csv`
+            * `sdmx`
+            * `xls`
+            * `xlsx`
+            * `csdb`
+            * `csvw-metadata`
+        type: string
+        enum:
+          - csv
+          - sdmx
+          - xls
+          - xlsx
+          - csdb
+          - csvw-metadata
+      media_type:
+        description: |
+          The IANA media type for the download file referenced by `download_url`.
+
+          Media Types supported:
+            * `text/csv`: CSV files
+            * `application/vnd.sdmx.structurespecificdata+xml`: SDMX files
+            * `application/vnd.ms-excel`: Excel (XLS) files
+            * `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`: Excel (XLSX) files
+            * `text/plain`: Plain text (used for CSDB output structured text files)
+            * `application/ld+json`: JSON-LD metadata file. Commonly used to annotate tabular data in an associated CSV file as outlined in the CSVW standard.
+        type: string
+        enum:
+          - text/csv
+          - application/vnd.sdmx.structurespecificdata+xml
+          - application/vnd.ms-excel
+          - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+          - text/plain
+          - application/ld+json
   # Link objects
   DatasetLinks:
     description: "Navigational links related to the dataset resource to aid in API navigation."
