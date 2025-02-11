@@ -1289,6 +1289,11 @@ definitions:
         type: array
         items:
           $ref: "#/definitions/RelatedLink"
+      publishers:
+        description: A list of the publishers for the dataset.
+        type: array
+        items:
+          $ref: "#/definitions/Publisher"
       qmi:
         $ref: "#/definitions/QMILink"
       related_datasets:
@@ -1874,8 +1879,11 @@ definitions:
         type: array
         items:
           $ref: "#/definitions/RelatedLink"
-      publisher:
-        $ref: "#/definitions/Publisher"
+      publishers:
+        description: A list of the publishers for the dataset.
+        type: array
+        items:
+          $ref: "#/definitions/Publisher"
       qmi:
         $ref: "#/definitions/QMILink"
       related_datasets:
@@ -2013,12 +2021,11 @@ definitions:
       name:
         description: "The name of the publisher"
         type: string
-      type:
-        description: "The type of publisher"
-        type: string
+        example: Office for National Statistics
       href:
         description: "A link to the publishers homepage"
         type: string
+        example: "https://www.ons.gov.uk"
   State:
     description: |
       The state of the resource, can only be one of the following:
