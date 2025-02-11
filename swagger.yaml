@@ -96,13 +96,6 @@ parameters:
     required: true
     schema:
       $ref: "#/definitions/Dataset"
-  new_edition:
-    name: new_edition
-    description: "A new edition of the dataset"
-    in: body
-    required: true
-    schema:
-      $ref: "#/definitions/Edition"
   new_version:
     name: new_version
     description: "A new version for an edition of a dataset"
@@ -224,8 +217,8 @@ paths:
     get:
       tags:
         - "Public"
-      summary: "Get a list of datasets"
-      description: "Returns a list of all datasets provided by the ONS that can be filtered using the filter API"
+      summary: "List datasets"
+      description: "Returns a list of all datasets available via the ONS APIs."
       parameters:
         - $ref: "#/parameters/is_based_on"
         - $ref: "#/parameters/limit"
@@ -362,7 +355,7 @@ paths:
       tags:
         - "Public"
       summary: "Get a list of editions of a dataset"
-      description: "Get a list of editions of a type of dataset"
+      description: "Get a list of editions of a dataset. Each edition returns the latest version of that edition."
       parameters:
         - $ref: "#/parameters/dataset_id"
         - $ref: "#/parameters/limit"
@@ -386,7 +379,7 @@ paths:
       tags:
         - "Public"
       summary: "Get an edition of a dataset"
-      description: "The edition contains a link to all versions"
+      description: "Get the latest version of a dataset edition."
       parameters:
         - $ref: "#/parameters/edition"
         - $ref: "#/parameters/dataset_id"
@@ -395,9 +388,9 @@ paths:
         - Authorization: []
       responses:
         200:
-          description: "A json object containing an edition"
+          description: "A json object containing the latest version of the edition"
           schema:
-            $ref: "#/definitions/Edition"
+            $ref: "#/definitions/Version"
         400:
           description: "Invalid request, dataset id was incorrect"
         404:
@@ -408,8 +401,8 @@ paths:
     get:
       tags:
         - "Public"
-      summary: "Get a list of versions of an edition"
-      description: "Get a list of all versions for an edition of a dataset"
+      summary: "List the edition's version history"
+      description: "Get a list of all versions for a dataset edition."
       parameters:
         - $ref: "#/parameters/edition"
         - $ref: "#/parameters/dataset_id"
@@ -500,7 +493,7 @@ paths:
     get:
       tags:
         - "Public"
-      summary: "Get a version"
+      summary: "Get a specific version"
       description: "Get a specific version of an edition of a dataset"
       parameters:
         - $ref: "#/parameters/edition"
@@ -1544,12 +1537,7 @@ definitions:
           description: "Path to value that needs to be operated on."
           type: string
           example: "/-"
-          enum:
-            [
-              "/-",
-              "/{dimension}/options/{option}/order",
-              "/{dimension}/options/{option}/node_id",
-            ]
+          enum: ["/-", "/{dimension}/options/{option}/order", "/{dimension}/options/{option}/node_id"]
         value:
           description: "A list of dimensions that will be added to the instance."
           example: '[{"dimension": "dim1", "option": "op1"}, {"dimension": "dim1", "option": "op2"}, {"op": "add", "path": "/dim1/options/op1/order", "value": 3}, {"op": "add", "path": "/dim1/options/op2/node_id", "value": "node123"}]'
@@ -1563,18 +1551,6 @@ definitions:
       size:
         description: "The size of the file in bytes"
         type: string
-  Edition:
-    type: object
-    properties:
-      edition:
-        description: "The edition of the dataset"
-        example: "2017"
-        readOnly: true
-        type: string
-      links:
-        $ref: "#/definitions/EditionLinks"
-      state:
-        $ref: "#/definitions/State"
   Editions:
     description: "A list of editions of a dataset."
     type: object
@@ -1585,7 +1561,7 @@ definitions:
           items:
             type: array
             items:
-              $ref: "#/definitions/Edition"
+              $ref: "#/definitions/Version"
   Event:
     type: object
     properties:
@@ -2374,6 +2350,7 @@ definitions:
   DatasetLinks:
     description: "Navigational links related to the dataset resource to aid in API navigation."
     type: object
+    readOnly: true
     properties:
       editions:
         readOnly: true
@@ -2385,6 +2362,15 @@ definitions:
             example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions"
       latest_version:
         $ref: "#/definitions/LatestVersionLink"
+      latest_edition:
+        description: "An object containing a link to the latest edition of the dataset."
+        type: object
+        readOnly: true
+        properties:
+          href:
+            description: "A link to the latest edition of the dataset."
+            type: string
+            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/2017"
       self:
         description: "A link to this resource"
         readOnly: true
@@ -2394,31 +2380,6 @@ definitions:
             description: "A URL to this resource"
             type: string
             example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset"
-  EditionLinks:
-    description: "A list of links related to this resource"
-    readOnly: true
-    type: object
-    properties:
-      dataset:
-        $ref: "#/definitions/DatasetLink"
-      latest_version:
-        $ref: "#/definitions/LatestVersionLink"
-      self:
-        description: "A link to this resource"
-        readOnly: true
-        type: object
-        properties:
-          href:
-            description: "A URL to this resource"
-            type: string
-            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/2017"
-      versions:
-        type: object
-        properties:
-          href:
-            description: "A URL to all versions dor an edition of a dataset"
-            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/edition/2017/versions"
-            type: string
   MetadataLinks:
     description: "A list of links related to this resource"
     readOnly: true
@@ -2448,6 +2409,7 @@ definitions:
   VersionLinks:
     description: "A list of links related to this resource"
     type: object
+    readOnly: true
     properties:
       dataset:
         $ref: "#/definitions/DatasetLink"
@@ -2472,6 +2434,13 @@ definitions:
             example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/2017/versions/5"
       spatial:
         $ref: "#/definitions/SpatialLink"
+      versions:
+        type: object
+        properties:
+          href:
+            description: "A URL to all versions for an edition of a dataset"
+            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/edition/2017/versions"
+            type: string
   DatasetLink:
     description: "An object containing the dataset id and link"
     readOnly: true
