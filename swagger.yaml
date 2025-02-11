@@ -243,7 +243,7 @@ paths:
         400:
           description: "Parameter is_based_on was sent but no value was provided"
         404:
-          description: "No dataset was found with the popultation-type provided"
+          description: "No dataset was found with the population-type provided"
         500:
           $ref: "#/responses/InternalError"
     post:
@@ -1144,16 +1144,17 @@ responses:
     description: "The token provided is unauthorised to carry out this operation"
 definitions:
   Alert:
-    description: "Important information relating to a version of a dataset"
+    description: "Important notice relating to a version of a dataset"
     type: object
     properties:
       date:
         description: "The date and time of publication of the version"
         type: string
+        format: date-time
       description:
         description: "Detail of what a user needs to be aware of for this dataset"
         type: string
-        example: "This is a description of the changes made as part of the correction."
+        example: "This is a description of the changes made as part of the correction or other important notice about this version."
       type:
         description: |
           The type of alert.
@@ -1185,10 +1186,13 @@ definitions:
         description: "A human readable label for dimension"
         type: string
   CollectionID:
-    description: "The id of the unpublished collection (of datasets) that this dataset is associated with. This is an internal only field and is not present once a dataset is published."
+    description: |
+      **Internal Only: This is an internal only field and is not present once a dataset is published.**
+
+      The id of the unpublished collection (of datasets) that this dataset is associated with."
     type: string
   Contact:
-    description: "A list of objects containing contact information for this dataset"
+    description: "Statistical point of contact for the dataset."
     type: object
     required:
       - name
@@ -1238,7 +1242,7 @@ definitions:
         description: |
           **Deprecated:** This field has been deprecated and replaced by the `topics` field.
 
-          The canonical topic id for this dataset.  This indicates which topic this dataset belongs to within the website taxonomy.
+          The canonical topic id for this dataset.  This indicates which topic this dataset belongs to within the topic taxonomy.
         type: string
         example: "7779"
       collection_id:
@@ -1279,9 +1283,7 @@ definitions:
           The flag indicating the latest version of the dataset has `accredited` designation as granted under the Code of Practice for Statistics.
         type: boolean
       next_release:
-        description: "The next release date for a dataset"
-        type: string
-        example: "To be announced"
+        $ref: "#/definitions/NextRelease"
       publications:
         description: "A list of publications related to this dataset."
         type: array
@@ -1309,7 +1311,7 @@ definitions:
         description: |
           **Deprecated:** This field is being deprecated and replaced by the `topics` field.
 
-          A list of subtopic ids that the dataset relates to within the website taxonomy.
+          A list of subtopic ids that the dataset relates to within the topic taxonomy.
         type: array
         items:
           type: "string"
@@ -1334,7 +1336,10 @@ definitions:
         items:
           type: "string"
         example: ["7779", "7755"]
-
+  NextRelease:
+    description: "The next release date for a dataset. This field is a free text field rather than a date-time format and may be a date range, to be confirmed or some other description."
+    type: string
+    example: "To be announced"
   DatasetType:
     description: |
       The type of dataset as determined by the backing data store. Used to determine which functionality is available for a dataset.
@@ -1529,7 +1534,7 @@ definitions:
               "/{dimension}/options/{option}/node_id",
             ]
         value:
-          description: "A list of dimenions that will be added to the instance."
+          description: "A list of dimensions that will be added to the instance."
           example: '[{"dimension": "dim1", "option": "op1"}, {"dimension": "dim1", "option": "op2"}, {"op": "add", "path": "/dim1/options/op1/order", "value": 3}, {"op": "add", "path": "/dim1/options/op2/node_id", "value": "node123"}]'
   DownloadObject:
     description: "Object containing information of a downloadable file"
@@ -1754,6 +1759,7 @@ definitions:
       release_date:
         description: "The release date of this version of the dataset"
         type: string
+        format: date-time
       state:
         $ref: "#/definitions/State"
       temporal:
@@ -1801,10 +1807,13 @@ definitions:
         items:
           $ref: "#/definitions/Alert"
       canonical_topic:
-        description: "The canonical topic id for this dataset.  This indicates which topic this dataset belongs to within the website taxonomy. **Deprecated** this field is being deprecated and replaced by the `Themes` field."
+        description: |
+          **Deprecated:** This field has been deprecated and replaced by the `topics` field.
+
+          The canonical topic id for this dataset.  This indicates which topic this dataset belongs to within the topic taxonomy.
         type: string
       contacts:
-        description: "A list containing contact details of staticians for a dataset"
+        description: "A list containing contact details of statisticians for a dataset"
         type: array
         items:
           $ref: "#/definitions/Contact"
@@ -1822,7 +1831,7 @@ definitions:
         items:
           type: string
       downloads:
-        description: "A selection of download objects containing information of downloadable files."
+        description: A selection of download objects containing information of downloadable files."
         type: object
         properties:
           csv:
@@ -1863,8 +1872,7 @@ definitions:
         description: "The flag indicating the resource is a national statistic. These are certified as compliant with the Code of Practice for Official Statistics"
         type: boolean
       next_release:
-        description: "The next release date for a dataset"
-        type: string
+        $ref: "#/definitions/NextRelease"
       publications:
         description: "A list of publications related to this dataset."
         type: array
@@ -1886,10 +1894,14 @@ definitions:
         description: "The release frequency of a dataset"
         type: string
       subtopics:
-        description: "A list of subtopic ids that the dataset relates to within the website taxonomy. **Deprecated** this field is being deprecated and replaced by the `Themes` field."
+        description: |
+          **Deprecated:** This field is being deprecated and replaced by the `topics` field.
+
+          A list of subtopic ids that the dataset relates to within the topic taxonomy.
         type: array
         items:
           type: "string"
+          example: "7755"
       temporal:
         $ref: "#/definitions/Temporal"
       title:
@@ -1902,7 +1914,7 @@ definitions:
       usage_notes:
         $ref: "#/definitions/UsageNotes"
       topics:
-        description: "A list of topics and subtopics that the dataset relates to within the website taxonomy. This field consolidates the previously separate `canonical_topic` and `subtopics` fields."
+        description: "A list of topics and subtopics that the dataset relates to within the topic taxonomy. This field consolidates the previously separate `canonical_topic` and `subtopics` fields."
         type: array
         items:
           type: "string"
@@ -2021,6 +2033,7 @@ definitions:
         * associated (not editions)
         * published
     type: string
+    example: published
     enum:
       - created
       - completed
@@ -2145,6 +2158,7 @@ definitions:
       release_date:
         description: "The release date of this version of the dataset"
         type: string
+        format: date-time
       state:
         $ref: "#/definitions/State"
       temporal:
@@ -2213,14 +2227,17 @@ definitions:
         description: "The dataset edition for this version"
         readOnly: true
         type: string
+        example: 2017
       id:
         description: "The dataset identifier of the dataset this version is an instance of."
         type: string
+        example: my-dataset
       is_based_on:
         $ref: "#/definitions/IsBasedOn"
       dataset_id:
         description: "The identifier for the dataset."
         type: string
+        example: my-dataset
       latest_changes:
         description: "A list of changes between version of an edition for a dataset and the previous version of the same dataset edition"
         type: array
@@ -2234,6 +2251,7 @@ definitions:
       release_date:
         description: "The release date of this version of the dataset"
         type: string
+        format: date-time
       state:
         $ref: "#/definitions/State"
       temporal:
@@ -2262,18 +2280,18 @@ definitions:
           href:
             description: "A URL to all editions for this dataset"
             type: string
+            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions"
       latest_version:
         $ref: "#/definitions/LatestVersionLink"
       self:
-        $ref: "#/definitions/SelfLink"
-    example:
-      editions:
-        href: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions"
-      latest_version:
-        href: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/2017/versions/5"
-        id: "5"
-      self:
-        href: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset"
+        description: "A link to this resource"
+        readOnly: true
+        type: object
+        properties:
+          href:
+            description: "A URL to this resource"
+            type: string
+            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset"
   EditionLinks:
     description: "A list of links related to this resource"
     readOnly: true
@@ -2284,7 +2302,14 @@ definitions:
       latest_version:
         $ref: "#/definitions/LatestVersionLink"
       self:
-        $ref: "#/definitions/SelfLink"
+        description: "A link to this resource"
+        readOnly: true
+        type: object
+        properties:
+          href:
+            description: "A URL to this resource"
+            type: string
+            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/2017"
       versions:
         type: object
         properties:
@@ -2298,7 +2323,14 @@ definitions:
     type: object
     properties:
       self:
-        $ref: "#/definitions/SelfLink"
+        description: "A link to this resource"
+        readOnly: true
+        type: object
+        properties:
+          href:
+            description: "A URL to this resource"
+            type: string
+            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/2017/versions/5/metadata"
       spatial:
         $ref: "#/definitions/SpatialLink"
       version:
@@ -2310,6 +2342,7 @@ definitions:
           href:
             description: "The uri to the location of this version of the dataset on the web"
             type: string
+            example: "https://www.ons.gov.uk/datasets/my-dataset/editions/2017/versions/5"
   VersionLinks:
     description: "A list of links related to this resource"
     type: object
@@ -2322,12 +2355,19 @@ definitions:
         properties:
           href:
             description: "A URL to list dimensions for this version"
-            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/2017/versions/2/dimensions"
+            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/2017/versions/5/dimensions"
             type: string
       edition:
         $ref: "#/definitions/EditionLink"
       self:
-        $ref: "#/definitions/SelfLink"
+        description: "A link to this resource"
+        readOnly: true
+        type: object
+        properties:
+          href:
+            description: "A URL to this resource"
+            type: string
+            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/2017/versions/5"
       spatial:
         $ref: "#/definitions/SpatialLink"
   DatasetLink:
@@ -2382,14 +2422,6 @@ definitions:
     properties:
       href:
         description: "A URL to a list of options for this dimension"
-        type: string
-  SelfLink:
-    description: "A link to this resource"
-    readOnly: true
-    type: object
-    properties:
-      href:
-        description: "A URL to this resource"
         type: string
   SpatialLink:
     type: object
@@ -2460,6 +2492,7 @@ definitions:
         readOnly: true
         type: integer
         example: 123
+
   MetadataUpdate:
     description: "An object containing all editable metadata fields on a dataset and a version resource"
     type: object
@@ -2470,7 +2503,7 @@ definitions:
         items:
           $ref: "#/definitions/Alert"
       canonical_topic:
-        description: "The canonical topic id for this dataset.  This indicates which topic this dataset belongs to within the website taxonomy."
+        description: "The canonical topic id for this dataset.  This indicates which topic this dataset belongs to within the topic taxonomy."
         type: string
       contacts:
         description: "A list containing contact details of statisticians for a dataset"
@@ -2508,8 +2541,7 @@ definitions:
         description: "The flag indicating the resource is a national statistic. These are certified as compliant with the Code of Practice for Official Statistics"
         type: boolean
       next_release:
-        description: "The next release date for a dataset"
-        type: string
+        $ref: "#/definitions/NextRelease"
       publications:
         description: "A list of publications related to this dataset."
         type: array
@@ -2534,7 +2566,7 @@ definitions:
         description: "The release frequency of a dataset"
         type: string
       subtopics:
-        description: "A list of subtopic ids that the dataset relates to within the website taxonomy."
+        description: "A list of subtopic ids that the dataset relates to within the topic taxonomy."
         type: array
         items:
           type: "string"
