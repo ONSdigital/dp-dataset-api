@@ -1146,6 +1146,10 @@ definitions:
   Alert:
     description: "Important notice relating to a version of a dataset"
     type: object
+    required:
+      - date
+      - description
+      - type
     properties:
       date:
         description: "The date and time of publication of the version"
@@ -1229,7 +1233,6 @@ definitions:
       - contacts
       - description
       - license
-      - links
       - title
       - type
       - topics
@@ -1250,6 +1253,7 @@ definitions:
       contacts:
         description: "A list containing contact details of statisticians for a dataset"
         type: array
+        minItems: 1
         items:
           $ref: "#/definitions/Contact"
       description:
@@ -1334,6 +1338,7 @@ definitions:
       topics:
         description: "A list of topic IDs that the dataset relates to within the topic taxonomy. This field consolidates the previously separate `canonical_topic` and `subtopics` fields."
         type: array
+        minItems: 1
         items:
           type: "string"
         example: ["7779", "7755"]
@@ -1923,7 +1928,7 @@ definitions:
         description: "The unit of measure for the dataset observations"
         type: string
       usage_notes:
-        $ref: "#/definitions/UsageNotes"
+        $ref: "#/definitions/UsageNote"
       topics:
         description: "A list of topics and subtopics that the dataset relates to within the topic taxonomy. This field consolidates the previously separate `canonical_topic` and `subtopics` fields."
         type: array
@@ -2024,15 +2029,18 @@ definitions:
   Publisher:
     description: "The publisher of the dataset"
     type: object
+    required:
+      - name
+      - href
     properties:
       name:
         description: "The name of the publisher"
         type: string
-        example: Office for National Statistics
+        default: Office for National Statistics
       href:
         description: "A link to the publishers homepage"
         type: string
-        example: "https://www.ons.gov.uk"
+        default: "https://www.ons.gov.uk"
   State:
     description: |
       The state of the resource, can only be one of the following:
@@ -2182,10 +2190,13 @@ definitions:
         description: "A list of usage notes relating to the dataset"
         type: array
         items:
-          $ref: "#/definitions/UsageNotes"
-  UsageNotes:
+          $ref: "#/definitions/UsageNote"
+  UsageNote:
     description: "A note relating to the dataset. This will appear in downloaded datasets"
     type: object
+    required:
+      - title
+      - note
     properties:
       title:
         description: "The title of the note"
@@ -2206,7 +2217,9 @@ definitions:
               $ref: "#/definitions/Version"
   Version:
     description: "An object containing information about published datasets from the ONS"
-    required: [release_date]
+    required:
+      - distributions
+      - release_date
     type: object
     properties:
       alerts:
@@ -2228,6 +2241,7 @@ definitions:
       distributions:
         description: A list of representations of the dataset available and how to access them.
         type: array
+        minItems: 1
         items:
           $ref: "#/definitions/Distribution"
       downloads:
@@ -2291,7 +2305,7 @@ definitions:
         description: "A list of usage notes relating to the dataset"
         type: array
         items:
-          $ref: "#/definitions/UsageNotes"
+          $ref: "#/definitions/UsageNote"
       version:
         description: "A number identifying the version for an edition from a dataset"
         example: 1
@@ -2300,6 +2314,10 @@ definitions:
   Distribution:
     description: The details of specific representation of a dataset and how to access it.
     type: object
+    required:
+      - title
+      - format
+      - download_url
     properties:
       title:
         description: The title or label of the distribution.
@@ -2665,4 +2683,4 @@ definitions:
         description: "The unit of measure for the dataset observations"
         type: string
       usage_notes:
-        $ref: "#/definitions/UsageNotes"
+        $ref: "#/definitions/UsageNote"
