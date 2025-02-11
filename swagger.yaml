@@ -1264,6 +1264,8 @@ definitions:
         items:
           type: "string"
           example: "Inflation"
+      last_updated:
+        $ref: "#/definitions/LastUpdated"
       license:
         description: "The license the dataset is released under."
         type: string
@@ -1329,18 +1331,23 @@ definitions:
         description: "The title of the dataset"
         example: "Consumer Prices Index"
         type: string
-      type:
-        $ref: "#/definitions/DatasetType"
-      unit_of_measure:
-        description: "The unit of measure for the dataset observations"
-        type: string
-        example: "Number of people"
       topics:
         description: "A list of topic IDs that the dataset relates to within the topic taxonomy. This field consolidates the previously separate `canonical_topic` and `subtopics` fields."
         type: array
         items:
           type: "string"
         example: ["7779", "7755"]
+      type:
+        $ref: "#/definitions/DatasetType"
+      unit_of_measure:
+        description: "The unit of measure for the dataset observations"
+        type: string
+        example: "Number of people"
+  LastUpdated:
+    description: The date and time of the last update to the resource. For published resources this is the date and time the latest change was published.
+    type: string
+    format: date-time
+    readOnly: true
   NextRelease:
     description: "The next release date for a dataset. This field is a free text field rather than a date-time format and may be a date range, to be confirmed or some other description."
     type: string
@@ -2209,6 +2216,10 @@ definitions:
           $ref: "#/definitions/Alert"
       collection_id:
         $ref: "#/definitions/CollectionID"
+      dataset_id:
+        description: "The identifier for the dataset."
+        type: string
+        example: my-dataset
       dimensions:
         description: "A list of codelists for each dimension of this version"
         type: array
@@ -2241,10 +2252,8 @@ definitions:
         example: 2017
       is_based_on:
         $ref: "#/definitions/IsBasedOn"
-      dataset_id:
-        description: "The identifier for the dataset."
-        type: string
-        example: my-dataset
+      last_updated:
+        $ref: "#/definitions/LastUpdated"
       latest_changes:
         description: "A list of changes between version of an edition for a dataset and the previous version of the same dataset edition"
         type: array
@@ -2278,16 +2287,16 @@ definitions:
         $ref: "#/definitions/Temporal"
       type:
         $ref: "#/definitions/DatasetType"
-      version:
-        description: "A number identifying the version for an edition from a dataset"
-        example: 1
-        readOnly: true
-        type: integer
       usage_notes:
         description: "A list of usage notes relating to the dataset"
         type: array
         items:
           $ref: "#/definitions/UsageNotes"
+      version:
+        description: "A number identifying the version for an edition from a dataset"
+        example: 1
+        readOnly: true
+        type: integer
   Distribution:
     description: The details of specific representation of a dataset and how to access it.
     type: object
