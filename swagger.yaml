@@ -2380,6 +2380,16 @@ definitions:
             description: "A URL to this resource"
             type: string
             example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset"
+      taxonomy:
+        description: "The taxonomy path of the dataset's canonical topic."
+        type: object
+        properties:
+          href:
+            description: |
+              **Deprecated:** This field has been deprecated and will be removed in future. It is strongly advised that you do not use this field as topics will move in the hierarchy and therefore the value returned here will become outdated. Use the first entry in the `topics` list in combination with the Topics API instead.
+
+              The taxonomy path of the canonical topic for the dataset at the time of publish.
+            type: string
   MetadataLinks:
     description: "A list of links related to this resource"
     readOnly: true
