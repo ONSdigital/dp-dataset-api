@@ -233,6 +233,13 @@ paths:
           description: "A json list containing datasets which have been published"
           schema:
             $ref: "#/definitions/Datasets"
+          headers:
+            ETag:
+              description: The RFC7232 ETag header field the of the resource, where the resource is the response to the specific query paramaters. This is used for setting the `If-None-Match` headers on subsequent requests to check for changes.
+              type: string
+            Cache-Control:
+              description: The RFC9111 Cache-Control header field for the response which instructs how to handle caching the resource.
+              type: string
         400:
           description: "Parameter is_based_on was sent but no value was provided"
         404:
@@ -307,6 +314,13 @@ paths:
           description: "A json object for a single Dataset"
           schema:
             $ref: "#/definitions/Dataset"
+          headers:
+            ETag:
+              description: The RFC7232 ETag header field. Defines the unique entity tag for the current state of the resource. This is used for setting the `If-Match` and `If-None-Match` headers on subsequent requests.
+              type: string
+            Cache-Control:
+              description: The RFC9111 Cache-Control header field for the response which instructs how to handle caching the resource.
+              type: string
         404:
           description: "No dataset was found using the id provided"
         500:
@@ -368,6 +382,13 @@ paths:
           description: "A json list containing all editions for a dataset"
           schema:
             $ref: "#/definitions/Editions"
+          headers:
+            ETag:
+              description: The RFC7232 ETag header field the of the resource, where the resource is the response to the specific query paramaters. This is used for setting the `If-None-Match` headers on subsequent requests to check for changes.
+              type: string
+            Cache-Control:
+              description: The RFC9111 Cache-Control header field for the response which instructs how to handle caching the resource.
+              type: string
         400:
           description: "Invalid request, dataset id was incorrect"
         404:
@@ -391,6 +412,13 @@ paths:
           description: "A json object containing the latest version of the edition"
           schema:
             $ref: "#/definitions/Version"
+          headers:
+            ETag:
+              description: The RFC7232 ETag header field. Defines the unique entity tag for the current state of the resource. This is used for setting the `If-Match` and `If-None-Match` headers on subsequent requests.
+              type: string
+            Cache-Control:
+              description: The RFC9111 Cache-Control header field for the response which instructs how to handle caching the resource.
+              type: string
         400:
           description: "Invalid request, dataset id was incorrect"
         404:
@@ -418,6 +446,13 @@ paths:
           description: "A json list containing all versions for a set type of dataset and edition"
           schema:
             $ref: "#/definitions/Versions"
+          headers:
+            ETag:
+              description: The RFC7232 ETag header field the of the resource, where the resource is the response to the specific query paramaters. This is used for setting the `If-None-Match` headers on subsequent requests to check for changes.
+              type: string
+            Cache-Control:
+              description: The RFC9111 Cache-Control header field for the response which instructs how to handle caching the resource.
+              type: string
         400:
           description: |
             Invalid request, reasons can be one of the following:
@@ -509,8 +544,11 @@ paths:
             $ref: "#/definitions/Version"
           headers:
             ETag:
+              description: The RFC7232 ETag header field. Defines the unique entity tag for the current state of the resource. This is used for setting the `If-Match` and `If-None-Match` headers on subsequent requests.
               type: string
-              description: "Defines the unique etag for this resource"
+            Cache-Control:
+              description: The RFC9111 Cache-Control header field for the response which instructs how to handle caching the resource.
+              type: string
         400:
           description: |
             Invalid request, reasons can be one of the following:
@@ -567,6 +605,13 @@ paths:
           description: "A json list of dimensions"
           schema:
             $ref: "#/definitions/Dimensions"
+          headers:
+            ETag:
+              description: The RFC7232 ETag header field the of the resource, where the resource is the response to the specific query paramaters. This is used for setting the `If-None-Match` headers on subsequent requests to check for changes.
+              type: string
+            Cache-Control:
+              description: The RFC9111 Cache-Control header field for the response which instructs how to handle caching the resource.
+              type: string
         400:
           description: |
             Invalid request, reasons can be one of the following:
@@ -581,7 +626,7 @@ paths:
     get:
       tags:
         - "Public"
-      summary: "Get a list of options from a dimension"
+      summary: "Get a list of options from a dimension (filterable and cantabular datasets only)"
       description: "Get a list of options which appear in this dimension and dataset. By default all options are returned, but a subset can be requested by providing offset and limit query parameters, or by providing the list of option IDs, only the IDs that are found will be returned."
       parameters:
         - $ref: "#/parameters/dimension"
@@ -599,6 +644,13 @@ paths:
           description: "Json object containing all options for a dimension"
           schema:
             $ref: "#/definitions/DimensionOptions"
+          headers:
+            ETag:
+              description: The RFC7232 ETag header field the of the resource, where the resource is the response to the specific query paramaters. This is used for setting the `If-None-Match` headers on subsequent requests to check for changes.
+              type: string
+            Cache-Control:
+              description: The RFC9111 Cache-Control header field for the response which instructs how to handle caching the resource.
+              type: string
         400:
           description: |
             Invalid request, reasons can be one of the following:
@@ -630,6 +682,13 @@ paths:
           description: "Json object containing all metadata for a version"
           schema:
             $ref: "#/definitions/Metadata"
+          headers:
+            ETag:
+              description: The RFC7232 ETag header field. Defines the unique entity tag for the current state of the resource. This is used for setting the `If-Match` and `If-None-Match` headers on subsequent requests.
+              type: string
+            Cache-Control:
+              description: The RFC9111 Cache-Control header field for the response which instructs how to handle caching the resource.
+              type: string
         400:
           description: |
             Invalid request, reasons can be one of the following:
@@ -690,6 +749,13 @@ paths:
           description: "Return a list of instance state"
           schema:
             $ref: "#/definitions/Instances"
+          headers:
+            ETag:
+              description: The RFC7232 ETag header field. Defines the unique entity tag for the current state of the resource. This is used for setting the `If-Match` and `If-None-Match` headers on subsequent requests.
+              type: string
+            Cache-Control:
+              description: The RFC9111 Cache-Control header field for the response which instructs how to handle caching the resource.
+              type: string
         400:
           $ref: "#/responses/InvalidRequestError"
         401:
@@ -745,8 +811,11 @@ paths:
             $ref: "#/definitions/Instance"
           headers:
             ETag:
+              description: The RFC7232 ETag header field. Defines the unique entity tag for the current state of the resource. This is used for setting the `If-Match` and `If-None-Match` headers on subsequent requests.
               type: string
-              description: "Defines a unique instance resource version"
+            Cache-Control:
+              description: The RFC9111 Cache-Control header field for the response which instructs how to handle caching the resource.
+              type: string
         401:
           $ref: "#/responses/UnauthorisedError"
         404:
@@ -809,8 +878,11 @@ paths:
               $ref: "#/definitions/DimensionOption"
           headers:
             ETag:
+              description: The RFC7232 ETag header field. Defines the unique entity tag for the current state of the resource. This is used for setting the `If-Match` and `If-None-Match` headers on subsequent requests.
               type: string
-              description: "Defines a unique instance resource version"
+            Cache-Control:
+              description: The RFC9111 Cache-Control header field for the response which instructs how to handle caching the resource.
+              type: string
         400:
           $ref: "#/responses/InvalidRequestError"
         401:
@@ -943,8 +1015,11 @@ paths:
                   type: string
           headers:
             ETag:
+              description: The RFC7232 ETag header field. Defines the unique entity tag for the current state of the resource. This is used for setting the `If-Match` and `If-None-Match` headers on subsequent requests.
               type: string
-              description: "Defines a unique instance resource version"
+            Cache-Control:
+              description: The RFC9111 Cache-Control header field for the response which instructs how to handle caching the resource.
+              type: string
         400:
           $ref: "#/responses/InvalidRequestError"
         401:
