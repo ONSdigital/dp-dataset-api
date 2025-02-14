@@ -47,7 +47,7 @@ type Version struct {
 	ETag               string               `bson:"e_tag"                           json:"-"`
 	LowestGeography    string               `bson:"lowest_geography,omitempty"      json:"lowest_geography,omitempty"`
 	QualityDesignation QualityDesignation   `bson:"quality_designation,omitempty"   json:"quality_designation,omitempty"`
-	Distribution       *Distribution        `bson:"distribution,omitempty"          json:"distribution,omitempty"`
+	Distributions      *[]Distribution      `bson:"distributions,omitempty"         json:"distributions,omitempty"`
 }
 
 // Alert represents an object containing information on an alert
@@ -59,8 +59,11 @@ type Alert struct {
 
 // Distribution represents a specific distribution of the dataset
 type Distribution struct {
-	Title     string `bson:"title,omitempty"         json:"title,omitempty"`
-	MediaType string `bson:"media_type,omitempty"    json:"media_type,omitempty"`
+	Title       string                `bson:"title,omitempty"         json:"title,omitempty"`
+	Format      DistributionFormat    `bson:"format,omitempty"        json:"format,omitempty"`
+	MediaType   DistributionMediaType `bson:"media_type,omitempty"    json:"media_type,omitempty"`
+	DownloadURL string                `bson:"download_url,omitempty"  json:"download_url,omitempty"`
+	ByteSize    int64                 `bson:"byte_size,omitempty"     json:"byte_size,omitempty"`
 }
 
 // DownloadList represents a list of objects of containing information on the downloadable files.
@@ -158,6 +161,7 @@ func (vl *VersionLinks) DeepCopy() *VersionLinks {
 // AlertType defines possible types of alerts
 type AlertType string
 
+// Define the possible values for the AlertType enum
 const (
 	AlertTypeAlert      AlertType = "alert"
 	AlertTypeCorrection AlertType = "correction"
@@ -173,6 +177,7 @@ func (at AlertType) IsValid() bool {
 	}
 }
 
+// String returns the string value of the AlertType
 func (at AlertType) String() string {
 	return string(at)
 }
@@ -219,6 +224,11 @@ func (qd *QualityDesignation) IsValid() bool {
 	}
 }
 
+// String returns the string value of the QualityDesignation
+func (qd QualityDesignation) String() string {
+	return string(qd)
+}
+
 // MarshalJSON marshals the QualityDesignation to JSON
 func (qd QualityDesignation) MarshalJSON() ([]byte, error) {
 	if !qd.IsValid() {
@@ -238,6 +248,108 @@ func (qd *QualityDesignation) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("invalid QualityDesignation: %s", str)
 	}
 	*qd = converted
+	return nil
+}
+
+// DistributionFormat enum type representing the allowable formats for the distribution download file
+type DistributionFormat string
+
+// Define the possible values for the DistributionFormat enum
+const (
+	DistributionFormatCSV      DistributionFormat = "csv"
+	DistributionFormatSDMX     DistributionFormat = "sdmx"
+	DistributionFormatXLS      DistributionFormat = "xls"
+	DistributionFormatXLSX     DistributionFormat = "xlsx"
+	DistributionFormatCSDB     DistributionFormat = "csdb"
+	DistributionFormatCSVWMeta DistributionFormat = "csvw-metadata"
+)
+
+// IsValid validates that the DistributionFormat is a valid enum value
+func (f *DistributionFormat) IsValid() bool {
+	switch *f {
+	case DistributionFormatCSV, DistributionFormatSDMX, DistributionFormatXLS,
+		DistributionFormatXLSX, DistributionFormatCSDB, DistributionFormatCSVWMeta:
+		return true
+	default:
+		return false
+	}
+}
+
+// String returns the string value of the DistributionFormat
+func (f DistributionFormat) String() string {
+	return string(f)
+}
+
+// MarshalJSON marshals the DistributionFormat to JSON
+func (f DistributionFormat) MarshalJSON() ([]byte, error) {
+	if !f.IsValid() {
+		return nil, fmt.Errorf("invalid DistributionFormat: %s", f)
+	}
+	return json.Marshal(string(f))
+}
+
+// UnmarshalJSON unmarshals a string to DistributionFormat
+func (f *DistributionFormat) UnmarshalJSON(data []byte) error {
+	var str string
+	if err := json.Unmarshal(data, &str); err != nil {
+		return err
+	}
+	converted := DistributionFormat(str)
+	if !converted.IsValid() {
+		return fmt.Errorf("invalid DistributionFormat: %s", str)
+	}
+	*f = converted
+	return nil
+}
+
+// DistributionMediaType enum type representing the allowable media types for the distribution download file
+type DistributionMediaType string
+
+// Define the possible values for the DistributionMediaType enum
+const (
+	DistributionMediaTypeCSV      DistributionMediaType = "text/csv"
+	DistributionMediaTypeSDMX     DistributionMediaType = "application/vnd.sdmx.structurespecificdata+xml"
+	DistributionMediaTypeXLS      DistributionMediaType = "application/vnd.ms-excel"
+	DistributionMediaTypeXLSX     DistributionMediaType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	DistributionMediaTypeCSDB     DistributionMediaType = "text/plain"
+	DistributionMediaTypeCSVWMeta DistributionMediaType = "application/ld+json"
+)
+
+// IsValid validates that the DistributionMediaType is a valid enum value
+func (mt *DistributionMediaType) IsValid() bool {
+	switch *mt {
+	case DistributionMediaTypeCSV, DistributionMediaTypeSDMX, DistributionMediaTypeXLS,
+		DistributionMediaTypeXLSX, DistributionMediaTypeCSDB, DistributionMediaTypeCSVWMeta:
+		return true
+	default:
+		return false
+	}
+}
+
+// String returns the string value of the DistributionMediaType
+func (mt DistributionMediaType) String() string {
+	return string(mt)
+}
+
+// MarshalJSON marshals the DistributionMediaType to JSON
+func (mt DistributionMediaType) MarshalJSON() ([]byte, error) {
+	if !mt.IsValid() {
+		return nil, fmt.Errorf("invalid DistributionMediaType: %s", mt)
+	}
+	return json.Marshal(string(mt))
+}
+
+// UnmarshalJSON unmarshals a string to DistributionMediaType
+func (mt *DistributionMediaType) UnmarshalJSON(data []byte) error {
+	var str string
+	if err := json.Unmarshal(data, &str); err != nil {
+		return err
+	}
+	converted := DistributionMediaType(str)
+	if !converted.IsValid() {
+		return fmt.Errorf("invalid DistributionMediaType: %s", str)
+	}
+	*mt = converted
 	return nil
 }
 
