@@ -37,6 +37,8 @@ func TestCreateVersion(t *testing.T) {
 			So(version.State, ShouldEqual, AssociatedState)
 			So(version.Temporal, ShouldResemble, &[]TemporalFrequency{temporal})
 			So(version.Version, ShouldEqual, 1)
+			So(version.QualityDesignation, ShouldEqual, QualityDesignationOfficial)
+			So(version.Distributions, ShouldResemble, &[]Distribution{distribution})
 		})
 	})
 
@@ -187,6 +189,8 @@ func TestVersionHash(t *testing.T) {
 					HRef:    "downloadservice/link.csv",
 				},
 			},
+			QualityDesignation: QualityDesignationOfficial,
+			Distributions:      &[]Distribution{distribution},
 		}
 	}
 

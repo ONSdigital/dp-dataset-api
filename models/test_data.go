@@ -193,6 +193,14 @@ var temporal = TemporalFrequency{
 	StartDate: "2014-09-09",
 }
 
+var distribution = Distribution{
+	Title:       "CSV file",
+	Format:      DistributionFormatCSV,
+	MediaType:   DistributionMediaTypeCSV,
+	DownloadURL: "http://localhost:22000/datasets/123/editions/2017/versions/1.csv",
+	ByteSize:    1234,
+}
+
 var editionConfirmedVersion = Version{
 	Dimensions:  []Dimension{dimension},
 	Downloads:   &downloads,
@@ -204,16 +212,18 @@ var editionConfirmedVersion = Version{
 }
 
 var associatedVersion = Version{
-	CollectionID:  collectionID,
-	Dimensions:    []Dimension{dimension},
-	Downloads:     &downloads,
-	Edition:       "2017",
-	LatestChanges: &[]LatestChange{latestChange},
-	Links:         &links,
-	ReleaseDate:   "2017-10-12",
-	State:         AssociatedState,
-	Temporal:      &[]TemporalFrequency{temporal},
-	Version:       1,
+	CollectionID:       collectionID,
+	Dimensions:         []Dimension{dimension},
+	Downloads:          &downloads,
+	Edition:            "2017",
+	LatestChanges:      &[]LatestChange{latestChange},
+	Links:              &links,
+	ReleaseDate:        "2017-10-12",
+	State:              AssociatedState,
+	Temporal:           &[]TemporalFrequency{temporal},
+	Version:            1,
+	QualityDesignation: QualityDesignationOfficial,
+	Distributions:      &[]Distribution{distribution},
 }
 
 var publishedVersion = Version{
