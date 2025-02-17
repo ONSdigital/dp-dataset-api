@@ -140,10 +140,11 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 	if api.enableURLRewriting {
 		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 		codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetCodeListAPIURL())
+		downloadLinksBuilder := links.FromHeadersOrDefaultDownload(&r.Header, api.urlBuilder.GetDownloadServiceURL(), api.urlBuilder.GetExternalDownloadServiceURL())
 
-		list, err = utils.RewriteVersions(ctx, list, datasetLinksBuilder, codeListLinksBuilder)
+		list, err = utils.RewriteVersions(ctx, list, datasetLinksBuilder, codeListLinksBuilder, downloadLinksBuilder)
 		if err != nil {
-			log.Error(ctx, "getVersions endpoint: error rewriting dimension or version links", err)
+			log.Error(ctx, "getVersions endpoint: error rewriting dimension, version or download links", err)
 			handleVersionAPIErr(ctx, err, w, logData)
 			return nil, 0, err
 		}
@@ -229,6 +230,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	if api.enableURLRewriting {
 		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 		codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetCodeListAPIURL())
+		downloadLinksBuilder := links.FromHeadersOrDefaultDownload(&r.Header, api.urlBuilder.GetDownloadServiceURL(), api.urlBuilder.GetExternalDownloadServiceURL())
 
 		var err error
 
@@ -242,6 +244,13 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 		v.Dimensions, err = utils.RewriteDimensions(ctx, v.Dimensions, datasetLinksBuilder, codeListLinksBuilder)
 		if err != nil {
 			log.Error(ctx, "getVersion endpoint: failed to rewrite dimensions", err)
+			handleVersionAPIErr(ctx, err, w, logData)
+			return
+		}
+
+		err = utils.RewriteDownloadLinks(ctx, v.Downloads, downloadLinksBuilder)
+		if err != nil {
+			log.Error(ctx, "getVersion endpoint: failed to rewrite download links", err)
 			handleVersionAPIErr(ctx, err, w, logData)
 			return
 		}

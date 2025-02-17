@@ -366,6 +366,11 @@ func createURLBuilder(config *config.Configuration) (*url.Builder, error) {
 		return nil, errors.Wrap(err, "unable to parse downloadServiceURL from config")
 	}
 
+	externalDownloadServiceURL, err := neturl.Parse(config.ExternalDownloadServiceURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to parse externalDownloadServiceURL from config")
+	}
+
 	datasetAPIURL, err := neturl.Parse(config.DatasetAPIURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to parse datasetAPIURL from config")
@@ -381,7 +386,7 @@ func createURLBuilder(config *config.Configuration) (*url.Builder, error) {
 		return nil, errors.Wrap(err, "unable to parse importAPIURL from config")
 	}
 
-	return url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL), nil
+	return url.NewBuilder(websiteURL, downloadServiceURL, externalDownloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL), nil
 }
 
 func getAuthorisationHandlers(ctx context.Context, cfg *config.Configuration) (datasetPermissions, permissions api.AuthHandler) {

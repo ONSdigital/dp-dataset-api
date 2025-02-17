@@ -505,7 +505,7 @@ func RewriteMetadataLinks(ctx context.Context, oldLinks *models.MetadataLinks, d
 	return nil
 }
 
-func RewriteVersions(ctx context.Context, results []models.Version, datasetLinksBuilder, codeListLinksBuilder *links.Builder) ([]models.Version, error) {
+func RewriteVersions(ctx context.Context, results []models.Version, datasetLinksBuilder, codeListLinksBuilder, downloadLinksBuilder *links.Builder) ([]models.Version, error) {
 	if len(results) == 0 {
 		return results, nil
 	}
@@ -525,6 +525,12 @@ func RewriteVersions(ctx context.Context, results []models.Version, datasetLinks
 		err = RewriteVersionLinks(ctx, item.Links, datasetLinksBuilder)
 		if err != nil {
 			log.Error(ctx, "failed to rewrite version links", err)
+			return nil, err
+		}
+
+		err = RewriteDownloadLinks(ctx, item.Downloads, downloadLinksBuilder)
+		if err != nil {
+			log.Error(ctx, "failed to rewrite download links", err)
 			return nil, err
 		}
 
@@ -562,7 +568,7 @@ func RewriteVersionLinks(ctx context.Context, oldLinks *models.VersionLinks, dat
 	return nil
 }
 
-func RewriteInstances(ctx context.Context, results []*models.Instance, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder *links.Builder) error {
+func RewriteInstances(ctx context.Context, results []*models.Instance, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder, downloadLinksBuilder *links.Builder) error {
 	if len(results) == 0 {
 		return nil
 	}
@@ -579,6 +585,12 @@ func RewriteInstances(ctx context.Context, results []*models.Instance, datasetLi
 		err = RewriteInstanceLinks(ctx, item.Links, datasetLinksBuilder, importLinksBuilder)
 		if err != nil {
 			log.Error(ctx, "failed to rewrite instance links", err)
+			return err
+		}
+
+		err = RewriteDownloadLinks(ctx, item.Downloads, downloadLinksBuilder)
+		if err != nil {
+			log.Error(ctx, "failed to rewrite download links", err)
 			return err
 		}
 	}
@@ -618,5 +630,32 @@ func RewriteInstanceLinks(ctx context.Context, oldLinks *models.InstanceLinks, d
 		}
 	}
 
+	return nil
+}
+
+func RewriteDownloadLinks(ctx context.Context, oldLinks *models.DownloadList, downloadLinksBuilder *links.Builder) error {
+	if oldLinks == nil {
+		return nil
+	}
+
+	prevLinks := []*models.DownloadObject{
+		oldLinks.CSV,
+		oldLinks.CSVW,
+		oldLinks.TXT,
+		oldLinks.XLS,
+		oldLinks.XLSX,
+	}
+
+	var err error
+
+	for _, link := range prevLinks {
+		if link != nil && link.HRef != "" {
+			link.HRef, err = downloadLinksBuilder.BuildDownloadLink(link.HRef)
+			if err != nil {
+				log.Error(ctx, "failed to rewrite link", err, log.Data{"link": link.HRef})
+				return err
+			}
+		}
+	}
 	return nil
 }

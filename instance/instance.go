@@ -84,8 +84,9 @@ func (s *Store) GetList(w http.ResponseWriter, r *http.Request, limit, offset in
 			datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, s.URLBuilder.GetDatasetAPIURL())
 			codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, s.URLBuilder.GetCodeListAPIURL())
 			importLinksBuilder := links.FromHeadersOrDefault(&r.Header, s.URLBuilder.GetImportAPIURL())
+			downloadLinksBuilder := links.FromHeadersOrDefaultDownload(&r.Header, s.URLBuilder.GetDownloadServiceURL(), s.URLBuilder.GetExternalDownloadServiceURL())
 
-			err = utils.RewriteInstances(ctx, instancesResults, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder)
+			err = utils.RewriteInstances(ctx, instancesResults, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder, downloadLinksBuilder)
 			if err != nil {
 				log.Error(ctx, "get instances endpoint: failed to rewrite instances", err, logData)
 				handleInstanceErr(ctx, err, w, logData)
@@ -137,8 +138,9 @@ func (s *Store) Get(w http.ResponseWriter, r *http.Request) {
 		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, s.URLBuilder.GetDatasetAPIURL())
 		codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, s.URLBuilder.GetCodeListAPIURL())
 		importLinksBuilder := links.FromHeadersOrDefault(&r.Header, s.URLBuilder.GetImportAPIURL())
+		downloadLinksBuilder := links.FromHeadersOrDefaultDownload(&r.Header, s.URLBuilder.GetDownloadServiceURL(), s.URLBuilder.GetExternalDownloadServiceURL())
 
-		err = utils.RewriteInstances(ctx, []*models.Instance{instance}, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder)
+		err = utils.RewriteInstances(ctx, []*models.Instance{instance}, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder, downloadLinksBuilder)
 		if err != nil {
 			log.Error(ctx, "get instance: failed to rewrite instance", err, logData)
 			handleInstanceErr(ctx, err, w, logData)
