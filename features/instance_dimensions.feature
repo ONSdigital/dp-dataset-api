@@ -114,7 +114,6 @@ Feature: Dataset API
         Given private endpoints are enabled
         And I am identified as "user@ons.gov.uk"
         And I am authorised
-        And I set the "X-Forwarded-Proto" header to "https"
         And I set the "X-Forwarded-Host" header to "api.example.com"
         And I set the "X-Forwarded-Path-Prefix" header to "v1"
         When I GET "/instances/test-item-1/dimensions"
@@ -206,7 +205,6 @@ Feature: Dataset API
         Given private endpoints are enabled
         And I am identified as "user@ons.gov.uk"
         And I am authorised
-        And I set the "X-Forwarded-Proto" header to "https"
         And I set the "X-Forwarded-Host" header to "api.example.com"
         And I set the "X-Forwarded-Path-Prefix" header to "v1"
         When I GET "/instances/test-item-1/dimensions?offset=3&limit=7"

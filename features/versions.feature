@@ -229,7 +229,6 @@ Feature: Dataset API
 
   Scenario: GET /datasets/{id}/editions/{edition}/versions in public mode returns published versions
     And URL rewriting is enabled
-    And I set the "X-Forwarded-Proto" header to "https"
     And I set the "X-Forwarded-Host" header to "api.example.com"
     And I set the "X-Forwarded-Path-Prefix" header to "v1"
     When I GET "/datasets/population-estimates/editions/hello/versions"
@@ -324,7 +323,6 @@ Feature: Dataset API
   Scenario: GET /datasets/{id}/editions/{edition}/versions in private mode returns all versions
     Given private endpoints are enabled
     And URL rewriting is enabled
-    And I set the "X-Forwarded-Proto" header to "https"
     And I set the "X-Forwarded-Host" header to "api.example.com"
     And I set the "X-Forwarded-Path-Prefix" header to "v1"
     And I am identified as "user@ons.gov.uk"
@@ -477,7 +475,6 @@ Feature: Dataset API
 
   Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} in public mode returns the version
     And URL rewriting is enabled
-    And I set the "X-Forwarded-Proto" header to "https"
     And I set the "X-Forwarded-Host" header to "api.example.com"
     And I set the "X-Forwarded-Path-Prefix" header to "v1"
     When I GET "/datasets/population-estimates/editions/hello/versions/4"
@@ -526,7 +523,6 @@ Feature: Dataset API
   Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} in private mode returns the version
     Given private endpoints are enabled
     And URL rewriting is enabled
-    And I set the "X-Forwarded-Proto" header to "https"
     And I set the "X-Forwarded-Host" header to "api.example.com"
     And I set the "X-Forwarded-Path-Prefix" header to "v1"
     And I am identified as "user@ons.gov.uk"

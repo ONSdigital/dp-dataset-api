@@ -90,7 +90,6 @@ Feature: Dataset API
 
     Scenario: GET /datasets/{id}/editions/{edition}/versions/{version}/dimensions in public mode
         And URL rewriting is enabled
-        And I set the "X-Forwarded-Proto" header to "https"
         And I set the "X-Forwarded-Host" header to "api.example.com"
         And I set the "X-Forwarded-Path-Prefix" header to "v1"
         When I GET "/datasets/population-estimates/editions/hello/versions/1/dimensions"
