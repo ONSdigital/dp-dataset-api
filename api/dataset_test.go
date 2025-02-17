@@ -41,15 +41,16 @@ var (
 	datasetPayloadWithEmptyThemesAndTypeStatic = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","keywords":["keyword"],"links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","id": "ageing-population-estimates", "next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"static","themes":[]}`
 	datasetPayloadWithEmptyContacts            = `{"contacts":[],"description":"census","keywords":["keyword"],"links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","id": "ageing-population-estimates", "next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":"static","themes":["theme"]}`
 
-	codeListAPIURL     = &neturl.URL{Scheme: "http", Host: "localhost:22400"}
-	datasetAPIURL      = &neturl.URL{Scheme: "http", Host: "localhost:22000"}
-	downloadServiceURL = &neturl.URL{Scheme: "http", Host: "localhost:23600"}
-	importAPIURL       = &neturl.URL{Scheme: "http", Host: "localhost:21800"}
-	websiteURL         = &neturl.URL{Scheme: "http", Host: "localhost:20000"}
-	urlBuilder         = url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
-	enableURLRewriting = false
-	enableStateMachine = false
-	mu                 sync.Mutex
+	codeListAPIURL             = &neturl.URL{Scheme: "http", Host: "localhost:22400"}
+	datasetAPIURL              = &neturl.URL{Scheme: "http", Host: "localhost:22000"}
+	downloadServiceURL         = &neturl.URL{Scheme: "http", Host: "localhost:23600"}
+	externalDownloadServiceURL = &neturl.URL{Scheme: "http", Host: "localhost:23600"}
+	importAPIURL               = &neturl.URL{Scheme: "http", Host: "localhost:21800"}
+	websiteURL                 = &neturl.URL{Scheme: "http", Host: "localhost:20000"}
+	urlBuilder                 = url.NewBuilder(websiteURL, downloadServiceURL, externalDownloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
+	enableURLRewriting         = false
+	enableStateMachine         = false
+	mu                         sync.Mutex
 )
 
 func getAuthorisationHandlerMock() *mocks.AuthHandlerMock {

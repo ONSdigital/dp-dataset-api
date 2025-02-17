@@ -26,21 +26,22 @@ import (
 )
 
 var (
-	codeListAPIURL        = &neturl.URL{Scheme: "http", Host: "localhost:22400"}
-	datasetAPIURL         = &neturl.URL{Scheme: "http", Host: "localhost:22000"}
-	downloadServiceURL    = &neturl.URL{Scheme: "http", Host: "localhost:23600"}
-	importAPIURL          = &neturl.URL{Scheme: "http", Host: "localhost:21800"}
-	websiteURL            = &neturl.URL{Scheme: "http", Host: "localhost:20000"}
-	urlBuilder            = url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
-	enableURLRewriting    = false
-	enableStateMachine    = false
-	mu                    sync.Mutex
-	testContext           = context.Background()
-	testETag              = "testETag"
-	testIfMatch           = "testIfMatch"
-	testLockID            = "testLockID"
-	AnyETag               = "*"
-	testMaxRequestOptions = 10
+	codeListAPIURL             = &neturl.URL{Scheme: "http", Host: "localhost:22400"}
+	datasetAPIURL              = &neturl.URL{Scheme: "http", Host: "localhost:22000"}
+	downloadServiceURL         = &neturl.URL{Scheme: "http", Host: "localhost:23600"}
+	externalDownloadServiceURL = &neturl.URL{Scheme: "http", Host: "localhost:23600"}
+	importAPIURL               = &neturl.URL{Scheme: "http", Host: "localhost:21800"}
+	websiteURL                 = &neturl.URL{Scheme: "http", Host: "localhost:20000"}
+	urlBuilder                 = url.NewBuilder(websiteURL, downloadServiceURL, externalDownloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
+	enableURLRewriting         = false
+	enableStateMachine         = false
+	mu                         sync.Mutex
+	testContext                = context.Background()
+	testETag                   = "testETag"
+	testIfMatch                = "testIfMatch"
+	testLockID                 = "testLockID"
+	AnyETag                    = "*"
+	testMaxRequestOptions      = 10
 )
 
 func createRequestWithToken(method, requestURL string, body io.Reader) (*http.Request, error) {

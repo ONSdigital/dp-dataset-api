@@ -10,11 +10,12 @@ import (
 )
 
 var (
-	codeListAPIURL     = &neturl.URL{Scheme: "http", Host: "localhost:22400"}
-	datasetAPIURL      = &neturl.URL{Scheme: "http", Host: "localhost:22000"}
-	downloadServiceURL = &neturl.URL{Scheme: "http", Host: "localhost:23600"}
-	importAPIURL       = &neturl.URL{Scheme: "http", Host: "localhost:21800"}
-	websiteURL         = &neturl.URL{Scheme: "http", Host: "localhost:20000"}
+	codeListAPIURL             = &neturl.URL{Scheme: "http", Host: "localhost:22400"}
+	datasetAPIURL              = &neturl.URL{Scheme: "http", Host: "localhost:22000"}
+	downloadServiceURL         = &neturl.URL{Scheme: "http", Host: "localhost:23600"}
+	externalDownloadServiceURL = &neturl.URL{Scheme: "http", Host: "localhost:23600"}
+	importAPIURL               = &neturl.URL{Scheme: "http", Host: "localhost:21800"}
+	websiteURL                 = &neturl.URL{Scheme: "http", Host: "localhost:20000"}
 )
 
 const (
@@ -25,7 +26,7 @@ const (
 
 func TestBuilder_BuildWebsiteDatasetVersionURL(t *testing.T) {
 	Convey("Given a URL builder", t, func() {
-		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
+		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, externalDownloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
 
 		Convey("When BuildWebsiteDatasetVersionURL is called", func() {
 			builtURL := urlBuilder.BuildWebsiteDatasetVersionURL(datasetID, edition, version)
@@ -42,7 +43,7 @@ func TestBuilder_BuildWebsiteDatasetVersionURL(t *testing.T) {
 
 func TestBuilder_GetWebsiteURL(t *testing.T) {
 	Convey("Given a URL builder", t, func() {
-		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
+		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, externalDownloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
 
 		Convey("When GetWebsiteURL is called", func() {
 			returnedURL := urlBuilder.GetWebsiteURL()
@@ -56,7 +57,7 @@ func TestBuilder_GetWebsiteURL(t *testing.T) {
 
 func TestBuilder_GetDownloadServiceURL(t *testing.T) {
 	Convey("Given a URL builder", t, func() {
-		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
+		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, externalDownloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
 
 		Convey("When GetDownloadServiceURL is called", func() {
 			returnedURL := urlBuilder.GetDownloadServiceURL()
@@ -68,9 +69,23 @@ func TestBuilder_GetDownloadServiceURL(t *testing.T) {
 	})
 }
 
+func TestBuilder_GetExternalDownloadServiceURL(t *testing.T) {
+	Convey("Given a URL builder", t, func() {
+		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, externalDownloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
+
+		Convey("When GetExternalDownloadServiceURL is called", func() {
+			returnedURL := urlBuilder.GetExternalDownloadServiceURL()
+
+			Convey("Then the expected URL is returned", func() {
+				So(returnedURL, ShouldEqual, externalDownloadServiceURL)
+			})
+		})
+	})
+}
+
 func TestBuilder_GetDatasetAPIURL(t *testing.T) {
 	Convey("Given a URL builder", t, func() {
-		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
+		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, externalDownloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
 
 		Convey("When GetDatasetAPIURL is called", func() {
 			returnedURL := urlBuilder.GetDatasetAPIURL()
@@ -84,7 +99,7 @@ func TestBuilder_GetDatasetAPIURL(t *testing.T) {
 
 func TestBuilder_GetCodeListAPIURL(t *testing.T) {
 	Convey("Given a URL builder", t, func() {
-		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
+		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, externalDownloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
 
 		Convey("When GetCodeListAPIURL is called", func() {
 			returnedURL := urlBuilder.GetCodeListAPIURL()
@@ -98,7 +113,7 @@ func TestBuilder_GetCodeListAPIURL(t *testing.T) {
 
 func TestBuilder_GetImportAPIURL(t *testing.T) {
 	Convey("Given a URL builder", t, func() {
-		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
+		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, externalDownloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
 
 		Convey("When GetImportAPIURL is called", func() {
 			returnedURL := urlBuilder.GetImportAPIURL()
