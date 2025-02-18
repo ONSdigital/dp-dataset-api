@@ -27,10 +27,6 @@ func NewBuilder(websiteURL, downloadServiceURL, externalDownloadServiceURL, data
 	}
 }
 
-func (builder *Builder) GetWebsiteURL() *url.URL {
-	return builder.websiteURL
-}
-
 func (builder *Builder) GetDownloadServiceURL() *url.URL {
 	return builder.downloadServiceURL
 }

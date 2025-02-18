@@ -41,20 +41,6 @@ func TestBuilder_BuildWebsiteDatasetVersionURL(t *testing.T) {
 	})
 }
 
-func TestBuilder_GetWebsiteURL(t *testing.T) {
-	Convey("Given a URL builder", t, func() {
-		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, externalDownloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
-
-		Convey("When GetWebsiteURL is called", func() {
-			returnedURL := urlBuilder.GetWebsiteURL()
-
-			Convey("Then the expected URL is returned", func() {
-				So(returnedURL, ShouldEqual, websiteURL)
-			})
-		})
-	})
-}
-
 func TestBuilder_GetDownloadServiceURL(t *testing.T) {
 	Convey("Given a URL builder", t, func() {
 		urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, externalDownloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)

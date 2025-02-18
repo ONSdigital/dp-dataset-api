@@ -113,10 +113,9 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 		if api.enableURLRewriting {
 			datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 			codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetCodeListAPIURL())
-			websiteLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetWebsiteURL())
 			downloadLinksBuilder := links.FromHeadersOrDefaultDownload(&r.Header, api.urlBuilder.GetDownloadServiceURL(), api.urlBuilder.GetExternalDownloadServiceURL())
 
-			err = utils.RewriteMetadataLinks(ctx, metaDataDoc.Links, datasetLinksBuilder, websiteLinksBuilder)
+			err = utils.RewriteMetadataLinks(ctx, metaDataDoc.Links, datasetLinksBuilder)
 			if err != nil {
 				log.Error(ctx, "getMetadata endpoint: failed to rewrite metadata links", err, logData)
 				handleMetadataErr(w, err)
