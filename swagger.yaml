@@ -1,23 +1,25 @@
 swagger: "2.0"
 info:
-  description: "Used to find information about data published by the ONS.
-  `Datasets` are published in unique `versions`, which are categorized by `edition`.
-  Data in each version is broken down by `dimensions`, and a unique combination
-  of dimension `options` in a version can be used to retrieve `observation` level data.
-  
-  Note: As of the latest update, the `@context` field has been removed from all dataset endpoints to improve response performance and correct data structure."
+  description: |
+    Dataset catalogue used to find information about data published by the ONS.
+
+    `Datasets` are published in unique `versions`, which are categorized by `edition`. Data in each version is broken down by `dimensions`, and a unique combination of dimension `options` in a version can be used to retrieve `observation` level data.
+
+    Note: As of the latest update, the `@context` field has been removed from all dataset endpoints to improve response performance and correct data structure."
   version: "1.0.0"
   title: "Explore our data"
   license:
     name: "Open Government Licence v3.0"
-    url: "http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
+    url: "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
 basePath: "/v1"
 tags:
-- name: "Public"
-- name: "Private user"
-- name: "Private"
+  - name: "Public"
+    description: Endpoints available on public API.
+  - name: "Private"
+    description: Internal only endpoints.
+host: api.beta.ons.gov.uk
 schemes:
-- "http"
+  - "https"
 parameters:
   dataset:
     name: dataset
@@ -30,24 +32,18 @@ parameters:
     in: path
     required: true
     type: string
-  dimension_options:
-    description: "The name of the dimension option and a single value; each option (dimension) and corresponding value (code) must exist against the version - e.g. `age=30` or one of the dimension options can be represented by a wildcard value `*` e.g. `geography=*`"
-    name: "<dimension_options>"
-    in: query
-    required: true
-    type: string
   patch_options:
     required: true
     name: patch
     schema:
-      $ref: '#/definitions/PatchOptions'
+      $ref: "#/definitions/PatchOptions"
     description: "A list of patch operations for a dimension option"
     in: body
   patch_dimensions:
     required: true
     name: patch
     schema:
-      $ref: '#/definitions/PatchDimensions'
+      $ref: "#/definitions/PatchDimensions"
     description: "A list of patch operations for a dimension"
     in: body
   edition:
@@ -61,10 +57,10 @@ parameters:
     description: "An event that occurs when importing a dataset"
     in: body
     schema:
-      $ref: '#/definitions/Event'
-  id:
+      $ref: "#/definitions/Event"
+  dataset_id:
     name: id
-    description: "Id that represents a dataset"
+    description: "ID that represents a dataset"
     in: path
     required: true
     type: string
@@ -73,7 +69,7 @@ parameters:
     description: "A request body to update the state of an import task"
     in: body
     schema:
-      $ref: '#/definitions/ImportTasks'
+      $ref: "#/definitions/ImportTasks"
   inserted_observations:
     name: inserted_observations
     description: "A value to increment the inserted_observations within an instance"
@@ -92,52 +88,40 @@ parameters:
     in: body
     required: true
     schema:
-      $ref: '#/definitions/Instance'
+      $ref: "#/definitions/Instance"
   new_dataset:
     name: dataset
     description: "A new dataset"
     in: body
     required: true
     schema:
-     allOf:
-        - type: object
-          properties:
-            type:  
-              $ref: '#/definitions/Type'
-        - $ref: "#/definitions/Dataset"
-  new_edition:
-    name: new_edition
-    description: "A new edition of the dataset"
-    in: body
-    required: true
-    schema:
-      $ref: '#/definitions/Edition'
+      $ref: "#/definitions/Dataset"
   new_version:
     name: new_version
     description: "A new version for an edition of a dataset"
     in: body
     required: true
     schema:
-      $ref: '#/definitions/Version'
+      $ref: "#/definitions/Version"
   node_id:
-   name: node_id
-   description: "An unique node id"
-   in: path
-   required: true
-   type: string
+    name: node_id
+    description: "An unique node id"
+    in: path
+    required: true
+    type: string
   newInstance:
     name: instance
     description: "An instance related to an import job"
     in: body
     required: true
     schema:
-      $ref: '#/definitions/NewInstance'
+      $ref: "#/definitions/NewInstance"
   option:
-   name: option
-   description: "A option to set within a type"
-   in: path
-   required: true
-   type: string
+    name: option
+    description: "A option to set within a type"
+    in: path
+    required: true
+    type: string
   state:
     name: "state"
     description: "A comma separated list of state values to filter on (e.g. ‘completed,edition-confirmed’)"
@@ -156,13 +140,13 @@ parameters:
     in: body
     required: true
     schema:
-      $ref: '#/definitions/UpdateInstanceDimension'
+      $ref: "#/definitions/UpdateInstanceDimension"
   update_dimension_option_request:
     name: dimension_option
     description: "A dimension option from an instance"
     in: body
     schema:
-      $ref: '#/definitions/UpdateDimensionOptionRequest'
+      $ref: "#/definitions/UpdateDimensionOptionRequest"
   version:
     name: version
     description: "A version of a dataset"
@@ -175,19 +159,24 @@ parameters:
     in: body
     required: true
     schema:
-      $ref: '#/definitions/UpdateVersion'
+      $ref: "#/definitions/UpdateVersion"
   limit:
     name: limit
-    description: "Maximum number of items that will be returned. A value of zero will return zero items. The default value is 20, and the maximum limit allowed is 1000"
+    description: "Maximum number of items that will be returned. A value of zero will return zero items."
     in: query
     required: false
     type: integer
+    default: 20
+    minimum: 0
+    maximum: 1000
   offset:
     name: offset
     description: "Starting index of the items array that will be returned. By default it is zero, meaning that the returned items will start from the beginning."
     in: query
     required: false
     type: integer
+    default: 0
+    minimum: 0
   ids:
     name: id
     description: "List of ids, as comma separated values and/or as multiple query parameters with the same key (e.g. 'id=op1,op2&id=op3'). It defines the IDs that we want to retrieve. If provided, it takes precedence over offset and limit."
@@ -213,18 +202,13 @@ parameters:
     schema:
       $ref: "#/definitions/MetadataUpdate"
 securityDefinitions:
-  FlorenceAPIKey:
-    name: florence-token
-    description: "API key used to allow florence users to create and query the progress of importing a dataset"
-    in: header
-    type: apiKey
-  InternalAPIKey:
-    name: internal-token
-    description: "API key used to allow only internal services to update the state of an import job"
+  Authorization:
+    name: Authorization
+    description: "Access token provided by Auth Service in a Bearer format. Can be a human or service user token."
     in: header
     type: apiKey
   DownloadServiceAPIKey:
-    name: x-download-service-token
+    name: X-Download-Service-Token
     description: "API key used to allow the download service to access public and private links to a download"
     in: header
     type: apiKey
@@ -232,40 +216,52 @@ paths:
   /datasets:
     get:
       tags:
-      - "Public"
-      summary: "Get a list of datasets"
-      description: "Returns a list of all datasets provided by the ONS that can be filtered using the filter API"
-      parameters: 
-      - $ref: '#/parameters/is_based_on'
-      - $ref: '#/parameters/limit'
-      - $ref: '#/parameters/offset'
+        - "Public"
+      summary: "List datasets"
+      description: "Returns a list of all datasets available via the ONS APIs."
+      parameters:
+        - $ref: "#/parameters/is_based_on"
+        - $ref: "#/parameters/limit"
+        - $ref: "#/parameters/offset"
+      security:
+        - {}
+        - Authorization: []
       produces:
-      - "application/json"
+        - "application/json"
       responses:
         200:
           description: "A json list containing datasets which have been published"
           schema:
-            $ref: '#/definitions/Datasets'
+            $ref: "#/definitions/Datasets"
+          headers:
+            ETag:
+              description: The RFC7232 ETag header field the of the resource, where the resource is the response to the specific query paramaters. This is used for setting the `If-None-Match` headers on subsequent requests to check for changes.
+              type: string
+            Cache-Control:
+              description: The RFC9111 Cache-Control header field for the response which instructs how to handle caching the resource.
+              type: string
         400:
           description: "Parameter is_based_on was sent but no value was provided"
         404:
-          description: "No dataset was found with the popultation-type provided"
+          description: "No dataset was found with the population-type provided"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
     post:
       tags:
-      - "Private user"
+        - "Private"
       summary: "Create a new dataset"
       description: "Allows an authenticated and authorised user to create a new dataset. The dataset ID should be included in the request body."
       parameters:
-      - $ref: '#/parameters/new_dataset'
+        - $ref: "#/parameters/new_dataset"
+      security:
+        - Authorization: []
       produces:
-      - "application/json"
+        - "application/json"
       responses:
         201:
           description: "A JSON object containing the newly created dataset"
           schema:
-            $ref: '#/definitions/NewDatasetResponse'
+            $ref: "#/definitions/NewDatasetResponse"
         400:
           description: "Invalid request body"
         401:
@@ -273,26 +269,28 @@ paths:
         403:
           description: "Forbidden to overwrite dataset, dataset already exists"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
 
   /datasets/{id}:
     post:
       tags:
-      - "Private user"
+        - "Private"
       summary: "Create a dataset (deprecated)"
       description: |
         **Deprecated:** This endpoint is being replaced by `POST /datasets`. Please use `POST /datasets` and provide the dataset ID in the request body. This endpoint may be removed in a future release.
       deprecated: true
       parameters:
-      - $ref: '#/parameters/id'
-      - $ref: '#/parameters/new_dataset'
+        - $ref: "#/parameters/dataset_id"
+        - $ref: "#/parameters/new_dataset"
+      security:
+        - Authorization: []
       produces:
-      - "application/json"
+        - "application/json"
       responses:
         201:
           description: "A json object containing a dataset which has been created"
           schema:
-            $ref: '#/definitions/NewDatasetResponse'
+            $ref: "#/definitions/NewDatasetResponse"
         400:
           description: "Invalid request body"
         401:
@@ -300,31 +298,43 @@ paths:
         403:
           description: "Forbidden to overwrite dataset, already published"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
     get:
       tags:
-      - "Public"
+        - "Public"
       summary: "Get a dataset"
       description: "The dataset contains all high level information, for additional details see editions or versions of a dataset. "
       parameters:
-      - $ref: '#/parameters/id'
+        - $ref: "#/parameters/dataset_id"
+      security:
+        - {}
+        - Authorization: []
       responses:
         200:
           description: "A json object for a single Dataset"
           schema:
-            $ref: '#/definitions/DatasetResponse'
+            $ref: "#/definitions/Dataset"
+          headers:
+            ETag:
+              description: The RFC7232 ETag header field. Defines the unique entity tag for the current state of the resource. This is used for setting the `If-Match` and `If-None-Match` headers on subsequent requests.
+              type: string
+            Cache-Control:
+              description: The RFC9111 Cache-Control header field for the response which instructs how to handle caching the resource.
+              type: string
         404:
           description: "No dataset was found using the id provided"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
     put:
       tags:
-      - "Private user"
+        - "Private"
       summary: "Update a dataset"
       description: "Update the metadata for the next release of the dataset. The dataset contains all high level information, for additional details see editions or versions of a dataset."
       parameters:
-      - $ref: '#/parameters/id'
-      - $ref: '#/parameters/update_dataset'
+        - $ref: "#/parameters/dataset_id"
+        - $ref: "#/parameters/update_dataset"
+      security:
+        - Authorization: []
       responses:
         200:
           description: "A json object for a single Dataset"
@@ -335,14 +345,16 @@ paths:
         404:
           description: "No dataset was found using the id provided"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
     delete:
       tags:
-      - "Private user"
+        - "Private"
       summary: "Delete a dataset"
       description: "Delete an existing dataset"
       parameters:
-      - $ref: '#/parameters/id'
+        - $ref: "#/parameters/dataset_id"
+      security:
+        - Authorization: []
       responses:
         204:
           description: "The dataset was successfully deleted"
@@ -351,64 +363,96 @@ paths:
         403:
           description: "Forbidden to delete dataset, already published"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
   /datasets/{id}/editions:
     get:
       tags:
-      - "Public"
+        - "Public"
       summary: "Get a list of editions of a dataset"
-      description: "Get a list of editions of a type of dataset"
+      description: "Get a list of editions of a dataset. Each edition returns the latest version of that edition."
       parameters:
-      - $ref: '#/parameters/id'
-      - $ref: '#/parameters/limit'
-      - $ref: '#/parameters/offset'
+        - $ref: "#/parameters/dataset_id"
+        - $ref: "#/parameters/limit"
+        - $ref: "#/parameters/offset"
+      security:
+        - {}
+        - Authorization: []
       responses:
         200:
           description: "A json list containing all editions for a dataset"
           schema:
-            $ref: '#/definitions/Editions'
+            $ref: "#/definitions/Editions"
+          headers:
+            ETag:
+              description: The RFC7232 ETag header field the of the resource, where the resource is the response to the specific query paramaters. This is used for setting the `If-None-Match` headers on subsequent requests to check for changes.
+              type: string
+            Cache-Control:
+              description: The RFC9111 Cache-Control header field for the response which instructs how to handle caching the resource.
+              type: string
         400:
           description: "Invalid request, dataset id was incorrect"
         404:
           description: "No editions were found for the id provided"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
   /datasets/{id}/editions/{edition}:
     get:
       tags:
-      - "Public"
+        - "Public"
       summary: "Get an edition of a dataset"
-      description: "The edition contains a link to all versions"
+      description: "Get the latest version of a dataset edition."
       parameters:
-      - $ref: '#/parameters/edition'
-      - $ref: '#/parameters/id'
+        - $ref: "#/parameters/edition"
+        - $ref: "#/parameters/dataset_id"
+      security:
+        - {}
+        - Authorization: []
       responses:
         200:
-          description: "A json object containing an edition"
+          description: "A json object containing the latest version of the edition"
           schema:
-            $ref: '#/definitions/Edition'
+            $ref: "#/definitions/Version"
+          headers:
+            ETag:
+              description: The RFC7232 ETag header field. Defines the unique entity tag for the current state of the resource. This is used for setting the `If-Match` and `If-None-Match` headers on subsequent requests.
+              type: string
+            Cache-Control:
+              description: The RFC9111 Cache-Control header field for the response which instructs how to handle caching the resource.
+              type: string
         400:
           description: "Invalid request, dataset id was incorrect"
         404:
           description: "No edition of a dataset was found using the id and edition provided"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
   /datasets/{id}/editions/{edition}/versions:
     get:
       tags:
-      - "Public"
-      summary: "Get a list of versions of an edition"
-      description: "Get a list of all versions for an edition of a dataset"
+        - "Public"
+      summary: "List the edition's version history"
+      description: "Get a list of all versions for a dataset edition."
       parameters:
-      - $ref: '#/parameters/edition'
-      - $ref: '#/parameters/id'
-      - $ref: '#/parameters/limit'
-      - $ref: '#/parameters/offset'
+        - $ref: "#/parameters/edition"
+        - $ref: "#/parameters/dataset_id"
+        - $ref: "#/parameters/limit"
+        - $ref: "#/parameters/offset"
+      security:
+        - {}
+        - Authorization: []
+        - Authorization: []
+          DownloadServiceAPIKey: []
       responses:
         200:
           description: "A json list containing all versions for a set type of dataset and edition"
           schema:
-            $ref: '#/definitions/Versions'
+            $ref: "#/definitions/Versions"
+          headers:
+            ETag:
+              description: The RFC7232 ETag header field the of the resource, where the resource is the response to the specific query paramaters. This is used for setting the `If-None-Match` headers on subsequent requests to check for changes.
+              type: string
+            Cache-Control:
+              description: The RFC9111 Cache-Control header field for the response which instructs how to handle caching the resource.
+              type: string
         400:
           description: |
             Invalid request, reasons can be one of the following:
@@ -417,21 +461,24 @@ paths:
         404:
           description: "No versions found using the id and edition provided"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
     post:
       tags:
-      - "Private user"
+        - "Private"
       summary: "Create a version"
       description: "Create a version for a dataset series.  This will set the state of the version and dataset series to be associated."
       parameters:
-        - $ref: '#/parameters/id'
-        - $ref: '#/parameters/edition'
-        - $ref: '#/parameters/new_version'
+        - $ref: "#/parameters/dataset_id"
+        - $ref: "#/parameters/edition"
+        - $ref: "#/parameters/new_version"
+      security:
+        - {}
+        - Authorization: []
       responses:
         201:
           description: "A json object containing a version"
           schema:
-            $ref: '#/definitions/NewVersionResponse'
+            $ref: "#/definitions/NewVersionResponse"
         400:
           description: |
             Invalid request, reasons can be one of the following:
@@ -443,23 +490,27 @@ paths:
         404:
           description: "Dataset series was not found for a dataset using the id and edition provided"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
   /datasets/{id}/editions/{edition}/versions/{version}:
     put:
       tags:
-      - "Private user"
+        - "Private"
       summary: "Update a version"
       description: "Update a version for an edition of a dataset, if the state is changed to associated or published, the parent documents(dataset and edition resources) will also be updated. A version can only be updated if the state is not published"
       parameters:
-      - $ref: '#/parameters/id'
-      - $ref: '#/parameters/edition'
-      - $ref: '#/parameters/version'
-      - $ref: '#/parameters/version_update'
+        - $ref: "#/parameters/dataset_id"
+        - $ref: "#/parameters/edition"
+        - $ref: "#/parameters/version"
+        - $ref: "#/parameters/version_update"
+      security:
+        - Authorization: []
+        - Authorization: []
+          DownloadServiceAPIKey: []
       responses:
         201:
           description: "A json object containing a version"
           schema:
-            $ref: '#/definitions/NewVersionResponse'
+            $ref: "#/definitions/NewVersionResponse"
         400:
           description: |
             Invalid request, reasons can be one of the following:
@@ -473,25 +524,31 @@ paths:
         404:
           description: "Version was not found for a dataset using the id and edition provided"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
     get:
       tags:
-      - "Public"
-      summary: "Get a version"
+        - "Public"
+      summary: "Get a specific version"
       description: "Get a specific version of an edition of a dataset"
       parameters:
-      - $ref: '#/parameters/edition'
-      - $ref: '#/parameters/id'
-      - $ref: '#/parameters/version'
+        - $ref: "#/parameters/edition"
+        - $ref: "#/parameters/dataset_id"
+        - $ref: "#/parameters/version"
+      security:
+        - {}
+        - Authorization: []
       responses:
         200:
           description: "A json object containing the edition and version of a dataset"
           schema:
-            $ref: '#/definitions/Version'
+            $ref: "#/definitions/Version"
           headers:
             ETag:
+              description: The RFC7232 ETag header field. Defines the unique entity tag for the current state of the resource. This is used for setting the `If-Match` and `If-None-Match` headers on subsequent requests.
               type: string
-              description: "Defines the unique etag for this resource"
+            Cache-Control:
+              description: The RFC9111 Cache-Control header field for the response which instructs how to handle caching the resource.
+              type: string
         400:
           description: |
             Invalid request, reasons can be one of the following:
@@ -500,23 +557,23 @@ paths:
         404:
           description: "No version was found for an edition of a dataset using the id, edition and version provided"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
     delete:
       tags:
-      - "Private"
+        - "Private"
       summary: "Delete a version"
       description: "detaches a version from a collection. Effectively a soft delete."
       parameters:
-      - $ref: '#/parameters/edition'
-      - $ref: '#/parameters/id'
-      - $ref: '#/parameters/version'
+        - $ref: "#/parameters/edition"
+        - $ref: "#/parameters/dataset_id"
+        - $ref: "#/parameters/version"
       security:
-            - InternalAPIKey: []
+        - Authorization: []
       responses:
         200:
           description: "A json object containing the edition and version of a dataset"
           schema:
-            $ref: '#/definitions/Version'
+            $ref: "#/definitions/Version"
         400:
           description: |
             Invalid request, reasons can be one of the following:
@@ -527,24 +584,34 @@ paths:
         404:
           description: "No version was found for an edition of a dataset using the id, edition and version provided"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
   /datasets/{id}/editions/{edition}/versions/{version}/dimensions:
     get:
       tags:
-      - "Public"
-      summary: "Get a list of dimensions from a dataset"
+        - "Public"
+      summary: "Get a list of dimensions from a dataset (filterable and cantabular datasets only)"
       description: "Get all dimensions which are used in the dataset"
       parameters:
-      - $ref: '#/parameters/edition'
-      - $ref: '#/parameters/id'
-      - $ref: '#/parameters/version'
-      - $ref: '#/parameters/limit'
-      - $ref: '#/parameters/offset'
+        - $ref: "#/parameters/edition"
+        - $ref: "#/parameters/dataset_id"
+        - $ref: "#/parameters/version"
+        - $ref: "#/parameters/limit"
+        - $ref: "#/parameters/offset"
+      security:
+        - {}
+        - Authorization: []
       responses:
         200:
           description: "A json list of dimensions"
           schema:
-            $ref: '#/definitions/Dimensions'
+            $ref: "#/definitions/Dimensions"
+          headers:
+            ETag:
+              description: The RFC7232 ETag header field the of the resource, where the resource is the response to the specific query paramaters. This is used for setting the `If-None-Match` headers on subsequent requests to check for changes.
+              type: string
+            Cache-Control:
+              description: The RFC9111 Cache-Control header field for the response which instructs how to handle caching the resource.
+              type: string
         400:
           description: |
             Invalid request, reasons can be one of the following:
@@ -554,26 +621,36 @@ paths:
         404:
           description: "No dimensions found for version of an edition of a dataset using the id, edition and version provided"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
   /datasets/{id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options:
     get:
       tags:
-      - "Public"
-      summary: "Get a list of options from a dimension"
+        - "Public"
+      summary: "Get a list of options from a dimension (filterable and cantabular datasets only)"
       description: "Get a list of options which appear in this dimension and dataset. By default all options are returned, but a subset can be requested by providing offset and limit query parameters, or by providing the list of option IDs, only the IDs that are found will be returned."
       parameters:
-      - $ref: '#/parameters/dimension'
-      - $ref: '#/parameters/edition'
-      - $ref: '#/parameters/id'
-      - $ref: '#/parameters/version'
-      - $ref: '#/parameters/limit'
-      - $ref: '#/parameters/offset'
-      - $ref: '#/parameters/ids'
+        - $ref: "#/parameters/dimension"
+        - $ref: "#/parameters/edition"
+        - $ref: "#/parameters/dataset_id"
+        - $ref: "#/parameters/version"
+        - $ref: "#/parameters/limit"
+        - $ref: "#/parameters/offset"
+        - $ref: "#/parameters/ids"
+      security:
+        - {}
+        - Authorization: []
       responses:
         200:
           description: "Json object containing all options for a dimension"
           schema:
-            $ref: '#/definitions/DimensionOptions'
+            $ref: "#/definitions/DimensionOptions"
+          headers:
+            ETag:
+              description: The RFC7232 ETag header field the of the resource, where the resource is the response to the specific query paramaters. This is used for setting the `If-None-Match` headers on subsequent requests to check for changes.
+              type: string
+            Cache-Control:
+              description: The RFC9111 Cache-Control header field for the response which instructs how to handle caching the resource.
+              type: string
         400:
           description: |
             Invalid request, reasons can be one of the following:
@@ -586,22 +663,32 @@ paths:
         404:
           description: "No dimension options were found for dimension"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
   /datasets/{id}/editions/{edition}/versions/{version}/metadata:
     get:
       tags:
-      - "Public"
+        - "Public"
       summary: "Get metadata for a version"
       description: "Get all metadata relevant to a version"
       parameters:
-      - $ref: '#/parameters/edition'
-      - $ref: '#/parameters/id'
-      - $ref: '#/parameters/version'
+        - $ref: "#/parameters/edition"
+        - $ref: "#/parameters/dataset_id"
+        - $ref: "#/parameters/version"
+      security:
+        - {}
+        - Authorization: []
       responses:
         200:
           description: "Json object containing all metadata for a version"
           schema:
-            $ref: '#/definitions/Metadata'
+            $ref: "#/definitions/Metadata"
+          headers:
+            ETag:
+              description: The RFC7232 ETag header field. Defines the unique entity tag for the current state of the resource. This is used for setting the `If-Match` and `If-None-Match` headers on subsequent requests.
+              type: string
+            Cache-Control:
+              description: The RFC9111 Cache-Control header field for the response which instructs how to handle caching the resource.
+              type: string
         400:
           description: |
             Invalid request, reasons can be one of the following:
@@ -610,18 +697,20 @@ paths:
         404:
           description: "Version not found"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
     put:
       tags:
-      - "Private"
+        - "Private"
       summary: "Update metadata for a dataset and a version"
       description: "Update metadata for a dataset and a version. The editable metadata can be updated only if both the dataset and the version have a state of associated"
       parameters:
-      - $ref: '#/parameters/id'
-      - $ref: '#/parameters/edition'
-      - $ref: '#/parameters/version'
-      - $ref: '#/parameters/if_match'
-      - $ref: '#/parameters/metadata_update'
+        - $ref: "#/parameters/dataset_id"
+        - $ref: "#/parameters/edition"
+        - $ref: "#/parameters/version"
+        - $ref: "#/parameters/if_match"
+        - $ref: "#/parameters/metadata_update"
+      security:
+        - Authorization: []
       responses:
         200:
           description: "The editable metadata has been updated"
@@ -639,139 +728,115 @@ paths:
         409:
           description: "Instance does not match the expected eTag"
         500:
-          $ref: '#/responses/InternalError'
-  /datasets/{id}/editions/{edition}/versions/{version}/observations:
-    get:
-      tags:
-      - "Public"
-      summary: "Get specific observations"
-      description: "Get observations from a version of the dataset. By providing
-      a single option for each dimension, a single observation will be returned.
-      A wildcard (*) can be provided for one dimension, to retrieve a list of
-      observations."
-      parameters:
-        - $ref: '#/parameters/edition'
-        - $ref: '#/parameters/id'
-        - $ref: '#/parameters/version'
-        - $ref: '#/parameters/dimension_options'
-      responses:
-        200:
-          description: "Json object containing all metadata for a version"
-          schema:
-            $ref: '#/definitions/ObservationsEndpoint'
-        400:
-          description: |
-            Invalid request, reasons can be one of the following:
-              * query parameters missing expected dimensions
-              * query parameters contain incorrect dimensions
-              * too many query parameters are set to wildcard (*) value; only one query parameter can be equal to *
-        404:
-          description: |
-            Resource not found, reasons can be one of the following:
-              * dataset id was incorrect
-              * edition was incorrect
-              * version was incorrect
-              * observations not found for selected query paramaters
-        500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
   /instances:
     get:
       tags:
-      - "Private user"
+        - "Private"
       summary: "Get instances"
       description: "Get a list of instances which has been paged"
       parameters:
-        - $ref: '#/parameters/state'
-        - $ref: '#/parameters/dataset'
-        - $ref: '#/parameters/limit'
-        - $ref: '#/parameters/offset'
+        - $ref: "#/parameters/state"
+        - $ref: "#/parameters/dataset"
+        - $ref: "#/parameters/limit"
+        - $ref: "#/parameters/offset"
       produces:
-      - "application/json"
+        - "application/json"
       security:
-      - FlorenceAPIKey: []
+        - Authorization: []
       responses:
         200:
           description: "Return a list of instance state"
           schema:
-            $ref: '#/definitions/Instances'
+            $ref: "#/definitions/Instances"
+          headers:
+            ETag:
+              description: The RFC7232 ETag header field. Defines the unique entity tag for the current state of the resource. This is used for setting the `If-Match` and `If-None-Match` headers on subsequent requests.
+              type: string
+            Cache-Control:
+              description: The RFC9111 Cache-Control header field for the response which instructs how to handle caching the resource.
+              type: string
         400:
-          $ref: '#/responses/InvalidRequestError'
+          $ref: "#/responses/InvalidRequestError"
         401:
-          $ref: '#/responses/UnauthorisedError'
+          $ref: "#/responses/UnauthorisedError"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
     post:
       tags:
-      - "Private"
+        - "Private"
       summary: "Create an instance"
-      description:  |
+      description: |
         Create an instance which will be imported. To create an instance an import job id and href is required. This is to allow a link back to the import job
       parameters:
-      - $ref: '#/parameters/newInstance'
+        - $ref: "#/parameters/newInstance"
       produces:
-      - "application/json"
+        - "application/json"
       security:
-      - InternalAPIKey: []
+        - Authorization: []
       responses:
         201:
           description: "Successfully created instance"
           schema:
-            $ref: '#/definitions/NewInstance'
+            $ref: "#/definitions/NewInstance"
           headers:
             ETag:
               type: string
               description: "Defines a unique instance resource version"
         400:
-          $ref: '#/responses/InvalidRequestError'
+          $ref: "#/responses/InvalidRequestError"
         401:
-          $ref: '#/responses/UnauthorisedError'
+          $ref: "#/responses/UnauthorisedError"
         403:
-          $ref: '#/responses/ForbiddenError'
+          $ref: "#/responses/ForbiddenError"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
   /instances/{instance_id}:
     get:
       tags:
-      - "Private user"
+        - "Private"
       summary: "Get an instance"
       description: "Get the current state of an instance, this includes all events which have happened."
       parameters:
-      - $ref: '#/parameters/instance_id'
-      - $ref: '#/parameters/if_match'
+        - $ref: "#/parameters/instance_id"
+        - $ref: "#/parameters/if_match"
       produces:
-      - "application/json"
+        - "application/json"
       security:
-      - FlorenceAPIKey: []
+        - Authorization: []
       responses:
         200:
           description: "Return a single instance state"
           schema:
-            $ref: '#/definitions/Instance'
+            $ref: "#/definitions/Instance"
           headers:
             ETag:
+              description: The RFC7232 ETag header field. Defines the unique entity tag for the current state of the resource. This is used for setting the `If-Match` and `If-None-Match` headers on subsequent requests.
               type: string
-              description: "Defines a unique instance resource version"
+            Cache-Control:
+              description: The RFC9111 Cache-Control header field for the response which instructs how to handle caching the resource.
+              type: string
         401:
-          $ref: '#/responses/UnauthorisedError'
+          $ref: "#/responses/UnauthorisedError"
         404:
-          $ref: '#/responses/InstanceNotFound'
+          $ref: "#/responses/InstanceNotFound"
         409:
-          $ref: '#/responses/ConflictError'
+          $ref: "#/responses/ConflictError"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
     put:
       tags:
-      - "Private"
+        - "Private"
       summary: "Update an instance"
       description: "Update an instance by providing an unique id and a set of properties to over write"
       parameters:
-      - $ref: '#/parameters/instance_id'
-      - $ref: '#/parameters/instance'
-      - $ref: '#/parameters/if_match'
+        - $ref: "#/parameters/instance_id"
+        - $ref: "#/parameters/instance"
+        - $ref: "#/parameters/if_match"
       produces:
-      - "application/json"
+        - "application/json"
       security:
-      - InternalAPIKey: []
+        - Authorization: []
       responses:
         200:
           description: "The instance has been updated"
@@ -780,65 +845,68 @@ paths:
               type: string
               description: "Defines a unique instance resource version"
         400:
-          $ref: '#/responses/InvalidRequestError'
+          $ref: "#/responses/InvalidRequestError"
         401:
-          $ref: '#/responses/UnauthorisedError'
+          $ref: "#/responses/UnauthorisedError"
         403:
-          $ref: '#/responses/ForbiddenError'
+          $ref: "#/responses/ForbiddenError"
         404:
-          $ref: '#/responses/InstanceNotFound'
+          $ref: "#/responses/InstanceNotFound"
         409:
-          $ref: '#/responses/ConflictError'
+          $ref: "#/responses/ConflictError"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
   /instances/{instance_id}/dimensions:
     get:
       tags:
-      - "Private user"
+        - "Private"
       summary: "Get a list of dimensions for an instance"
       description: "Get all dimensions from an instance"
       parameters:
-      - $ref: '#/parameters/instance_id'
-      - $ref: '#/parameters/if_match'
+        - $ref: "#/parameters/instance_id"
+        - $ref: "#/parameters/if_match"
       produces:
-      - "application/json"
+        - "application/json"
       security:
-      - InternalAPIKey: []
+        - Authorization: []
       responses:
         200:
           description: "Return a list of dimensions"
           schema:
             type: array
             items:
-              $ref: '#/definitions/DimensionOption'
+              $ref: "#/definitions/DimensionOption"
           headers:
             ETag:
+              description: The RFC7232 ETag header field. Defines the unique entity tag for the current state of the resource. This is used for setting the `If-Match` and `If-None-Match` headers on subsequent requests.
               type: string
-              description: "Defines a unique instance resource version"
+            Cache-Control:
+              description: The RFC9111 Cache-Control header field for the response which instructs how to handle caching the resource.
+              type: string
         400:
-          $ref: '#/responses/InvalidRequestError'
+          $ref: "#/responses/InvalidRequestError"
         401:
-          $ref: '#/responses/UnauthorisedError'
+          $ref: "#/responses/UnauthorisedError"
         403:
-          $ref: '#/responses/ForbiddenError'
+          $ref: "#/responses/ForbiddenError"
         404:
-          $ref: '#/responses/InstanceNotFound'
+          $ref: "#/responses/InstanceNotFound"
         409:
-          $ref: '#/responses/ConflictError'
+          $ref: "#/responses/ConflictError"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
     post:
       deprecated: true
       tags:
-      - "Private"
+        - "Private"
       summary: "Create a dimension"
       description: "Create a new dimension which is related to an instance"
       parameters:
-      - $ref: '#/parameters/instance_id'
-      - $ref: '#/parameters/update_dimension_option_request'
-      - $ref: '#/parameters/if_match'
+        - $ref: "#/parameters/instance_id"
+        - $ref: "#/parameters/update_dimension_option_request"
+        - $ref: "#/parameters/if_match"
       security:
-      - InternalAPIKey: []
+        - Authorization: []
       responses:
         201:
           description: "Dimension was created"
@@ -847,57 +915,57 @@ paths:
               type: string
               description: "Defines a unique instance resource version"
         400:
-          $ref: '#/responses/InvalidRequestError'
+          $ref: "#/responses/InvalidRequestError"
         404:
-          $ref: '#/responses/InstanceNotFound'
+          $ref: "#/responses/InstanceNotFound"
         409:
-          $ref: '#/responses/ConflictError'
+          $ref: "#/responses/ConflictError"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
     patch:
       tags:
-      - "Private"
+        - "Private"
       summary: "Create one or more dimensions"
       description: "Create one or more dimensions which are related to an instance"
       parameters:
-      - $ref: '#/parameters/instance_id'
-      - $ref: '#/parameters/patch_dimensions'
-      - $ref: '#/parameters/if_match'
+        - $ref: "#/parameters/instance_id"
+        - $ref: "#/parameters/patch_dimensions"
+        - $ref: "#/parameters/if_match"
       produces:
-      - "application/json-patch+json"
+        - "application/json-patch+json"
       security:
-      - InternalAPIKey: []
+        - Authorization: []
       responses:
         200:
           description: "All dimensions were successfully created"
           schema:
-            $ref: '#/definitions/PatchDimensions'
+            $ref: "#/definitions/PatchDimensions"
           headers:
             ETag:
               type: string
               description: "Defines a unique instance resource version"
         400:
-          $ref: '#/responses/InvalidRequestError'
+          $ref: "#/responses/InvalidRequestError"
         404:
-          $ref: '#/responses/InstanceNotFound'
+          $ref: "#/responses/InstanceNotFound"
         409:
-          $ref: '#/responses/ConflictError'
+          $ref: "#/responses/ConflictError"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
 
   /instances/{instance_id}/dimensions/{dimension}:
     put:
       tags:
-      - "Private user"
+        - "Private"
       summary: "Update dimension"
       description: "Update the label and/or description of a dimension within an instance, by providing dimension name and properties to over write"
       parameters:
-      - $ref: '#/parameters/instance_id'
-      - $ref: '#/parameters/dimension'
-      - $ref: '#/parameters/update_dimension'
-      - $ref: '#/parameters/if_match'
+        - $ref: "#/parameters/instance_id"
+        - $ref: "#/parameters/dimension"
+        - $ref: "#/parameters/update_dimension"
+        - $ref: "#/parameters/if_match"
       security:
-      - InternalAPIKey: []
+        - Authorization: []
       responses:
         200:
           description: "The instance has been updated"
@@ -906,31 +974,31 @@ paths:
               type: string
               description: "Defines a unique instance resource version"
         400:
-          $ref: '#/responses/InvalidRequestError'
+          $ref: "#/responses/InvalidRequestError"
         401:
-          $ref: '#/responses/UnauthorisedError'
+          $ref: "#/responses/UnauthorisedError"
         403:
-          $ref: '#/responses/ForbiddenError'
+          $ref: "#/responses/ForbiddenError"
         404:
-          $ref: '#/responses/InstanceNotFound'
+          $ref: "#/responses/InstanceNotFound"
         409:
-          $ref: '#/responses/ConflictError'
+          $ref: "#/responses/ConflictError"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
   /instances/{instance_id}/dimensions/{dimension}/options:
     get:
       tags:
-      - "Private user"
+        - "Private"
       summary: "Get a list of options for a dimension"
       description: "Get all unique options from a dimension"
       parameters:
-      - $ref: '#/parameters/instance_id'
-      - $ref: '#/parameters/dimension'
-      - $ref: '#/parameters/if_match'
+        - $ref: "#/parameters/instance_id"
+        - $ref: "#/parameters/dimension"
+        - $ref: "#/parameters/if_match"
       produces:
-      - "application/json"
+        - "application/json"
       security:
-      - InternalAPIKey: []
+        - Authorization: []
       responses:
         200:
           description: "Return a list of unique options"
@@ -947,35 +1015,38 @@ paths:
                   type: string
           headers:
             ETag:
+              description: The RFC7232 ETag header field. Defines the unique entity tag for the current state of the resource. This is used for setting the `If-Match` and `If-None-Match` headers on subsequent requests.
               type: string
-              description: "Defines a unique instance resource version"
+            Cache-Control:
+              description: The RFC9111 Cache-Control header field for the response which instructs how to handle caching the resource.
+              type: string
         400:
-          $ref: '#/responses/InvalidRequestError'
+          $ref: "#/responses/InvalidRequestError"
         401:
-          $ref: '#/responses/UnauthorisedError'
+          $ref: "#/responses/UnauthorisedError"
         403:
-          $ref: '#/responses/ForbiddenError'
+          $ref: "#/responses/ForbiddenError"
         404:
           description: "dimension does not match any dimensions within the instance"
         409:
-          $ref: '#/responses/ConflictError'
+          $ref: "#/responses/ConflictError"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
   /instances/{instance_id}/events:
     post:
       tags:
-       - "Private"
+        - "Private"
       summary: "Add an event to an instance"
       description: |
         Add a new event into an instance. Events can be for information or error messages.
         Each event must contain a type of event (Info or Error), a message to explain
         the event, time of the event and finally the message offset in kafka
       parameters:
-      - $ref: '#/parameters/instance_id'
-      - $ref: '#/parameters/event'
-      - $ref: '#/parameters/if_match'
+        - $ref: "#/parameters/instance_id"
+        - $ref: "#/parameters/event"
+        - $ref: "#/parameters/if_match"
       security:
-      - InternalAPIKey: []
+        - Authorization: []
       responses:
         201:
           description: "The event was added to the instance"
@@ -984,27 +1055,27 @@ paths:
               type: string
               description: "Defines a unique instance resource version"
         400:
-          $ref: '#/responses/InvalidRequestError'
+          $ref: "#/responses/InvalidRequestError"
         401:
-          $ref: '#/responses/UnauthorisedError'
+          $ref: "#/responses/UnauthorisedError"
         404:
           description: "InstanceId does not match any instances"
         409:
-          $ref: '#/responses/ConflictError'
+          $ref: "#/responses/ConflictError"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
   /instances/{instance_id}/inserted_observations/{inserted_observations}:
     put:
       tags:
-      - "Private"
+        - "Private"
       summary: "Increment the inserted observation count"
       description: "This will add to the number already store in the api"
       parameters:
-      - $ref: '#/parameters/instance_id'
-      - $ref: '#/parameters/inserted_observations'
-      - $ref: '#/parameters/if_match'
+        - $ref: "#/parameters/instance_id"
+        - $ref: "#/parameters/inserted_observations"
+        - $ref: "#/parameters/if_match"
       security:
-      - InternalAPIKey: []
+        - Authorization: []
       responses:
         200:
           description: "Added value to inserted observation"
@@ -1013,27 +1084,27 @@ paths:
               type: string
               description: "Defines a unique instance resource version"
         400:
-          $ref: '#/responses/InvalidRequestError'
+          $ref: "#/responses/InvalidRequestError"
         401:
-          $ref: '#/responses/UnauthorisedError'
+          $ref: "#/responses/UnauthorisedError"
         404:
           description: "InstanceId does not match any instances"
         409:
-          $ref: '#/responses/ConflictError'
+          $ref: "#/responses/ConflictError"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
   /instances/{instance_id}/import_tasks:
     put:
       tags:
-      - "Private"
+        - "Private"
       summary: "Update import tasks for an instance"
       description: "The instance import process involves multiple tasks. This endpoint updates the state of an import task."
       parameters:
-      - $ref: '#/parameters/instance_id'
-      - $ref: '#/parameters/import_tasks'
-      - $ref: '#/parameters/if_match'
+        - $ref: "#/parameters/instance_id"
+        - $ref: "#/parameters/import_tasks"
+        - $ref: "#/parameters/if_match"
       security:
-      - InternalAPIKey: []
+        - Authorization: []
       responses:
         200:
           description: "Updated the state of the import task"
@@ -1042,71 +1113,71 @@ paths:
               type: string
               description: "Defines a unique instance resource version"
         400:
-          $ref: '#/responses/InvalidRequestError'
+          $ref: "#/responses/InvalidRequestError"
         401:
-          $ref: '#/responses/UnauthorisedError'
+          $ref: "#/responses/UnauthorisedError"
         404:
           description: "InstanceId does not match any instances"
         409:
-          $ref: '#/responses/ConflictError'
+          $ref: "#/responses/ConflictError"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
   /instances/{instance_id}/dimensions/{dimension}/options/{option}:
     patch:
       tags:
-      - "Private"
+        - "Private"
       summary: "Modify a dimension option for an instance"
       description: |
         Modify a dimension option for an instance by setting values for node_id or order
       parameters:
-      - $ref: '#/parameters/instance_id'
-      - $ref: '#/parameters/dimension'
-      - $ref: '#/parameters/option'
-      - $ref: '#/parameters/patch_options'
-      - $ref: '#/parameters/if_match'
+        - $ref: "#/parameters/instance_id"
+        - $ref: "#/parameters/dimension"
+        - $ref: "#/parameters/option"
+        - $ref: "#/parameters/patch_options"
+        - $ref: "#/parameters/if_match"
       produces:
-      - "application/json-patch+json"
+        - "application/json-patch+json"
       security:
-      - InternalAPIKey: []
+        - Authorization: []
       responses:
         200:
           description: "The dimension option was modified and the successfully applied patch operations are returned"
           schema:
-            $ref: '#/definitions/PatchOptions'
+            $ref: "#/definitions/PatchOptions"
           headers:
             ETag:
               type: string
               description: "Defines a unique instance resource version"
         400:
-          $ref: '#/responses/InvalidRequestError'
+          $ref: "#/responses/InvalidRequestError"
         401:
-          $ref: '#/responses/UnauthorisedError'
+          $ref: "#/responses/UnauthorisedError"
         403:
-          $ref: '#/responses/ForbiddenError'
+          $ref: "#/responses/ForbiddenError"
         404:
           description: "InstanceId does not match any instances"
         409:
-          $ref: '#/responses/ConflictError'
+          $ref: "#/responses/ConflictError"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
   /instances/{instance_id}/dimensions/{dimension}/options/{option}/node_id/{node_id}:
     put:
       deprecated: true
       tags:
-      - "Private"
+        - "Private"
       summary: "Update a dimension with the node_id"
       description: |
         Update the dimension with a nodeId
       parameters:
-      - $ref: '#/parameters/instance_id'
-      - $ref: '#/parameters/dimension'
-      - $ref: '#/parameters/node_id'
-      - $ref: '#/parameters/option'
-      - $ref: '#/parameters/if_match'
+        - $ref: "#/parameters/instance_id"
+        - $ref: "#/parameters/dimension"
+        - $ref: "#/parameters/node_id"
+        - $ref: "#/parameters/option"
+        - $ref: "#/parameters/if_match"
       produces:
-      - "application/json"
+        - "application/json"
       security:
-      - InternalAPIKey: []
+        - Authorization: []
       responses:
         200:
           description: "Updated the dimension with the nodeId"
@@ -1115,17 +1186,17 @@ paths:
               type: string
               description: "Defines a unique instance resource version"
         400:
-          $ref: '#/responses/InvalidRequestError'
+          $ref: "#/responses/InvalidRequestError"
         401:
-          $ref: '#/responses/UnauthorisedError'
+          $ref: "#/responses/UnauthorisedError"
         403:
-          $ref: '#/responses/ForbiddenError'
+          $ref: "#/responses/ForbiddenError"
         404:
           description: "InstanceId does not match any instances"
         409:
-          $ref: '#/responses/ConflictError'
+          $ref: "#/responses/ConflictError"
         500:
-          $ref: '#/responses/InternalError'
+          $ref: "#/responses/InternalError"
 responses:
   ConflictError:
     description: "Failed to process the request due to a conflict"
@@ -1140,26 +1211,34 @@ responses:
   UnauthorisedError:
     description: "The token provided is unauthorised to carry out this operation"
 definitions:
-  AccessRightsLink:
-    type: object
-    properties:
-      href:
-        description: "A url to the standard Government access right text for the dataset"
-        type: string
   Alert:
-    description: "Important information relating to a version of a dataset"
+    description: "Important notice relating to a version of a dataset"
     type: object
+    required:
+      - date
+      - description
+      - type
     properties:
       date:
         description: "The date and time of publication of the version"
         type: string
+        format: date-time
       description:
         description: "Detail of what a user needs to be aware of for this dataset"
         type: string
+        example: "This is a description of the changes made as part of the correction or other important notice about this version."
       type:
-        description: "The type of alert"
-        example: "correction"
+        description: |
+          The type of alert.
+
+          Available types:
+            * `alert`: Important contextual information relevant to the interpretation of a specific version of the dataset.
+            * `correction`: A correction notice summarising the data changes made in the corrected as compared to the superseded version.
         type: string
+        enum:
+          - alert
+          - correction
+        example: "correction"
   Codelist:
     type: object
     properties:
@@ -1179,211 +1258,192 @@ definitions:
         description: "A human readable label for dimension"
         type: string
   CollectionID:
-    description: "The id of the unpublished collection (of datasets) that this dataset is associated with"
+    description: |
+      **Internal Only: This is an internal only field and is not present once a dataset is published.**
+
+      The id of the unpublished collection (of datasets) that this dataset is associated with."
     type: string
   Contact:
-    description: "A list of objects containing contact information for this dataset"
+    description: "Statistical point of contact for the dataset."
     type: object
+    required:
+      - name
+      - email
     properties:
       email:
-        description: "An email address to contact the statistician"
+        description: "Email address to contact the statistician or statistician group responsible for the dataset."
         type: string
+        example: "example@ons.gov.uk"
       name:
-        description: "The name of the statistician"
+        description: "The name of the statistician or statistician group contact point responsible for the dataset."
         type: string
+        example: "Expert Statistical Team"
       telephone:
-        description: "Telephone number to contact the statistician"
+        description: "Telephone number to contact the statistician or statistician group responsible for the dataset."
         type: string
+        example: "+44 1234 111111"
   Datasets:
     description: "A list of datasets"
     type: object
-    properties:
-      count:
-        description: "The number of datasets returned"
-        readOnly: true
-        type: integer
-      items:
-        type: array
-        items:
-          $ref: '#/definitions/DatasetResponse'
-      limit:
-        description: "The number of datasets requested"
-        type: integer
-      offset:
-        description: "The first row of datasets to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the limit parameter"
-        type: integer
-      total_count:
-        description: "The total number of datasets"
-        readOnly: true
-        type: integer
-  DatasetResponse:
-    description: "A model for the response body when getting a dataset"
     allOf:
-    - type: object
-      properties:
-        id:
-          description: "An unique id for a dataset"
-          example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
-          readOnly: true
-          type: string
-        type:
-          $ref: "#/definitions/Type"
-    - $ref: "#/definitions/Dataset"
+      - $ref: "#/definitions/PaginationFields"
+      - type: object
+        properties:
+          items:
+            type: array
+            items:
+              $ref: "#/definitions/Dataset"
   Dataset:
     description: "The dataset"
     type: object
-    required: ["id", "contacts", "description", "license", "links", "national_statistics", "title"]
+    required:
+      - id
+      - contacts
+      - description
+      - license
+      - title
+      - type
+      - topics
     properties:
       id:
-        description: "The unique id for the dataset"
+        description: "The unique dataset id."
+        example: "my-dataset"
         type: string
       canonical_topic:
-        description: "The canonical topic id for this dataset.  This indicates which topic this dataset belongs to within the website taxonomy. **Deprecated** this field is being deprecated and replaced by the `Themes` field."
+        description: |
+          **Deprecated:** This field has been deprecated and replaced by the `topics` field.
+
+          The canonical topic id for this dataset.  This indicates which topic this dataset belongs to within the topic taxonomy.
         type: string
+        example: "7779"
       collection_id:
-        $ref: '#/definitions/CollectionID'
+        $ref: "#/definitions/CollectionID"
       contacts:
-        description: "A list containing contact details of staticians for a dataset"
+        description: "A list containing contact details of statisticians for a dataset"
         type: array
+        minItems: 1
         items:
-          $ref: '#/definitions/Contact'
+          $ref: "#/definitions/Contact"
       description:
         description: "A description for a dataset"
         type: string
+        example: "This dataset contains some very interesting data about the UK."
       is_based_on:
-        $ref: '#/definitions/IsBasedOn'
+        $ref: "#/definitions/IsBasedOn"
       keywords:
         description: "A list of keywords for a dataset"
         type: array
         items:
           type: "string"
+          example: "Inflation"
+      last_updated:
+        $ref: "#/definitions/LastUpdated"
       license:
-        description: "The standard Government license right text for the dataset"
+        description: "The license the dataset is released under."
         type: string
+        default: "Open Government Licence v3.0"
       links:
-        $ref: '#/definitions/DatasetLinks'
+        readOnly: true
+        $ref: "#/definitions/DatasetLinks"
       methodologies:
-        description: "A list of methodologies for a dataset"
+        description: "A list of methodologies for the dataset."
         type: array
         items:
-          type: object
-          properties:
-            description:
-              description: "The description of a methodology"
-              type: string
-            href:
-              description: "The url to a methodology"
-              type: string
-            title:
-              description: "The title of a methodology"
-              type: string
+          $ref: "#/definitions/RelatedLink"
       national_statistic:
-        description: "The flag indicating the resource is a national statistic. These are certified as compliant with the Code of Practice for Official Statistics"
+        description: |
+          **Deprecated:** This field has been deprecated and replaced with the `quality_designation` field under at the edition level in order to correctly represent the three potential quality designations under the updated Code of Practice for Statistics.
+
+          The flag indicating the latest version of the dataset has `accredited` designation as granted under the Code of Practice for Statistics.
         type: boolean
       next_release:
-        description: "The next release date for a dataset"
-        type: string
+        $ref: "#/definitions/NextRelease"
       publications:
-        description: "A list of publications for a dataset"
+        description: "A list of publications related to this dataset."
         type: array
         items:
-          type: object
-          properties:
-            description:
-              description: "The description of a publication"
-              type: string
-            href:
-              description: "The url to a publication"
-              type: string
-            title:
-              description: "The title of a publication"
-              type: string
-      publisher:
-        $ref: '#/definitions/Publisher'
+          $ref: "#/definitions/RelatedLink"
+      publishers:
+        description: A list of the publishers for the dataset.
+        type: array
+        items:
+          $ref: "#/definitions/Publisher"
       qmi:
-        description: "Object containing information on the quality and methodology index of a dataset"
-        type: object
-        properties:
-          description:
-            description: "The description of a quality and methodology index"
-            type: string
-          href:
-            description: "The url to a quality and methodology index"
-            type: string
-          title:
-            description: "The title of a quality and methodology index"
-            type: string
+        $ref: "#/definitions/QMILink"
       related_datasets:
-        description: "A list of objects containing information of datasets related to a dataset"
+        description: "A list of other datasets related to this dataset."
         type: array
         items:
-          type: object
-          properties:
-            href:
-              description: "The url to a related dataset"
-              type: string
-            title:
-              description: "The title of a related dataset"
-              type: string
+          $ref: "#/definitions/RelatedLink"
       related_content:
-        description: "A list of objects containing information of content related to a dataset"
+        description: "A list of website content related to this dataset."
         type: array
         items:
-          type: object
-          properties:
-            href:
-              description: "The url to related content"
-              type: string
-            description:
-              description: "The description of the related content"
-              type: string
-            title:
-              description: "The title of the related content"
-              type: string
+          $ref: "#/definitions/RelatedLink"
       release_frequency:
         description: "The release frequency of a dataset"
         type: string
+        example: "Monthly"
       state:
-        $ref: '#/definitions/State'
+        $ref: "#/definitions/State"
       subtopics:
-        description: "A list of subtopic ids that the dataset relates to within the website taxonomy. **Deprecated** this field is being deprecated and replaced by the `Themes` field."
+        description: |
+          **Deprecated:** This field is being deprecated and replaced by the `topics` field.
+
+          A list of subtopic ids that the dataset relates to within the topic taxonomy.
         type: array
         items:
           type: "string"
+          example: "7755"
       survey:
         description: "The name of the survey the dataset was created from."
         type: string
-      theme:
-        description: "The theme for a dataset"
-        type: string
+        example: "census"
       title:
         description: "The title of the dataset"
-        example: "CPI"
+        example: "Consumer Prices Index"
         type: string
+      topics:
+        description: "A list of topic IDs that the dataset relates to within the topic taxonomy. This field consolidates the previously separate `canonical_topic` and `subtopics` fields."
+        type: array
+        minItems: 1
+        items:
+          type: "string"
+        example: ["7779", "7755"]
       type:
-        description: "The type of dataset"
-        example: "cantabular_flexible_table"
-        type: string
+        $ref: "#/definitions/DatasetType"
       unit_of_measure:
         description: "The unit of measure for the dataset observations"
         type: string
-      uri:
-        description: "The uri to the location of this resource on the web"
-        type: string
-      themes:
-        description: "A list of topics and subtopics that the dataset relates to within the website taxonomy. This field consolidates the previously separate `canonical_topic` and `subtopics` fields."
-        type: array
-        items:
-          type: "string"
-    
-
-  Type:
-    description: "The type for a dataset" 
+        example: "Number of people"
+  LastUpdated:
+    description: The date and time of the last update to the resource. For published resources this is the date and time the latest change was published.
     type: string
-    enum: [filterable]
-    default: "filterable"    
+    format: date-time
+    readOnly: true
+  NextRelease:
+    description: "The next release date for a dataset. This field is a free text field rather than a date-time format and may be a date range, to be confirmed or some other description."
+    type: string
+    example: "To be announced"
+  DatasetType:
+    description: |
+      The type of dataset as determined by the backing data store. Used to determine which functionality is available for a dataset.
+
+      Available types:
+        * `filterable`: Datasets provided by Customise My Data product providing ability to filter observations by specific dimension options.
+        * `cantabular_flexible_table`: Dataset derived from a `cantabular_blob` allowing the option to change the geography level and filter on specific areas.
+        * `cantabular_multivariate_table`: Dataset with multiple variables derived from a `cantabular_blob` allowing the option to customise the dataset by adding or removing dimensions as well as by changing the geography level and dimension categorisation.
+        * `static`: Datasets available as a flat file download without additional querying capabilities.
+    type: string
+    enum:
+      - filterable
+      - cantabular_flexible_table
+      - cantabular_multivariate_table
+      - static
+    default: "filterable"
+    example: "static"
   IsBasedOn:
-    description: "Information about the population-type that the dataset is based on (census 2021 only)" 
+    description: "Information about the population-type that the dataset is based on (census 2021 only)"
     type: object
     properties:
       id:
@@ -1430,9 +1490,9 @@ definitions:
                 description: "The unique id for the code list"
                 type: string
           options:
-            $ref: '#/definitions/OptionsLink'
+            $ref: "#/definitions/OptionsLink"
           version:
-            $ref: '#/definitions/VersionLink'
+            $ref: "#/definitions/VersionLink"
       number_of_options:
         description: "The number of options available for this dimension"
         type: integer
@@ -1440,49 +1500,27 @@ definitions:
         description: "The variable name (census datasets only)"
         type: string
   Dimensions:
+    description: "List of dimensions for a specific dataset version."
     type: object
-    properties:
-      count:
-        description: "The number of dimensions returned for a version from an edition of a dataset"
-        readOnly: true
-        type: integer
-      items:
-        description: "An array of dimensions"
-        type: array
-        items:
-          $ref: '#/definitions/Dimension'
-      limit:
-        description: "The number of dimensions requested for a version from an edition of a dataset"
-        type: integer
-      offset:
-        description: "The first row of dimension for a version from an edition of a dataset to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the limit parameter"
-        type: integer
-      total_count:
-        description: "The total number of dimensions against a version from an edition of a dataset"
-        readOnly: true
-        type: integer
+    allOf:
+      - $ref: "#/definitions/PaginationFields"
+      - type: object
+        properties:
+          items:
+            type: array
+            items:
+              $ref: "#/definitions/Dimension"
   DimensionOptions:
+    description: "A list of options for a specific dimension."
     type: object
-    properties:
-      count:
-        description: "The number of dimensions returned for a version from an edition of a dataset"
-        readOnly: true
-        type: integer
-      items:
-        description: "An array of dimension options"
-        type: array
-        items:
-          $ref: '#/definitions/DimensionOption'
-      limit:
-        description: "The number of dimensions requested for a version from an edition of a dataset"
-        type: integer
-      offset:
-        description: "The first row of dimension for a version from an edition of a dataset to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the limit parameter"
-        type: integer
-      total_count:
-        description: "The total number of dimensions against a version from an edition of a dataset"
-        readOnly: true
-        type: integer
+    allOf:
+      - $ref: "#/definitions/PaginationFields"
+      - type: object
+        properties:
+          items:
+            type: array
+            items:
+              $ref: "#/definitions/DimensionOption"
   DimensionOption:
     type: object
     properties:
@@ -1576,8 +1614,8 @@ definitions:
           example: "/-"
           enum: ["/-", "/{dimension}/options/{option}/order", "/{dimension}/options/{option}/node_id"]
         value:
-          description: "A list of dimenions that will be added to the instance."
-          example: "[{\"dimension\": \"dim1\", \"option\": \"op1\"}, {\"dimension\": \"dim1\", \"option\": \"op2\"}, {\"op\": \"add\", \"path\": \"/dim1/options/op1/order\", \"value\": 3}, {\"op\": \"add\", \"path\": \"/dim1/options/op2/node_id\", \"value\": \"node123\"}]"
+          description: "A list of dimensions that will be added to the instance."
+          example: '[{"dimension": "dim1", "option": "op1"}, {"dimension": "dim1", "option": "op2"}, {"op": "add", "path": "/dim1/options/op1/order", "value": 3}, {"op": "add", "path": "/dim1/options/op2/node_id", "value": "node123"}]'
   DownloadObject:
     description: "Object containing information of a downloadable file"
     type: object
@@ -1588,43 +1626,17 @@ definitions:
       size:
         description: "The size of the file in bytes"
         type: string
-  Edition:
-    type: object
-    properties:
-      edition:
-        description: "The edition of the dataset"
-        example: "2017"
-        readOnly: true
-        type: string
-      id:
-        description: "An unique id for a dataset edition"
-        readOnly: true
-        type: string
-      links:
-        $ref: '#/definitions/EditionLinks'
-      state:
-        $ref: '#/definitions/State'
   Editions:
+    description: "A list of editions of a dataset."
     type: object
-    properties:
-      count:
-        description: "The number of editions returned for a dataset"
-        readOnly: true
-        type: integer
-      items:
-        type: array
-        items:
-          $ref: '#/definitions/Edition'
-      limit:
-        description: "The number of editions requested for a dataset"
-        type: integer
-      offset:
-        description: "The first row of editions for a dataset to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the limit parameter"
-        type: integer
-      total_count:
-        description: "The total number of editions against a dataset"
-        readOnly: true
-        type: integer
+    allOf:
+      - $ref: "#/definitions/PaginationFields"
+      - type: object
+        properties:
+          items:
+            type: array
+            items:
+              $ref: "#/definitions/Version"
   Event:
     type: object
     properties:
@@ -1688,26 +1700,26 @@ definitions:
         readOnly: true
         type: array
         items:
-          $ref: '#/definitions/Alert'
+          $ref: "#/definitions/Alert"
       id:
         description: "A unique id for an instance"
         readOnly: true
         type: string
       collection_id:
-        $ref: '#/definitions/CollectionID'
+        $ref: "#/definitions/CollectionID"
       dimensions:
         description: "A list of codelists for each dimension of this instance"
         type: array
         items:
-          $ref: '#/definitions/Codelist'
+          $ref: "#/definitions/Codelist"
       downloads:
         description: "A selection of download objects containing information of downloadable files."
         type: object
         properties:
           csv:
-            $ref: '#/definitions/DownloadObject'
+            $ref: "#/definitions/DownloadObject"
           xls:
-            $ref: '#/definitions/DownloadObject'
+            $ref: "#/definitions/DownloadObject"
       edition:
         description: "The edition of the dataset version"
         type: string
@@ -1716,14 +1728,14 @@ definitions:
         readOnly: true
         type: array
         items:
-          $ref: '#/definitions/Event'
+          $ref: "#/definitions/Event"
       headers:
         description: "The header information from a V4 file"
         type: array
         items:
           type: string
       import_tasks:
-        $ref: '#/definitions/ImportTasks'
+        $ref: "#/definitions/ImportTasks"
       last_updated:
         description: "The last time an event happened"
         readOnly: true
@@ -1738,11 +1750,11 @@ definitions:
             properties:
               href:
                 description: "The URL for the dataset associated with this instance"
-                example: "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
+                example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset"
                 type: string
               id:
                 description: "The ID of the dataset associated with this instance"
-                example: "95c4669b-3ae9-4ba7-b690-87e890a1c67c"
+                example: "my-dataset"
                 type: string
           dimensions:
             description: "An object describing the URL for the dimensions which are associated with this instance"
@@ -1751,7 +1763,7 @@ definitions:
             properties:
               href:
                 description: "The URL for a list of dimensions associated with this instance"
-                example: "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2017/versions/1/dimensions"
+                example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/2017/versions/1/dimensions"
                 type: string
           edition:
             description: "An object describing the ID and URL for the dataset edition that is associated with this instance"
@@ -1760,7 +1772,7 @@ definitions:
             properties:
               href:
                 description: "The URL for the dataset edition associated with this instance"
-                example: "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c/editions/2017"
+                example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/2017"
                 type: string
               id:
                 description: "The ID for the dataset edition associated with this instance"
@@ -1773,7 +1785,7 @@ definitions:
             properties:
               href:
                 description: "The URL for the job containing this instance"
-                example: "http://localhost:21800/jobs/042e216a-7822-4fa0-a3d6-e3f5248ffc35"
+                example: "https://api.beta.ons.gov.uk/v1/jobs/042e216a-7822-4fa0-a3d6-e3f5248ffc35"
                 type: string
               id:
                 description: "The ID of the job containing this instance"
@@ -1786,7 +1798,7 @@ definitions:
             properties:
               href:
                 description: "The URL for this resource"
-                example: "http://localhost:22000/instances/45c4669b-3ae9-4ba7-b690-87e890a1c67f"
+                example: "https://api.beta.ons.gov.uk/v1/instances/45c4669b-3ae9-4ba7-b690-87e890a1c67f"
                 type: string
           spatial:
             description: "A link object describing the url to a list of geography ranges for the version of the dataset"
@@ -1802,19 +1814,20 @@ definitions:
             properties:
               href:
                 description: "The URL for the dataset version associated with this instance"
-                example: 'http://localhost:21800/dataset/042e216a-7822-4fa0-a3d6-e3f5248ffc35/edition/2017/version/1'
+                example: "https://api.beta.ons.gov.uk/v1/dataset/my-dataset/edition/2017/version/1"
                 type: string
               id:
                 description: "The ID of the dataset version associated with this instance"
-                example: "042e216a-7822-4fa0-a3d6-e3f5248ffc35"
+                example: "1"
                 type: string
       release_date:
         description: "The release date of this version of the dataset"
         type: string
+        format: date-time
       state:
-        $ref: '#/definitions/State'
+        $ref: "#/definitions/State"
       temporal:
-        $ref: '#/definitions/Temporal'
+        $ref: "#/definitions/Temporal"
       total_observations:
         description: "The number of observations in this instance"
         type: integer
@@ -1825,23 +1838,14 @@ definitions:
   Instances:
     description: "A list of instance resources, if query parameter state is set return all instances with that state"
     type: object
-    properties:
-      count:
-        description: "The number of instances returned"
-        type: integer
-      items:
-        type: array
-        items:
-          $ref: '#/definitions/Instance'
-      limit:
-        description: "The number of instances requested"
-        type: integer
-      offset:
-        description: "The first row of instances to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the limit parameter"
-        type: integer
-      total_count:
-        description: "The total number of instances"
-        type: integer
+    allOf:
+      - $ref: "#/definitions/PaginationFields"
+      - type: object
+        properties:
+          items:
+            type: array
+            items:
+              $ref: "#/definitions/Instance"
   LatestChange:
     description: "A single change between this version and the previous version of an edition for a dataset"
     type: object
@@ -1865,15 +1869,18 @@ definitions:
         description: "A list of alerts, for example corrections after the resource has been published"
         type: array
         items:
-          $ref: '#/definitions/Alert'
+          $ref: "#/definitions/Alert"
       canonical_topic:
-        description: "The canonical topic id for this dataset.  This indicates which topic this dataset belongs to within the website taxonomy. **Deprecated** this field is being deprecated and replaced by the `Themes` field."
+        description: |
+          **Deprecated:** This field has been deprecated and replaced by the `topics` field.
+
+          The canonical topic id for this dataset.  This indicates which topic this dataset belongs to within the topic taxonomy.
         type: string
       contacts:
-        description: "A list containing contact details of staticians for a dataset"
+        description: "A list containing contact details of statisticians for a dataset"
         type: array
         items:
-          $ref: '#/definitions/Contact'
+          $ref: "#/definitions/Contact"
       description:
         description: "A description for a dataset"
         type: string
@@ -1881,24 +1888,24 @@ definitions:
         description: "A list of codelists for each dimension of this version"
         type: array
         items:
-          $ref: '#/definitions/Dimension'
+          $ref: "#/definitions/Dimension"
       distribution:
         description: "A list of media types that the version data of an edition of a dataset can be accessed"
         type: array
         items:
           type: string
       downloads:
-        description: "A selection of download objects containing information of downloadable files."
+        description: A selection of download objects containing information of downloadable files."
         type: object
         properties:
           csv:
-            $ref: '#/definitions/DownloadObject'
+            $ref: "#/definitions/DownloadObject"
           csvw:
-            $ref: '#/definitions/DownloadObject'
+            $ref: "#/definitions/DownloadObject"
           txt:
-            $ref: '#/definitions/DownloadObject'
+            $ref: "#/definitions/DownloadObject"
           xls:
-            $ref: '#/definitions/DownloadObject'
+            $ref: "#/definitions/DownloadObject"
       headers:
         description: "A list of headers for a census dataset"
         type: array
@@ -1913,75 +1920,40 @@ definitions:
         description: "A list of changes between version of an edition for a dataset and the previous version of the same dataset edition"
         type: array
         items:
-          $ref: '#/definitions/LatestChange'
+          $ref: "#/definitions/LatestChange"
       license:
-        description: "The standard Government license right text for the dataset"
+        description: "The license the dataset is released under."
         type: string
+        default: "Open Government Licence v3.0"
       dataset_links:
-        $ref: '#/definitions/MetadataLinks'
+        $ref: "#/definitions/MetadataLinks"
       methodologies:
-        description: "A list of methodologies for a dataset"
+        description: "A list of methodologies for the dataset."
         type: array
         items:
-          type: object
-          properties:
-            description:
-              description: "The description of a methodology"
-              type: string
-            href:
-              description: "The url to a methodology"
-              type: string
-            title:
-              description: "The title of a methodology"
-              type: string
+          $ref: "#/definitions/RelatedLink"
       national_statistic:
         description: "The flag indicating the resource is a national statistic. These are certified as compliant with the Code of Practice for Official Statistics"
         type: boolean
       next_release:
-        description: "The next release date for a dataset"
-        type: string
+        $ref: "#/definitions/NextRelease"
       publications:
-        description: "A list of publications for a dataset"
+        description: "A list of publications related to this dataset."
         type: array
         items:
-          type: object
-          properties:
-            description:
-              description: "The description of a publication"
-              type: string
-            href:
-              description: "The url to a publication"
-              type: string
-            title:
-              description: "The title of a publication"
-              type: string
-      publisher:
-        $ref: '#/definitions/Publisher'
+          $ref: "#/definitions/RelatedLink"
+      publishers:
+        description: A list of the publishers for the dataset.
+        type: array
+        items:
+          $ref: "#/definitions/Publisher"
       qmi:
-        description: "Object containing information on the quality and methodology index of a dataset"
-        type: object
-        properties:
-          description:
-            description: "The description of a quality and methodology index"
-            type: string
-          href:
-            description: "The url to a quality and methodology index"
-            type: string
-          title:
-            description: "The title of a quality and methodology index"
-            type: string
+        $ref: "#/definitions/QMILink"
       related_datasets:
-        description: "A list of objects containing information of datasets related to a dataset"
+        description: "A list of other datasets related to this dataset."
         type: array
         items:
-          type: object
-          properties:
-            href:
-              description: "The url to a related dataset"
-              type: string
-            title:
-              description: "The title of a related dataset"
-              type: string
+          $ref: "#/definitions/RelatedLink"
       release_date:
         description: "The release date of this version of the dataset"
         type: string
@@ -1989,15 +1961,16 @@ definitions:
         description: "The release frequency of a dataset"
         type: string
       subtopics:
-        description: "A list of subtopic ids that the dataset relates to within the website taxonomy. **Deprecated** this field is being deprecated and replaced by the `Themes` field."
+        description: |
+          **Deprecated:** This field is being deprecated and replaced by the `topics` field.
+
+          A list of subtopic ids that the dataset relates to within the topic taxonomy.
         type: array
         items:
           type: "string"
+          example: "7755"
       temporal:
-        $ref: '#/definitions/Temporal'
-      theme:
-        description: "The theme for a dataset"
-        type: string
+        $ref: "#/definitions/Temporal"
       title:
         description: "The title of the dataset"
         example: "CPI"
@@ -2005,13 +1978,10 @@ definitions:
       unit_of_measure:
         description: "The unit of measure for the dataset observations"
         type: string
-      uri:
-        description: "The uri to the location of the dataset on the web"
-        type: string
       usage_notes:
-        $ref: '#/definitions/UsageNotes'
-      themes:
-        description: "A list of topics and subtopics that the dataset relates to within the website taxonomy. This field consolidates the previously separate `canonical_topic` and `subtopics` fields."
+        $ref: "#/definitions/UsageNote"
+      topics:
+        description: "A list of topics and subtopics that the dataset relates to within the topic taxonomy. This field consolidates the previously separate `canonical_topic` and `subtopics` fields."
         type: array
         items:
           type: "string"
@@ -2025,22 +1995,22 @@ definitions:
         type: string
       current:
         allOf:
-        - type: object
-          properties:
-            collection_id:
-              $ref: '#/definitions/CollectionID'
-            type:  
-              $ref: '#/definitions/Type'
-        - $ref: "#/definitions/Dataset"
+          - type: object
+            properties:
+              collection_id:
+                $ref: "#/definitions/CollectionID"
+              type:
+                $ref: "#/definitions/DatasetType"
+          - $ref: "#/definitions/Dataset"
       next:
         allOf:
-        - type: object
-          properties:
-            collection_id:
-              $ref: '#/definitions/CollectionID'
-            type:  
-              $ref: '#/definitions/Type'
-        - $ref: "#/definitions/Dataset"
+          - type: object
+            properties:
+              collection_id:
+                $ref: "#/definitions/CollectionID"
+              type:
+                $ref: "#/definitions/DatasetType"
+          - $ref: "#/definitions/Dataset"
   NewInstance:
     description: "A model for the request and response body for creating a new instance"
     type: object
@@ -2049,13 +2019,13 @@ definitions:
         description: "A list of codelists for each dimension of this instance"
         type: array
         items:
-          $ref: '#/definitions/Codelist'
+          $ref: "#/definitions/Codelist"
       id:
         description: "A unique id for an instance"
         readOnly: true
         type: string
       import_tasks:
-        $ref: '#/definitions/ImportTasks'
+        $ref: "#/definitions/ImportTasks"
       links:
         type: object
         properties:
@@ -2065,11 +2035,11 @@ definitions:
             properties:
               href:
                 description: "The URL for the dataset associated with this instance"
-                example: "http://localhost:22000/datasets/95c4669b-3ae9-4ba7-b690-87e890a1c67c"
+                example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset"
                 type: string
               id:
                 description: "The ID of the dataset associated with this instance"
-                example: "95c4669b-3ae9-4ba7-b690-87e890a1c67c"
+                example: "my-dataset"
                 type: string
           job:
             description: "An object describing the ID and URL of the job containing this instance"
@@ -2078,7 +2048,7 @@ definitions:
             properties:
               href:
                 description: "The URL for the job containing this instance"
-                example: "http://localhost:21800/jobs/042e216a-7822-4fa0-a3d6-e3f5248ffc35"
+                example: "https://api.beta.ons.gov.uk/v1/jobs/042e216a-7822-4fa0-a3d6-e3f5248ffc35"
                 type: string
               id:
                 description: "The ID of the job containing this instance"
@@ -2091,115 +2061,37 @@ definitions:
             properties:
               href:
                 description: "The URL for this resource"
-                example: "http://localhost:22000/instances/45c4669b-3ae9-4ba7-b690-87e890a1c67f"
+                example: "https://api.beta.ons.gov.uk/v1/instances/45c4669b-3ae9-4ba7-b690-87e890a1c67f"
                 type: string
       state:
-        description: "The state of the resource, this can only have a value of `created`"
-        type: string
-        readOnly: true
+        $ref: "#/definitions/State"
   NewVersionResponse:
     description: "A model for the response body when creating a new version for an edition of a dataset"
     allOf:
       - type: object
         properties:
           collection_id:
-            $ref: '#/definitions/CollectionID'
+            $ref: "#/definitions/CollectionID"
           id:
             type: string
             description: "An unique id for a dataset"
             example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91CD"
       - $ref: "#/definitions/Version"
-  ObservationsEndpoint:
-    description: "An object containing information on a list of observations for a given version of a dataset"
-    type: object
-    properties:
-      dimensions:
-        description: "A list of dimensions for the given query"
-        type: object
-        properties:
-          <dimension name>:
-            description: "Each field is a dimension (<dimension name>) and will represent a query parameter in the request unless the query parameter is equal to a wildcard value (*)"
-            type: object
-            properties:
-              option:
-                description: "A list of links to the corresponding dimension codes for the given `dimension_options`"
-                type: object
-                properties:
-                  href:
-                    description: "A link to the corresponding dimension code for the given `dimension_option`"
-                    type: string
-                    example: "http://localhost:8080/codelists/AB12CD34/codes/K02000001"
-                  id:
-                    description: "The id of the corresponding dimension code for the given `dimension_option`"
-                    type: string
-      limit:
-        description: "The maximum number of observations requested when filtering on query parameters (limited to 10000). Defaults to 10000 observations."
-        type: integer
-      links:
-        $ref: '#/definitions/ObservationLinks'
-      observations:
-        description: "A list of observations found when filtering on query parameters"
-        type: array
-        items:
-          properties:
-            dimensions:
-              description: "Contains a list of dimension objects associated with an observation. Each dimension combined with the top level list of dimensions result in this single observation only"
-              type: object
-              properties:
-                <dimension name>:
-                  description: "Each field is a dimension (<dimension name>) and will represent a query parameter in the request as long as the query parameter is equal to a wildcard value (*)"
-                  type: object
-                  properties:
-                    href:
-                      description: "A link to the corresponding dimension code for the given `dimension_option`"
-                      example: "http://localhost:8080/codelists/AB12CD34/codes/K02000001"
-                      type: string
-                    id:
-                      description: "The id of the corresponding dimension code for the given `dimension_option`"
-                      type: "string"
-                    label:
-                      description: "The label corresponding to the dimension code for the given `dimension_option`"
-                      type: string
-            metadata:
-              description: "Metadata related to the observation found against version of a dataset"
-              type: array
-              items:
-                type: object
-                properties:
-                  <key>:
-                    description: "A single metadata key-value pair related to the observation found against version of a dataset, for example 'coefficients of variation' or 'data marking'"
-                    type: string
-            observation:
-              description: "The observation value for the selection of query parameters (dimensions) chosen"
-              type: string
-          required: [observation]
-      offset:
-        description: "The offset into the entire list of observations found"
-        type: integer
-      total_observations:
-        description: "The number of observations found"
-        type: integer
-      unit_of_measure:
-        description: "The unit of measure for the dataset observations"
-        type: string
-      usage_notes:
-        description: "A list of usage notes relating to the dataset"
-        type: array
-        items:
-          $ref: '#/definitions/UsageNotes'
   Publisher:
     description: "The publisher of the dataset"
     type: object
+    required:
+      - name
+      - href
     properties:
       name:
         description: "The name of the publisher"
         type: string
-      type:
-        description: "The type of publisher"
-        type: string
+        default: Office for National Statistics
       href:
         description: "A link to the publishers homepage"
         type: string
+        default: "https://www.ons.gov.uk"
   State:
     description: |
       The state of the resource, can only be one of the following:
@@ -2210,6 +2102,14 @@ definitions:
         * associated (not editions)
         * published
     type: string
+    example: published
+    enum:
+      - created
+      - completed
+      - failed
+      - edition-confirmed
+      - associated
+      - published
   Temporal:
     description: "A list of frequencies the dataset covers for a particular period of time"
     type: array
@@ -2235,18 +2135,18 @@ definitions:
         type: string
       current:
         allOf:
-        - type: object
-          properties:
-            collection_id:
-              $ref: '#/definitions/CollectionID'
-        - $ref: "#/definitions/Dataset"
+          - type: object
+            properties:
+              collection_id:
+                $ref: "#/definitions/CollectionID"
+          - $ref: "#/definitions/Dataset"
       next:
         allOf:
-        - type: object
-          properties:
-            collection_id:
-              $ref: '#/definitions/CollectionID'
-        - $ref: "#/definitions/Dataset"
+          - type: object
+            properties:
+              collection_id:
+                $ref: "#/definitions/CollectionID"
+          - $ref: "#/definitions/Dataset"
   UpdateDimensionOptionRequest:
     description: "A cached dimension. (Only used by the Private API)"
     type: object
@@ -2306,31 +2206,32 @@ definitions:
         description: "A list of alerts, for example corrections after the resource has been published"
         type: array
         items:
-          $ref: '#/definitions/Alert'
+          $ref: "#/definitions/Alert"
       collection_id:
-        $ref: '#/definitions/CollectionID'
+        $ref: "#/definitions/CollectionID"
       downloads:
         description: "A selection of download objects containing information of downloadable files. These can only be updated via an authorised caller."
         type: object
         properties:
           csv:
-            $ref: '#/definitions/DownloadObject'
+            $ref: "#/definitions/DownloadObject"
           xls:
-            $ref: '#/definitions/DownloadObject'
+            $ref: "#/definitions/DownloadObject"
       latest_changes:
         description: "A list of changes between version of an edition for a dataset and the previous version of the same dataset edition"
         type: array
         items:
-          $ref: '#/definitions/LatestChange'
+          $ref: "#/definitions/LatestChange"
       links:
-        $ref: '#/definitions/VersionLinks'
+        $ref: "#/definitions/VersionLinks"
       release_date:
         description: "The release date of this version of the dataset"
         type: string
+        format: date-time
       state:
-        $ref: '#/definitions/State'
+        $ref: "#/definitions/State"
       temporal:
-        $ref: '#/definitions/Temporal'
+        $ref: "#/definitions/Temporal"
       version:
         description: "A number identifying the version for an edition from a dataset"
         example: 1
@@ -2340,10 +2241,13 @@ definitions:
         description: "A list of usage notes relating to the dataset"
         type: array
         items:
-          $ref: '#/definitions/UsageNotes'
-  UsageNotes:
+          $ref: "#/definitions/UsageNote"
+  UsageNote:
     description: "A note relating to the dataset. This will appear in downloaded datasets"
     type: object
+    required:
+      - title
+      - note
     properties:
       title:
         description: "The title of the note"
@@ -2352,150 +2256,233 @@ definitions:
         description: "The content of the note"
         type: string
   Versions:
+    description: "A list of version history for a specific dataset edition."
     type: object
-    properties:
-      count:
-        description: "The number of versions returned for an edition of a dataset"
-        readOnly: true
-        type: integer
-      items:
-        description: "An array of Datasets"
-        type: array
-        items:
-          $ref: '#/definitions/Version'
-      limit:
-        description: "The number of versions requested for an edition of a dataset"
-        type: integer
-      offset:
-        description: "The first row of versions for an edition of a dataset to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the limit parameter"
-        type: integer
-      total_count:
-        description: "The total number of versions for an edition of a dataset"
-        readOnly: true
-        type: integer
+    allOf:
+      - $ref: "#/definitions/PaginationFields"
+      - type: object
+        properties:
+          items:
+            type: array
+            items:
+              $ref: "#/definitions/Version"
   Version:
     description: "An object containing information about published datasets from the ONS"
-    required: ["title", "description", "type", "next_release", "release_date", "state", "themes"]
+    required:
+      - distributions
+      - release_date
     type: object
     properties:
       alerts:
         description: "A list of alerts, for example corrections after the resource has been published"
         type: array
         items:
-          $ref: '#/definitions/Alert'
+          $ref: "#/definitions/Alert"
       collection_id:
-        $ref: '#/definitions/CollectionID'
+        $ref: "#/definitions/CollectionID"
+      dataset_id:
+        description: "The identifier for the dataset."
+        type: string
+        example: my-dataset
       dimensions:
         description: "A list of codelists for each dimension of this version"
         type: array
         items:
-          $ref: '#/definitions/Dimension'
+          $ref: "#/definitions/Dimension"
+      distributions:
+        description: A list of representations of the dataset available and how to access them.
+        type: array
+        minItems: 1
+        items:
+          $ref: "#/definitions/Distribution"
       downloads:
-        description: "A selection of download objects containing information of downloadable files."
+        description: |
+          **Deprecated:** These fields have been deprecated and replaced by the `distributions` list.
+
+          A selection of download objects containing information of downloadable files.
         type: object
         properties:
           csv:
-            $ref: '#/definitions/DownloadObject'
+            $ref: "#/definitions/DownloadObject"
           csvw:
-            $ref: '#/definitions/DownloadObject'
+            $ref: "#/definitions/DownloadObject"
           txt:
-            $ref: '#/definitions/DownloadObject'
+            $ref: "#/definitions/DownloadObject"
           xls:
-            $ref: '#/definitions/DownloadObject'
+            $ref: "#/definitions/DownloadObject"
       edition:
         description: "The dataset edition for this version"
         readOnly: true
         type: string
-      id:
-        description: "The identifier for this version of an edition for a dataset"
-        type: string
+        example: 2017
       is_based_on:
-        $ref: '#/definitions/IsBasedOn'
-      dataset_id:
-        description: "The identifier for the dataset."
-        type: string
+        $ref: "#/definitions/IsBasedOn"
+      last_updated:
+        $ref: "#/definitions/LastUpdated"
       latest_changes:
         description: "A list of changes between version of an edition for a dataset and the previous version of the same dataset edition"
         type: array
         items:
-          $ref: '#/definitions/LatestChange'
+          $ref: "#/definitions/LatestChange"
       links:
-        $ref: '#/definitions/VersionLinks'
+        $ref: "#/definitions/VersionLinks"
       lowest_geography:
         description: "The lowest geography this dataset is available at (Census datasets only)"
         type: string
+      quality_designation:
+        description: |
+          The official statistics quality designation level of this dataset version.
+
+          Possible quality designations:
+            * `accredited-official`
+            * `official`
+            * `official-in-development`
+        type: string
+        enum:
+          - accredited-official
+          - official
+          - official-in-development
       release_date:
         description: "The release date of this version of the dataset"
         type: string
+        format: date-time
       state:
-        $ref: '#/definitions/State'
+        $ref: "#/definitions/State"
       temporal:
-        $ref: '#/definitions/Temporal'
+        $ref: "#/definitions/Temporal"
       type:
-        description: "The type of dataset - e.g. cantabular_flexible_table"
-        type: string
+        $ref: "#/definitions/DatasetType"
+      usage_notes:
+        description: "A list of usage notes relating to the dataset"
+        type: array
+        items:
+          $ref: "#/definitions/UsageNote"
       version:
         description: "A number identifying the version for an edition from a dataset"
         example: 1
         readOnly: true
         type: integer
-      usage_notes:
-        description: "A list of usage notes relating to the dataset"
-        type: array
-        items:
-          $ref: '#/definitions/UsageNotes'
+  Distribution:
+    description: The details of specific representation of a dataset and how to access it.
+    type: object
+    required:
+      - title
+      - format
+      - download_url
+    properties:
+      title:
+        description: The title or label of the distribution.
+        type: string
+        example: Full Dataset (CSV)
+      download_url:
+        description: URL to directly download a file for the distribution in the specified format.
+        type: string
+        example: https://download.ons.gov.uk/my-dataset-download.csv
+      byte_size:
+        description: The size in bytes of the download file referenced by `download_url`.
+        type: integer
+        minimum: 0
+        example: 4300000
+      format:
+        description: |
+          The format for the download file referenced by `download_url`.
+
+          Formats supported:
+            * `csv`
+            * `sdmx`
+            * `xls`
+            * `xlsx`
+            * `csdb`
+            * `csvw-metadata`
+        type: string
+        enum:
+          - csv
+          - sdmx
+          - xls
+          - xlsx
+          - csdb
+          - csvw-metadata
+      media_type:
+        description: |
+          The IANA media type for the download file referenced by `download_url`.
+
+          Media Types supported:
+            * `text/csv`: CSV files
+            * `application/vnd.sdmx.structurespecificdata+xml`: SDMX files
+            * `application/vnd.ms-excel`: Excel (XLS) files
+            * `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`: Excel (XLSX) files
+            * `text/plain`: Plain text (used for CSDB output structured text files)
+            * `application/ld+json`: JSON-LD metadata file. Commonly used to annotate tabular data in an associated CSV file as outlined in the CSVW standard.
+        type: string
+        enum:
+          - text/csv
+          - application/vnd.sdmx.structurespecificdata+xml
+          - application/vnd.ms-excel
+          - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+          - text/plain
+          - application/ld+json
   # Link objects
   DatasetLinks:
-    description: "A list of links related to this resource"
+    description: "Navigational links related to the dataset resource to aid in API navigation."
     type: object
+    readOnly: true
     properties:
-      access_rights:
-        $ref: '#/definitions/AccessRightsLink'
       editions:
         readOnly: true
         type: object
         properties:
           href:
             description: "A URL to all editions for this dataset"
-            example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions"
             type: string
+            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions"
       latest_version:
-        $ref: '#/definitions/LatestVersionLink'
+        $ref: "#/definitions/LatestVersionLink"
+      latest_edition:
+        description: "An object containing a link to the latest edition of the dataset."
+        type: object
+        readOnly: true
+        properties:
+          href:
+            description: "A link to the latest edition of the dataset."
+            type: string
+            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/2017"
       self:
-        $ref: '#/definitions/SelfLink'
-      taxonomy:
-        $ref: '#/definitions/TaxonomyLink'
-  EditionLinks:
-    description: "A list of links related to this resource"
-    readOnly: true
-    type: object
-    properties:
-      dataset:
-        $ref: '#/definitions/DatasetLink'
-      latest_version:
-        $ref: '#/definitions/LatestVersionLink'
-      self:
-        $ref: '#/definitions/SelfLink'
-      versions:
+        description: "A link to this resource"
+        readOnly: true
         type: object
         properties:
           href:
-            description: "A URL to all versions dor an edition of a dataset"
-            example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/edition/2017/versions"
+            description: "A URL to this resource"
+            type: string
+            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset"
+      taxonomy:
+        description: "The taxonomy path of the dataset's canonical topic."
+        type: object
+        properties:
+          href:
+            description: |
+              **Deprecated:** This field has been deprecated and will be removed in future. It is strongly advised that you do not use this field as topics will move in the hierarchy and therefore the value returned here will become outdated. Use the first entry in the `topics` list in combination with the Topics API instead.
+
+              The taxonomy path of the canonical topic for the dataset at the time of publish.
             type: string
   MetadataLinks:
     description: "A list of links related to this resource"
     readOnly: true
     type: object
     properties:
-      access_right:
-        $ref: '#/definitions/AccessRightsLink'
       self:
-        $ref: '#/definitions/SelfLink'
+        description: "A link to this resource"
+        readOnly: true
+        type: object
+        properties:
+          href:
+            description: "A URL to this resource"
+            type: string
+            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/2017/versions/5/metadata"
       spatial:
-        $ref: '#/definitions/SpatialLink'
+        $ref: "#/definitions/SpatialLink"
       version:
-        $ref: '#/definitions/VersionLink'
+        $ref: "#/definitions/VersionLink"
       website_version:
         description: "A link to the location of this version of the dataset on the web"
         type: object
@@ -2503,39 +2490,42 @@ definitions:
           href:
             description: "The uri to the location of this version of the dataset on the web"
             type: string
-  ObservationLinks:
-    description: "A list of links related to this resource"
-    readOnly: true
-    type: object
-    properties:
-      dataset_metadata:
-        $ref: '#/definitions/MetadataLink'
-      self:
-        $ref: '#/definitions/SelfLink'
-      version:
-        $ref: '#/definitions/VersionLink'
+            example: "https://www.ons.gov.uk/datasets/my-dataset/editions/2017/versions/5"
   VersionLinks:
     description: "A list of links related to this resource"
     type: object
+    readOnly: true
     properties:
       dataset:
-        $ref: '#/definitions/DatasetLink'
+        $ref: "#/definitions/DatasetLink"
       dimensions:
         readOnly: true
         type: object
         properties:
           href:
             description: "A URL to list dimensions for this version"
-            example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions/2017/versions/2/dimensions"
+            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/2017/versions/5/dimensions"
             type: string
       edition:
-        $ref: '#/definitions/EditionLink'
+        $ref: "#/definitions/EditionLink"
       self:
-        $ref: '#/definitions/SelfLink'
+        description: "A link to this resource"
+        readOnly: true
+        type: object
+        properties:
+          href:
+            description: "A URL to this resource"
+            type: string
+            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/2017/versions/5"
       spatial:
-        $ref: '#/definitions/SpatialLink'
-      job:
-        $ref: '#/definitions/JobLink'
+        $ref: "#/definitions/SpatialLink"
+      versions:
+        type: object
+        properties:
+          href:
+            description: "A URL to all versions for an edition of a dataset"
+            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/edition/2017/versions"
+            type: string
   DatasetLink:
     description: "An object containing the dataset id and link"
     readOnly: true
@@ -2543,11 +2533,12 @@ definitions:
     properties:
       href:
         description: "A URL to the parent dataset for this resource"
-        example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
+        example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset"
         type: string
       id:
         description: "The unique id for the dataset of this version"
         type: string
+        example: "my-dataset"
   EditionLink:
     description: "An object containing the edition and link"
     readOnly: true
@@ -2555,11 +2546,12 @@ definitions:
     properties:
       href:
         description: "A URL to the dataset edition for a version"
-        example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions/2017"
+        example: "https://api.beta.ons.gov.uk/v1/datasets/my-datasets/editions/2017"
         type: string
       id:
         description: "The unique id for the dataset edition for a version"
         type: string
+        example: "2017"
   LatestVersionLink:
     description: "An object containing the latest version id and link"
     type: object
@@ -2567,11 +2559,12 @@ definitions:
     properties:
       href:
         description: "A link to the latest version and edition of the dataset"
-        example: "http://localhost:8080/datasets/DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC/editions/2017/versions/2"
+        example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/2017/versions/5"
         type: string
       id:
         description: "The unique id for the latest version of a dataset"
         type: "string"
+        example: "5"
   MetadataLink:
     description: "The version metadata that is associated with this resource"
     type: object
@@ -2586,35 +2579,11 @@ definitions:
       href:
         description: "A URL to a list of options for this dimension"
         type: string
-  SelfLink:
-    description: "A link to this resource"
-    readOnly: true
-    type: object
-    properties:
-      href:
-        description: "A URL to this resource"
-        type: string
   SpatialLink:
     type: object
     properties:
       href:
         description: "A url to a list of geography ranges for the version of the dataset"
-        type: string
-  JobLink:
-    type: object
-    properties:
-          href:
-            description: "A URL to list dimensions for this version"
-            type: string
-          id:
-            description: "A Job id"
-            type: string
-  TaxonomyLink:
-    description: "A link to the taxonomy of the dataset"
-    type: object
-    properties:
-      href:
-        description: "A url to the taxonomy of the dataset"
         type: string
   VersionLink:
     description: "The dataset version this resource belongs to"
@@ -2623,9 +2592,63 @@ definitions:
       href:
         description: "A URL to the version this resource relates to"
         type: string
+        example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/2017/versions/5"
       id:
         description: "The version number this resource relates to"
         type: string
+        example: "5"
+  RelatedLink:
+    type: object
+    required:
+      - href
+      - title
+    properties:
+      href:
+        description: "The url of the linked item."
+        type: string
+        example: "https://www.ons.gov.uk/my-related-page"
+      title:
+        description: "The title of the linked item."
+        type: string
+        example: "Related Link Title"
+      description:
+        description: "The description of the linked item."
+        type: string
+        example: "This is a description of the linked resource."
+  QMILink:
+    type: object
+    required:
+      - href
+    properties:
+      href:
+        description: "The url to the quality and methodology information sheet for the dataset."
+        type: string
+        example: "https://www.ons.gov.uk/businessindustryandtrade/retailindustry/methodologies/retailsalesindexrsiqmi"
+  PaginationFields:
+    type: object
+    properties:
+      count:
+        description: "The number of items returned."
+        readOnly: true
+        type: integer
+        example: 20
+      limit:
+        description: "The number of items requested."
+        type: integer
+        default: 20
+        minimum: 0
+        maximum: 1000
+      offset:
+        description: "The offset of the first item to retrieve, starting at 0. Use this parameter as a pagination mechanism along with the limit parameter"
+        type: integer
+        example: 0
+        default: 0
+      total_count:
+        description: "The total number of items available."
+        readOnly: true
+        type: integer
+        example: 123
+
   MetadataUpdate:
     description: "An object containing all editable metadata fields on a dataset and a version resource"
     type: object
@@ -2634,15 +2657,15 @@ definitions:
         description: "A list of alerts against a version"
         type: array
         items:
-          $ref: '#/definitions/Alert'
+          $ref: "#/definitions/Alert"
       canonical_topic:
-        description: "The canonical topic id for this dataset.  This indicates which topic this dataset belongs to within the website taxonomy."
+        description: "The canonical topic id for this dataset.  This indicates which topic this dataset belongs to within the topic taxonomy."
         type: string
       contacts:
         description: "A list containing contact details of statisticians for a dataset"
         type: array
         items:
-          $ref: '#/definitions/Contact'
+          $ref: "#/definitions/Contact"
       description:
         description: "A description for a dataset"
         type: string
@@ -2650,7 +2673,7 @@ definitions:
         description: "A list of codelists for each dimension of this version"
         type: array
         items:
-          $ref: '#/definitions/Dimension'
+          $ref: "#/definitions/Dimension"
       keywords:
         description: "A list of keywords for a dataset"
         type: array
@@ -2660,86 +2683,38 @@ definitions:
         description: "A list of changes between version of an edition for a dataset and the previous version of the same dataset edition"
         type: array
         items:
-          $ref: '#/definitions/LatestChange'
+          $ref: "#/definitions/LatestChange"
       license:
-        description: "The standard Government license right text for the dataset"
+        description: "The license the dataset is released under."
         type: string
+        default: "Open Government Licence v3.0"
       methodologies:
-        description: "A list of methodologies for a dataset"
+        description: "A list of methodologies for the dataset."
         type: array
         items:
-          type: object
-          properties:
-            description:
-              description: "The description of a methodology"
-              type: string
-            href:
-              description: "The url to a methodology"
-              type: string
-            title:
-              description: "The title of a methodology"
-              type: string
+          $ref: "#/definitions/RelatedLink"
       national_statistic:
         description: "The flag indicating the resource is a national statistic. These are certified as compliant with the Code of Practice for Official Statistics"
         type: boolean
       next_release:
-        description: "The next release date for a dataset"
-        type: string
+        $ref: "#/definitions/NextRelease"
       publications:
-        description: "A list of publications for a dataset"
+        description: "A list of publications related to this dataset."
         type: array
         items:
-          type: object
-          properties:
-            description:
-              description: "The description of a publication"
-              type: string
-            href:
-              description: "The url to a publication"
-              type: string
-            title:
-              description: "The title of a publication"
-              type: string
+          $ref: "#/definitions/RelatedLink"
       qmi:
-        description: "Object containing information on the quality and methodology index of a dataset"
-        type: object
-        properties:
-          description:
-            description: "The description of a quality and methodology index"
-            type: string
-          href:
-            description: "The url to a quality and methodology index"
-            type: string
-          title:
-            description: "The title of a quality and methodology index"
-            type: string
+        $ref: "#/definitions/QMILink"
       related_content:
-        description: "A list of objects containing information of content related to a dataset"
+        description: "A list of website content related to this dataset."
         type: array
         items:
-          type: object
-          properties:
-            href:
-              description: "The url to related content"
-              type: string
-            description:
-              description: "The description of the related content"
-              type: string
-            title:
-              description: "The title of the related content"
-              type: string
+          $ref: "#/definitions/RelatedLink"
       related_datasets:
-        description: "A list of objects containing information of datasets related to a dataset"
+        description: "A list of other datasets related to this dataset."
         type: array
         items:
-          type: object
-          properties:
-            href:
-              description: "The url to a related dataset"
-              type: string
-            title:
-              description: "The title of a related dataset"
-              type: string
+          $ref: "#/definitions/RelatedLink"
       release_date:
         description: "The release date of this version of the dataset"
         type: string
@@ -2747,7 +2722,7 @@ definitions:
         description: "The release frequency of a dataset"
         type: string
       subtopics:
-        description: "A list of subtopic ids that the dataset relates to within the website taxonomy."
+        description: "A list of subtopic ids that the dataset relates to within the topic taxonomy."
         type: array
         items:
           type: "string"
@@ -2762,4 +2737,4 @@ definitions:
         description: "The unit of measure for the dataset observations"
         type: string
       usage_notes:
-        $ref: '#/definitions/UsageNotes'
+        $ref: "#/definitions/UsageNote"
