@@ -71,6 +71,7 @@ const (
 	InstanceCollection         = "InstanceCollection"
 	DimensionOptionsCollection = "DimensionOptionsCollection"
 	InstanceLockCollection     = "InstanceLockCollection"
+	VersionsCollection         = "VersionsCollection"
 )
 
 // Get the application and returns the configuration structure, and initialises with default values.
@@ -120,7 +121,7 @@ func Get() (*Configuration, error) {
 				Username:                      "",
 				Password:                      "",
 				Database:                      "datasets",
-				Collections:                   map[string]string{DatasetsCollection: "datasets", ContactsCollection: "contacts", EditionsCollection: "editions", InstanceCollection: "instances", DimensionOptionsCollection: "dimension.options", InstanceLockCollection: "instances_locks"},
+				Collections:                   map[string]string{DatasetsCollection: "datasets", ContactsCollection: "contacts", EditionsCollection: "editions", InstanceCollection: "instances", DimensionOptionsCollection: "dimension.options", InstanceLockCollection: "instances_locks", VersionsCollection: "versions"},
 				ReplicaSet:                    "",
 				IsStrongReadConcernEnabled:    false,
 				IsWriteConcernMajorityEnabled: true,
