@@ -52,7 +52,7 @@ func TestSpec(t *testing.T) {
 				So(cfg.MongoConfig.ClusterEndpoint, ShouldEqual, "localhost:27017")
 				So(cfg.MongoConfig.Database, ShouldEqual, "datasets")
 				So(cfg.MongoConfig.Collections, ShouldResemble, map[string]string{"DatasetsCollection": "datasets", "ContactsCollection": "contacts",
-					"EditionsCollection": "editions", "InstanceCollection": "instances", "DimensionOptionsCollection": "dimension.options", "InstanceLockCollection": "instances_locks"})
+					"EditionsCollection": "editions", "InstanceCollection": "instances", "DimensionOptionsCollection": "dimension.options", "InstanceLockCollection": "instances_locks", "VersionsCollection": "versions"})
 				So(cfg.MongoConfig.Username, ShouldEqual, "")
 				So(cfg.MongoConfig.Password, ShouldEqual, "")
 				So(cfg.MongoConfig.IsSSL, ShouldEqual, false)
