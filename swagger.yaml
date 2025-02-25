@@ -2301,6 +2301,7 @@ definitions:
 
           A selection of download objects containing information of downloadable files.
         type: object
+        readOnly: true
         properties:
           csv:
             $ref: "#/definitions/DownloadObject"
