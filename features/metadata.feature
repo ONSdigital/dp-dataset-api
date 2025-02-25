@@ -56,7 +56,7 @@ Feature: Dataset API - metadata
                             "id": "population-estimates"
                         },
                         "self": {
-                            "href": "someurl"
+                            "href": "/datasets/population-estimates/editions/hello/versions/1"
                         }
                     },
                     "edition": "hello"
@@ -70,7 +70,7 @@ Feature: Dataset API - metadata
                             "id": "published-dataset"
                         },
                         "self": {
-                            "href": "someurl"
+                            "href": "/datasets/published-dataset/editions/2023/versions/1"
                         }
                     },
                     "edition": "2023"
@@ -84,7 +84,7 @@ Feature: Dataset API - metadata
                             "id": "population-estimates"
                         },
                         "self": {
-                            "href": "someurl"
+                            "href": "/datasets/population-estimates/editions/hello/versions/2"
                         }
                     },
                     "edition": "hello"
@@ -126,7 +126,7 @@ Feature: Dataset API - metadata
                         "id": "population-estimates"
                     },
                     "self": {
-                        "href": "someurl"
+                        "href": "/datasets/population-estimates/editions/hello/versions/1"
                     }
                 },
                 "edition": "hello",
@@ -167,7 +167,7 @@ Feature: Dataset API - metadata
                         "id": "population-estimates"
                     },
                     "self": {
-                        "href": "someurl"
+                        "href": "/datasets/population-estimates/editions/hello/versions/1"
                     }
                 },
                 "edition": "hello",
@@ -209,7 +209,7 @@ Feature: Dataset API - metadata
                         "id": "population-estimates"
                     },
                     "self": {
-                        "href": "someurl"
+                        "href": "/datasets/population-estimates/editions/hello/versions/1"
                     }
                 },
                 "edition": "hello",
@@ -247,7 +247,7 @@ Feature: Dataset API - metadata
                         "id": "published-dataset"
                     },
                     "self": {
-                        "href": "someurl"
+                        "href": "/datasets/published-dataset/editions/2023/versions/1"
                     }
                 },
                 "edition": "2023"
@@ -286,7 +286,7 @@ Feature: Dataset API - metadata
                         "id": "population-estimates"
                     },
                     "self": {
-                        "href": "someurl"
+                        "href": "/datasets/population-estimates/editions/hello/versions/2"
                     }
                 },
                 "edition": "hello"
@@ -325,7 +325,7 @@ Feature: Dataset API - metadata
                         "id": "population-estimates"
                     },
                     "self": {
-                        "href": "someurl"
+                        "href": "/datasets/population-estimates/editions/hello/versions/1"
                     }
                 },
                 "edition": "hello"
