@@ -227,6 +227,9 @@ type MongoDBMock struct {
 	// GetVersionsFunc mocks the GetVersions method.
 	GetVersionsFunc func(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) ([]models.Version, int, error)
 
+	// GetVersionsWithDatasetIDFunc mocks the GetVersionsWithDatasetID method.
+	GetVersionsWithDatasetIDFunc func(ctx context.Context, datasetID string, offset int, limit int) ([]models.Version, int, error)
+
 	// RemoveDatasetVersionAndEditionLinksFunc mocks the RemoveDatasetVersionAndEditionLinks method.
 	RemoveDatasetVersionAndEditionLinksFunc func(ctx context.Context, id string) error
 
@@ -521,6 +524,19 @@ type MongoDBMock struct {
 			// Limit is the limit argument value.
 			Limit int
 		}
+
+		// GetVersionsWithDatasetID holds details about calls to the GetVersionsWithDatasetID method.
+		GetVersionsWithDatasetID []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// Offset is the offset argument value.
+			Offset int
+			// Limit is the limit argument value.
+			Limit int
+		}
+
 		// RemoveDatasetVersionAndEditionLinks holds details about calls to the RemoveDatasetVersionAndEditionLinks method.
 		RemoveDatasetVersionAndEditionLinks []struct {
 			// Ctx is the ctx argument value.
@@ -732,6 +748,7 @@ type MongoDBMock struct {
 	lockGetUniqueDimensionAndOptions        sync.RWMutex
 	lockGetVersion                          sync.RWMutex
 	lockGetVersions                         sync.RWMutex
+	lockGetVersionsWithDatasetID            sync.RWMutex
 	lockRemoveDatasetVersionAndEditionLinks sync.RWMutex
 	lockUnlockInstance                      sync.RWMutex
 	lockUpdateBuildHierarchyTaskState       sync.RWMutex
@@ -1756,6 +1773,30 @@ func (mock *MongoDBMock) GetVersionsCalls() []struct {
 	return calls
 }
 
+// GetVersionsWithDatasetID calls GetVersionsWithDatasetIDFunc.
+func (mock *MongoDBMock) GetVersionsWithDatasetID(ctx context.Context, datasetID string, offset int, limit int) ([]models.Version, int, error) {
+	if mock.GetVersionsWithDatasetIDFunc == nil {
+		panic("StorerMock.GetVersionsWithDatasetIDFunc: method is nil but Storer.GetVersionsWithDatasetID was just called")
+	}
+
+	callInfo := struct {
+		Ctx       context.Context
+		DatasetID string
+		Offset    int
+		Limit     int
+	}{
+		Ctx:       ctx,
+		DatasetID: datasetID,
+		Offset:    offset,
+		Limit:     limit,
+	}
+
+	mock.lockGetVersionsWithDatasetID.Lock()
+	mock.calls.GetVersionsWithDatasetID = append(mock.calls.GetVersionsWithDatasetID, callInfo)
+	mock.lockGetVersionsWithDatasetID.Unlock()
+
+	return mock.GetVersionsWithDatasetIDFunc(ctx, datasetID, offset, limit)
+}
 // RemoveDatasetVersionAndEditionLinks calls RemoveDatasetVersionAndEditionLinksFunc.
 func (mock *MongoDBMock) RemoveDatasetVersionAndEditionLinks(ctx context.Context, id string) error {
 	if mock.RemoveDatasetVersionAndEditionLinksFunc == nil {

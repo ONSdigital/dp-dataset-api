@@ -39,6 +39,9 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 		w := httptest.NewRecorder()
 		results := []models.Version{}
 		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{ID: "123-456", Next: &models.Dataset{ID: "123-456"}}, nil
+			},
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
@@ -64,6 +67,40 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 		So(totalCount, ShouldEqual, 2)
 		So(err, ShouldEqual, nil)
 	})
+
+	Convey("get versions delegates offset and limit to db func and returns results list for static dataset type", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", http.NoBody)
+		w := httptest.NewRecorder()
+		results := []models.Version{}
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{ID: "123-456", Next: &models.Dataset{ID: "123-456", Type: "static"}}, nil
+			},
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			GetVersionsWithDatasetIDFunc: func(context.Context, string, int, int) ([]models.Version, int, error) {
+				return results, 2, nil
+			},
+		}
+
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
+		list, totalCount, err := api.getVersions(w, r, 20, 0)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionsWithDatasetIDCalls()), ShouldEqual, 1)
+		So(mockedDataStore.GetVersionsWithDatasetIDCalls()[0].Limit, ShouldEqual, 20)
+		So(mockedDataStore.GetVersionsWithDatasetIDCalls()[0].Offset, ShouldEqual, 0)
+		So(list, ShouldResemble, results)
+		So(totalCount, ShouldEqual, 2)
+		So(err, ShouldEqual, nil)
+	})
 }
 
 func TestGetVersionsReturnsError(t *testing.T) {
@@ -73,6 +110,9 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return nil, errs.ErrDatasetNotFound
+			},
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return errs.ErrInternalServer
 			},
@@ -94,6 +134,9 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return nil, errs.ErrDatasetNotFound
+			},
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return errs.ErrDatasetNotFound
 			},
@@ -116,6 +159,9 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return nil, nil
+			},
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
@@ -142,6 +188,9 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		r.Header.Add("internal_token", "coffee")
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{ID: "123-456", Next: &models.Dataset{ID: "123-456"}}, nil
+			},
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
@@ -170,6 +219,9 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{ID: "123-456", Next: &models.Dataset{ID: "123-456"}}, nil
+			},
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
@@ -201,6 +253,9 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		version := models.Version{State: "gobbly-gook"}
 		items := []models.Version{version}
 		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{ID: "123-456", Next: &models.Dataset{ID: "123-456"}}, nil
+			},
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
