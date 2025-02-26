@@ -7,7 +7,7 @@ import (
 	"context"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/bson"
 	"sync"
 )
 
@@ -60,7 +60,7 @@ var _ store.Storer = &StorerMock{}
 //			GetDimensionOptionsFromIDsFunc: func(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error) {
 //				panic("mock out the GetDimensionOptionsFromIDs method")
 //			},
-//			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]primitive.M, error) {
+//			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]bson.M, error) {
 //				panic("mock out the GetDimensions method")
 //			},
 //			GetDimensionsFromInstanceFunc: func(ctx context.Context, ID string, offset int, limit int) ([]*models.DimensionOption, int, error) {
@@ -89,6 +89,9 @@ var _ store.Storer = &StorerMock{}
 //			},
 //			GetVersionsFunc: func(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) ([]models.Version, int, error) {
 //				panic("mock out the GetVersions method")
+//			},
+//			GetVersionsWithDatasetIDFunc: func(ctx context.Context, datasetID string, offset int, limit int) ([]models.Version, int, error) {
+//				panic("mock out the GetVersionsWithDatasetID method")
 //			},
 //			RemoveDatasetVersionAndEditionLinksFunc: func(ctx context.Context, id string) error {
 //				panic("mock out the RemoveDatasetVersionAndEditionLinks method")
@@ -123,7 +126,7 @@ var _ store.Storer = &StorerMock{}
 //			UpdateInstanceFunc: func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error) {
 //				panic("mock out the UpdateInstance method")
 //			},
-//			UpdateMetadataFunc: func(ctx context.Context, datasetId string, versionId string, versionEtag string, updatedDataset *models.Dataset, updatedVersion *models.Version) error {
+//			UpdateMetadataFunc: func(ctx context.Context, datasetID string, versionID string, versionEtag string, updatedDataset *models.Dataset, updatedVersion *models.Version) error {
 //				panic("mock out the UpdateMetadata method")
 //			},
 //			UpdateObservationInsertedFunc: func(ctx context.Context, currentInstance *models.Instance, observationInserted int64, eTagSelector string) (string, error) {
@@ -194,7 +197,7 @@ type StorerMock struct {
 	GetDimensionOptionsFromIDsFunc func(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error)
 
 	// GetDimensionsFunc mocks the GetDimensions method.
-	GetDimensionsFunc func(ctx context.Context, versionID string) ([]primitive.M, error)
+	GetDimensionsFunc func(ctx context.Context, versionID string) ([]bson.M, error)
 
 	// GetDimensionsFromInstanceFunc mocks the GetDimensionsFromInstance method.
 	GetDimensionsFromInstanceFunc func(ctx context.Context, ID string, offset int, limit int) ([]*models.DimensionOption, int, error)
@@ -260,7 +263,7 @@ type StorerMock struct {
 	UpdateInstanceFunc func(ctx context.Context, currentInstance *models.Instance, updatedInstance *models.Instance, eTagSelector string) (string, error)
 
 	// UpdateMetadataFunc mocks the UpdateMetadata method.
-	UpdateMetadataFunc func(ctx context.Context, datasetId string, versionId string, versionEtag string, updatedDataset *models.Dataset, updatedVersion *models.Version) error
+	UpdateMetadataFunc func(ctx context.Context, datasetID string, versionID string, versionEtag string, updatedDataset *models.Dataset, updatedVersion *models.Version) error
 
 	// UpdateObservationInsertedFunc mocks the UpdateObservationInserted method.
 	UpdateObservationInsertedFunc func(ctx context.Context, currentInstance *models.Instance, observationInserted int64, eTagSelector string) (string, error)
@@ -650,10 +653,10 @@ type StorerMock struct {
 		UpdateMetadata []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
-			// DatasetId is the datasetId argument value.
-			DatasetId string
-			// VersionId is the versionId argument value.
-			VersionId string
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// VersionID is the versionID argument value.
+			VersionID string
 			// VersionEtag is the versionEtag argument value.
 			VersionEtag string
 			// UpdatedDataset is the updatedDataset argument value.
@@ -1315,7 +1318,7 @@ func (mock *StorerMock) GetDimensionOptionsFromIDsCalls() []struct {
 }
 
 // GetDimensions calls GetDimensionsFunc.
-func (mock *StorerMock) GetDimensions(ctx context.Context, versionID string) ([]primitive.M, error) {
+func (mock *StorerMock) GetDimensions(ctx context.Context, versionID string) ([]bson.M, error) {
 	if mock.GetDimensionsFunc == nil {
 		panic("StorerMock.GetDimensionsFunc: method is nil but Storer.GetDimensions was just called")
 	}
@@ -1763,7 +1766,6 @@ func (mock *StorerMock) GetVersionsWithDatasetID(ctx context.Context, datasetID 
 	if mock.GetVersionsWithDatasetIDFunc == nil {
 		panic("StorerMock.GetVersionsWithDatasetIDFunc: method is nil but Storer.GetVersionsWithDatasetID was just called")
 	}
-
 	callInfo := struct {
 		Ctx       context.Context
 		DatasetID string
@@ -1775,15 +1777,13 @@ func (mock *StorerMock) GetVersionsWithDatasetID(ctx context.Context, datasetID 
 		Offset:    offset,
 		Limit:     limit,
 	}
-
 	mock.lockGetVersionsWithDatasetID.Lock()
 	mock.calls.GetVersionsWithDatasetID = append(mock.calls.GetVersionsWithDatasetID, callInfo)
 	mock.lockGetVersionsWithDatasetID.Unlock()
-
 	return mock.GetVersionsWithDatasetIDFunc(ctx, datasetID, offset, limit)
 }
 
-// GetVersionsWithDatasetIDCalls gets all the calls that were made to GetVersions.
+// GetVersionsWithDatasetIDCalls gets all the calls that were made to GetVersionsWithDatasetID.
 // Check the length with:
 //
 //	len(mockedStorer.GetVersionsWithDatasetIDCalls())
@@ -2270,21 +2270,21 @@ func (mock *StorerMock) UpdateInstanceCalls() []struct {
 }
 
 // UpdateMetadata calls UpdateMetadataFunc.
-func (mock *StorerMock) UpdateMetadata(ctx context.Context, datasetId string, versionId string, versionEtag string, updatedDataset *models.Dataset, updatedVersion *models.Version) error {
+func (mock *StorerMock) UpdateMetadata(ctx context.Context, datasetID string, versionID string, versionEtag string, updatedDataset *models.Dataset, updatedVersion *models.Version) error {
 	if mock.UpdateMetadataFunc == nil {
 		panic("StorerMock.UpdateMetadataFunc: method is nil but Storer.UpdateMetadata was just called")
 	}
 	callInfo := struct {
 		Ctx            context.Context
-		DatasetId      string
-		VersionId      string
+		DatasetID      string
+		VersionID      string
 		VersionEtag    string
 		UpdatedDataset *models.Dataset
 		UpdatedVersion *models.Version
 	}{
 		Ctx:            ctx,
-		DatasetId:      datasetId,
-		VersionId:      versionId,
+		DatasetID:      datasetID,
+		VersionID:      versionID,
 		VersionEtag:    versionEtag,
 		UpdatedDataset: updatedDataset,
 		UpdatedVersion: updatedVersion,
@@ -2292,7 +2292,7 @@ func (mock *StorerMock) UpdateMetadata(ctx context.Context, datasetId string, ve
 	mock.lockUpdateMetadata.Lock()
 	mock.calls.UpdateMetadata = append(mock.calls.UpdateMetadata, callInfo)
 	mock.lockUpdateMetadata.Unlock()
-	return mock.UpdateMetadataFunc(ctx, datasetId, versionId, versionEtag, updatedDataset, updatedVersion)
+	return mock.UpdateMetadataFunc(ctx, datasetID, versionID, versionEtag, updatedDataset, updatedVersion)
 }
 
 // UpdateMetadataCalls gets all the calls that were made to UpdateMetadata.
@@ -2301,16 +2301,16 @@ func (mock *StorerMock) UpdateMetadata(ctx context.Context, datasetId string, ve
 //	len(mockedStorer.UpdateMetadataCalls())
 func (mock *StorerMock) UpdateMetadataCalls() []struct {
 	Ctx            context.Context
-	DatasetId      string
-	VersionId      string
+	DatasetID      string
+	VersionID      string
 	VersionEtag    string
 	UpdatedDataset *models.Dataset
 	UpdatedVersion *models.Version
 } {
 	var calls []struct {
 		Ctx            context.Context
-		DatasetId      string
-		VersionId      string
+		DatasetID      string
+		VersionID      string
 		VersionEtag    string
 		UpdatedDataset *models.Dataset
 		UpdatedVersion *models.Version
