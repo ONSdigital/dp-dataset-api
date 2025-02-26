@@ -13,11 +13,10 @@ import (
 )
 
 var (
-	codeListAPIURL             = &neturl.URL{Scheme: "http", Host: "localhost:22400"}
-	datasetAPIURL              = &neturl.URL{Scheme: "http", Host: "localhost:22000"}
-	downloadServiceURL         = &neturl.URL{Scheme: "http", Host: "localhost:23600"}
-	externalDownloadServiceURL = &neturl.URL{Scheme: "http", Host: "localhost:23600"}
-	importAPIURL               = &neturl.URL{Scheme: "http", Host: "localhost:21800"}
+	codeListAPIURL     = &neturl.URL{Scheme: "http", Host: "localhost:22400"}
+	datasetAPIURL      = &neturl.URL{Scheme: "http", Host: "localhost:22000"}
+	downloadServiceURL = &neturl.URL{Scheme: "http", Host: "localhost:23600"}
+	importAPIURL       = &neturl.URL{Scheme: "http", Host: "localhost:21800"}
 )
 
 // Copilot used to format test data and generate .So() statements
@@ -3646,7 +3645,6 @@ func TestRewriteVersions_Success(t *testing.T) {
 	Convey("Given a list of versions", t, func() {
 		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, codeListAPIURL)
 		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
-		downloadLinksBuilder := links.FromHeadersOrDefaultDownload(&http.Header{}, downloadServiceURL, externalDownloadServiceURL)
 
 		Convey("When the version, dimension and download links need rewriting", func() {
 			results := []models.Version{
@@ -3806,7 +3804,7 @@ func TestRewriteVersions_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, downloadLinksBuilder)
+			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, downloadServiceURL)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
@@ -4019,7 +4017,7 @@ func TestRewriteVersions_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, downloadLinksBuilder)
+			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, downloadServiceURL)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
@@ -4096,7 +4094,7 @@ func TestRewriteVersions_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, downloadLinksBuilder)
+			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, downloadServiceURL)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -4141,7 +4139,7 @@ func TestRewriteVersions_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, downloadLinksBuilder)
+			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, downloadServiceURL)
 
 			Convey("Then the links should remain nil", func() {
 				So(err, ShouldBeNil)
@@ -4167,7 +4165,7 @@ func TestRewriteVersions_Success(t *testing.T) {
 		Convey("When the versions are empty", func() {
 			results := []models.Version{}
 
-			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, downloadLinksBuilder)
+			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, downloadServiceURL)
 
 			Convey("Then the versions should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -4182,7 +4180,6 @@ func TestRewriteVersions_Error(t *testing.T) {
 	Convey("Given a list of versions", t, func() {
 		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, codeListAPIURL)
-		downloadLinksBuilder := links.FromHeadersOrDefaultDownload(&http.Header{}, downloadServiceURL, externalDownloadServiceURL)
 		Convey("When the version links are unable to be parsed", func() {
 			results := []models.Version{
 				{
@@ -4225,7 +4222,7 @@ func TestRewriteVersions_Error(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, downloadLinksBuilder)
+			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, downloadServiceURL)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -4263,7 +4260,7 @@ func TestRewriteVersions_Error(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, downloadLinksBuilder)
+			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, downloadServiceURL)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -4287,7 +4284,7 @@ func TestRewriteVersions_Error(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, downloadLinksBuilder)
+			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, downloadServiceURL)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -4445,7 +4442,6 @@ func TestRewriteInstances_Success(t *testing.T) {
 		importLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, importAPIURL)
 		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, codeListAPIURL)
-		downloadLinksBuilder := links.FromHeadersOrDefaultDownload(&http.Header{}, downloadServiceURL, externalDownloadServiceURL)
 
 		Convey("When the instance, dimension and download links need rewriting", func() {
 			results := []*models.Instance{
@@ -4631,7 +4627,7 @@ func TestRewriteInstances_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteInstances(ctx, results, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder, downloadLinksBuilder)
+			err := RewriteInstances(ctx, results, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder, downloadServiceURL)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
@@ -4875,7 +4871,7 @@ func TestRewriteInstances_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteInstances(ctx, results, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder, downloadLinksBuilder)
+			err := RewriteInstances(ctx, results, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder, downloadServiceURL)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
@@ -4954,7 +4950,7 @@ func TestRewriteInstances_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteInstances(ctx, results, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder, downloadLinksBuilder)
+			err := RewriteInstances(ctx, results, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder, downloadServiceURL)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -4976,7 +4972,7 @@ func TestRewriteInstances_Success(t *testing.T) {
 		Convey("When the instances are empty", func() {
 			results := []*models.Instance{}
 
-			err := RewriteInstances(ctx, results, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder, downloadLinksBuilder)
+			err := RewriteInstances(ctx, results, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder, downloadServiceURL)
 
 			Convey("Then no error should be returned", func() {
 				So(err, ShouldBeNil)
@@ -4991,7 +4987,6 @@ func TestRewriteInstances_Error(t *testing.T) {
 		importLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, importAPIURL)
 		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, codeListAPIURL)
-		downloadLinksBuilder := links.FromHeadersOrDefaultDownload(&http.Header{}, downloadServiceURL, externalDownloadServiceURL)
 
 		Convey("When the instance links are unable to be parsed", func() {
 			results := []*models.Instance{
@@ -5055,7 +5050,7 @@ func TestRewriteInstances_Error(t *testing.T) {
 				},
 			}
 
-			err := RewriteInstances(ctx, results, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder, downloadLinksBuilder)
+			err := RewriteInstances(ctx, results, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder, downloadServiceURL)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -5131,7 +5126,7 @@ func TestRewriteInstances_Error(t *testing.T) {
 				},
 			}
 
-			err := RewriteInstances(ctx, results, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder, downloadLinksBuilder)
+			err := RewriteInstances(ctx, results, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder, downloadServiceURL)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -5170,7 +5165,7 @@ func TestRewriteInstances_Error(t *testing.T) {
 				},
 			}
 
-			err := RewriteInstances(ctx, results, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder, downloadLinksBuilder)
+			err := RewriteInstances(ctx, results, datasetLinksBuilder, codeListLinksBuilder, importLinksBuilder, downloadServiceURL)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -5360,7 +5355,6 @@ func TestRewriteInstanceLinks_Error(t *testing.T) {
 func TestRewriteDownloadLinks_Success(t *testing.T) {
 	ctx := context.Background()
 	Convey("Given a set of download links", t, func() {
-		downloadLinksBuilder := links.FromHeadersOrDefaultDownload(&http.Header{}, downloadServiceURL, externalDownloadServiceURL)
 		Convey("When the download links need rewriting", func() {
 			links := &models.DownloadList{
 				CSV: &models.DownloadObject{
@@ -5385,7 +5379,7 @@ func TestRewriteDownloadLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteDownloadLinks(ctx, links, downloadLinksBuilder)
+			err := RewriteDownloadLinks(ctx, links, downloadServiceURL)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
@@ -5426,7 +5420,7 @@ func TestRewriteDownloadLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteDownloadLinks(ctx, links, downloadLinksBuilder)
+			err := RewriteDownloadLinks(ctx, links, downloadServiceURL)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
@@ -5446,7 +5440,7 @@ func TestRewriteDownloadLinks_Success(t *testing.T) {
 		Convey("When the download links are empty", func() {
 			links := &models.DownloadList{}
 
-			err := RewriteDownloadLinks(ctx, links, downloadLinksBuilder)
+			err := RewriteDownloadLinks(ctx, links, downloadServiceURL)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -5455,7 +5449,7 @@ func TestRewriteDownloadLinks_Success(t *testing.T) {
 		})
 
 		Convey("When the download links are nil", func() {
-			err := RewriteDownloadLinks(ctx, nil, downloadLinksBuilder)
+			err := RewriteDownloadLinks(ctx, nil, downloadServiceURL)
 
 			Convey("Then the links should remain nil", func() {
 				So(err, ShouldBeNil)
@@ -5467,7 +5461,6 @@ func TestRewriteDownloadLinks_Success(t *testing.T) {
 func TestRewriteDownloadLinks_Error(t *testing.T) {
 	ctx := context.Background()
 	Convey("Given a set of download links", t, func() {
-		downloadLinksBuilder := links.FromHeadersOrDefaultDownload(&http.Header{}, downloadServiceURL, externalDownloadServiceURL)
 		Convey("When the download links are unable to be parsed", func() {
 			links := &models.DownloadList{
 				CSV: &models.DownloadObject{
@@ -5492,7 +5485,7 @@ func TestRewriteDownloadLinks_Error(t *testing.T) {
 				},
 			}
 
-			err := RewriteDownloadLinks(ctx, links, downloadLinksBuilder)
+			err := RewriteDownloadLinks(ctx, links, downloadServiceURL)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)

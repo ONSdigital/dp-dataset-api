@@ -7,32 +7,26 @@ import (
 
 // Builder encapsulates the building of urls in a central place, with knowledge of the url structures and base host names.
 type Builder struct {
-	websiteURL                 *url.URL
-	downloadServiceURL         *url.URL
-	externalDownloadServiceURL *url.URL
-	datasetAPIURL              *url.URL
-	codeListAPIURL             *url.URL
-	importAPIURL               *url.URL
+	websiteURL         *url.URL
+	downloadServiceURL *url.URL
+	datasetAPIURL      *url.URL
+	codeListAPIURL     *url.URL
+	importAPIURL       *url.URL
 }
 
 // NewBuilder returns a new instance of url.Builder
-func NewBuilder(websiteURL, downloadServiceURL, externalDownloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL *url.URL) *Builder {
+func NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL *url.URL) *Builder {
 	return &Builder{
-		websiteURL:                 websiteURL,
-		downloadServiceURL:         downloadServiceURL,
-		externalDownloadServiceURL: externalDownloadServiceURL,
-		datasetAPIURL:              datasetAPIURL,
-		codeListAPIURL:             codeListAPIURL,
-		importAPIURL:               importAPIURL,
+		websiteURL:         websiteURL,
+		downloadServiceURL: downloadServiceURL,
+		datasetAPIURL:      datasetAPIURL,
+		codeListAPIURL:     codeListAPIURL,
+		importAPIURL:       importAPIURL,
 	}
 }
 
 func (builder *Builder) GetDownloadServiceURL() *url.URL {
 	return builder.downloadServiceURL
-}
-
-func (builder *Builder) GetExternalDownloadServiceURL() *url.URL {
-	return builder.externalDownloadServiceURL
 }
 
 func (builder *Builder) GetDatasetAPIURL() *url.URL {

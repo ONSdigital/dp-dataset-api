@@ -191,10 +191,9 @@ func TestCreateMetadata(t *testing.T) {
 			codeListAPIURL := &neturl.URL{Scheme: "http", Host: "localhost:22400"}
 			datasetAPIURL := &neturl.URL{Scheme: "http", Host: "localhost:22000"}
 			downloadServiceURL := &neturl.URL{Scheme: "http", Host: "localhost:23600"}
-			externalDownloadServiceURL := &neturl.URL{Scheme: "http", Host: "localhost:23600"}
 			importAPIURL := &neturl.URL{Scheme: "http", Host: "localhost:21800"}
 			websiteURL := &neturl.URL{Scheme: "http", Host: "localhost:20000"}
-			urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, externalDownloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
+			urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
 			metaDataDoc := CreateMetaDataDoc(&dataset, &version, urlBuilder)
 			expectedThemes := []string{"1234", "5678", "9012"}
 
