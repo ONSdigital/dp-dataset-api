@@ -2,8 +2,6 @@ module github.com/ONSdigital/dp-dataset-api
 
 go 1.23.0
 
-toolchain go1.23.6
-
 // to avoid 'sonatype-2021-4899' non-CVE Vulnerability
 exclude github.com/gorilla/sessions v1.2.1
 
