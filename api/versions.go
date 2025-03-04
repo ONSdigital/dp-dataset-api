@@ -74,7 +74,8 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 
 	list, totalCount, err := func() ([]models.Version, int, error) {
 		authorised := api.authenticate(r, logData)
-
+		var results []models.Version
+		var totalCount int
 		var state string
 		if !authorised {
 			state = models.PublishedState
@@ -90,7 +91,20 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 			return nil, 0, err
 		}
 
-		results, totalCount, err := api.dataStore.Backend.GetVersions(ctx, datasetID, edition, state, offset, limit)
+		//if dataset exists
+		dataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
+		if err != nil {
+			log.Error(ctx, "failed to retrieve dataset details", err, logData)
+			return nil, 0, err
+		}
+
+		datasetType := dataset.Next.Type
+		if datasetType == models.Static.String() {
+			results, totalCount, err = api.dataStore.Backend.GetVersionsWithDatasetID(ctx, datasetID, offset, limit)
+		} else {
+			results, totalCount, err = api.dataStore.Backend.GetVersions(ctx, datasetID, edition, state, offset, limit)
+		}
+
 		if err != nil {
 			log.Error(ctx, "failed to find any versions for dataset edition", err, logData)
 			return nil, 0, err
