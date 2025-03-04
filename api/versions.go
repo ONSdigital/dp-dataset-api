@@ -10,7 +10,6 @@ import (
 
 	"github.com/ONSdigital/dp-api-clients-go/v2/headers"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
-	"github.com/ONSdigital/dp-dataset-api/instance"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/utils"
 	dpresponse "github.com/ONSdigital/dp-net/v2/handlers/response"
@@ -840,47 +839,71 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 
 	log.Info(ctx, "condensed endpoint called", logData)
 
-	// Validate dataset and edition existence
+	// Validate dataset existence
 	if err := api.dataStore.Backend.CheckDatasetExists(ctx, datasetID, ""); err != nil {
 		log.Error(ctx, "failed to find dataset", err, logData)
 		handleDatasetAPIErr(ctx, errs.ErrDatasetNotFound, w, nil)
 		return
 	}
-	if err := api.dataStore.Backend.CheckEditionExists(ctx, datasetID, edition, ""); err != nil {
-		log.Error(ctx, "failed to find edition", err, logData)
-		handleDatasetAPIErr(ctx, errs.ErrEditionNotFound, w, nil)
-		return
+
+	fmt.Println("THE EDITION", edition)
+
+	// Check if the edition exists
+	editionExists := true
+	if err := api.dataStore.Backend.CheckEditionExistsStatic(ctx, datasetID, edition, ""); err != nil {
+		editionExists = false
 	}
 
-	// Unmarshal instance from the request body
-	newInstance, err := instance.UnmarshalInstance(ctx, r.Body, true)
-	if err != nil {
-		log.Error(ctx, "failed to unmarshal instance", err, logData)
+	fmt.Println("EDITION EXISTS", editionExists)
+
+	tempVersion := &models.Version{}
+	if err := json.NewDecoder(r.Body).Decode(tempVersion); err != nil {
+		log.Error(ctx, "failed to unmarshal version", err, logData)
 		handleVersionAPIErr(ctx, errs.ErrUnableToParseJSON, w, logData)
 		return
 	}
 
-	// Set instance attributes and generate links
-	newInstance.Edition = edition
-	nextVersion, err := api.dataStore.Backend.GetNextVersion(ctx, datasetID, edition)
-	if err != nil {
-		log.Error(ctx, "failed to get next version", err, logData)
-		handleDatasetAPIErr(ctx, errs.ErrInternalServer, w, nil)
+	if err := validateVersionFields(tempVersion); err != nil {
+		log.Error(ctx, "failed validation check for version update", err, logData)
+		handleVersionAPIErr(ctx, errs.ErrMissingParameters, w, logData)
 		return
 	}
-	newInstance.Version = nextVersion
-	newInstance.State = models.AssociatedState
-	newInstance.Links = api.generateInstanceLinks(datasetID, newInstance.InstanceID, edition, nextVersion, newInstance.Links)
 
-	// Add instance to the datastore
-	newInstance, err = api.dataStore.Backend.AddInstance(ctx, newInstance)
+	var err error
+	var nextVersion int
+
+	fmt.Println("TEMP VERSION 1:", tempVersion.Version)
+
+	tempVersion.Edition = edition
+
+	if editionExists {
+		nextVersion, err = api.dataStore.Backend.GetNextVersionStatic(ctx, datasetID, edition)
+		fmt.Println("NEXT VERSION 1:", nextVersion)
+		if err != nil {
+			log.Error(ctx, "failed to get next version", err, logData)
+			handleDatasetAPIErr(ctx, errs.ErrInternalServer, w, nil)
+			return
+		}
+	} else {
+		log.Warn(ctx, "edition not found, defaulting to version 1", logData)
+		tempVersion.Edition = edition
+		nextVersion = 1
+	}
+
+	fmt.Println("NEXT VERSION 2", nextVersion)
+
+	tempVersion.Version = nextVersion
+	tempVersion.DatasetID = datasetID
+	tempVersion.Links = api.generateVersionLinks(datasetID, edition, nextVersion, tempVersion.Links)
+
+	// Store version in 'versions' collection
+	newVersion, err := api.dataStore.Backend.AddVersionStatic(ctx, tempVersion)
 	if err != nil {
-		log.Error(ctx, "failed to add instance", err, logData)
+		log.Error(ctx, "failed to add version", err, logData)
 		handleVersionAPIErr(ctx, err, w, logData)
 		return
 	}
 
-	// Update dataset's next object with instance details
 	datasetDoc, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 	if err != nil {
 		log.Error(ctx, "failed to get dataset", err, logData)
@@ -889,11 +912,7 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	}
 
 	datasetDoc.Next.State = models.AssociatedState
-	datasetDoc.Next.Description = newInstance.Description
-	datasetDoc.Next.Title = newInstance.Title
-	datasetDoc.Next.NextRelease = newInstance.NextRelease
-	datasetDoc.Next.Themes = newInstance.Themes
-	datasetDoc.Next.LastUpdated = newInstance.LastUpdated
+	datasetDoc.Next.LastUpdated = newVersion.LastUpdated
 
 	if err := api.dataStore.Backend.UpsertDataset(ctx, datasetID, datasetDoc); err != nil {
 		log.Error(ctx, "failed to update dataset", err, logData)
@@ -901,15 +920,15 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 		return
 	}
 
-	log.Info(ctx, "add instance: request successful", logData)
+	log.Info(ctx, "add version: request successful", logData)
 
 	setJSONContentType(w)
-	dpresponse.SetETag(w, newInstance.ETag)
+	dpresponse.SetETag(w, newVersion.ETag)
 	w.WriteHeader(http.StatusCreated)
 
-	response, err := json.Marshal(newInstance)
+	response, err := json.Marshal(newVersion)
 	if err != nil {
-		log.Error(ctx, "failed to marshal instance to JSON", err, logData)
+		log.Error(ctx, "failed to marshal version to JSON", err, logData)
 		handleDatasetAPIErr(ctx, errs.ErrInternalServer, w, nil)
 		return
 	}
@@ -919,25 +938,49 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	}
 }
 
-func (api *DatasetAPI) generateInstanceLinks(datasetID, instanceID, edition string, version int, existingLinks *models.InstanceLinks) *models.InstanceLinks {
+func validateVersionFields(version *models.Version) error {
+	var missingFields []string
+
+	if version.ReleaseDate == "" {
+		missingFields = append(missingFields, "release_date")
+	}
+	if version.UsageNotes == nil || len(*version.UsageNotes) == 0 {
+		missingFields = append(missingFields, "usage_notes")
+	}
+	if version.Alerts == nil || len(*version.Alerts) == 0 {
+		missingFields = append(missingFields, "alerts")
+	}
+	if version.Distributions == nil || len(*version.Distributions) == 0 {
+		missingFields = append(missingFields, "distributions")
+	}
+
+	if missingFields != nil {
+		return fmt.Errorf("missing mandatory version fields: %v", missingFields)
+	}
+
+	return nil
+}
+
+func (api *DatasetAPI) generateVersionLinks(datasetID, edition string, version int, existingLinks *models.VersionLinks) *models.VersionLinks {
 	spatial := (*models.LinkObject)(nil)
-	job := (*models.LinkObject)(nil)
 
 	if existingLinks != nil && existingLinks.Spatial != nil {
 		spatial = existingLinks.Spatial
 	}
-	if existingLinks != nil && existingLinks.Job != nil {
-		job = existingLinks.Job
-	}
-	return &models.InstanceLinks{
+	return &models.VersionLinks{
 		Dataset: &models.LinkObject{
 			HRef: fmt.Sprintf("%s/datasets/%s", api.host, datasetID),
 			ID:   datasetID,
 		},
-		Self: &models.LinkObject{
-			HRef: fmt.Sprintf("%s/datasets/%s", api.host, instanceID),
+		Dimensions: &models.LinkObject{
+			// need to fix
+			HRef: fmt.Sprintf("%s/datasets/%s", api.host, datasetID),
+			ID:   datasetID,
 		},
-		Job: job,
+		// Self: &models.LinkObject{
+		// 	// need to fix
+		// 	HRef: fmt.Sprintf("%s/datasets/%s", api.host, instanceID),
+		// },
 		Edition: &models.LinkObject{
 			HRef: fmt.Sprintf("%s/datasets/%s/editions/%s", api.host, datasetID, edition),
 			ID:   edition,

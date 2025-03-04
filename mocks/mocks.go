@@ -8,21 +8,25 @@ import (
 	"sync"
 )
 
+// Ensure, that DownloadsGeneratorMock does implement api.DownloadsGenerator.
+// If this is not the case, regenerate this file with moq.
+// var _ api.DownloadsGenerator = &DownloadsGeneratorMock{}
+
 // DownloadsGeneratorMock is a mock implementation of api.DownloadsGenerator.
 //
-// 	func TestSomethingThatUsesDownloadsGenerator(t *testing.T) {
+//	func TestSomethingThatUsesDownloadsGenerator(t *testing.T) {
 //
-// 		// make and configure a mocked api.DownloadsGenerator
-// 		mockedDownloadsGenerator := &DownloadsGeneratorMock{
-// 			GenerateFunc: func(ctx context.Context, datasetID string, instanceID string, edition string, version string) error {
-// 				panic("mock out the Generate method")
-// 			},
-// 		}
+//		// make and configure a mocked api.DownloadsGenerator
+//		mockedDownloadsGenerator := &DownloadsGeneratorMock{
+//			GenerateFunc: func(ctx context.Context, datasetID string, instanceID string, edition string, version string) error {
+//				panic("mock out the Generate method")
+//			},
+//		}
 //
-// 		// use mockedDownloadsGenerator in code that requires api.DownloadsGenerator
-// 		// and then make assertions.
+//		// use mockedDownloadsGenerator in code that requires api.DownloadsGenerator
+//		// and then make assertions.
 //
-// 	}
+//	}
 type DownloadsGeneratorMock struct {
 	// GenerateFunc mocks the Generate method.
 	GenerateFunc func(ctx context.Context, datasetID string, instanceID string, edition string, version string) error
@@ -72,7 +76,8 @@ func (mock *DownloadsGeneratorMock) Generate(ctx context.Context, datasetID stri
 
 // GenerateCalls gets all the calls that were made to Generate.
 // Check the length with:
-//     len(mockedDownloadsGenerator.GenerateCalls())
+//
+//	len(mockedDownloadsGenerator.GenerateCalls())
 func (mock *DownloadsGeneratorMock) GenerateCalls() []struct {
 	Ctx        context.Context
 	DatasetID  string
