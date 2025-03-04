@@ -846,15 +846,11 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 		return
 	}
 
-	fmt.Println("THE EDITION", edition)
-
 	// Check if the edition exists
 	editionExists := true
 	if err := api.dataStore.Backend.CheckEditionExistsStatic(ctx, datasetID, edition, ""); err != nil {
 		editionExists = false
 	}
-
-	fmt.Println("EDITION EXISTS", editionExists)
 
 	tempVersion := &models.Version{}
 	if err := json.NewDecoder(r.Body).Decode(tempVersion); err != nil {
@@ -872,13 +868,10 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	var err error
 	var nextVersion int
 
-	fmt.Println("TEMP VERSION 1:", tempVersion.Version)
-
 	tempVersion.Edition = edition
 
 	if editionExists {
 		nextVersion, err = api.dataStore.Backend.GetNextVersionStatic(ctx, datasetID, edition)
-		fmt.Println("NEXT VERSION 1:", nextVersion)
 		if err != nil {
 			log.Error(ctx, "failed to get next version", err, logData)
 			handleDatasetAPIErr(ctx, errs.ErrInternalServer, w, nil)
@@ -889,8 +882,6 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 		tempVersion.Edition = edition
 		nextVersion = 1
 	}
-
-	fmt.Println("NEXT VERSION 2", nextVersion)
 
 	tempVersion.Version = nextVersion
 	tempVersion.DatasetID = datasetID
