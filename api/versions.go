@@ -866,14 +866,14 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 		editionExists = false
 	}
 
-	tempVersion := &models.Version{}
-	if err := json.NewDecoder(r.Body).Decode(tempVersion); err != nil {
+	versionRequest := &models.Version{}
+	if err := json.NewDecoder(r.Body).Decode(versionRequest); err != nil {
 		log.Error(ctx, "failed to unmarshal version", err, logData)
 		handleVersionAPIErr(ctx, errs.ErrUnableToParseJSON, w, logData)
 		return
 	}
 
-	if err := validateVersionFields(tempVersion); err != nil {
+	if err := validateVersionFields(versionRequest); err != nil {
 		log.Error(ctx, "failed validation check for version update", err, logData)
 		handleVersionAPIErr(ctx, errs.ErrMissingParameters, w, logData)
 		return
@@ -882,7 +882,7 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	var err error
 	var nextVersion int
 
-	tempVersion.Edition = edition
+	versionRequest.Edition = edition
 
 	if editionExists {
 		nextVersion, err = api.dataStore.Backend.GetNextVersionStatic(ctx, datasetID, edition)
@@ -893,16 +893,16 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 		}
 	} else {
 		log.Warn(ctx, "edition not found, defaulting to version 1", logData)
-		tempVersion.Edition = edition
+		versionRequest.Edition = edition
 		nextVersion = 1
 	}
 
-	tempVersion.Version = nextVersion
-	tempVersion.DatasetID = datasetID
-	tempVersion.Links = api.generateVersionLinks(datasetID, edition, nextVersion, tempVersion.Links)
+	versionRequest.Version = nextVersion
+	versionRequest.DatasetID = datasetID
+	versionRequest.Links = api.generateVersionLinks(datasetID, edition, nextVersion, versionRequest.Links)
 
 	// Store version in 'versions' collection
-	newVersion, err := api.dataStore.Backend.AddVersionStatic(ctx, tempVersion)
+	newVersion, err := api.dataStore.Backend.AddVersionStatic(ctx, versionRequest)
 	if err != nil {
 		log.Error(ctx, "failed to add version", err, logData)
 		handleVersionAPIErr(ctx, err, w, logData)
