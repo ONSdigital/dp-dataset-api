@@ -3,7 +3,6 @@ package mongo
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -33,9 +32,6 @@ func (m *Mongo) GetNextVersionStatic(ctx context.Context, datasetID, edition str
 	var version models.Version
 	var nextVersion int
 
-	fmt.Println("DATASET ID", datasetID)
-	fmt.Println("EDITION", edition)
-
 	selector := bson.M{
 		"links.dataset.id": datasetID,
 		"links.edition.id": edition,
@@ -44,17 +40,13 @@ func (m *Mongo) GetNextVersionStatic(ctx context.Context, datasetID, edition str
 	// Results are sorted in reverse order to get latest version
 	err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).FindOne(ctx, selector, &version, mongodriver.Sort(bson.M{"version": -1}))
 	if err != nil {
-		fmt.Println("ERROR", err)
 		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
 			return 1, nil
 		}
-		fmt.Println("NEXT VERSION 1:", nextVersion)
 		return nextVersion, err
 	}
 
-	fmt.Println("NEXT VERSION 2:", nextVersion)
 	nextVersion = version.Version + 1
-	fmt.Println("NEXT VERSION 3:", nextVersion)
 
 	return nextVersion, nil
 }

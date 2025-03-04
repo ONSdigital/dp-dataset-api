@@ -902,7 +902,6 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 		return
 	}
 
-	datasetDoc.Next.State = models.AssociatedState
 	datasetDoc.Next.LastUpdated = newVersion.LastUpdated
 
 	if err := api.dataStore.Backend.UpsertDataset(ctx, datasetID, datasetDoc); err != nil {
