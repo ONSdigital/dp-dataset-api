@@ -197,6 +197,9 @@ func TestWebSubnetVersionEndpoint(t *testing.T) {
 		var versionSearchState, editionSearchState, datasetSearchState string
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{ID: "123-456", Next: &models.Dataset{ID: "123-456"}}, nil
+			},
 			CheckDatasetExistsFunc: func(_ context.Context, _, state string) error {
 				datasetSearchState = state
 				return nil

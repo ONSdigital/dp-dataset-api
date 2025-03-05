@@ -116,6 +116,22 @@ func (m *Mongo) GetVersionsWithDatasetID(ctx context.Context, datasetID string, 
 	return results, totalCount, nil
 }
 
+// GetVersion retrieves a version document for a dataset edition
+func (m *Mongo) GetVersionStatic(ctx context.Context, id, editionID string, versionID int, state string) (*models.Version, error) {
+	selector := buildVersionQuery(id, editionID, state, versionID)
+
+	var version models.Version
+	err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).FindOne(ctx, selector, &version)
+	if err != nil {
+		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
+			return nil, errs.ErrVersionNotFound
+		}
+		return nil, err
+	}
+
+	return &version, nil
+}
+
 func buildVersionWithDatasetIDQuery(id string) bson.M {
 	selector := bson.M{
 		"links.dataset.id": id,

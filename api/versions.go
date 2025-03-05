@@ -86,12 +86,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 			return nil, 0, err
 		}
 
-		if err := api.dataStore.Backend.CheckEditionExists(ctx, datasetID, edition, state); err != nil {
-			log.Error(ctx, "failed to find edition for list of versions", err, logData)
-			return nil, 0, err
-		}
-
-		//if dataset exists
+		// Check if dataset exists
 		dataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 		if err != nil {
 			log.Error(ctx, "failed to retrieve dataset details", err, logData)
@@ -99,6 +94,20 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 		}
 
 		datasetType := dataset.Next.Type
+
+		// Check if edition exists based on dataset type
+		if datasetType == models.Static.String() {
+			err = api.dataStore.Backend.CheckEditionExistsStatic(ctx, datasetID, edition, state)
+		} else {
+			err = api.dataStore.Backend.CheckEditionExists(ctx, datasetID, edition, state)
+		}
+
+		if err != nil {
+			log.Error(ctx, "failed to verify edition existence for dataset", err, logData)
+			return nil, 0, err
+		}
+
+		// Retrieve versions based on dataset type
 		if datasetType == models.Static.String() {
 			results, totalCount, err = api.dataStore.Backend.GetVersionsWithDatasetID(ctx, datasetID, offset, limit)
 		} else {
@@ -106,7 +115,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 		}
 
 		if err != nil {
-			log.Error(ctx, "failed to find any versions for dataset edition", err, logData)
+			log.Error(ctx, "failed to retrieve versions for dataset edition", err, logData)
 			return nil, 0, err
 		}
 
@@ -195,12 +204,34 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		if err := api.dataStore.Backend.CheckEditionExists(ctx, datasetID, edition, state); err != nil {
-			log.Error(ctx, "failed to find edition for dataset", err, logData)
+		// get dataset if dataset exists
+		dataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
+		if err != nil {
+			log.Error(ctx, "failed to retrieve dataset details", err, logData)
 			return nil, err
 		}
 
-		version, err := api.dataStore.Backend.GetVersion(ctx, datasetID, edition, versionID, state)
+		datasetType := dataset.Next.Type
+		// Check if edition exists based on dataset type
+		if datasetType == models.Static.String() {
+			err = api.dataStore.Backend.CheckEditionExistsStatic(ctx, datasetID, edition, state)
+		} else {
+			err = api.dataStore.Backend.CheckEditionExists(ctx, datasetID, edition, state)
+		}
+
+		if err != nil {
+			log.Error(ctx, "failed to verify edition existence for dataset", err, logData)
+			return nil, err
+		}
+
+		version := &models.Version{}
+		// Retrieve versions based on dataset type
+		if datasetType == models.Static.String() {
+			version, err = api.dataStore.Backend.GetVersionStatic(ctx, datasetID, edition, versionID, state)
+		} else {
+			version, err = api.dataStore.Backend.GetVersion(ctx, datasetID, edition, versionID, state)
+		}
+
 		if err != nil {
 			log.Error(ctx, "failed to find version for dataset edition", err, logData)
 			return nil, err
