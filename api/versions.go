@@ -897,6 +897,7 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 		nextVersion = 1
 	}
 
+	versionRequest.State = models.AssociatedState
 	versionRequest.Version = nextVersion
 	versionRequest.DatasetID = datasetID
 	versionRequest.Links = api.generateVersionLinks(datasetID, edition, nextVersion, versionRequest.Links)
@@ -917,6 +918,7 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	}
 
 	datasetDoc.Next.LastUpdated = newVersion.LastUpdated
+	datasetDoc.Next.State = models.AssociatedState
 
 	if err := api.dataStore.Backend.UpsertDataset(ctx, datasetID, datasetDoc); err != nil {
 		log.Error(ctx, "failed to update dataset", err, logData)
