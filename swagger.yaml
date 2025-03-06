@@ -2289,6 +2289,7 @@ definitions:
       dataset_id:
         description: "The identifier for the dataset."
         type: string
+        readOnly: true
         example: my-dataset
       dimensions:
         description: "A list of codelists for each dimension of this version"
@@ -2358,7 +2359,9 @@ definitions:
       temporal:
         $ref: "#/definitions/Temporal"
       type:
-        $ref: "#/definitions/DatasetType"
+        readOnly: true
+        allOf:
+          - $ref: "#/definitions/DatasetType"
       usage_notes:
         description: "A list of usage notes relating to the dataset"
         type: array
