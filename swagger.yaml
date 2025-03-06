@@ -478,7 +478,7 @@ paths:
         201:
           description: "A json object containing a version"
           schema:
-            $ref: "#/definitions/NewVersionResponse"
+            $ref: "#/definitions/Version"
         400:
           description: |
             Invalid request, reasons can be one of the following:
@@ -510,7 +510,7 @@ paths:
         201:
           description: "A json object containing a version"
           schema:
-            $ref: "#/definitions/NewVersionResponse"
+            $ref: "#/definitions/Version"
         400:
           description: |
             Invalid request, reasons can be one of the following:
@@ -2065,18 +2065,6 @@ definitions:
                 type: string
       state:
         $ref: "#/definitions/State"
-  NewVersionResponse:
-    description: "A model for the response body when creating a new version for an edition of a dataset"
-    allOf:
-      - type: object
-        properties:
-          collection_id:
-            $ref: "#/definitions/CollectionID"
-          id:
-            type: string
-            description: "An unique id for a dataset"
-            example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91CD"
-      - $ref: "#/definitions/Version"
   Publisher:
     description: "The publisher of the dataset"
     type: object
