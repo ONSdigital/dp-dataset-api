@@ -4,26 +4,29 @@
 package mocks
 
 import (
-	"sync"
-
 	kafka "github.com/ONSdigital/dp-kafka/v4"
+	"sync"
 )
+
+// Ensure, that KafkaProducerMock does implement download.KafkaProducer.
+// If this is not the case, regenerate this file with moq.
+//var _ download.KafkaProducer = &KafkaProducerMock{}
 
 // KafkaProducerMock is a mock implementation of download.KafkaProducer.
 //
-// 	func TestSomethingThatUsesKafkaProducer(t *testing.T) {
+//	func TestSomethingThatUsesKafkaProducer(t *testing.T) {
 //
-// 		// make and configure a mocked download.KafkaProducer
-// 		mockedKafkaProducer := &KafkaProducerMock{
-// 			OutputFunc: func() chan []byte {
-// 				panic("mock out the Output method")
-// 			},
-// 		}
+//		// make and configure a mocked download.KafkaProducer
+//		mockedKafkaProducer := &KafkaProducerMock{
+//			OutputFunc: func() chan kafka.BytesMessage {
+//				panic("mock out the Output method")
+//			},
+//		}
 //
-// 		// use mockedKafkaProducer in code that requires download.KafkaProducer
-// 		// and then make assertions.
+//		// use mockedKafkaProducer in code that requires download.KafkaProducer
+//		// and then make assertions.
 //
-// 	}
+//	}
 type KafkaProducerMock struct {
 	// OutputFunc mocks the Output method.
 	OutputFunc func() chan kafka.BytesMessage
@@ -52,7 +55,8 @@ func (mock *KafkaProducerMock) Output() chan kafka.BytesMessage {
 
 // OutputCalls gets all the calls that were made to Output.
 // Check the length with:
-//     len(mockedKafkaProducer.OutputCalls())
+//
+//	len(mockedKafkaProducer.OutputCalls())
 func (mock *KafkaProducerMock) OutputCalls() []struct {
 } {
 	var calls []struct {
@@ -63,21 +67,25 @@ func (mock *KafkaProducerMock) OutputCalls() []struct {
 	return calls
 }
 
+// Ensure, that GenerateDownloadsEventMock does implement download.GenerateDownloadsEvent.
+// If this is not the case, regenerate this file with moq.
+//var _ download.GenerateDownloadsEvent = &GenerateDownloadsEventMock{}
+
 // GenerateDownloadsEventMock is a mock implementation of download.GenerateDownloadsEvent.
 //
-// 	func TestSomethingThatUsesGenerateDownloadsEvent(t *testing.T) {
+//	func TestSomethingThatUsesGenerateDownloadsEvent(t *testing.T) {
 //
-// 		// make and configure a mocked download.GenerateDownloadsEvent
-// 		mockedGenerateDownloadsEvent := &GenerateDownloadsEventMock{
-// 			MarshalFunc: func(s interface{}) ([]byte, error) {
-// 				panic("mock out the Marshal method")
-// 			},
-// 		}
+//		// make and configure a mocked download.GenerateDownloadsEvent
+//		mockedGenerateDownloadsEvent := &GenerateDownloadsEventMock{
+//			MarshalFunc: func(s interface{}) ([]byte, error) {
+//				panic("mock out the Marshal method")
+//			},
+//		}
 //
-// 		// use mockedGenerateDownloadsEvent in code that requires download.GenerateDownloadsEvent
-// 		// and then make assertions.
+//		// use mockedGenerateDownloadsEvent in code that requires download.GenerateDownloadsEvent
+//		// and then make assertions.
 //
-// 	}
+//	}
 type GenerateDownloadsEventMock struct {
 	// MarshalFunc mocks the Marshal method.
 	MarshalFunc func(s interface{}) ([]byte, error)
@@ -111,7 +119,8 @@ func (mock *GenerateDownloadsEventMock) Marshal(s interface{}) ([]byte, error) {
 
 // MarshalCalls gets all the calls that were made to Marshal.
 // Check the length with:
-//     len(mockedGenerateDownloadsEvent.MarshalCalls())
+//
+//	len(mockedGenerateDownloadsEvent.MarshalCalls())
 func (mock *GenerateDownloadsEventMock) MarshalCalls() []struct {
 	S interface{}
 } {

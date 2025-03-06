@@ -22,8 +22,10 @@ type dataMongoDB interface {
 	UpsertDimensionsToInstance(ctx context.Context, dimensions []*models.CachedDimensionOption) error
 	AddEventToInstance(ctx context.Context, currentInstance *models.Instance, event *models.Event, eTagSelector string) (newETag string, err error)
 	AddInstance(ctx context.Context, instance *models.Instance) (*models.Instance, error)
+	AddVersionStatic(ctx context.Context, version *models.Version) (inst *models.Version, err error)
 	CheckDatasetExists(ctx context.Context, ID, state string) error
 	CheckEditionExists(ctx context.Context, ID, editionID, state string) error
+	CheckEditionExistsStatic(ctx context.Context, id, editionID, state string) error
 	GetDataset(ctx context.Context, ID string) (*models.DatasetUpdate, error)
 	GetDatasets(ctx context.Context, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error)
 	GetDatasetsByBasedOn(ctx context.Context, ID string, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error)
@@ -36,9 +38,12 @@ type dataMongoDB interface {
 	GetInstances(ctx context.Context, states []string, datasets []string, offset, limit int) ([]*models.Instance, int, error)
 	GetInstance(ctx context.Context, ID, eTagSelector string) (*models.Instance, error)
 	GetNextVersion(ctx context.Context, datasetID, editionID string) (int, error)
+	GetNextVersionStatic(ctx context.Context, datasetID, editionID string) (int, error)
 	GetVersion(ctx context.Context, datasetID, editionID string, version int, state string) (*models.Version, error)
+	GetVersionStatic(ctx context.Context, datasetID, editionID string, version int, state string) (*models.Version, error)
 	GetUniqueDimensionAndOptions(ctx context.Context, ID, dimension string) ([]*string, int, error)
 	GetVersions(ctx context.Context, datasetID, editionID, state string, offset, limit int) ([]models.Version, int, error)
+	GetVersionsWithDatasetID(ctx context.Context, datasetID string, offset, limit int) ([]models.Version, int, error)
 	UpdateDataset(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error
 	UpdateDatasetWithAssociation(ctx context.Context, ID, state string, version *models.Version) error
 	UpdateDimensionsNodeIDAndOrder(ctx context.Context, updates []*models.DimensionOption) error
@@ -54,6 +59,7 @@ type dataMongoDB interface {
 	UpsertDataset(ctx context.Context, ID string, datasetDoc *models.DatasetUpdate) error
 	UpsertEdition(ctx context.Context, datasetID, edition string, editionDoc *models.EditionUpdate) error
 	UpsertVersion(ctx context.Context, ID string, versionDoc *models.Version) error
+	UpsertVersionStatic(ctx context.Context, ID string, versionDoc *models.Version) error
 	DeleteDataset(ctx context.Context, ID string) error
 	DeleteEdition(ctx context.Context, ID string) error
 	AcquireInstanceLock(ctx context.Context, instanceID string) (lockID string, err error)

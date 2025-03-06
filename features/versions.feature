@@ -16,7 +16,7 @@ Feature: Dataset API
                     "links": {
                       "latest_version": {
                         "id": "1",
-                        "href": "someurl"
+                        "href": "/datasets/test-cantabular-dataset-2/editions/2021/versions/1"
                       }
                     }
                 },
@@ -30,7 +30,7 @@ Feature: Dataset API
                     "links": {
                       "latest_version": {
                         "id": "1",
-                        "href": "someurl"
+                        "href": "/datasets/test-static/editions/test-edition-static/versions/1"
                       }
                     }
                 }
@@ -91,7 +91,7 @@ Feature: Dataset API
                         },
                         "latest_version": {
                             "id": "1",
-                            "href": "someurl"
+                            "href": "/datasets/test-cantabular-dataset-2/editions/2021/versions/1"
                         }
                     }
                 },
@@ -106,7 +106,7 @@ Feature: Dataset API
                         },
                         "latest_version": {
                             "id": "1",
-                            "href": "someurl"
+                            "href": "/datasets/test-static/editions/test-edition-static/versions/1"
                         }
                     }
                 }
@@ -124,7 +124,7 @@ Feature: Dataset API
                             "id": "population-estimates"
                         },
                         "self": {
-                            "href": "someurl"
+                            "href": "/datasets/population-estimates/editions/hello/versions/1"
                         }
                     },
                     "edition": "hello"
@@ -138,7 +138,7 @@ Feature: Dataset API
                             "id": "population-estimates"
                         },
                         "self": {
-                            "href": "someurl"
+                            "href": "/datasets/population-estimates/editions/hello/versions/2"
                         }
                     },
                     "edition": "hello"
@@ -152,7 +152,7 @@ Feature: Dataset API
                             "id": "population-estimates"
                         },
                         "self": {
-                            "href": "someurl"
+                            "href": "/datasets/population-estimates/editions/hellov2/versions/3"
                         }
                     },
                     "edition": "hellov2"
@@ -166,7 +166,7 @@ Feature: Dataset API
                             "id": "population-estimates"
                         },
                         "self": {
-                            "href": "someurl"
+                            "href": "/datasets/population-estimates/editions/hello/versions/4"
                         }
                     },
                     "edition": "hello",
@@ -182,7 +182,7 @@ Feature: Dataset API
                             "id": "test-cantabular-dataset-1"
                         },
                         "self": {
-                            "href": "someurl"
+                            "href": "/datasets/test-cantabular-dataset-1/editions/2021/versions/1"
                         }
                     },
                     "edition": "2021"
@@ -197,7 +197,7 @@ Feature: Dataset API
                             "id": "test-cantabular-dataset-2"
                         },
                         "self": {
-                            "href": "someurl"
+                            "href": "/datasets/test-cantabular-dataset-2/editions/2021/versions/1"
                         }
                     },
                     "edition": "2021",
@@ -205,7 +205,7 @@ Feature: Dataset API
                       "csv": {
                         "public": "",
                         "size": "1",
-                        "href": "someurl"
+                        "href": "/downloads/datasets/test-cantabular-dataset-2/editions/2021/versions/1.csv"
                       }
                     }
                 },
@@ -219,7 +219,7 @@ Feature: Dataset API
                             "id": "test-static"
                         },
                         "self": {
-                            "href": "someurl"
+                            "href": "/datasets/test-static/editions/test-edition-static/versions/1"
                         }
                     },
                     "edition": "test-edition-static"
@@ -248,7 +248,7 @@ Feature: Dataset API
                                 "id": "population-estimates"
                             },
                             "self": {
-                                "href": "https://api.example.com/v1/someurl"
+                                "href": "https://api.example.com/v1/datasets/population-estimates/editions/hello/versions/4"
                             }
                         },
                         "lowest_geography": "ltla"
@@ -264,7 +264,7 @@ Feature: Dataset API
                                 "id": "population-estimates"
                             },
                             "self": {
-                                "href": "https://api.example.com/v1/someurl"
+                                "href": "https://api.example.com/v1/datasets/population-estimates/editions/hello/versions/1"
                             }
                         }
                     }
@@ -293,7 +293,7 @@ Feature: Dataset API
                                 "id": "population-estimates"
                             },
                             "self": {
-                                "href": "someurl"
+                                "href": "/datasets/population-estimates/editions/hello/versions/4"
                             }
                         },
                         "lowest_geography": "ltla"
@@ -309,7 +309,7 @@ Feature: Dataset API
                                 "id": "population-estimates"
                             },
                             "self": {
-                                "href": "someurl"
+                                "href": "/datasets/population-estimates/editions/hello/versions/1"
                             }
                         }
                     }
@@ -343,7 +343,7 @@ Feature: Dataset API
                                 "id": "population-estimates"
                             },
                             "self": {
-                                "href": "https://api.example.com/v1/someurl"
+                                "href": "https://api.example.com/v1/datasets/population-estimates/editions/hello/versions/4"
                             }
                         },
                         "edition": "hello",
@@ -359,7 +359,7 @@ Feature: Dataset API
                                 "id": "population-estimates"
                             },
                             "self": {
-                                "href": "https://api.example.com/v1/someurl"
+                                "href": "https://api.example.com/v1/datasets/population-estimates/editions/hello/versions/2"
                             }
                         },
                         "edition": "hello"
@@ -374,7 +374,7 @@ Feature: Dataset API
                                 "id": "population-estimates"
                             },
                             "self": {
-                                "href": "https://api.example.com/v1/someurl"
+                                "href": "https://api.example.com/v1/datasets/population-estimates/editions/hello/versions/1"
                             }
                         },
                         "edition": "hello"
@@ -406,7 +406,7 @@ Feature: Dataset API
                                 "id": "population-estimates"
                             },
                             "self": {
-                                "href": "someurl"
+                                "href": "/datasets/population-estimates/editions/hello/versions/4"
                             }
                         },
                         "edition": "hello",
@@ -422,7 +422,7 @@ Feature: Dataset API
                                 "id": "population-estimates"
                             },
                             "self": {
-                                "href": "someurl"
+                                "href": "/datasets/population-estimates/editions/hello/versions/2"
                             }
                         },
                         "edition": "hello"
@@ -437,7 +437,7 @@ Feature: Dataset API
                                 "id": "population-estimates"
                             },
                             "self": {
-                                "href": "someurl"
+                                "href": "/datasets/population-estimates/editions/hello/versions/1"
                             }
                         },
                         "edition": "hello"
@@ -489,7 +489,7 @@ Feature: Dataset API
                     "id": "population-estimates"
                 },
                 "self": {
-                    "href": "https://api.example.com/v1/someurl"
+                    "href": "https://api.example.com/v1/datasets/population-estimates/editions/hello/versions/4"
                 }
             },
             "edition": "hello",
@@ -511,7 +511,7 @@ Feature: Dataset API
                     "id": "population-estimates"
                 },
                 "self": {
-                    "href": "someurl"
+                    "href": "/datasets/population-estimates/editions/hello/versions/4"
                 }
             },
             "edition": "hello",
@@ -539,7 +539,7 @@ Feature: Dataset API
                     "id": "population-estimates"
                 },
                 "self": {
-                    "href": "https://api.example.com/v1/someurl"
+                    "href": "https://api.example.com/v1/datasets/population-estimates/editions/hello/versions/2"
                 }
             },
             "edition": "hello"
@@ -563,7 +563,7 @@ Feature: Dataset API
                     "id": "population-estimates"
                 },
                 "self": {
-                    "href": "someurl"
+                    "href": "/datasets/population-estimates/editions/hello/versions/2"
                 }
             },
             "edition": "hello"
@@ -638,7 +638,7 @@ Feature: Dataset API
               "links": {
                 "version": {
                   "id": "1",
-                  "href": "someurl"
+                  "href": "/datasets/test-cantabular-dataset-2/editions/2021/versions/1"
                 }
               }
             }
@@ -674,7 +674,7 @@ Feature: Dataset API
               "links": {
                 "version": {
                   "id": "1",
-                  "href": "someurl"
+                  "href": "/datasets/test-cantabular-dataset-2/editions/2021/versions/1"
                 }
               }
             }

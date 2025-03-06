@@ -37,7 +37,7 @@ Feature: Dataset API
                             "id": "population-estimates"
                         },
                         "self": {
-                            "href": "someurl"
+                            "href": "/datasets/population-estimates/editions/hello/versions/1"
                         }
                     },
                     "edition": "hello"
@@ -51,7 +51,7 @@ Feature: Dataset API
                             "id": "population-estimates"
                         },
                         "self": {
-                            "href": "someurl"
+                            "href": "/datasets/population-estimates/editions/hello/versions/2"
                         }
                     },
                     "edition": "hello"
@@ -65,7 +65,7 @@ Feature: Dataset API
                             "id": "population-estimates"
                         },
                         "self": {
-                            "href": "someurl"
+                            "href": "/datasets/population-estimates/editions/hello/versions/3"
                         }
                     },
                     "edition": "hello"

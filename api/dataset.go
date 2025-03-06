@@ -270,16 +270,6 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		if api.enableURLRewriting {
-			datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
-
-			err = utils.RewriteDatasetLinks(ctx, datasetDoc.Next.Links, datasetLinksBuilder)
-			if err != nil {
-				log.Error(ctx, "addDataset endpoint: failed to rewrite links for response", err)
-				return nil, err
-			}
-		}
-
 		b, err := json.Marshal(datasetDoc)
 		if err != nil {
 			log.Error(ctx, "addDataset endpoint: failed to marshal dataset resource into bytes", err, logData)
@@ -383,17 +373,6 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 		log.Error(ctx, "addDatasetNew endpoint: failed to insert dataset resource to datastore", err, logData)
 		handleDatasetAPIErr(ctx, err, w, logData)
 		return
-	}
-
-	if api.enableURLRewriting {
-		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
-
-		err = utils.RewriteDatasetLinks(ctx, datasetDoc.Next.Links, datasetLinksBuilder)
-		if err != nil {
-			log.Error(ctx, "addDatasetNew endpoint: failed to rewrite links for response", err)
-			handleDatasetAPIErr(ctx, err, w, logData)
-			return
-		}
 	}
 
 	b, err := json.Marshal(datasetDoc)
