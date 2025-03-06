@@ -2209,6 +2209,12 @@ definitions:
           $ref: "#/definitions/Alert"
       collection_id:
         $ref: "#/definitions/CollectionID"
+      distributions:
+        description: A list of representations of the dataset available and how to access them.
+        type: array
+        minItems: 1
+        items:
+          $ref: "#/definitions/Distribution"
       downloads:
         description: "A selection of download objects containing information of downloadable files. These can only be updated via an authorised caller."
         type: object
