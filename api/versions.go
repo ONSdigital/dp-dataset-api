@@ -907,7 +907,6 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	if missingFields := validateVersionFields(versionRequest); len(missingFields) > 0 {
 		log.Error(ctx, "failed validation check for version update", fmt.Errorf("missing mandatory version fields"), logData)
 
-		// Create a structured error response
 		errorResponse := map[string]interface{}{
 			"error":          "missing mandatory version fields",
 			"missing_fields": missingFields,
