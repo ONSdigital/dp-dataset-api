@@ -3272,7 +3272,7 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 		api.addDatasetVersionCondensed(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
 	})
 
 	Convey("When edition exists, version should increment", t, func() {
