@@ -2439,6 +2439,7 @@ definitions:
         type: integer
         minimum: 0
         example: 4300000
+        readOnly: true
       format:
         description: |
           The format for the download file referenced by `download_url`.
@@ -2470,6 +2471,7 @@ definitions:
             * `text/plain`: Plain text (used for CSDB output structured text files)
             * `application/ld+json`: JSON-LD metadata file. Commonly used to annotate tabular data in an associated CSV file as outlined in the CSVW standard.
         type: string
+        readOnly: true
         enum:
           - text/csv
           - application/vnd.sdmx.structurespecificdata+xml
