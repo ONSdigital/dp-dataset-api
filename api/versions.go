@@ -904,9 +904,25 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 		return
 	}
 
-	if err := validateVersionFields(versionRequest); err != nil {
-		log.Error(ctx, "failed validation check for version update", err, logData)
-		handleVersionAPIErr(ctx, errs.ErrMissingParameters, w, logData)
+	if missingFields := validateVersionFields(versionRequest); len(missingFields) > 0 {
+		log.Error(ctx, "failed validation check for version update", fmt.Errorf("missing mandatory version fields"), logData)
+
+		// Create a structured error response
+		errorResponse := map[string]interface{}{
+			"error":          "missing mandatory version fields",
+			"missing_fields": missingFields,
+		}
+
+		responseBody, err := json.Marshal(errorResponse)
+		if err != nil {
+			log.Error(ctx, "failed to marshal error response", err, logData)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		setJSONContentType(w)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write(responseBody)
 		return
 	}
 
@@ -975,27 +991,17 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	}
 }
 
-func validateVersionFields(version *models.Version) error {
+func validateVersionFields(version *models.Version) []string {
 	var missingFields []string
 
 	if version.ReleaseDate == "" {
 		missingFields = append(missingFields, "release_date")
 	}
-	if version.UsageNotes == nil || len(*version.UsageNotes) == 0 {
-		missingFields = append(missingFields, "usage_notes")
-	}
-	if version.Alerts == nil || len(*version.Alerts) == 0 {
-		missingFields = append(missingFields, "alerts")
-	}
 	if version.Distributions == nil || len(*version.Distributions) == 0 {
 		missingFields = append(missingFields, "distributions")
 	}
 
-	if missingFields != nil {
-		return fmt.Errorf("missing mandatory version fields: %v", missingFields)
-	}
-
-	return nil
+	return missingFields
 }
 
 func (api *DatasetAPI) generateVersionLinks(datasetID, edition string, version int, existingLinks *models.VersionLinks) *models.VersionLinks {
