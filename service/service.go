@@ -133,7 +133,7 @@ func GetListMultivariateCantabularTransitions() []application.Transition {
 	publishedTransition := application.Transition{
 		Label:               "published",
 		TargetState:         application.Published,
-		AllowedSourceStates: []string{"associated", "edition-confirmed"},
+		AllowedSourceStates: []string{"associated", "edition-confirmed", "published"},
 		Type:                "cantabular_multivariate_table",
 	}
 
