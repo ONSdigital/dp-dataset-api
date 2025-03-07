@@ -34,7 +34,7 @@ type Version struct {
 	Edition            string               `bson:"edition,omitempty"               json:"edition,omitempty"`
 	Headers            []string             `bson:"headers,omitempty"               json:"-"`
 	ID                 string               `bson:"id,omitempty"                    json:"id,omitempty"`
-	LastUpdated        time.Time            `bson:"last_updated,omitempty"          json:"-"`
+	LastUpdated        time.Time            `bson:"last_updated,omitempty"          json:"last_updated,omitempty"`
 	LatestChanges      *[]LatestChange      `bson:"latest_changes,omitempty"        json:"latest_changes,omitempty"`
 	Links              *VersionLinks        `bson:"links,omitempty"                 json:"links,omitempty"`
 	ReleaseDate        string               `bson:"release_date,omitempty"          json:"release_date,omitempty"`
