@@ -921,7 +921,9 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 
 		setJSONContentType(w)
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write(responseBody)
+		if _, err := w.Write(responseBody); err != nil {
+			log.Error(ctx, "failed to write response", err, logData)
+		}
 		return
 	}
 
