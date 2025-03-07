@@ -3000,7 +3000,6 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 	Convey("When dataset and edition exist and version is added successfully", t, func() {
 		b := `{
   "next_release": "2025-02-15",
-  "last_updated": "2025-02-15",
   "alerts": [
     {}
   ],
@@ -3066,7 +3065,6 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
   "description": "test dataset",
   "type": "static",
   "next_release": "2025-02-15",
-  "last_updated": "2025-02-15",
   "alerts": [
     {}
   ],
@@ -3145,7 +3143,6 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
   "description": "test dataset",
   "type": "static",
   "next_release": "2025-02-15",
-  "last_updated": "2025-02-15",
   "alerts": [
     {}
   ],
@@ -3281,7 +3278,6 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 	Convey("When edition exists, version should increment", t, func() {
 		b := `{
   "next_release": "2025-02-15",
-  "last_updated": "2025-02-15",
   "alerts": [
     {}
   ],
