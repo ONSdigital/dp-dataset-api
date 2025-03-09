@@ -82,11 +82,13 @@ type DatasetUpdate struct {
 
 // Dataset represents information related to a single dataset
 type Dataset struct {
+	ID                string           `bson:"_id,omitempty"                    json:"id,omitempty"`
+	CanonicalTopic    string           `bson:"canonical_topic,omitempty"        json:"canonical_topic,omitempty"`
 	CollectionID      string           `bson:"collection_id,omitempty"          json:"collection_id,omitempty"`
 	Contacts          []ContactDetails `bson:"contacts,omitempty"               json:"contacts,omitempty"`
 	Description       string           `bson:"description,omitempty"            json:"description,omitempty"`
+	IsBasedOn         *IsBasedOn       `bson:"is_based_on,omitempty"            json:"is_based_on,omitempty"`
 	Keywords          []string         `bson:"keywords,omitempty"               json:"keywords,omitempty"`
-	ID                string           `bson:"_id,omitempty"                    json:"id,omitempty"`
 	LastUpdated       time.Time        `bson:"last_updated,omitempty"           json:"-"`
 	License           string           `bson:"license,omitempty"                json:"license,omitempty"`
 	Links             *DatasetLinks    `bson:"links,omitempty"                  json:"links,omitempty"`
@@ -94,28 +96,28 @@ type Dataset struct {
 	NationalStatistic *bool            `bson:"national_statistic,omitempty"     json:"national_statistic,omitempty"`
 	NextRelease       string           `bson:"next_release,omitempty"           json:"next_release,omitempty"`
 	Publications      []GeneralDetails `bson:"publications,omitempty"           json:"publications,omitempty"`
-	Publisher         *Publisher       `bson:"publisher,omitempty"              json:"publisher,omitempty"`
+	Publisher         *Publisher       `bson:"publisher,omitempty"              json:"publisher,omitempty"` // Array in swagger.yml
 	QMI               *GeneralDetails  `bson:"qmi,omitempty"                    json:"qmi,omitempty"`
+	RelatedContent    []GeneralDetails `bson:"related_content,omitempty"        json:"related_content,omitempty"`
 	RelatedDatasets   []GeneralDetails `bson:"related_datasets,omitempty"       json:"related_datasets,omitempty"`
 	ReleaseFrequency  string           `bson:"release_frequency,omitempty"      json:"release_frequency,omitempty"`
 	State             string           `bson:"state,omitempty"                  json:"state,omitempty"`
-	Theme             string           `bson:"theme,omitempty"                  json:"theme,omitempty"`
-	Title             string           `bson:"title,omitempty"                  json:"title,omitempty"`
-	UnitOfMeasure     string           `bson:"unit_of_measure,omitempty"        json:"unit_of_measure,omitempty"`
-	URI               string           `bson:"uri,omitempty"                    json:"uri,omitempty"`
-	Type              string           `bson:"type,omitempty"                   json:"type,omitempty"`
-	IsBasedOn         *IsBasedOn       `bson:"is_based_on,omitempty"            json:"is_based_on,omitempty"`
-	CanonicalTopic    string           `bson:"canonical_topic,omitempty"        json:"canonical_topic,omitempty"`
 	Subtopics         []string         `bson:"subtopics,omitempty"              json:"subtopics,omitempty"`
 	Survey            string           `bson:"survey,omitempty"                 json:"survey,omitempty"`
-	RelatedContent    []GeneralDetails `bson:"related_content,omitempty"        json:"related_content,omitempty"`
-	Themes            []string         `bson:"themes,omitempty" json:"themes,omitempty"`
+	Title             string           `bson:"title,omitempty"                  json:"title,omitempty"`
+	Theme             string           `bson:"theme,omitempty"                  json:"theme,omitempty"`  // Not in swagger.yml
+	Themes            []string         `bson:"themes,omitempty"                 json:"themes,omitempty"` // Not in swagger.yml
+	Topics            []string         `bson:"topics,omitempty"                 json:"topics,omitempty"`
+	Type              string           `bson:"type,omitempty"                   json:"type,omitempty"`
+	UnitOfMeasure     string           `bson:"unit_of_measure,omitempty"        json:"unit_of_measure,omitempty"`
+	URI               string           `bson:"uri,omitempty"                    json:"uri,omitempty"` // Not in swagger.yml
 }
 
 // DatasetLinks represents a list of specific links related to the dataset resource
 type DatasetLinks struct {
-	AccessRights  *LinkObject `bson:"access_rights,omitempty"   json:"access_rights,omitempty"`
+	AccessRights  *LinkObject `bson:"access_rights,omitempty"   json:"access_rights,omitempty"` // Not in swagger.yml
 	Editions      *LinkObject `bson:"editions,omitempty"        json:"editions,omitempty"`
+	LatestEdition *LinkObject `bson:"latest_edition,omitempty"  json:"latest_edition,omitempty"`
 	LatestVersion *LinkObject `bson:"latest_version,omitempty"  json:"latest_version,omitempty"`
 	Self          *LinkObject `bson:"self,omitempty"            json:"self,omitempty"`
 	Taxonomy      *LinkObject `bson:"taxonomy,omitempty"        json:"taxonomy,omitempty"`
