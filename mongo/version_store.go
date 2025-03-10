@@ -13,6 +13,15 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
+// AcquireVersionsLock tries to lock the provided versionID.
+func (m *Mongo) AcquireVersionsLock(ctx context.Context, versionID string) (lockID string, err error) {
+	return m.lockClientVersionsCollection.Acquire(ctx, versionID)
+}
+
+func (m *Mongo) UnlockVersions(ctx context.Context, lockID string) {
+	m.lockClientVersionsCollection.Unlock(ctx, lockID)
+}
+
 // UpsertVersion adds or overrides an existing version document
 func (m *Mongo) UpsertVersionStatic(ctx context.Context, id string, version *models.Version) (err error) {
 	update := bson.M{

@@ -8,7 +8,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
-	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"sync"
 )
 
@@ -24,6 +24,9 @@ var _ store.MongoDB = &MongoDBMock{}
 //		mockedMongoDB := &MongoDBMock{
 //			AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
 //				panic("mock out the AcquireInstanceLock method")
+//			},
+//			AcquireVersionsLockFunc: func(ctx context.Context, instanceID string) (string, error) {
+//				panic("mock out the AcquireVersionsLock method")
 //			},
 //			AddEventToInstanceFunc: func(ctx context.Context, currentInstance *models.Instance, event *models.Event, eTagSelector string) (string, error) {
 //				panic("mock out the AddEventToInstance method")
@@ -70,7 +73,7 @@ var _ store.MongoDB = &MongoDBMock{}
 //			GetDimensionOptionsFromIDsFunc: func(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error) {
 //				panic("mock out the GetDimensionOptionsFromIDs method")
 //			},
-//			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]bson.M, error) {
+//			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]primitive.M, error) {
 //				panic("mock out the GetDimensions method")
 //			},
 //			GetDimensionsFromInstanceFunc: func(ctx context.Context, ID string, offset int, limit int) ([]*models.DimensionOption, int, error) {
@@ -114,6 +117,9 @@ var _ store.MongoDB = &MongoDBMock{}
 //			},
 //			UnlockInstanceFunc: func(ctx context.Context, lockID string)  {
 //				panic("mock out the UnlockInstance method")
+//			},
+//			UnlockVersionsFunc: func(ctx context.Context, lockID string)  {
+//				panic("mock out the UnlockVersions method")
 //			},
 //			UpdateBuildHierarchyTaskStateFunc: func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
 //				panic("mock out the UpdateBuildHierarchyTaskState method")
@@ -176,6 +182,9 @@ type MongoDBMock struct {
 	// AcquireInstanceLockFunc mocks the AcquireInstanceLock method.
 	AcquireInstanceLockFunc func(ctx context.Context, instanceID string) (string, error)
 
+	// AcquireVersionsLockFunc mocks the AcquireVersionsLock method.
+	AcquireVersionsLockFunc func(ctx context.Context, instanceID string) (string, error)
+
 	// AddEventToInstanceFunc mocks the AddEventToInstance method.
 	AddEventToInstanceFunc func(ctx context.Context, currentInstance *models.Instance, event *models.Event, eTagSelector string) (string, error)
 
@@ -222,7 +231,7 @@ type MongoDBMock struct {
 	GetDimensionOptionsFromIDsFunc func(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error)
 
 	// GetDimensionsFunc mocks the GetDimensions method.
-	GetDimensionsFunc func(ctx context.Context, versionID string) ([]bson.M, error)
+	GetDimensionsFunc func(ctx context.Context, versionID string) ([]primitive.M, error)
 
 	// GetDimensionsFromInstanceFunc mocks the GetDimensionsFromInstance method.
 	GetDimensionsFromInstanceFunc func(ctx context.Context, ID string, offset int, limit int) ([]*models.DimensionOption, int, error)
@@ -265,6 +274,9 @@ type MongoDBMock struct {
 
 	// UnlockInstanceFunc mocks the UnlockInstance method.
 	UnlockInstanceFunc func(ctx context.Context, lockID string)
+
+	// UnlockVersionsFunc mocks the UnlockVersions method.
+	UnlockVersionsFunc func(ctx context.Context, lockID string)
 
 	// UpdateBuildHierarchyTaskStateFunc mocks the UpdateBuildHierarchyTaskState method.
 	UpdateBuildHierarchyTaskStateFunc func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error)
@@ -321,6 +333,13 @@ type MongoDBMock struct {
 	calls struct {
 		// AcquireInstanceLock holds details about calls to the AcquireInstanceLock method.
 		AcquireInstanceLock []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// InstanceID is the instanceID argument value.
+			InstanceID string
+		}
+		// AcquireVersionsLock holds details about calls to the AcquireVersionsLock method.
+		AcquireVersionsLock []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// InstanceID is the instanceID argument value.
@@ -622,6 +641,13 @@ type MongoDBMock struct {
 			// LockID is the lockID argument value.
 			LockID string
 		}
+		// UnlockVersions holds details about calls to the UnlockVersions method.
+		UnlockVersions []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// LockID is the lockID argument value.
+			LockID string
+		}
 		// UpdateBuildHierarchyTaskState holds details about calls to the UpdateBuildHierarchyTaskState method.
 		UpdateBuildHierarchyTaskState []struct {
 			// Ctx is the ctx argument value.
@@ -805,6 +831,7 @@ type MongoDBMock struct {
 		}
 	}
 	lockAcquireInstanceLock                 sync.RWMutex
+	lockAcquireVersionsLock                 sync.RWMutex
 	lockAddEventToInstance                  sync.RWMutex
 	lockAddInstance                         sync.RWMutex
 	lockAddVersionStatic                    sync.RWMutex
@@ -835,6 +862,7 @@ type MongoDBMock struct {
 	lockGetVersionsWithDatasetID            sync.RWMutex
 	lockRemoveDatasetVersionAndEditionLinks sync.RWMutex
 	lockUnlockInstance                      sync.RWMutex
+	lockUnlockVersions                      sync.RWMutex
 	lockUpdateBuildHierarchyTaskState       sync.RWMutex
 	lockUpdateBuildSearchTaskState          sync.RWMutex
 	lockUpdateDataset                       sync.RWMutex
@@ -887,6 +915,42 @@ func (mock *MongoDBMock) AcquireInstanceLockCalls() []struct {
 	mock.lockAcquireInstanceLock.RLock()
 	calls = mock.calls.AcquireInstanceLock
 	mock.lockAcquireInstanceLock.RUnlock()
+	return calls
+}
+
+// AcquireVersionsLock calls AcquireVersionsLockFunc.
+func (mock *MongoDBMock) AcquireVersionsLock(ctx context.Context, instanceID string) (string, error) {
+	if mock.AcquireVersionsLockFunc == nil {
+		panic("MongoDBMock.AcquireVersionsLockFunc: method is nil but MongoDB.AcquireVersionsLock was just called")
+	}
+	callInfo := struct {
+		Ctx        context.Context
+		InstanceID string
+	}{
+		Ctx:        ctx,
+		InstanceID: instanceID,
+	}
+	mock.lockAcquireVersionsLock.Lock()
+	mock.calls.AcquireVersionsLock = append(mock.calls.AcquireVersionsLock, callInfo)
+	mock.lockAcquireVersionsLock.Unlock()
+	return mock.AcquireVersionsLockFunc(ctx, instanceID)
+}
+
+// AcquireVersionsLockCalls gets all the calls that were made to AcquireVersionsLock.
+// Check the length with:
+//
+//	len(mockedMongoDB.AcquireVersionsLockCalls())
+func (mock *MongoDBMock) AcquireVersionsLockCalls() []struct {
+	Ctx        context.Context
+	InstanceID string
+} {
+	var calls []struct {
+		Ctx        context.Context
+		InstanceID string
+	}
+	mock.lockAcquireVersionsLock.RLock()
+	calls = mock.calls.AcquireVersionsLock
+	mock.lockAcquireVersionsLock.RUnlock()
 	return calls
 }
 
@@ -1495,7 +1559,7 @@ func (mock *MongoDBMock) GetDimensionOptionsFromIDsCalls() []struct {
 }
 
 // GetDimensions calls GetDimensionsFunc.
-func (mock *MongoDBMock) GetDimensions(ctx context.Context, versionID string) ([]bson.M, error) {
+func (mock *MongoDBMock) GetDimensions(ctx context.Context, versionID string) ([]primitive.M, error) {
 	if mock.GetDimensionsFunc == nil {
 		panic("MongoDBMock.GetDimensionsFunc: method is nil but MongoDB.GetDimensions was just called")
 	}
@@ -2139,6 +2203,42 @@ func (mock *MongoDBMock) UnlockInstanceCalls() []struct {
 	mock.lockUnlockInstance.RLock()
 	calls = mock.calls.UnlockInstance
 	mock.lockUnlockInstance.RUnlock()
+	return calls
+}
+
+// UnlockVersions calls UnlockVersionsFunc.
+func (mock *MongoDBMock) UnlockVersions(ctx context.Context, lockID string) {
+	if mock.UnlockVersionsFunc == nil {
+		panic("MongoDBMock.UnlockVersionsFunc: method is nil but MongoDB.UnlockVersions was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		LockID string
+	}{
+		Ctx:    ctx,
+		LockID: lockID,
+	}
+	mock.lockUnlockVersions.Lock()
+	mock.calls.UnlockVersions = append(mock.calls.UnlockVersions, callInfo)
+	mock.lockUnlockVersions.Unlock()
+	mock.UnlockVersionsFunc(ctx, lockID)
+}
+
+// UnlockVersionsCalls gets all the calls that were made to UnlockVersions.
+// Check the length with:
+//
+//	len(mockedMongoDB.UnlockVersionsCalls())
+func (mock *MongoDBMock) UnlockVersionsCalls() []struct {
+	Ctx    context.Context
+	LockID string
+} {
+	var calls []struct {
+		Ctx    context.Context
+		LockID string
+	}
+	mock.lockUnlockVersions.RLock()
+	calls = mock.calls.UnlockVersions
+	mock.lockUnlockVersions.RUnlock()
 	return calls
 }
 

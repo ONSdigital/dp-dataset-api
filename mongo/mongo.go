@@ -14,9 +14,10 @@ import (
 type Mongo struct {
 	config.MongoConfig
 
-	Connection   *mongodriver.MongoConnection
-	healthClient *mongohealth.CheckMongoClient
-	lockClient   *mongolock.Lock
+	Connection                   *mongodriver.MongoConnection
+	healthClient                 *mongohealth.CheckMongoClient
+	lockClientInstanceCollection *mongolock.Lock
+	lockClientVersionsCollection *mongolock.Lock
 }
 
 // Init returns an initialised Mongo object encapsulating a connection to the mongo server/cluster with the given configuration,
@@ -38,7 +39,8 @@ func (m *Mongo) Init(ctx context.Context) (err error) {
 		},
 	}
 	m.healthClient = mongohealth.NewClientWithCollections(m.Connection, databaseCollectionBuilder)
-	m.lockClient = mongolock.New(ctx, m.Connection, m.ActualCollectionName(config.InstanceCollection))
+	m.lockClientInstanceCollection = mongolock.New(ctx, m.Connection, m.ActualCollectionName(config.InstanceCollection))
+	m.lockClientVersionsCollection = mongolock.New(ctx, m.Connection, m.ActualCollectionName(config.VersionsCollection))
 
 	return nil
 }

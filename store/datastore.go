@@ -64,6 +64,8 @@ type dataMongoDB interface {
 	DeleteEdition(ctx context.Context, ID string) error
 	AcquireInstanceLock(ctx context.Context, instanceID string) (lockID string, err error)
 	UnlockInstance(ctx context.Context, lockID string)
+	AcquireVersionsLock(ctx context.Context, versionID string) (lockID string, err error)
+	UnlockVersions(ctx context.Context, lockID string)
 	RemoveDatasetVersionAndEditionLinks(ctx context.Context, id string) error
 }
 
