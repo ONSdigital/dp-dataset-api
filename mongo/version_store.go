@@ -75,18 +75,12 @@ func (m *Mongo) AddVersionStatic(ctx context.Context, version *models.Version) (
 
 // CheckEditionExists checks that the edition of a dataset exists in the versions collection
 func (m *Mongo) CheckEditionExistsStatic(ctx context.Context, id, editionID, state string) error {
-	var query bson.M
-	if state == "" {
-		query = bson.M{
-			"links.dataset.id": id,
-			"edition":          editionID,
-		}
-	} else {
-		query = bson.M{
-			"links.dataset.id": id,
-			"edition":          editionID,
-			"state":            state,
-		}
+	query := bson.M{
+		"links.dataset.id": id,
+		"links.edition.id": editionID,
+	}
+	if state != "" {
+		query["state"] = state
 	}
 
 	var d models.Version
