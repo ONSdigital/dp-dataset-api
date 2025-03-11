@@ -1879,23 +1879,42 @@ definitions:
       contacts:
         description: "A list containing contact details of statisticians for a dataset"
         type: array
+        minItems: 1
         items:
           $ref: "#/definitions/Contact"
+      dataset_id:
+        description: "The identifier for the dataset."
+        type: string
+        readOnly: true
+        example: my-dataset
       description:
         description: "A description for a dataset"
         type: string
+        example: "This dataset contains some very interesting data about the UK."
       dimensions:
         description: "A list of codelists for each dimension of this version"
         type: array
         items:
           $ref: "#/definitions/Dimension"
       distribution:
-        description: "A list of media types that the version data of an edition of a dataset can be accessed"
+        description: |
+          **Deprecated:** This field is being deprecated. Use `distributions` for list of formats in which the dataset can be accessed.
+
+          A list of media types that the version data of an edition of a dataset can be accessed
         type: array
         items:
           type: string
+      distributions:
+        description: A list of representations of the dataset available and how to access them.
+        type: array
+        minItems: 1
+        items:
+          $ref: "#/definitions/Distribution"
       downloads:
-        description: A selection of download objects containing information of downloadable files."
+        description: |
+          **Deprecated:** These fields have been deprecated and replaced by the `distributions` list.
+
+          A selection of download objects containing information of downloadable files.
         type: object
         properties:
           csv:
@@ -1906,6 +1925,11 @@ definitions:
             $ref: "#/definitions/DownloadObject"
           xls:
             $ref: "#/definitions/DownloadObject"
+      edition:
+        description: "The dataset edition for this version"
+        readOnly: true
+        type: string
+        example: 2017
       headers:
         description: "A list of headers for a census dataset"
         type: array
@@ -1916,6 +1940,9 @@ definitions:
         type: array
         items:
           type: "string"
+          example: "Inflation"
+      last_updated:
+        $ref: "#/definitions/LastUpdated"
       latest_changes:
         description: "A list of changes between version of an edition for a dataset and the previous version of the same dataset edition"
         type: array
@@ -1925,7 +1952,7 @@ definitions:
         description: "The license the dataset is released under."
         type: string
         default: "Open Government Licence v3.0"
-      dataset_links:
+      links:
         $ref: "#/definitions/MetadataLinks"
       methodologies:
         description: "A list of methodologies for the dataset."
@@ -1933,7 +1960,10 @@ definitions:
         items:
           $ref: "#/definitions/RelatedLink"
       national_statistic:
-        description: "The flag indicating the resource is a national statistic. These are certified as compliant with the Code of Practice for Official Statistics"
+        description: |
+          **Deprecated:** This field has been deprecated and replaced with the `quality_designation` field under at the edition level in order to correctly represent the three potential quality designations under the updated Code of Practice for Statistics.
+
+          The flag indicating the latest version of the dataset has `accredited` designation as granted under the Code of Practice for Statistics.
         type: boolean
       next_release:
         $ref: "#/definitions/NextRelease"
@@ -1949,6 +1979,19 @@ definitions:
           $ref: "#/definitions/Publisher"
       qmi:
         $ref: "#/definitions/QMILink"
+      quality_designation:
+        description: |
+          The official statistics quality designation level of this dataset version.
+
+          Possible quality designations:
+            * `accredited-official`
+            * `official`
+            * `official-in-development`
+        type: string
+        enum:
+          - accredited-official
+          - official
+          - official-in-development
       related_datasets:
         description: "A list of other datasets related to this dataset."
         type: array
@@ -1957,9 +2000,11 @@ definitions:
       release_date:
         description: "The release date of this version of the dataset"
         type: string
+        format: date-time
       release_frequency:
         description: "The release frequency of a dataset"
         type: string
+        example: "Monthly"
       subtopics:
         description: |
           **Deprecated:** This field is being deprecated and replaced by the `topics` field.
@@ -1973,18 +2018,31 @@ definitions:
         $ref: "#/definitions/Temporal"
       title:
         description: "The title of the dataset"
-        example: "CPI"
+        example: "Consumer Prices Index"
         type: string
+      topics:
+        description: "A list of topic IDs that the dataset relates to within the topic taxonomy. This field consolidates the previously separate `canonical_topic` and `subtopics` fields."
+        type: array
+        minItems: 1
+        items:
+          type: "string"
+        example: ["7779", "7755"]
+      type:
+        $ref: "#/definitions/DatasetType"
       unit_of_measure:
         description: "The unit of measure for the dataset observations"
         type: string
+        example: "Number of people"
       usage_notes:
-        $ref: "#/definitions/UsageNote"
-      topics:
-        description: "A list of topics and subtopics that the dataset relates to within the topic taxonomy. This field consolidates the previously separate `canonical_topic` and `subtopics` fields."
+        description: "A list of usage notes relating to the dataset"
         type: array
         items:
-          type: "string"
+          $ref: "#/definitions/UsageNote"
+      version:
+        description: "A number identifying the version for an edition from a dataset"
+        example: 1
+        readOnly: true
+        type: integer
   NewDatasetResponse:
     description: "A model for the response body when creating a new dataset"
     type: object
@@ -2381,6 +2439,7 @@ definitions:
         type: integer
         minimum: 0
         example: 4300000
+        readOnly: true
       format:
         description: |
           The format for the download file referenced by `download_url`.
@@ -2412,6 +2471,7 @@ definitions:
             * `text/plain`: Plain text (used for CSDB output structured text files)
             * `application/ld+json`: JSON-LD metadata file. Commonly used to annotate tabular data in an associated CSV file as outlined in the CSVW standard.
         type: string
+        readOnly: true
         enum:
           - text/csv
           - application/vnd.sdmx.structurespecificdata+xml
