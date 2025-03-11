@@ -14,8 +14,9 @@ type Metadata struct {
 	Links           *MetadataLinks       `json:"links,omitempty"`
 	TableID         string               `json:"table_id,omitempty"`
 	CSVHeader       []string             `json:"headers,omitempty"`
-	Version         int                  `json:"version,omitempty"`
+	Edition         string               `json:"edition,omitempty"`
 	DatasetLinks    *DatasetLinks        `json:"dataset_links,omitempty"`
+	ID              string               `json:"id,omitempty"`
 	Publisher       *Publisher           `json:"publisher,omitempty"`
 	Temporal        *[]TemporalFrequency `json:"temporal,omitempty"`
 	Theme           string               `json:"theme,omitempty"`
@@ -26,6 +27,8 @@ type Metadata struct {
 	Classifications string               `json:"classifications,omitempty"`
 	Source          string               `json:"source,omitempty"`
 	IsBasedOn       *IsBasedOn           `json:"is_based_on,omitempty"`
+	Type            string               `json:"type,omitempty"`
+	Version         int                  `json:"version,omitempty"`
 }
 
 // EditableMetadata represents the metadata fields that can be edited
@@ -86,15 +89,20 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 			ReleaseFrequency:  datasetDoc.ReleaseFrequency,
 			Subtopics:         datasetDoc.Subtopics,
 			Title:             datasetDoc.Title,
-			UnitOfMeasure:     datasetDoc.UnitOfMeasure,
-			UsageNotes:        versionDoc.UsageNotes,
+
+			UnitOfMeasure: datasetDoc.UnitOfMeasure,
+			UsageNotes:    versionDoc.UsageNotes,
 		},
+		Edition:   versionDoc.Edition,
+		ID:        datasetDoc.ID,
 		Links:     &MetadataLinks{},
 		Publisher: datasetDoc.Publisher,
 		Temporal:  versionDoc.Temporal,
 		Theme:     datasetDoc.Theme,
 		URI:       datasetDoc.URI,
 		IsBasedOn: datasetDoc.IsBasedOn,
+		Version:   versionDoc.Version,
+		Type:      datasetDoc.Type,
 	}
 
 	// Add relevant metdata links from dataset document
