@@ -75,9 +75,18 @@ func (m *Mongo) AddVersionStatic(ctx context.Context, version *models.Version) (
 
 // CheckEditionExists checks that the edition of a dataset exists in the versions collection
 func (m *Mongo) CheckEditionExistsStatic(ctx context.Context, id, editionID, state string) error {
-	query := bson.M{
-		"links.dataset.id": id,
-		"links.edition.id": editionID,
+	var query bson.M
+	if state == "" {
+		query = bson.M{
+			"links.dataset.id": id,
+			"edition":          editionID,
+		}
+	} else {
+		query = bson.M{
+			"links.dataset.id": id,
+			"edition":          editionID,
+			"state":            state,
+		}
 	}
 
 	var d models.Version
@@ -92,8 +101,8 @@ func (m *Mongo) CheckEditionExistsStatic(ctx context.Context, id, editionID, sta
 }
 
 // GetVersions retrieves all version documents for a dataset
-func (m *Mongo) GetVersionsWithDatasetID(ctx context.Context, datasetID string, offset, limit int) ([]models.Version, int, error) {
-	selector := buildVersionWithDatasetIDQuery(datasetID)
+func (m *Mongo) GetVersionsStatic(ctx context.Context, datasetID, edition, state string, offset, limit int) ([]models.Version, int, error) {
+	selector := buildVersionsQuery(datasetID, edition, state)
 	// get total count and paginated values according to provided offset and limit
 	results := []models.Version{}
 	totalCount, err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Find(ctx, selector, &results,
@@ -130,11 +139,4 @@ func (m *Mongo) GetVersionStatic(ctx context.Context, id, editionID string, vers
 	}
 
 	return &version, nil
-}
-
-func buildVersionWithDatasetIDQuery(id string) bson.M {
-	selector := bson.M{
-		"links.dataset.id": id,
-	}
-	return selector
 }
