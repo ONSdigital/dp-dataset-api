@@ -278,6 +278,7 @@ func TestPutMetadata(t *testing.T) {
 
 func TestGetMetadataReturnsOk(t *testing.T) {
 	t.Parallel()
+	var staticType = "static"
 	Convey("Successfully return metadata resource for a request without an authentication header", t, func() {
 		datasetDoc := createDatasetDoc()
 		versionDoc := createPublishedVersionDoc()
@@ -395,9 +396,9 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 
 	Convey("Successfully return metadata resource for a static dataset type", t, func() {
 		datasetDoc := createDatasetDoc()
-		datasetDoc.Current.Type = "static"
+		datasetDoc.Current.Type = staticType
 		if datasetDoc.Next != nil {
-			datasetDoc.Next.Type = "static"
+			datasetDoc.Next.Type = staticType
 		}
 
 		versionDoc := createPublishedVersionDoc()
@@ -460,6 +461,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 
 func TestGetMetadataReturnsError(t *testing.T) {
 	t.Parallel()
+	var staticType = "statiic"
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", http.NoBody)
 		w := httptest.NewRecorder()
@@ -752,9 +754,9 @@ func TestGetMetadataReturnsError(t *testing.T) {
 
 	Convey("When the version document for a static dataset cannot be found return status not found", t, func() {
 		datasetDoc := createDatasetDoc()
-		datasetDoc.Current.Type = "static"
+		datasetDoc.Current.Type = staticType
 		if datasetDoc.Next != nil {
-			datasetDoc.Next.Type = "static"
+			datasetDoc.Next.Type = staticType
 		}
 
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", http.NoBody)
@@ -792,9 +794,9 @@ func TestGetMetadataReturnsError(t *testing.T) {
 
 	Convey("When the edition document for a static dataset cannot be found return status not found", t, func() {
 		datasetDoc := createDatasetDoc()
-		datasetDoc.Current.Type = "static"
+		datasetDoc.Current.Type = staticType
 		if datasetDoc.Next != nil {
-			datasetDoc.Next.Type = "static"
+			datasetDoc.Next.Type = staticType
 		}
 		versionDoc := createPublishedVersionDoc()
 
