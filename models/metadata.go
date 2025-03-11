@@ -89,9 +89,8 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 			ReleaseFrequency:  datasetDoc.ReleaseFrequency,
 			Subtopics:         datasetDoc.Subtopics,
 			Title:             datasetDoc.Title,
-
-			UnitOfMeasure: datasetDoc.UnitOfMeasure,
-			UsageNotes:    versionDoc.UsageNotes,
+			UnitOfMeasure:     datasetDoc.UnitOfMeasure,
+			UsageNotes:        versionDoc.UsageNotes,
 		},
 		Edition:   versionDoc.Edition,
 		ID:        datasetDoc.ID,
