@@ -135,15 +135,8 @@ func (m *Mongo) GetVersionStatic(ctx context.Context, id, editionID string, vers
 	return &version, nil
 }
 
-func buildVersionWithDatasetIDQuery(id string) bson.M {
-	selector := bson.M{
-		"links.dataset.id": id,
-	}
-	return selector
-}
-
 // GetLatestVersionStatic retrieves the latest version for an edition of a dataset
-func (m *Mongo) GetLatestVersionStatic(ctx context.Context, datasetID, editionID string, state string) (*models.Version, error) {
+func (m *Mongo) GetLatestVersionStatic(ctx context.Context, datasetID, editionID, state string) (*models.Version, error) {
 	selector := bson.M{
 		"links.dataset.id": datasetID,
 		"links.edition.id": editionID,
