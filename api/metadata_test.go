@@ -461,7 +461,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 
 func TestGetMetadataReturnsError(t *testing.T) {
 	t.Parallel()
-	var staticType = "statiic"
+	var staticType = "static"
 	Convey("When the api cannot connect to datastore return an internal server error", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", http.NoBody)
 		w := httptest.NewRecorder()
