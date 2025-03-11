@@ -485,7 +485,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1) // Now expect 1 call to GetDataset
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 	})
 
 	Convey("When the dataset document cannot be found return status not found", t, func() {
