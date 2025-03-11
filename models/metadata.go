@@ -2,6 +2,7 @@ package models
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/ONSdigital/dp-dataset-api/url"
 )
@@ -33,30 +34,32 @@ type Metadata struct {
 
 // EditableMetadata represents the metadata fields that can be edited
 type EditableMetadata struct {
-	Alerts            *[]Alert         `json:"alerts,omitempty"`
-	CanonicalTopic    string           `json:"canonical_topic,omitempty"`
-	Contacts          []ContactDetails `json:"contacts,omitempty"`
-	Description       string           `json:"description,omitempty"`
-	Dimensions        []Dimension      `json:"dimensions,omitempty"`
-	Distributions     *[]Distribution  `json:"distributions,omitempty"`
-	Keywords          []string         `json:"keywords,omitempty"`
-	LatestChanges     *[]LatestChange  `json:"latest_changes,omitempty"`
-	License           string           `json:"license,omitempty"`
-	Methodologies     []GeneralDetails `json:"methodologies,omitempty"`
-	NationalStatistic *bool            `json:"national_statistic,omitempty"`
-	NextRelease       string           `json:"next_release,omitempty"`
-	Publications      []GeneralDetails `json:"publications,omitempty"`
-	QMI               *GeneralDetails  `json:"qmi,omitempty"`
-	RelatedDatasets   []GeneralDetails `json:"related_datasets,omitempty"`
-	ReleaseDate       string           `json:"release_date,omitempty"`
-	ReleaseFrequency  string           `json:"release_frequency,omitempty"`
-	Title             string           `json:"title,omitempty"`
-	Survey            string           `json:"survey,omitempty"`
-	Subtopics         []string         `json:"subtopics,omitempty"`
-	UnitOfMeasure     string           `json:"unit_of_measure,omitempty"`
-	UsageNotes        *[]UsageNote     `json:"usage_notes,omitempty"`
-	RelatedContent    []GeneralDetails `json:"related_content,omitempty"`
-	Themes            []string         `json:"themes,omitempty"`
+	Alerts             *[]Alert           `json:"alerts,omitempty"`
+	CanonicalTopic     string             `json:"canonical_topic,omitempty"`
+	Contacts           []ContactDetails   `json:"contacts,omitempty"`
+	Description        string             `json:"description,omitempty"`
+	Dimensions         []Dimension        `json:"dimensions,omitempty"`
+	Distributions      *[]Distribution    `json:"distributions,omitempty"`
+	Keywords           []string           `json:"keywords,omitempty"`
+	LastUpdated        time.Time          `json:"last_updated,omitempty"`
+	LatestChanges      *[]LatestChange    `json:"latest_changes,omitempty"`
+	License            string             `json:"license,omitempty"`
+	Methodologies      []GeneralDetails   `json:"methodologies,omitempty"`
+	NationalStatistic  *bool              `json:"national_statistic,omitempty"`
+	NextRelease        string             `json:"next_release,omitempty"`
+	Publications       []GeneralDetails   `json:"publications,omitempty"`
+	QMI                *GeneralDetails    `json:"qmi,omitempty"`
+	RelatedDatasets    []GeneralDetails   `json:"related_datasets,omitempty"`
+	ReleaseDate        string             `json:"release_date,omitempty"`
+	ReleaseFrequency   string             `json:"release_frequency,omitempty"`
+	Title              string             `json:"title,omitempty"`
+	Survey             string             `json:"survey,omitempty"`
+	Subtopics          []string           `json:"subtopics,omitempty"`
+	UnitOfMeasure      string             `json:"unit_of_measure,omitempty"`
+	UsageNotes         *[]UsageNote       `json:"usage_notes,omitempty"`
+	RelatedContent     []GeneralDetails   `json:"related_content,omitempty"`
+	QualityDesignation QualityDesignation `json:"quality_designation,omitempty"`
+	Themes             []string           `json:"themes,omitempty"`
 }
 
 // MetadataLinks represents a link object to list of metadata relevant to a version
@@ -72,27 +75,29 @@ type MetadataLinks struct {
 func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url.Builder) *Metadata {
 	metaDataDoc := &Metadata{
 		EditableMetadata: EditableMetadata{
-			Alerts:            versionDoc.Alerts,
-			CanonicalTopic:    datasetDoc.CanonicalTopic,
-			Contacts:          datasetDoc.Contacts,
-			Description:       datasetDoc.Description,
-			Dimensions:        versionDoc.Dimensions,
-			Distributions:     versionDoc.Distributions,
-			Keywords:          datasetDoc.Keywords,
-			LatestChanges:     versionDoc.LatestChanges,
-			License:           datasetDoc.License,
-			Methodologies:     datasetDoc.Methodologies,
-			NationalStatistic: datasetDoc.NationalStatistic,
-			NextRelease:       datasetDoc.NextRelease,
-			Publications:      datasetDoc.Publications,
-			QMI:               datasetDoc.QMI,
-			RelatedDatasets:   datasetDoc.RelatedDatasets,
-			ReleaseDate:       versionDoc.ReleaseDate,
-			ReleaseFrequency:  datasetDoc.ReleaseFrequency,
-			Subtopics:         datasetDoc.Subtopics,
-			Title:             datasetDoc.Title,
-			UnitOfMeasure:     datasetDoc.UnitOfMeasure,
-			UsageNotes:        versionDoc.UsageNotes,
+			Alerts:             versionDoc.Alerts,
+			CanonicalTopic:     datasetDoc.CanonicalTopic,
+			Contacts:           datasetDoc.Contacts,
+			Description:        datasetDoc.Description,
+			Dimensions:         versionDoc.Dimensions,
+			Distributions:      versionDoc.Distributions,
+			Keywords:           datasetDoc.Keywords,
+			LatestChanges:      versionDoc.LatestChanges,
+			License:            datasetDoc.License,
+			LastUpdated:        datasetDoc.LastUpdated,
+			Methodologies:      datasetDoc.Methodologies,
+			NationalStatistic:  datasetDoc.NationalStatistic,
+			NextRelease:        datasetDoc.NextRelease,
+			Publications:       datasetDoc.Publications,
+			QMI:                datasetDoc.QMI,
+			RelatedDatasets:    datasetDoc.RelatedDatasets,
+			ReleaseDate:        versionDoc.ReleaseDate,
+			ReleaseFrequency:   datasetDoc.ReleaseFrequency,
+			Subtopics:          datasetDoc.Subtopics,
+			QualityDesignation: versionDoc.QualityDesignation,
+			Title:              datasetDoc.Title,
+			UnitOfMeasure:      datasetDoc.UnitOfMeasure,
+			UsageNotes:         versionDoc.UsageNotes,
 		},
 		Edition:   versionDoc.Edition,
 		ID:        datasetDoc.ID,
