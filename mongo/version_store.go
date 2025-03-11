@@ -138,3 +138,56 @@ func buildVersionWithDatasetIDQuery(id string) bson.M {
 	}
 	return selector
 }
+
+// GetLatestVersionStatic retrieves the latest version for an edition of a dataset
+func (m *Mongo) GetLatestVersionStatic(ctx context.Context, datasetID, editionID string, state string) (*models.Version, error) {
+	selector := bson.M{
+		"links.dataset.id": datasetID,
+		"links.edition.id": editionID,
+	}
+	if state != "" {
+		selector["state"] = state
+	}
+
+	var version models.Version
+	err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).FindOne(ctx, selector, &version, mongodriver.Sort(bson.M{"version": -1}))
+	if err != nil {
+		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
+			return nil, errs.ErrVersionNotFound
+		}
+		return nil, err
+	}
+
+	return &version, nil
+}
+
+// GetDatasetType retrieves the type of a dataset
+func (m *Mongo) GetDatasetType(ctx context.Context, datasetID string, authorised bool) (string, error) {
+	selector := bson.M{
+		"_id": datasetID,
+	}
+
+	if !authorised {
+		selector["current.state"] = models.PublishedState
+	}
+
+	var d models.DatasetUpdate
+
+	if authorised {
+		if err := m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).FindOne(ctx, selector, &d, mongodriver.Projection(bson.M{"next.type": 1})); err != nil {
+			if errors.Is(err, mongodriver.ErrNoDocumentFound) {
+				return "", errs.ErrDatasetNotFound
+			}
+			return "", err
+		}
+		return d.Next.Type, nil
+	}
+
+	if err := m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).FindOne(ctx, selector, &d, mongodriver.Projection(bson.M{"current.type": 1})); err != nil {
+		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
+			return "", errs.ErrDatasetNotFound
+		}
+		return "", err
+	}
+	return d.Current.Type, nil
+}

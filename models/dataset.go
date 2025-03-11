@@ -169,7 +169,10 @@ type EditionUpdateLinks struct {
 type Edition struct {
 	Edition            string              `bson:"edition,omitempty"      json:"edition,omitempty"`
 	ID                 string              `bson:"id,omitempty"           json:"id,omitempty"`
+	DatasetID          string              `bson:"dataset_id,omitempty"   json:"dataset_id,omitempty"`
+	Version            int                 `bson:"version,omitempty"      json:"version,omitempty"`
 	LastUpdated        time.Time           `bson:"last_updated,omitempty" json:"-"`
+	ReleaseDate        string              `bson:"release_date,omitempty" json:"release_date,omitempty"`
 	Links              *EditionUpdateLinks `bson:"links,omitempty"        json:"links,omitempty"`
 	State              string              `bson:"state,omitempty"        json:"state,omitempty"`
 	IsBasedOn          *IsBasedOn          `bson:"is_based_on,omitempty"  json:"is_based_on,omitempty"`
