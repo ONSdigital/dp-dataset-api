@@ -38,6 +38,7 @@ type EditableMetadata struct {
 	Contacts          []ContactDetails `json:"contacts,omitempty"`
 	Description       string           `json:"description,omitempty"`
 	Dimensions        []Dimension      `json:"dimensions,omitempty"`
+	Distributions     *[]Distribution  `json:"distributions,omitempty"`
 	Keywords          []string         `json:"keywords,omitempty"`
 	LatestChanges     *[]LatestChange  `json:"latest_changes,omitempty"`
 	License           string           `json:"license,omitempty"`
@@ -76,6 +77,7 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 			Contacts:          datasetDoc.Contacts,
 			Description:       datasetDoc.Description,
 			Dimensions:        versionDoc.Dimensions,
+			Distributions:     versionDoc.Distributions,
 			Keywords:          datasetDoc.Keywords,
 			LatestChanges:     versionDoc.LatestChanges,
 			License:           datasetDoc.License,
