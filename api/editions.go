@@ -219,6 +219,9 @@ func mapVersionToEdition(version *models.Version, authorised bool) *models.Editi
 		},
 		Version:            version.Version,
 		LastUpdated:        version.LastUpdated,
+		Alerts:             version.Alerts,
+		UsageNotes:         version.UsageNotes,
+		Distributions:      version.Distributions,
 		QualityDesignation: version.QualityDesignation,
 	}
 
