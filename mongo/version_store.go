@@ -79,6 +79,9 @@ func (m *Mongo) CheckEditionExistsStatic(ctx context.Context, id, editionID, sta
 		"links.dataset.id": id,
 		"links.edition.id": editionID,
 	}
+	if state != "" {
+		query["state"] = state
+	}
 
 	var d models.Version
 	if err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).FindOne(ctx, query, &d, mongodriver.Projection(bson.M{"_id": 1})); err != nil {
@@ -92,8 +95,8 @@ func (m *Mongo) CheckEditionExistsStatic(ctx context.Context, id, editionID, sta
 }
 
 // GetVersions retrieves all version documents for a dataset
-func (m *Mongo) GetVersionsWithDatasetID(ctx context.Context, datasetID string, offset, limit int) ([]models.Version, int, error) {
-	selector := buildVersionWithDatasetIDQuery(datasetID)
+func (m *Mongo) GetVersionsStatic(ctx context.Context, datasetID, edition, state string, offset, limit int) ([]models.Version, int, error) {
+	selector := buildVersionsQuery(datasetID, edition, state)
 	// get total count and paginated values according to provided offset and limit
 	results := []models.Version{}
 	totalCount, err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Find(ctx, selector, &results,

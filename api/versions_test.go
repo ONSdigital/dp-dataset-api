@@ -87,7 +87,7 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
-			GetVersionsWithDatasetIDFunc: func(context.Context, string, int, int) ([]models.Version, int, error) {
+			GetVersionsStaticFunc: func(context.Context, string, string, string, int, int) ([]models.Version, int, error) {
 				return results, 2, nil
 			},
 		}
@@ -100,9 +100,9 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.CheckEditionExistsStaticCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetVersionsWithDatasetIDCalls()), ShouldEqual, 1)
-		So(mockedDataStore.GetVersionsWithDatasetIDCalls()[0].Limit, ShouldEqual, 20)
-		So(mockedDataStore.GetVersionsWithDatasetIDCalls()[0].Offset, ShouldEqual, 0)
+		So(len(mockedDataStore.GetVersionsStaticCalls()), ShouldEqual, 1)
+		So(mockedDataStore.GetVersionsStaticCalls()[0].Limit, ShouldEqual, 20)
+		So(mockedDataStore.GetVersionsStaticCalls()[0].Offset, ShouldEqual, 0)
 		So(list, ShouldResemble, results)
 		So(totalCount, ShouldEqual, 2)
 		So(err, ShouldEqual, nil)
@@ -3000,7 +3000,6 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 	Convey("When dataset and edition exist and version is added successfully", t, func() {
 		b := `{
   "next_release": "2025-02-15",
-  "last_updated": "2025-02-15",
   "alerts": [
     {}
   ],
@@ -3066,7 +3065,6 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
   "description": "test dataset",
   "type": "static",
   "next_release": "2025-02-15",
-  "last_updated": "2025-02-15",
   "alerts": [
     {}
   ],
@@ -3145,7 +3143,6 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
   "description": "test dataset",
   "type": "static",
   "next_release": "2025-02-15",
-  "last_updated": "2025-02-15",
   "alerts": [
     {}
   ],
@@ -3275,13 +3272,12 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 		api.addDatasetVersionCondensed(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
 	})
 
 	Convey("When edition exists, version should increment", t, func() {
 		b := `{
   "next_release": "2025-02-15",
-  "last_updated": "2025-02-15",
   "alerts": [
     {}
   ],

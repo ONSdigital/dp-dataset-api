@@ -478,7 +478,7 @@ paths:
         201:
           description: "A json object containing a version"
           schema:
-            $ref: "#/definitions/NewVersionResponse"
+            $ref: "#/definitions/Version"
         400:
           description: |
             Invalid request, reasons can be one of the following:
@@ -510,7 +510,7 @@ paths:
         201:
           description: "A json object containing a version"
           schema:
-            $ref: "#/definitions/NewVersionResponse"
+            $ref: "#/definitions/Version"
         400:
           description: |
             Invalid request, reasons can be one of the following:
@@ -2065,18 +2065,6 @@ definitions:
                 type: string
       state:
         $ref: "#/definitions/State"
-  NewVersionResponse:
-    description: "A model for the response body when creating a new version for an edition of a dataset"
-    allOf:
-      - type: object
-        properties:
-          collection_id:
-            $ref: "#/definitions/CollectionID"
-          id:
-            type: string
-            description: "An unique id for a dataset"
-            example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91CD"
-      - $ref: "#/definitions/Version"
   Publisher:
     description: "The publisher of the dataset"
     type: object
@@ -2209,6 +2197,12 @@ definitions:
           $ref: "#/definitions/Alert"
       collection_id:
         $ref: "#/definitions/CollectionID"
+      distributions:
+        description: A list of representations of the dataset available and how to access them.
+        type: array
+        minItems: 1
+        items:
+          $ref: "#/definitions/Distribution"
       downloads:
         description: "A selection of download objects containing information of downloadable files. These can only be updated via an authorised caller."
         type: object
@@ -2283,6 +2277,7 @@ definitions:
       dataset_id:
         description: "The identifier for the dataset."
         type: string
+        readOnly: true
         example: my-dataset
       dimensions:
         description: "A list of codelists for each dimension of this version"
@@ -2301,6 +2296,7 @@ definitions:
 
           A selection of download objects containing information of downloadable files.
         type: object
+        readOnly: true
         properties:
           csv:
             $ref: "#/definitions/DownloadObject"
@@ -2351,7 +2347,9 @@ definitions:
       temporal:
         $ref: "#/definitions/Temporal"
       type:
-        $ref: "#/definitions/DatasetType"
+        readOnly: true
+        allOf:
+          - $ref: "#/definitions/DatasetType"
       usage_notes:
         description: "A list of usage notes relating to the dataset"
         type: array

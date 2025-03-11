@@ -240,6 +240,7 @@ Feature: Dataset API
                     {
                         "dataset_id": "population-estimates",
                         "id": "test-item-4",
+                        "last_updated":"2021-01-01T00:00:03Z",
                         "version": 4,
                         "edition": "hello",
                         "state": "published",
@@ -256,6 +257,7 @@ Feature: Dataset API
                     {
                         "dataset_id": "population-estimates",
                         "id": "test-item-1",
+                        "last_updated":"2021-01-01T00:00:00Z",
                         "version": 1,
                         "edition": "hello",
                         "state": "published",
@@ -285,6 +287,7 @@ Feature: Dataset API
                     {
                         "dataset_id": "population-estimates",
                         "id": "test-item-4",
+                        "last_updated":"2021-01-01T00:00:03Z",
                         "version": 4,
                         "edition": "hello",
                         "state": "published",
@@ -301,6 +304,7 @@ Feature: Dataset API
                     {
                         "dataset_id": "population-estimates",
                         "id": "test-item-1",
+                        "last_updated":"2021-01-01T00:00:00Z",
                         "version": 1,
                         "edition": "hello",
                         "state": "published",
@@ -336,6 +340,7 @@ Feature: Dataset API
                     {
                         "dataset_id": "population-estimates",
                         "id": "test-item-4",
+                        "last_updated":"2021-01-01T00:00:03Z",
                         "version": 4,
                         "state": "published",
                         "links": {
@@ -352,6 +357,7 @@ Feature: Dataset API
                     {
                         "dataset_id": "population-estimates",
                         "id": "test-item-2",
+                        "last_updated":"2021-01-01T00:00:01Z",
                         "version": 2,
                         "state": "associated",
                         "links": {
@@ -367,6 +373,7 @@ Feature: Dataset API
                     {
                         "dataset_id": "population-estimates",
                         "id": "test-item-1",
+                        "last_updated":"2021-01-01T00:00:00Z",
                         "version": 1,
                         "state": "published",
                         "links": {
@@ -399,6 +406,7 @@ Feature: Dataset API
                     {
                         "dataset_id": "population-estimates",
                         "id": "test-item-4",
+                        "last_updated":"2021-01-01T00:00:03Z",
                         "version": 4,
                         "state": "published",
                         "links": {
@@ -415,6 +423,7 @@ Feature: Dataset API
                     {
                         "dataset_id": "population-estimates",
                         "id": "test-item-2",
+                        "last_updated":"2021-01-01T00:00:01Z",
                         "version": 2,
                         "state": "associated",
                         "links": {
@@ -430,6 +439,7 @@ Feature: Dataset API
                     {
                         "dataset_id": "population-estimates",
                         "id": "test-item-1",
+                        "last_updated":"2021-01-01T00:00:00Z",
                         "version": 1,
                         "state": "published",
                         "links": {
@@ -482,6 +492,7 @@ Feature: Dataset API
         """
         {
             "id": "test-item-4",
+            "last_updated":"2021-01-01T00:00:03Z",
             "version": 4,
             "state": "published",
             "links": {
@@ -504,6 +515,7 @@ Feature: Dataset API
         """
         {
             "id": "test-item-4",
+            "last_updated":"2021-01-01T00:00:03Z",
             "version": 4,
             "state": "published",
             "links": {
@@ -532,6 +544,7 @@ Feature: Dataset API
         """
         {
             "id": "test-item-2",
+            "last_updated":"2021-01-01T00:00:01Z",
             "version": 2,
             "state": "associated",
             "links": {
@@ -556,6 +569,7 @@ Feature: Dataset API
         """
         {
             "id": "test-item-2",
+            "last_updated":"2021-01-01T00:00:01Z",
             "version": 2,
             "state": "associated",
             "links": {
