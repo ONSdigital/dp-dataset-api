@@ -54,6 +54,9 @@ var _ store.Storer = &StorerMock{}
 //			GetDatasetFunc: func(ctx context.Context, ID string) (*models.DatasetUpdate, error) {
 //				panic("mock out the GetDataset method")
 //			},
+//			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+//				panic("mock out the GetDatasetType method")
+//			},
 //			GetDatasetsFunc: func(ctx context.Context, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
 //				panic("mock out the GetDatasets method")
 //			},
@@ -83,6 +86,9 @@ var _ store.Storer = &StorerMock{}
 //			},
 //			GetInstancesFunc: func(ctx context.Context, states []string, datasets []string, offset int, limit int) ([]*models.Instance, int, error) {
 //				panic("mock out the GetInstances method")
+//			},
+//			GetLatestVersionStaticFunc: func(ctx context.Context, datasetID string, editionID string, state string) (*models.Version, error) {
+//				panic("mock out the GetLatestVersionStatic method")
 //			},
 //			GetNextVersionFunc: func(ctx context.Context, datasetID string, editionID string) (int, error) {
 //				panic("mock out the GetNextVersion method")
@@ -205,6 +211,9 @@ type StorerMock struct {
 	// GetDatasetFunc mocks the GetDataset method.
 	GetDatasetFunc func(ctx context.Context, ID string) (*models.DatasetUpdate, error)
 
+	// GetDatasetTypeFunc mocks the GetDatasetType method.
+	GetDatasetTypeFunc func(ctx context.Context, datasetID string, authorised bool) (string, error)
+
 	// GetDatasetsFunc mocks the GetDatasets method.
 	GetDatasetsFunc func(ctx context.Context, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error)
 
@@ -234,6 +243,9 @@ type StorerMock struct {
 
 	// GetInstancesFunc mocks the GetInstances method.
 	GetInstancesFunc func(ctx context.Context, states []string, datasets []string, offset int, limit int) ([]*models.Instance, int, error)
+
+	// GetLatestVersionStaticFunc mocks the GetLatestVersionStatic method.
+	GetLatestVersionStaticFunc func(ctx context.Context, datasetID string, editionID string, state string) (*models.Version, error)
 
 	// GetNextVersionFunc mocks the GetNextVersion method.
 	GetNextVersionFunc func(ctx context.Context, datasetID string, editionID string) (int, error)
@@ -415,6 +427,15 @@ type StorerMock struct {
 			// ID is the ID argument value.
 			ID string
 		}
+		// GetDatasetType holds details about calls to the GetDatasetType method.
+		GetDatasetType []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// Authorised is the authorised argument value.
+			Authorised bool
+		}
 		// GetDatasets holds details about calls to the GetDatasets method.
 		GetDatasets []struct {
 			// Ctx is the ctx argument value.
@@ -528,6 +549,17 @@ type StorerMock struct {
 			Offset int
 			// Limit is the limit argument value.
 			Limit int
+		}
+		// GetLatestVersionStatic holds details about calls to the GetLatestVersionStatic method.
+		GetLatestVersionStatic []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// EditionID is the editionID argument value.
+			EditionID string
+			// State is the state argument value.
+			State string
 		}
 		// GetNextVersion holds details about calls to the GetNextVersion method.
 		GetNextVersion []struct {
@@ -822,6 +854,7 @@ type StorerMock struct {
 	lockDeleteDataset                       sync.RWMutex
 	lockDeleteEdition                       sync.RWMutex
 	lockGetDataset                          sync.RWMutex
+	lockGetDatasetType                      sync.RWMutex
 	lockGetDatasets                         sync.RWMutex
 	lockGetDatasetsByBasedOn                sync.RWMutex
 	lockGetDimensionOptions                 sync.RWMutex
@@ -832,6 +865,7 @@ type StorerMock struct {
 	lockGetEditions                         sync.RWMutex
 	lockGetInstance                         sync.RWMutex
 	lockGetInstances                        sync.RWMutex
+	lockGetLatestVersionStatic              sync.RWMutex
 	lockGetNextVersion                      sync.RWMutex
 	lockGetNextVersionStatic                sync.RWMutex
 	lockGetUniqueDimensionAndOptions        sync.RWMutex
@@ -1297,6 +1331,46 @@ func (mock *StorerMock) GetDatasetCalls() []struct {
 	return calls
 }
 
+// GetDatasetType calls GetDatasetTypeFunc.
+func (mock *StorerMock) GetDatasetType(ctx context.Context, datasetID string, authorised bool) (string, error) {
+	if mock.GetDatasetTypeFunc == nil {
+		panic("StorerMock.GetDatasetTypeFunc: method is nil but Storer.GetDatasetType was just called")
+	}
+	callInfo := struct {
+		Ctx        context.Context
+		DatasetID  string
+		Authorised bool
+	}{
+		Ctx:        ctx,
+		DatasetID:  datasetID,
+		Authorised: authorised,
+	}
+	mock.lockGetDatasetType.Lock()
+	mock.calls.GetDatasetType = append(mock.calls.GetDatasetType, callInfo)
+	mock.lockGetDatasetType.Unlock()
+	return mock.GetDatasetTypeFunc(ctx, datasetID, authorised)
+}
+
+// GetDatasetTypeCalls gets all the calls that were made to GetDatasetType.
+// Check the length with:
+//
+//	len(mockedStorer.GetDatasetTypeCalls())
+func (mock *StorerMock) GetDatasetTypeCalls() []struct {
+	Ctx        context.Context
+	DatasetID  string
+	Authorised bool
+} {
+	var calls []struct {
+		Ctx        context.Context
+		DatasetID  string
+		Authorised bool
+	}
+	mock.lockGetDatasetType.RLock()
+	calls = mock.calls.GetDatasetType
+	mock.lockGetDatasetType.RUnlock()
+	return calls
+}
+
 // GetDatasets calls GetDatasetsFunc.
 func (mock *StorerMock) GetDatasets(ctx context.Context, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
 	if mock.GetDatasetsFunc == nil {
@@ -1742,6 +1816,50 @@ func (mock *StorerMock) GetInstancesCalls() []struct {
 	mock.lockGetInstances.RLock()
 	calls = mock.calls.GetInstances
 	mock.lockGetInstances.RUnlock()
+	return calls
+}
+
+// GetLatestVersionStatic calls GetLatestVersionStaticFunc.
+func (mock *StorerMock) GetLatestVersionStatic(ctx context.Context, datasetID string, editionID string, state string) (*models.Version, error) {
+	if mock.GetLatestVersionStaticFunc == nil {
+		panic("StorerMock.GetLatestVersionStaticFunc: method is nil but Storer.GetLatestVersionStatic was just called")
+	}
+	callInfo := struct {
+		Ctx       context.Context
+		DatasetID string
+		EditionID string
+		State     string
+	}{
+		Ctx:       ctx,
+		DatasetID: datasetID,
+		EditionID: editionID,
+		State:     state,
+	}
+	mock.lockGetLatestVersionStatic.Lock()
+	mock.calls.GetLatestVersionStatic = append(mock.calls.GetLatestVersionStatic, callInfo)
+	mock.lockGetLatestVersionStatic.Unlock()
+	return mock.GetLatestVersionStaticFunc(ctx, datasetID, editionID, state)
+}
+
+// GetLatestVersionStaticCalls gets all the calls that were made to GetLatestVersionStatic.
+// Check the length with:
+//
+//	len(mockedStorer.GetLatestVersionStaticCalls())
+func (mock *StorerMock) GetLatestVersionStaticCalls() []struct {
+	Ctx       context.Context
+	DatasetID string
+	EditionID string
+	State     string
+} {
+	var calls []struct {
+		Ctx       context.Context
+		DatasetID string
+		EditionID string
+		State     string
+	}
+	mock.lockGetLatestVersionStatic.RLock()
+	calls = mock.calls.GetLatestVersionStatic
+	mock.lockGetLatestVersionStatic.RUnlock()
 	return calls
 }
 
