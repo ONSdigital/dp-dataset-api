@@ -10,7 +10,7 @@ import (
 
 // Ensure, that DownloadsGeneratorMock does implement api.DownloadsGenerator.
 // If this is not the case, regenerate this file with moq.
-//var _ api.DownloadsGenerator = &DownloadsGeneratorMock{}
+// var _ api.DownloadsGenerator = &DownloadsGeneratorMock{}
 
 // DownloadsGeneratorMock is a mock implementation of api.DownloadsGenerator.
 //
