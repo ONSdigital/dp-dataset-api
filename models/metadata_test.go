@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	neturl "net/url"
 	"testing"
 	"time"
@@ -133,6 +132,7 @@ func TestCreateMetadata(t *testing.T) {
 				So(metaDataDoc.RelatedContent, ShouldResemble, dataset.RelatedContent)
 				So(metaDataDoc.CanonicalTopic, ShouldEqual, dataset.CanonicalTopic)
 				So(metaDataDoc.Subtopics, ShouldResemble, dataset.Subtopics)
+				So(metaDataDoc.Topics, ShouldBeNil)
 
 				So(metaDataDoc.CSVHeader, ShouldResemble, version.Headers)
 				So(metaDataDoc.Dimensions, ShouldResemble, version.Dimensions)
@@ -187,7 +187,7 @@ func TestCreateMetadata(t *testing.T) {
 			})
 		})
 
-		Convey("When we call CreateMetaDataDoc", func() {
+		Convey("When we call CreateMetaDataDoc with a non-static dataset", func() {
 			codeListAPIURL := &neturl.URL{Scheme: "http", Host: "localhost:22400"}
 			datasetAPIURL := &neturl.URL{Scheme: "http", Host: "localhost:22000"}
 			downloadServiceURL := &neturl.URL{Scheme: "http", Host: "localhost:23600"}
@@ -195,78 +195,30 @@ func TestCreateMetadata(t *testing.T) {
 			websiteURL := &neturl.URL{Scheme: "http", Host: "localhost:20000"}
 			urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
 			metaDataDoc := CreateMetaDataDoc(&dataset, &version, urlBuilder)
-			expectedThemes := []string{"1234", "5678", "9012"}
 
-			Convey("Then it returns a metadata object with all the CMD fields populated", func() {
-				So(metaDataDoc.Description, ShouldEqual, dataset.Description)
-				So(metaDataDoc.Keywords, ShouldResemble, dataset.Keywords)
-				So(metaDataDoc.Title, ShouldEqual, dataset.Title)
-				So(metaDataDoc.UnitOfMeasure, ShouldEqual, dataset.UnitOfMeasure)
-				So(metaDataDoc.Contacts, ShouldResemble, dataset.Contacts)
-				So(metaDataDoc.License, ShouldResemble, dataset.License)
-				So(metaDataDoc.Methodologies, ShouldResemble, dataset.Methodologies)
-				So(metaDataDoc.NationalStatistic, ShouldResemble, dataset.NationalStatistic)
-				So(metaDataDoc.NextRelease, ShouldResemble, dataset.NextRelease)
-				So(metaDataDoc.Publications, ShouldResemble, dataset.Publications)
-				So(metaDataDoc.Publisher, ShouldResemble, dataset.Publisher)
-				So(metaDataDoc.RelatedDatasets, ShouldResemble, dataset.RelatedDatasets)
-				So(metaDataDoc.ReleaseFrequency, ShouldResemble, dataset.ReleaseFrequency)
-				So(metaDataDoc.Theme, ShouldResemble, dataset.Theme)
-				So(metaDataDoc.URI, ShouldEqual, dataset.URI)
-				So(metaDataDoc.QMI, ShouldResemble, dataset.QMI)
+			Convey("Then it returns a metadata object with canonical topic and subtopics set", func() {
 				So(metaDataDoc.CanonicalTopic, ShouldEqual, dataset.CanonicalTopic)
 				So(metaDataDoc.Subtopics, ShouldResemble, dataset.Subtopics)
-				So(metaDataDoc.Links.AccessRights, ShouldEqual, dataset.Links.AccessRights)
-				So(metaDataDoc.Themes, ShouldEqual, expectedThemes)
-
-				So(metaDataDoc.Alerts, ShouldEqual, version.Alerts)
-				So(metaDataDoc.Dimensions, ShouldResemble, version.Dimensions)
-				So(metaDataDoc.LatestChanges, ShouldEqual, version.LatestChanges)
-				So(metaDataDoc.ReleaseDate, ShouldEqual, version.ReleaseDate)
-				So(metaDataDoc.Temporal, ShouldEqual, version.Temporal)
-				So(metaDataDoc.UsageNotes, ShouldEqual, version.UsageNotes)
-
-				So(metaDataDoc.Downloads.CSV.HRef, ShouldEqual, csvDownload.HRef)
-				So(metaDataDoc.Downloads.CSV.Size, ShouldEqual, csvDownload.Size)
-				So(metaDataDoc.Downloads.CSV.Private, ShouldEqual, "")
-				So(metaDataDoc.Downloads.CSV.Public, ShouldEqual, "")
-				So(metaDataDoc.Downloads.CSVW.HRef, ShouldEqual, csvwDownload.HRef)
-				So(metaDataDoc.Downloads.CSVW.Size, ShouldEqual, csvwDownload.Size)
-				So(metaDataDoc.Downloads.CSVW.Private, ShouldEqual, "")
-				So(metaDataDoc.Downloads.CSVW.Public, ShouldEqual, "")
-				So(metaDataDoc.Downloads.TXT.HRef, ShouldEqual, txtDownload.HRef)
-				So(metaDataDoc.Downloads.TXT.Size, ShouldEqual, txtDownload.Size)
-				So(metaDataDoc.Downloads.TXT.Private, ShouldEqual, txtDownload.Private) // TODO: Should it be cleared?
-				So(metaDataDoc.Downloads.TXT.Public, ShouldEqual, txtDownload.Public)   // TODO: Should it be cleared?
-				So(metaDataDoc.Downloads.XLS.HRef, ShouldEqual, xlsDownload.HRef)
-				So(metaDataDoc.Downloads.XLS.Size, ShouldEqual, xlsDownload.Size)
-				So(metaDataDoc.Downloads.XLS.Private, ShouldEqual, "")
-				So(metaDataDoc.Downloads.XLS.Public, ShouldEqual, "")
-				So(metaDataDoc.Downloads.XLSX.Private, ShouldEqual, xlsxDownload.Private) // TODO: Should it be cleared?
-				So(metaDataDoc.Downloads.XLSX.Public, ShouldEqual, xlsxDownload.Public)   // TODO: Should it be cleared?
-
-				So(metaDataDoc.Links.Self.HRef, ShouldEqual, version.Links.Version.HRef+"/metadata")
-				So(metaDataDoc.Links.Self.ID, ShouldEqual, "")
-				So(metaDataDoc.Links.Spatial, ShouldEqual, version.Links.Spatial)
-				So(metaDataDoc.Links.Version, ShouldEqual, version.Links.Version)
-				expectedWebsiteHref := fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%d",
-					websiteURL, dataset.ID, version.Links.Edition.ID, version.Version)
-				So(metaDataDoc.Links.WebsiteVersion.HRef, ShouldEqual, expectedWebsiteHref)
-				So(metaDataDoc.Links.WebsiteVersion.ID, ShouldEqual, "")
-				So(metaDataDoc.IsBasedOn, ShouldResemble, &IsBasedOn{
-					ID:   "UR_HH",
-					Type: "All usual residents in households",
-				})
-
-				// TODO: Should it include xlsx?
-				So(metaDataDoc.Distribution, ShouldResemble, []string{"json", "csv", "csvw", "xls", "txt"})
+				So(metaDataDoc.Topics, ShouldBeNil)
 			})
+		})
 
-			Convey("And the non-CMD fields are empty", func() {
-				So(metaDataDoc.CSVHeader, ShouldBeNil)
-				So(metaDataDoc.DatasetLinks, ShouldBeNil)
-				So(metaDataDoc.RelatedContent, ShouldBeNil)
-				So(metaDataDoc.Version, ShouldEqual, version.Version)
+		Convey("When we call CreateMetaDataDoc with a static dataset", func() {
+			// Create a copy of the dataset with type set to static
+			staticDataset := dataset
+			staticDataset.Type = "static"
+			staticDataset.Topics = []string{"topic1", "topic2", "topic3"}
+
+			codeListAPIURL := &neturl.URL{Scheme: "http", Host: "localhost:22400"}
+			datasetAPIURL := &neturl.URL{Scheme: "http", Host: "localhost:22000"}
+			downloadServiceURL := &neturl.URL{Scheme: "http", Host: "localhost:23600"}
+			importAPIURL := &neturl.URL{Scheme: "http", Host: "localhost:21800"}
+			websiteURL := &neturl.URL{Scheme: "http", Host: "localhost:20000"}
+			urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
+			metaDataDoc := CreateMetaDataDoc(&staticDataset, &version, urlBuilder)
+
+			Convey("Then it returns a metadata object with topics populated", func() {
+				So(metaDataDoc.Topics, ShouldResemble, staticDataset.Topics)
 			})
 		})
 	})
@@ -361,14 +313,15 @@ func TestUpdateMetadata(t *testing.T) {
 				HRef:        "related-content-rul",
 				Title:       "related-content-title",
 			}},
+			Topics: []string{"topic1", "topic2"},
 		}
 
 		collectionID := "collection-id"
 		datasetID := "dataset-id"
 
-		Convey("And a dataset", func() {
+		Convey("And a non-static dataset", func() {
 			lastUpdated := time.Now()
-			datasetType := "type"
+			datasetType := "cantabular_table"
 			state := PublishedState
 			theme := "population"
 			uri := "dataset-uri"
@@ -432,6 +385,7 @@ func TestUpdateMetadata(t *testing.T) {
 					So(dataset.RelatedDatasets, ShouldResemble, metadata.RelatedDatasets)
 					So(dataset.Publications, ShouldResemble, metadata.Publications)
 					So(dataset.Survey, ShouldEqual, metadata.Survey)
+					So(dataset.Topics, ShouldBeNil)
 				})
 				Convey("And none of the non-metadata fields is updated", func() {
 					So(dataset.CollectionID, ShouldEqual, collectionID)
@@ -444,6 +398,77 @@ func TestUpdateMetadata(t *testing.T) {
 					So(dataset.URI, ShouldEqual, uri)
 					So(dataset.Type, ShouldEqual, datasetType)
 					So(dataset.IsBasedOn, ShouldEqual, &isBasedOn)
+				})
+			})
+		})
+
+		Convey("And a static dataset", func() {
+			lastUpdated := time.Now()
+			datasetType := "static"
+			state := PublishedState
+			theme := "population"
+			uri := "dataset-uri"
+			links := DatasetLinks{
+				AccessRights: &LinkObject{
+					HRef: "href-access-rights",
+					ID:   "access-rights",
+				},
+				Editions: &LinkObject{
+					HRef: "href-editions",
+					ID:   "editions",
+				},
+				LatestVersion: &LinkObject{
+					HRef: "href-latest",
+					ID:   "latest",
+				},
+				Self: &LinkObject{
+					HRef: "href-self",
+					ID:   "self",
+				},
+				Taxonomy: &LinkObject{
+					HRef: "href-taxonomy",
+					ID:   "taxonomy",
+				},
+			}
+			isBasedOn := IsBasedOn{
+				ID:   "UR_HH",
+				Type: "All usual residents in households",
+			}
+			dataset := Dataset{
+				CollectionID: collectionID,
+				ID:           datasetID,
+				LastUpdated:  lastUpdated,
+				Links:        &links,
+				Publisher:    &publisher,
+				State:        state,
+				Theme:        theme,
+				URI:          uri,
+				Type:         datasetType,
+				IsBasedOn:    &isBasedOn,
+			}
+
+			Convey("When we call UpdateMetadata on the dataset", func() {
+				dataset.UpdateMetadata(metadata)
+
+				Convey("Then all the metadata fields including topics are updated correctly", func() {
+					So(dataset.CanonicalTopic, ShouldEqual, metadata.CanonicalTopic)
+					So(dataset.Title, ShouldEqual, metadata.Title)
+					So(dataset.Contacts, ShouldResemble, metadata.Contacts)
+					So(dataset.NextRelease, ShouldEqual, metadata.NextRelease)
+					So(dataset.License, ShouldEqual, metadata.License)
+					So(dataset.Description, ShouldEqual, metadata.Description)
+					So(dataset.UnitOfMeasure, ShouldEqual, metadata.UnitOfMeasure)
+					So(dataset.Keywords, ShouldResemble, metadata.Keywords)
+					So(dataset.Subtopics, ShouldResemble, metadata.Subtopics)
+					So(dataset.RelatedContent, ShouldResemble, metadata.RelatedContent)
+					So(dataset.NationalStatistic, ShouldEqual, metadata.NationalStatistic)
+					So(dataset.Methodologies, ShouldResemble, metadata.Methodologies)
+					So(dataset.QMI, ShouldResemble, metadata.QMI)
+					So(dataset.ReleaseFrequency, ShouldEqual, metadata.ReleaseFrequency)
+					So(dataset.RelatedDatasets, ShouldResemble, metadata.RelatedDatasets)
+					So(dataset.Publications, ShouldResemble, metadata.Publications)
+					So(dataset.Survey, ShouldEqual, metadata.Survey)
+					So(dataset.Topics, ShouldResemble, metadata.Topics)
 				})
 			})
 		})

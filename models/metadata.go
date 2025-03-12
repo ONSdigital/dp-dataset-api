@@ -59,7 +59,7 @@ type EditableMetadata struct {
 	UsageNotes         *[]UsageNote       `json:"usage_notes,omitempty"`
 	RelatedContent     []GeneralDetails   `json:"related_content,omitempty"`
 	QualityDesignation QualityDesignation `json:"quality_designation,omitempty"`
-	Themes             []string           `json:"themes,omitempty"`
+	Topics             []string           `json:"topics,omitempty"`
 }
 
 // MetadataLinks represents a link object to list of metadata relevant to a version
@@ -73,6 +73,11 @@ type MetadataLinks struct {
 
 // CreateMetaDataDoc manages the creation of metadata across dataset and version docs
 func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url.Builder) *Metadata {
+	var topics []string
+	if datasetDoc.Type == "static" {
+		topics = datasetDoc.Topics
+	}
+
 	metaDataDoc := &Metadata{
 		EditableMetadata: EditableMetadata{
 			Alerts:             versionDoc.Alerts,
@@ -98,6 +103,7 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 			Title:              datasetDoc.Title,
 			UnitOfMeasure:      datasetDoc.UnitOfMeasure,
 			UsageNotes:         versionDoc.UsageNotes,
+			Topics:             topics,
 		},
 		Edition:   versionDoc.Edition,
 		ID:        datasetDoc.ID,
@@ -114,16 +120,6 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 	// Add relevant metdata links from dataset document
 	if datasetDoc.Links != nil {
 		metaDataDoc.Links.AccessRights = datasetDoc.Links.AccessRights
-	}
-
-	if metaDataDoc.Themes == nil {
-		if datasetDoc.CanonicalTopic != "" {
-			metaDataDoc.Themes = append(metaDataDoc.Themes, datasetDoc.CanonicalTopic)
-		}
-
-		if datasetDoc.Subtopics != nil {
-			metaDataDoc.Themes = append(metaDataDoc.Themes, datasetDoc.Subtopics...)
-		}
 	}
 
 	// Add relevant metdata links from version document
@@ -319,18 +315,9 @@ func (d *Dataset) UpdateMetadata(metadata EditableMetadata) {
 	d.RelatedDatasets = metadata.RelatedDatasets
 	d.Publications = metadata.Publications
 	d.Survey = metadata.Survey
-	if metadata.CanonicalTopic != "" {
-		if !contains(d.Themes, metadata.CanonicalTopic) {
-			d.Themes = append(d.Themes, metadata.CanonicalTopic)
-		}
-	}
 
-	if metadata.Subtopics != nil {
-		for _, subtopic := range metadata.Subtopics {
-			if !contains(d.Themes, subtopic) {
-				d.Themes = append(d.Themes, subtopic)
-			}
-		}
+	if d.Type == "static" && metadata.Topics != nil {
+		d.Topics = metadata.Topics
 	}
 }
 
@@ -341,13 +328,4 @@ func (v *Version) UpdateMetadata(metadata EditableMetadata) {
 	v.Dimensions = metadata.Dimensions
 	v.UsageNotes = metadata.UsageNotes
 	v.LatestChanges = metadata.LatestChanges
-}
-
-func contains(themes []string, item string) bool {
-	for _, v := range themes {
-		if v == item {
-			return true
-		}
-	}
-	return false
 }

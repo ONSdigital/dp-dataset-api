@@ -406,6 +406,10 @@ func createDatasetUpdateQuery(ctx context.Context, id string, dataset *models.Da
 		updates["next.related_content"] = dataset.RelatedContent
 	}
 
+	if dataset.Type == "static" && len(dataset.Topics) > 0 {
+		updates["next.topics"] = dataset.Topics
+	}
+
 	log.Info(ctx, "built update query for dataset resource", log.Data{"dataset_id": id, "dataset": dataset, "updates": updates})
 	return updates
 }

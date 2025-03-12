@@ -38,7 +38,6 @@ type Instance struct {
 	Description       string               `bson:"description,omitempty"                 json:"description,omitempty"`
 	Title             string               `bson:"title,omitempty"                       json:"title,omitempty"`
 	NextRelease       string               `bson:"next_release,omitempty"                json:"next_release,omitempty"`
-	Themes            []string             `bson:"themes,omitempty"                      json:"themes,omitempty"`
 }
 
 // Hash generates a SHA-1 hash of the instance struct. SHA-1 is not cryptographically safe,

@@ -158,9 +158,11 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 				log.Info(ctx, "getDataset endpoint: caller not authorised returning dataset", logData)
 
 				dataset.Current.ID = dataset.ID
-				if dataset.Current.Themes == nil {
-					dataset.Current.Themes = utils.BuildThemes(dataset.Current.CanonicalTopic, dataset.Current.Subtopics)
+
+				if dataset.Current.Type != "static" && dataset.Current.Topics == nil {
+					dataset.Current.Topics = nil
 				}
+
 				datasetResponse = dataset.Current
 			} else {
 				// User has valid authentication to get raw dataset document
@@ -169,9 +171,15 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 					return nil, errs.ErrDatasetNotFound
 				}
 				log.Info(ctx, "getDataset endpoint: caller authorised returning dataset current sub document", logData)
-				if dataset.Current != nil && dataset.Current.Themes == nil {
-					dataset.Current.Themes = utils.BuildThemes(dataset.Current.CanonicalTopic, dataset.Current.Subtopics)
+
+				if dataset.Current != nil && dataset.Current.Type != "static" && dataset.Current.Topics == nil {
+					dataset.Current.Topics = nil
 				}
+
+				if dataset.Next != nil && dataset.Next.Type != "static" && dataset.Next.Topics == nil {
+					dataset.Next.Topics = nil
+				}
+
 				datasetResponse = dataset
 			}
 		}
@@ -358,10 +366,6 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 	dataset.Links.LatestVersion = nil
 
 	dataset.LastUpdated = time.Now()
-
-	if dataset.Themes == nil {
-		dataset.Themes = utils.BuildThemes(dataset.CanonicalTopic, dataset.Subtopics)
-	}
 
 	datasetDoc := &models.DatasetUpdate{
 		ID:   datasetID,
