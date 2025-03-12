@@ -114,8 +114,7 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 
 		var metaDataDoc *models.Metadata
 
-		if datasetType == models.CantabularBlob || datasetType == models.CantabularTable ||
-			datasetType == models.CantabularFlexibleTable || datasetType == models.CantabularMultivariateTable {
+		if datasetType == models.CantabularFlexibleTable || datasetType == models.CantabularMultivariateTable {
 			metaDataDoc = models.CreateCantabularMetaDataDoc(doc, versionDoc)
 		} else {
 			// combine version and dataset metadata
