@@ -12,6 +12,10 @@ import (
 	"github.com/ONSdigital/log.go/v2/log"
 )
 
+const (
+	StaticDatasetType = "static"
+)
+
 // ValidatePositiveInt obtains the positive int value of query var defined by the provided varKey
 func ValidatePositiveInt(parameter string) (val int, err error) {
 	val, err = strconv.Atoi(parameter)
@@ -141,11 +145,11 @@ func RewriteDatasetWithAuth(ctx context.Context, dataset *models.DatasetUpdate, 
 
 	log.Info(ctx, "getDataset endpoint: caller authorised returning dataset current sub document", log.Data{"dataset_id": dataset.ID})
 
-	if dataset.Current != nil && dataset.Current.Type == "static" && dataset.Current.Topics == nil {
+	if dataset.Current != nil && dataset.Current.Type == StaticDatasetType && dataset.Current.Topics == nil {
 		dataset.Current.Topics = []string{}
 	}
 
-	if dataset.Current != nil && dataset.Current.Type != "static" {
+	if dataset.Current != nil && dataset.Current.Type != StaticDatasetType {
 		dataset.Current.Topics = nil
 	}
 
@@ -157,11 +161,11 @@ func RewriteDatasetWithAuth(ctx context.Context, dataset *models.DatasetUpdate, 
 		}
 	}
 
-	if dataset.Next != nil && dataset.Next.Type == "static" && dataset.Next.Topics == nil {
+	if dataset.Next != nil && dataset.Next.Type == StaticDatasetType && dataset.Next.Topics == nil {
 		dataset.Next.Topics = []string{}
 	}
 
-	if dataset.Next != nil && dataset.Next.Type != "static" {
+	if dataset.Next != nil && dataset.Next.Type != StaticDatasetType {
 		dataset.Next.Topics = nil
 	}
 
@@ -192,7 +196,7 @@ func RewriteDatasetWithoutAuth(ctx context.Context, dataset *models.DatasetUpdat
 
 	dataset.Current.ID = dataset.ID
 
-	if dataset.Current.Type != "static" {
+	if dataset.Current.Type != StaticDatasetType {
 		dataset.Current.Topics = nil
 	}
 

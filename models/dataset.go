@@ -38,6 +38,7 @@ const (
 	Invalid
 )
 
+//nolint:goconst // "static" is part of a type definition slice
 var datasetTypes = []string{
 	"filterable",
 	"cantabular_table",
