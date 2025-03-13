@@ -177,7 +177,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if err != nil {
-		if err == errs.ErrDatasetNotFound || err == errs.ErrEditionNotFound {
+		if err == errs.ErrDatasetNotFound || err == errs.ErrEditionNotFound || err == errs.ErrVersionNotFound {
 			http.Error(w, err.Error(), http.StatusNotFound)
 		} else {
 			http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
@@ -206,8 +206,8 @@ func mapVersionToEdition(version *models.Version, authorised bool) *models.Editi
 				ID:   version.Links.Dataset.ID,
 			},
 			LatestVersion: &models.LinkObject{
-				HRef: version.Links.Self.HRef,
-				ID:   version.Links.Self.ID,
+				HRef: version.Links.Version.HRef,
+				ID:   version.Links.Version.ID,
 			},
 			Self: &models.LinkObject{
 				HRef: version.Links.Edition.HRef,
