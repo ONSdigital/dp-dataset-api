@@ -38,7 +38,6 @@ const (
 	Invalid
 )
 
-//nolint:goconst // "static" is part of a type definition slice
 var datasetTypes = []string{
 	"filterable",
 	"cantabular_table",
@@ -54,6 +53,8 @@ func (dt DatasetType) String() string {
 }
 
 // GetDatasetType returns a dataset type for a given dataset
+//
+//nolint:goconst // "static" is part of a type definition slice
 func GetDatasetType(datasetType string) (DatasetType, error) {
 	switch datasetType {
 	case "filterable", "v4", "":
