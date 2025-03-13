@@ -109,7 +109,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 
 		// Retrieve versions based on dataset type
 		if datasetType == models.Static.String() {
-			results, totalCount, err = api.dataStore.Backend.GetVersionsWithDatasetID(ctx, datasetID, offset, limit)
+			results, totalCount, err = api.dataStore.Backend.GetVersionsStatic(ctx, datasetID, edition, state, offset, limit)
 		} else {
 			results, totalCount, err = api.dataStore.Backend.GetVersions(ctx, datasetID, edition, state, offset, limit)
 		}

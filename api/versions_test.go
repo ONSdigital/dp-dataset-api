@@ -87,7 +87,7 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
-			GetVersionsWithDatasetIDFunc: func(context.Context, string, int, int) ([]models.Version, int, error) {
+			GetVersionsStaticFunc: func(context.Context, string, string, string, int, int) ([]models.Version, int, error) {
 				return results, 2, nil
 			},
 		}
@@ -100,9 +100,9 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.CheckEditionExistsStaticCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetVersionsWithDatasetIDCalls()), ShouldEqual, 1)
-		So(mockedDataStore.GetVersionsWithDatasetIDCalls()[0].Limit, ShouldEqual, 20)
-		So(mockedDataStore.GetVersionsWithDatasetIDCalls()[0].Offset, ShouldEqual, 0)
+		So(len(mockedDataStore.GetVersionsStaticCalls()), ShouldEqual, 1)
+		So(mockedDataStore.GetVersionsStaticCalls()[0].Limit, ShouldEqual, 20)
+		So(mockedDataStore.GetVersionsStaticCalls()[0].Offset, ShouldEqual, 0)
 		So(list, ShouldResemble, results)
 		So(totalCount, ShouldEqual, 2)
 		So(err, ShouldEqual, nil)

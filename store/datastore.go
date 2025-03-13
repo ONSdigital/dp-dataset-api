@@ -29,6 +29,7 @@ type dataMongoDB interface {
 	GetDataset(ctx context.Context, ID string) (*models.DatasetUpdate, error)
 	GetDatasets(ctx context.Context, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error)
 	GetDatasetsByBasedOn(ctx context.Context, ID string, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error)
+	GetDatasetType(ctx context.Context, datasetID string, authorised bool) (string, error)
 	GetDimensionsFromInstance(ctx context.Context, ID string, offset, limit int) ([]*models.DimensionOption, int, error)
 	GetDimensions(ctx context.Context, versionID string) ([]bson.M, error)
 	GetDimensionOptions(ctx context.Context, version *models.Version, dimension string, offset, limit int) ([]*models.PublicDimensionOption, int, error)
@@ -41,9 +42,10 @@ type dataMongoDB interface {
 	GetNextVersionStatic(ctx context.Context, datasetID, editionID string) (int, error)
 	GetVersion(ctx context.Context, datasetID, editionID string, version int, state string) (*models.Version, error)
 	GetVersionStatic(ctx context.Context, datasetID, editionID string, version int, state string) (*models.Version, error)
+	GetLatestVersionStatic(ctx context.Context, datasetID, editionID string, state string) (*models.Version, error)
 	GetUniqueDimensionAndOptions(ctx context.Context, ID, dimension string) ([]*string, int, error)
 	GetVersions(ctx context.Context, datasetID, editionID, state string, offset, limit int) ([]models.Version, int, error)
-	GetVersionsWithDatasetID(ctx context.Context, datasetID string, offset, limit int) ([]models.Version, int, error)
+	GetVersionsStatic(ctx context.Context, datasetID, edition, state string, offset, limit int) ([]models.Version, int, error)
 	UpdateDataset(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error
 	UpdateDatasetWithAssociation(ctx context.Context, ID, state string, version *models.Version) error
 	UpdateDimensionsNodeIDAndOrder(ctx context.Context, updates []*models.DimensionOption) error

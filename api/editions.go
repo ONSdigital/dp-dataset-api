@@ -91,8 +91,8 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	datasetID := vars["dataset_id"]
-	edition := vars["edition"]
-	logData := log.Data{"dataset_id": datasetID, "edition": edition}
+	editionID := vars["edition"]
+	logData := log.Data{"dataset_id": datasetID, "edition": editionID}
 
 	b, err := func() ([]byte, error) {
 		authorised := api.authenticate(r, logData)
@@ -102,15 +102,27 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 			state = models.PublishedState
 		}
 
-		if err := api.dataStore.Backend.CheckDatasetExists(ctx, datasetID, state); err != nil {
-			log.Error(ctx, "getEdition endpoint: unable to find dataset", err, logData)
+		datasetType, err := api.dataStore.Backend.GetDatasetType(ctx, datasetID, authorised)
+		if err != nil {
+			log.Error(ctx, "getEdition endpoint: unable to find dataset type", err, logData)
 			return nil, err
 		}
 
-		edition, err := api.dataStore.Backend.GetEdition(ctx, datasetID, edition, state)
-		if err != nil {
-			log.Error(ctx, "getEdition endpoint: unable to find edition", err, logData)
-			return nil, err
+		var edition *models.EditionUpdate
+
+		if datasetType == models.Static.String() {
+			version, err := api.dataStore.Backend.GetLatestVersionStatic(ctx, datasetID, editionID, state)
+			if err != nil {
+				log.Error(ctx, "getEdition endpoint: unable to find latest static version", err, logData)
+				return nil, err
+			}
+			edition = mapVersionToEdition(version, authorised)
+		} else {
+			edition, err = api.dataStore.Backend.GetEdition(ctx, datasetID, editionID, state)
+			if err != nil {
+				log.Error(ctx, "getEdition endpoint: unable to find edition", err, logData)
+				return nil, err
+			}
 		}
 
 		var editionResponse interface{}
@@ -181,4 +193,40 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Info(ctx, "getEdition endpoint: request successful", logData)
+}
+
+func mapVersionToEdition(version *models.Version, authorised bool) *models.EditionUpdate {
+	edition := &models.Edition{
+		DatasetID:   version.DatasetID,
+		Edition:     version.Edition,
+		ReleaseDate: version.ReleaseDate,
+		Links: &models.EditionUpdateLinks{
+			Dataset: &models.LinkObject{
+				HRef: version.Links.Dataset.HRef,
+				ID:   version.Links.Dataset.ID,
+			},
+			LatestVersion: &models.LinkObject{
+				HRef: version.Links.Self.HRef,
+				ID:   version.Links.Self.ID,
+			},
+			Self: &models.LinkObject{
+				HRef: version.Links.Edition.HRef,
+				ID:   version.Links.Edition.ID,
+			},
+			Versions: &models.LinkObject{
+				HRef: version.Links.Edition.HRef + "/versions",
+			},
+		},
+		Version:            version.Version,
+		LastUpdated:        version.LastUpdated,
+		Alerts:             version.Alerts,
+		UsageNotes:         version.UsageNotes,
+		Distributions:      version.Distributions,
+		QualityDesignation: version.QualityDesignation,
+	}
+
+	if authorised {
+		return &models.EditionUpdate{Next: edition}
+	}
+	return &models.EditionUpdate{Current: edition}
 }

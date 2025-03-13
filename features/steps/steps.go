@@ -265,13 +265,14 @@ func (c *DatasetComponent) iHaveTheseEditions(editionsJSON *godog.DocString) err
 		return err
 	}
 
-	for timeOffset, editionDoc := range editions {
+	for timeOffset := range editions {
+		editionDoc := &editions[timeOffset]
 		editionID := editionDoc.ID
 
 		editionUp := models.EditionUpdate{
 			ID:      editionID,
-			Next:    &editions[timeOffset],
-			Current: &editions[timeOffset],
+			Next:    editionDoc,
+			Current: editionDoc,
 		}
 
 		editionsCollection := c.MongoClient.ActualCollectionName(config.EditionsCollection)

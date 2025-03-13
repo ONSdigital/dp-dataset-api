@@ -266,7 +266,7 @@ func TestCreateMetadata(t *testing.T) {
 				So(metaDataDoc.CSVHeader, ShouldBeNil)
 				So(metaDataDoc.DatasetLinks, ShouldBeNil)
 				So(metaDataDoc.RelatedContent, ShouldBeNil)
-				So(metaDataDoc.Version, ShouldEqual, 0)
+				So(metaDataDoc.Version, ShouldEqual, version.Version)
 			})
 		})
 	})
