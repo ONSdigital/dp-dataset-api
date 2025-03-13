@@ -71,13 +71,23 @@ func (smDS *StateMachineDatasetAPI) AmendVersion(ctx context.Context, vars map[s
 		version:   vars["version"],
 	}
 
-	lockID, lockErr := smDS.DataStore.Backend.AcquireInstanceLock(ctx, version.ID)
-	if lockErr != nil {
-		return lockErr
+	if version.Type == models.Static.String() {
+		lockID, lockErr := smDS.DataStore.Backend.AcquireVersionsLock(ctx, version.ID)
+		if lockErr != nil {
+			return lockErr
+		}
+		defer func() {
+			smDS.DataStore.Backend.UnlockVersions(ctx, lockID)
+		}()
+	} else {
+		lockID, lockErr := smDS.DataStore.Backend.AcquireInstanceLock(ctx, version.ID)
+		if lockErr != nil {
+			return lockErr
+		}
+		defer func() {
+			smDS.DataStore.Backend.UnlockInstance(ctx, lockID)
+		}()
 	}
-	defer func() {
-		smDS.DataStore.Backend.UnlockInstance(ctx, lockID)
-	}()
 
 	currentVersion, versionUpdate, err := smDS.PopulateVersionInfo(ctx, version, versionDetails)
 	if err != nil {
@@ -104,15 +114,34 @@ func (smDS *StateMachineDatasetAPI) PopulateVersionInfo(ctx context.Context, ver
 		return nil, nil, err
 	}
 
-	if err = smDS.DataStore.Backend.CheckEditionExists(ctx, versionDetails.datasetID, versionDetails.edition, ""); err != nil {
-		log.Error(ctx, "UpdateVersion: failed to find edition of dataset", err, data)
-		return nil, nil, err
+	if versionUpdate != nil {
+		if versionUpdate.Type == models.Static.String() {
+			if err = smDS.DataStore.Backend.CheckEditionExistsStatic(ctx, versionDetails.datasetID, versionDetails.edition, ""); err != nil {
+				log.Error(ctx, "UpdateVersion: failed to find version of dataset", err, data)
+				return nil, nil, err
+			}
+		} else {
+			if err = smDS.DataStore.Backend.CheckEditionExists(ctx, versionDetails.datasetID, versionDetails.edition, ""); err != nil {
+				log.Error(ctx, "UpdateVersion: failed to find edition of dataset", err, data)
+				return nil, nil, err
+			}
+		}
 	}
 
-	currentVersion, err = smDS.DataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
-	if err != nil {
-		log.Error(ctx, "UpdateVersion: datastore.GetVersion returned an error", err, data)
-		return nil, nil, err
+	if versionUpdate != nil {
+		if versionUpdate.Type == models.Static.String() {
+			currentVersion, err = smDS.DataStore.Backend.GetVersionStatic(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
+			if err != nil {
+				log.Error(ctx, "UpdateVersion: datastore.GetVersionStatic returned an error", err, data)
+				return nil, nil, err
+			}
+		} else {
+			currentVersion, err = smDS.DataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
+			if err != nil {
+				log.Error(ctx, "UpdateVersion: datastore.GetVersion returned an error", err, data)
+				return nil, nil, err
+			}
+		}
 	}
 
 	// doUpdate is an aux function that combines the existing version document with the update received in the body request,

@@ -554,15 +554,34 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 		return nil, nil, nil, err
 	}
 
-	if err = api.dataStore.Backend.CheckEditionExists(ctx, versionDetails.datasetID, versionDetails.edition, ""); err != nil {
-		log.Error(ctx, "putVersion endpoint: failed to find edition of dataset", err, data)
-		return nil, nil, nil, err
+	if versionUpdate != nil {
+		if versionUpdate.Type == models.Static.String() {
+			if err = api.dataStore.Backend.CheckEditionExistsStatic(ctx, versionDetails.datasetID, versionDetails.edition, ""); err != nil {
+				log.Error(ctx, "putVersion endpoint: failed to find edition of dataset", err, data)
+				return nil, nil, nil, err
+			}
+		} else {
+			if err = api.dataStore.Backend.CheckEditionExists(ctx, versionDetails.datasetID, versionDetails.edition, ""); err != nil {
+				log.Error(ctx, "putVersion endpoint: failed to find edition of dataset", err, data)
+				return nil, nil, nil, err
+			}
+		}
 	}
 
-	currentVersion, err = api.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
-	if err != nil {
-		log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err, data)
-		return nil, nil, nil, err
+	if versionUpdate != nil {
+		if versionUpdate.Type == models.Static.String() {
+			currentVersion, err = api.dataStore.Backend.GetVersionStatic(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
+			if err != nil {
+				log.Error(ctx, "putVersion endpoint: datastore.GetVersionStatic returned an error", err, data)
+				return nil, nil, nil, err
+			}
+		} else {
+			currentVersion, err = api.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
+			if err != nil {
+				log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err, data)
+				return nil, nil, nil, err
+			}
+		}
 	}
 
 	// doUpdate is an aux function that combines the existing version document with the update received in the body request,
@@ -586,21 +605,42 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 			eTag = currentVersion.ETag
 		}
 
-		if _, err := api.dataStore.Backend.UpdateVersion(ctx, currentVersion, combinedVersionUpdate, eTag); err != nil {
-			return err
+		if versionUpdate != nil {
+			if versionUpdate.Type == models.Static.String() {
+				if _, err := api.dataStore.Backend.UpdateVersionStatic(ctx, currentVersion, combinedVersionUpdate, eTag); err != nil {
+					return err
+				}
+			} else {
+				if _, err := api.dataStore.Backend.UpdateVersion(ctx, currentVersion, combinedVersionUpdate, eTag); err != nil {
+					return err
+				}
+			}
 		}
 
 		return nil
 	}
 
-	// acquire instance lock to prevent race conditions on instance collection
-	lockID, err := api.dataStore.Backend.AcquireInstanceLock(ctx, currentVersion.ID)
-	if err != nil {
-		return nil, nil, nil, err
+	if versionUpdate != nil {
+		if versionUpdate.Type == models.Static.String() {
+			// acquire versions lock to prevent race conditions on versions collection
+			lockID, err := api.dataStore.Backend.AcquireVersionsLock(ctx, currentVersion.ID)
+			if err != nil {
+				return nil, nil, nil, err
+			}
+			defer func() {
+				api.dataStore.Backend.UnlockVersions(ctx, lockID)
+			}()
+		} else {
+			// acquire instance lock to prevent race conditions on instance collection
+			lockID, err := api.dataStore.Backend.AcquireInstanceLock(ctx, currentVersion.ID)
+			if err != nil {
+				return nil, nil, nil, err
+			}
+			defer func() {
+				api.dataStore.Backend.UnlockInstance(ctx, lockID)
+			}()
+		}
 	}
-	defer func() {
-		api.dataStore.Backend.UnlockInstance(ctx, lockID)
-	}()
 
 	// Try to perform the update. If there was a race condition and another caller performed the update
 	// before we could acquire the lock, this will result in the ETag being changed
@@ -611,10 +651,21 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 	if err := doUpdate(); err != nil {
 		if err == errs.ErrDatasetNotFound {
 			log.Info(ctx, "instance document in database corresponding to dataset version was modified before the lock was acquired, retrying...", data)
-			currentVersion, err = api.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
-			if err != nil {
-				log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err, data)
-				return nil, nil, nil, err
+
+			if versionUpdate != nil {
+				if versionUpdate.Type == models.Static.String() {
+					currentVersion, err = api.dataStore.Backend.GetVersionStatic(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
+					if err != nil {
+						log.Error(ctx, "putVersion endpoint: datastore.GetVersionStatic returned an error", err, data)
+						return nil, nil, nil, err
+					}
+				} else {
+					currentVersion, err = api.dataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
+					if err != nil {
+						log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err, data)
+						return nil, nil, nil, err
+					}
+				}
 			}
 
 			if err = doUpdate(); err != nil {

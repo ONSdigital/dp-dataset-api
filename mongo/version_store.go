@@ -3,6 +3,7 @@ package mongo
 import (
 	"context"
 	"errors"
+	bsonprim "go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -146,4 +147,25 @@ func buildVersionWithDatasetIDQuery(id string) bson.M {
 		"links.dataset.id": id,
 	}
 	return selector
+}
+
+// UpdateVersionStatic updates an existing version document
+func (m *Mongo) UpdateVersionStatic(ctx context.Context, currentVersion, versionUpdate *models.Version, eTagSelector string) (newETag string, err error) {
+	// calculate the new eTag hash for the instance that would result from adding the event
+	newETag, err = newETagForVersionUpdate(currentVersion, versionUpdate)
+	if err != nil {
+		return "", err
+	}
+
+	sel := selector(currentVersion.ID, bsonprim.Timestamp{}, eTagSelector)
+	updates := createVersionUpdateQuery(versionUpdate, newETag)
+
+	if _, err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Must().Update(ctx, sel, bson.M{"$set": updates, "$setOnInsert": bson.M{"last_updated": time.Now()}}); err != nil {
+		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
+			return "", errs.ErrDatasetNotFound
+		}
+		return "", err
+	}
+
+	return newETag, nil
 }
