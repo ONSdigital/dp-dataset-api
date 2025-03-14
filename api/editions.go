@@ -116,7 +116,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 				log.Error(ctx, "getEdition endpoint: unable to find latest static version", err, logData)
 				return nil, err
 			}
-			edition = mapVersionToEdition(version, authorised)
+			edition = utils.MapVersionToEdition(version, authorised)
 		} else {
 			edition, err = api.dataStore.Backend.GetEdition(ctx, datasetID, editionID, state)
 			if err != nil {
@@ -193,40 +193,4 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Info(ctx, "getEdition endpoint: request successful", logData)
-}
-
-func mapVersionToEdition(version *models.Version, authorised bool) *models.EditionUpdate {
-	edition := &models.Edition{
-		DatasetID:   version.DatasetID,
-		Edition:     version.Edition,
-		ReleaseDate: version.ReleaseDate,
-		Links: &models.EditionUpdateLinks{
-			Dataset: &models.LinkObject{
-				HRef: version.Links.Dataset.HRef,
-				ID:   version.Links.Dataset.ID,
-			},
-			LatestVersion: &models.LinkObject{
-				HRef: version.Links.Version.HRef,
-				ID:   version.Links.Version.ID,
-			},
-			Self: &models.LinkObject{
-				HRef: version.Links.Edition.HRef,
-				ID:   version.Links.Edition.ID,
-			},
-			Versions: &models.LinkObject{
-				HRef: version.Links.Edition.HRef + "/versions",
-			},
-		},
-		Version:            version.Version,
-		LastUpdated:        version.LastUpdated,
-		Alerts:             version.Alerts,
-		UsageNotes:         version.UsageNotes,
-		Distributions:      version.Distributions,
-		QualityDesignation: version.QualityDesignation,
-	}
-
-	if authorised {
-		return &models.EditionUpdate{Next: edition}
-	}
-	return &models.EditionUpdate{Current: edition}
 }

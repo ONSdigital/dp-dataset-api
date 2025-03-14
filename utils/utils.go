@@ -81,6 +81,42 @@ func BuildThemes(canonicalTopic string, subtopics []string) []string {
 	return themes
 }
 
+func MapVersionToEdition(version *models.Version, authorised bool) *models.EditionUpdate {
+	edition := &models.Edition{
+		DatasetID:   version.DatasetID,
+		Edition:     version.Edition,
+		ReleaseDate: version.ReleaseDate,
+		Links: &models.EditionUpdateLinks{
+			Dataset: &models.LinkObject{
+				HRef: version.Links.Dataset.HRef,
+				ID:   version.Links.Dataset.ID,
+			},
+			LatestVersion: &models.LinkObject{
+				HRef: version.Links.Version.HRef,
+				ID:   version.Links.Version.ID,
+			},
+			Self: &models.LinkObject{
+				HRef: version.Links.Edition.HRef,
+				ID:   version.Links.Edition.ID,
+			},
+			Versions: &models.LinkObject{
+				HRef: version.Links.Edition.HRef + "/versions",
+			},
+		},
+		Version:            version.Version,
+		LastUpdated:        version.LastUpdated,
+		Alerts:             version.Alerts,
+		UsageNotes:         version.UsageNotes,
+		Distributions:      version.Distributions,
+		QualityDesignation: version.QualityDesignation,
+	}
+
+	if authorised {
+		return &models.EditionUpdate{Next: edition}
+	}
+	return &models.EditionUpdate{Current: edition}
+}
+
 func RewriteDatasetsWithAuth(ctx context.Context, results []*models.DatasetUpdate, datasetLinksBuilder *links.Builder) ([]*models.DatasetUpdate, error) {
 	if len(results) == 0 {
 		return results, nil
