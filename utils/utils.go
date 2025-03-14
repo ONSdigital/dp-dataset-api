@@ -12,6 +12,10 @@ import (
 	"github.com/ONSdigital/log.go/v2/log"
 )
 
+const (
+	StaticDatasetType = "static"
+)
+
 // ValidatePositiveInt obtains the positive int value of query var defined by the provided varKey
 func ValidatePositiveInt(parameter string) (val int, err error) {
 	val, err = strconv.Atoi(parameter)
@@ -70,15 +74,15 @@ func SliceStr(full []*string, offset, limit int) (sliced []*string) {
 	return full[offset:end]
 }
 
-func BuildThemes(canonicalTopic string, subtopics []string) []string {
-	themes := []string{}
+func BuildTopics(canonicalTopic string, subtopics []string) []string {
+	topics := []string{}
 	if canonicalTopic != "" {
-		themes = append(themes, canonicalTopic)
+		topics = append(topics, canonicalTopic)
 	}
 	if subtopics != nil {
-		themes = append(themes, subtopics...)
+		topics = append(topics, subtopics...)
 	}
-	return themes
+	return topics
 }
 
 func MapVersionToEdition(version *models.Version, authorised bool) *models.EditionUpdate {
@@ -177,8 +181,12 @@ func RewriteDatasetWithAuth(ctx context.Context, dataset *models.DatasetUpdate, 
 
 	log.Info(ctx, "getDataset endpoint: caller authorised returning dataset current sub document", log.Data{"dataset_id": dataset.ID})
 
-	if dataset.Current != nil && dataset.Current.Themes == nil {
-		dataset.Current.Themes = BuildThemes(dataset.Current.CanonicalTopic, dataset.Current.Subtopics)
+	if dataset.Current != nil && dataset.Current.Type == StaticDatasetType && dataset.Current.Topics == nil {
+		dataset.Current.Topics = []string{}
+	}
+
+	if dataset.Current != nil && dataset.Current.Type != StaticDatasetType {
+		dataset.Current.Topics = nil
 	}
 
 	if dataset.Current != nil {
@@ -187,6 +195,14 @@ func RewriteDatasetWithAuth(ctx context.Context, dataset *models.DatasetUpdate, 
 			log.Error(ctx, "failed to rewrite 'current' links", err)
 			return nil, err
 		}
+	}
+
+	if dataset.Next != nil && dataset.Next.Type == StaticDatasetType && dataset.Next.Topics == nil {
+		dataset.Next.Topics = []string{}
+	}
+
+	if dataset.Next != nil && dataset.Next.Type != StaticDatasetType {
+		dataset.Next.Topics = nil
 	}
 
 	if dataset.Next != nil {
@@ -215,8 +231,9 @@ func RewriteDatasetWithoutAuth(ctx context.Context, dataset *models.DatasetUpdat
 	log.Info(ctx, "getDataset endpoint: caller not authorised returning dataset", log.Data{"dataset_id": dataset.ID})
 
 	dataset.Current.ID = dataset.ID
-	if dataset.Current.Themes == nil {
-		dataset.Current.Themes = BuildThemes(dataset.Current.CanonicalTopic, dataset.Current.Subtopics)
+
+	if dataset.Current.Type != StaticDatasetType {
+		dataset.Current.Topics = nil
 	}
 
 	datasetResponse = dataset.Current
@@ -228,7 +245,6 @@ func RewriteDatasetWithoutAuth(ctx context.Context, dataset *models.DatasetUpdat
 
 	return datasetResponse, nil
 }
-
 func RewriteDatasetLinks(ctx context.Context, oldLinks *models.DatasetLinks, datasetLinksBuilder *links.Builder) error {
 	if oldLinks == nil {
 		return nil

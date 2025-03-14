@@ -53,6 +53,8 @@ func (dt DatasetType) String() string {
 }
 
 // GetDatasetType returns a dataset type for a given dataset
+//
+//nolint:goconst // "static" is part of a type definition slice
 func GetDatasetType(datasetType string) (DatasetType, error) {
 	switch datasetType {
 	case "filterable", "v4", "":
@@ -109,7 +111,7 @@ type Dataset struct {
 	Subtopics         []string         `bson:"subtopics,omitempty"              json:"subtopics,omitempty"`
 	Survey            string           `bson:"survey,omitempty"                 json:"survey,omitempty"`
 	RelatedContent    []GeneralDetails `bson:"related_content,omitempty"        json:"related_content,omitempty"`
-	Themes            []string         `bson:"themes,omitempty" json:"themes,omitempty"`
+	Topics            []string         `bson:"topics,omitempty"                 json:"topics,omitempty"`
 }
 
 // DatasetLinks represents a list of specific links related to the dataset resource
@@ -392,8 +394,8 @@ func ValidateDataset(dataset *Dataset) error {
 			invalidFields = append(invalidFields, "Contacts")
 		}
 
-		if len(dataset.Themes) == 0 {
-			invalidFields = append(invalidFields, "Themes")
+		if len(dataset.Topics) == 0 {
+			invalidFields = append(invalidFields, "Topics")
 		}
 	}
 
