@@ -3,7 +3,6 @@ package mongo
 import (
 	"context"
 	"errors"
-	bsonprim "go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -25,15 +24,18 @@ func (m *Mongo) UnlockVersions(ctx context.Context, lockID string) {
 
 // UpsertVersion adds or overrides an existing version document
 func (m *Mongo) UpsertVersionStatic(ctx context.Context, id string, version *models.Version) (err error) {
+	version.LastUpdated = time.Now()
 	update := bson.M{
 		"$set": version,
-		"$setOnInsert": bson.M{
-			"last_updated": time.Now(),
-		},
 	}
 
-	_, err = m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Upsert(ctx, bson.M{"id": id}, update)
+	sel := bson.M{
+		"edition": version.Edition,
+		"version": version.Version,
+		"e_tag":   version.ETag,
+	}
 
+	_, err = m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).UpsertOne(ctx, sel, update)
 	return err
 }
 
@@ -206,7 +208,11 @@ func (m *Mongo) UpdateVersionStatic(ctx context.Context, currentVersion, version
 		return "", err
 	}
 
-	sel := selector(currentVersion.ID, bsonprim.Timestamp{}, eTagSelector)
+	sel := bson.M{
+		"edition": currentVersion.Edition,
+		"version": currentVersion.Version,
+		"e_tag":   eTagSelector,
+	}
 	updates := createVersionUpdateQuery(versionUpdate, newETag)
 
 	if _, err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Must().Update(ctx, sel, bson.M{"$set": updates, "$setOnInsert": bson.M{"last_updated": time.Now()}}); err != nil {
