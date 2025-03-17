@@ -143,7 +143,9 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 		}
 	}
 
-	metaDataDoc.Distribution = getDistribution(versionDoc.Downloads)
+	if datasetDoc.Type != "static" {
+		metaDataDoc.Distribution = getDistribution(versionDoc.Downloads)
+	}
 
 	if versionDoc.Downloads != nil {
 		metaDataDoc.Downloads = &DownloadList{}
