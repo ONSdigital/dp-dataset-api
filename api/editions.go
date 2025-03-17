@@ -109,14 +109,28 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var edition *models.EditionUpdate
+		var unpublishedVersion *models.Version
 
 		if datasetType == models.Static.String() {
-			version, err := api.dataStore.Backend.GetLatestVersionStatic(ctx, datasetID, editionID, state)
-			if err != nil {
-				log.Error(ctx, "getEdition endpoint: unable to find latest static version", err, logData)
+			publishedVersion, err := api.dataStore.Backend.GetLatestVersionStatic(ctx, datasetID, editionID, models.PublishedState)
+			if err != nil && err != errs.ErrVersionNotFound {
+				log.Error(ctx, "getEdition endpoint: unable to find latest published static version", err, logData)
 				return nil, err
 			}
-			edition = utils.MapVersionToEdition(version, authorised)
+
+			if authorised {
+				unpublishedVersion, err = api.dataStore.Backend.GetLatestVersionStatic(ctx, datasetID, editionID, "")
+				if err != nil && err != errs.ErrVersionNotFound {
+					log.Error(ctx, "getEdition endpoint: unable to find latest unpublished static version", err, logData)
+					return nil, err
+				}
+			}
+
+			edition, err = utils.MapVersionsToEditionUpdate(publishedVersion, unpublishedVersion)
+			if err != nil {
+				log.Error(ctx, "getEdition endpoint: failed to map version to edition", err, logData)
+				return nil, err
+			}
 		} else {
 			edition, err = api.dataStore.Backend.GetEdition(ctx, datasetID, editionID, state)
 			if err != nil {
@@ -177,8 +191,10 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if err != nil {
-		if err == errs.ErrDatasetNotFound || err == errs.ErrEditionNotFound || err == errs.ErrVersionNotFound {
+		if err == errs.ErrDatasetNotFound || err == errs.ErrEditionNotFound {
 			http.Error(w, err.Error(), http.StatusNotFound)
+		} else if err == errs.ErrVersionNotFound {
+			http.Error(w, errs.ErrEditionNotFound.Error(), http.StatusNotFound)
 		} else {
 			http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
 		}
