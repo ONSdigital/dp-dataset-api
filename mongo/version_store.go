@@ -217,7 +217,7 @@ func (m *Mongo) UpdateVersionStatic(ctx context.Context, currentVersion, version
 
 	if _, err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Must().Update(ctx, sel, bson.M{"$set": updates, "$setOnInsert": bson.M{"last_updated": time.Now()}}); err != nil {
 		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
-			return "", errs.ErrDatasetNotFound
+			return "", errs.ErrVersionNotFound
 		}
 		return "", err
 	}
