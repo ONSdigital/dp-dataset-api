@@ -593,6 +593,34 @@ func TestGetEditionsReturnsError(t *testing.T) {
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
 	})
+
+	Convey("When no editions exist against a dataset return version not found", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", http.NoBody)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
+				return models.Static.String(), nil
+			},
+			GetAllStaticVersionsFunc: func(ctx context.Context, ID, state string, offset, limit int) ([]*models.Version, int, error) {
+				return nil, 0, errs.ErrVersionNotFound
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetAllStaticVersionsCalls()), ShouldEqual, 1)
+	})
 }
 
 func TestGetEditionReturnsOK(t *testing.T) {
