@@ -486,6 +486,9 @@ func TestAssociateStaticVersionNoErrors(t *testing.T) {
 			UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
 				return "", nil
 			},
+			UpdateVersionStaticFunc: func(ctx context.Context, currentVersion *models.Version, versionUpdate *models.Version, eTagSelector string) (string, error) {
+				return "", nil
+			},
 		}
 
 		states, transitions := setUpStatesTransitions()
@@ -496,7 +499,8 @@ func TestAssociateStaticVersionNoErrors(t *testing.T) {
 		err := AssociateVersion(testContext, smDS, currentStaticVersion, versionstaticUpdate, versionDetails, "")
 
 		So(err, ShouldBeNil)
-		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateVersionStaticCalls()), ShouldEqual, 1)
 	})
 }
 
@@ -1059,6 +1063,9 @@ func TestPublishCMDVersionFailsToPublish(t *testing.T) {
 			SetInstanceIsPublishedFunc: func(context.Context, string) error {
 				return errors.New("failed to set is_published on the instance node")
 			},
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				return models.Filterable.String(), nil
+			},
 		}
 
 		states, transitions := setUpStatesTransitions()
@@ -1182,6 +1189,9 @@ func TestPublishVersionDatabaseFails(t *testing.T) {
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return errs.ErrDatasetNotFound
 			},
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				return models.CantabularFlexibleTable.String(), nil
+			},
 		}
 
 		states, transitions := setUpStatesTransitions()
@@ -1298,6 +1308,9 @@ func TestPublishVersionDatasetNotFound(t *testing.T) {
 			},
 			SetInstanceIsPublishedFunc: func(context.Context, string) error {
 				return nil
+			},
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				return models.CantabularFlexibleTable.String(), nil
 			},
 		}
 
@@ -1428,6 +1441,9 @@ func TestPublishVersionInvalidType(t *testing.T) {
 			},
 			UpsertEditionFunc: func(context.Context, string, string, *models.EditionUpdate) error {
 				return nil
+			},
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				return "not_a_type", nil
 			},
 		}
 
@@ -1567,6 +1583,9 @@ func TestPublishVersionDatasetDownloadsOK(t *testing.T) {
 			},
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
+			},
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				return models.CantabularFlexibleTable.String(), nil
 			},
 		}
 
@@ -1772,6 +1791,9 @@ func TestPublishVersionPublishLinksFails(t *testing.T) {
 					},
 				}, nil
 			},
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				return models.CantabularFlexibleTable.String(), nil
+			},
 		}
 
 		states, transitions := setUpStatesTransitions()
@@ -1891,6 +1913,9 @@ func TestPublishVersionUpsertEditionFails(t *testing.T) {
 			},
 			UpsertEditionFunc: func(context.Context, string, string, *models.EditionUpdate) error {
 				return errs.ErrEditionNotFound
+			},
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				return models.CantabularFlexibleTable.String(), nil
 			},
 		}
 
@@ -2027,6 +2052,9 @@ func TestPublishVersionFailedToGenerateDownloads(t *testing.T) {
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				return models.CantabularFlexibleTable.String(), nil
+			},
 		}
 
 		states, transitions := setUpStatesTransitions()
@@ -2116,6 +2144,9 @@ func TestPublishVersionFailedToFindEdition(t *testing.T) {
 			},
 			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
 				return nil, errs.ErrEditionNotFound
+			},
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				return models.CantabularFlexibleTable.String(), nil
 			},
 		}
 
