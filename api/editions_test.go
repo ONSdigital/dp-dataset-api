@@ -12,6 +12,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	"github.com/ONSdigital/dp-dataset-api/utils"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -68,6 +69,416 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
 		So(list, ShouldResemble, []*models.Edition{publicResult})
+		So(totalCount, ShouldEqual, 2)
+		So(err, ShouldEqual, nil)
+	})
+
+	Convey("get published editions when the dataset type is static", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", http.NoBody)
+		w := httptest.NewRecorder()
+
+		editionsList := []*models.EditionUpdate{
+			{
+				Current: &models.Edition{
+					Edition:     "2023",
+					ID:          "",
+					DatasetID:   "123",
+					Version:     2,
+					LastUpdated: time.Date(2023, 9, 30, 12, 0, 0, 0, time.UTC),
+					ReleaseDate: "2023-10-01",
+					Links: &models.EditionUpdateLinks{
+						Dataset:       &models.LinkObject{HRef: "http://localhost:22000/datasets/123", ID: "123"},
+						LatestVersion: &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2023/versions/2", ID: "2"},
+						Self:          &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2023", ID: "2023"},
+						Versions:      &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2023/versions", ID: ""},
+					},
+					Alerts: &[]models.Alert{
+						{
+							Date:        "",
+							Description: "Test alert",
+							Type:        models.AlertType(""),
+						},
+					},
+					UsageNotes: &[]models.UsageNote{
+						{
+							Note:  "Test usage note",
+							Title: "",
+						},
+					},
+					Distributions: &[]models.Distribution{
+						{
+							Title:       "Test distribution",
+							Format:      models.DistributionFormat(""),
+							MediaType:   models.DistributionMediaType(""),
+							DownloadURL: "",
+							ByteSize:    0,
+						},
+					},
+					QualityDesignation: models.QualityDesignation("Test quality designation"),
+				},
+				Next: &models.Edition{
+					Edition:     "2023",
+					ID:          "",
+					DatasetID:   "123",
+					Version:     2,
+					LastUpdated: time.Date(2023, 9, 30, 12, 0, 0, 0, time.UTC),
+					ReleaseDate: "2023-10-01",
+					Links: &models.EditionUpdateLinks{
+						Dataset:       &models.LinkObject{HRef: "http://localhost:22000/datasets/123", ID: "123"},
+						LatestVersion: &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2023/versions/2", ID: "2"},
+						Self:          &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2023", ID: "2023"},
+						Versions:      &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2023/versions", ID: ""},
+					},
+					Alerts: &[]models.Alert{
+						{
+							Date:        "",
+							Description: "Test alert",
+							Type:        models.AlertType(""),
+						},
+					},
+					UsageNotes: &[]models.UsageNote{
+						{
+							Note:  "Test usage note",
+							Title: "",
+						},
+					},
+					Distributions: &[]models.Distribution{
+						{
+							Title:       "Test distribution",
+							Format:      models.DistributionFormat(""),
+							MediaType:   models.DistributionMediaType(""),
+							DownloadURL: "",
+							ByteSize:    0,
+						},
+					},
+					QualityDesignation: models.QualityDesignation("Test quality designation"),
+				},
+			},
+		}
+
+		versions := []*models.Version{
+			{
+				DatasetID:   "123",
+				Edition:     "2023",
+				ReleaseDate: "2023-10-01",
+				Links: &models.VersionLinks{
+					Dataset: &models.LinkObject{
+						HRef: "http://localhost:22000/datasets/123",
+						ID:   "123",
+					},
+					Version: &models.LinkObject{
+						HRef: "http://localhost:22000/datasets/123/editions/2023/versions/1",
+						ID:   "1",
+					},
+					Edition: &models.LinkObject{
+						HRef: "http://localhost:22000/datasets/123/editions/2023",
+						ID:   "2023",
+					},
+				},
+				Version:            1,
+				LastUpdated:        time.Date(2023, 9, 30, 12, 0, 0, 0, time.UTC),
+				Alerts:             &[]models.Alert{{Description: "Test alert"}},
+				UsageNotes:         &[]models.UsageNote{{Note: "Test usage note"}},
+				Distributions:      &[]models.Distribution{{Title: "Test distribution"}},
+				QualityDesignation: "Test quality designation",
+				State:              "published",
+			},
+			{
+				DatasetID:   "123",
+				Edition:     "2023",
+				ReleaseDate: "2023-10-01",
+				Links: &models.VersionLinks{
+					Dataset: &models.LinkObject{
+						HRef: "http://localhost:22000/datasets/123",
+						ID:   "123",
+					},
+					Version: &models.LinkObject{
+						HRef: "http://localhost:22000/datasets/123/editions/2023/versions/2",
+						ID:   "2",
+					},
+					Edition: &models.LinkObject{
+						HRef: "http://localhost:22000/datasets/123/editions/2023",
+						ID:   "2023",
+					},
+				},
+				Version:            2,
+				LastUpdated:        time.Date(2023, 9, 30, 12, 0, 0, 0, time.UTC),
+				Alerts:             &[]models.Alert{{Description: "Test alert"}},
+				UsageNotes:         &[]models.UsageNote{{Note: "Test usage note"}},
+				Distributions:      &[]models.Distribution{{Title: "Test distribution"}},
+				QualityDesignation: "Test quality designation",
+				State:              "published",
+			},
+		}
+		publishedLatestVersion := &models.Version{
+			DatasetID:   "123",
+			Edition:     "2023",
+			ReleaseDate: "2023-10-01",
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123",
+					ID:   "123",
+				},
+				Version: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123/editions/2023/versions/2",
+					ID:   "2",
+				},
+				Edition: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123/editions/2023",
+					ID:   "2023",
+				},
+			},
+			Version:            2,
+			LastUpdated:        time.Date(2023, 9, 30, 12, 0, 0, 0, time.UTC),
+			Alerts:             &[]models.Alert{{Description: "Test alert"}},
+			UsageNotes:         &[]models.UsageNote{{Note: "Test usage note"}},
+			Distributions:      &[]models.Distribution{{Title: "Test distribution"}},
+			QualityDesignation: "Test quality designation",
+			State:              "published",
+		}
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
+				return models.Static.String(), nil
+			},
+			GetAllStaticVersionsFunc: func(ctx context.Context, ID, state string, offset, limit int) ([]*models.Version, int, error) {
+				return versions, 2, nil
+			},
+			GetLatestVersionStaticFunc: func(ctx context.Context, datasetID, editionID, state string) (*models.Version, error) {
+				return publishedLatestVersion, nil
+			},
+		}
+
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
+		_, totalCount, _ := api.getEditions(w, r, 20, 0)
+
+		editions, err := utils.MapVersionsToEditionUpdate(publishedLatestVersion, nil)
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetAllStaticVersionsCalls()), ShouldEqual, 1)
+		So([]*models.EditionUpdate{editions}, ShouldEqual, editionsList)
+		So(totalCount, ShouldEqual, 2)
+		So(err, ShouldEqual, nil)
+	})
+
+	Convey("get all editions when the dataset type is static", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", http.NoBody)
+		w := httptest.NewRecorder()
+
+		editionsList := []*models.EditionUpdate{
+			{
+				Current: &models.Edition{
+					Edition:     "2023",
+					ID:          "",
+					DatasetID:   "123",
+					Version:     1,
+					LastUpdated: time.Date(2023, 9, 30, 12, 0, 0, 0, time.UTC),
+					ReleaseDate: "2023-10-01",
+					Links: &models.EditionUpdateLinks{
+						Dataset:       &models.LinkObject{HRef: "http://localhost:22000/datasets/123", ID: "123"},
+						LatestVersion: &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2023/versions/1", ID: "1"},
+						Self:          &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2023", ID: "2023"},
+						Versions:      &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2023/versions", ID: ""},
+					},
+					Alerts: &[]models.Alert{
+						{
+							Date:        "",
+							Description: "Test alert",
+							Type:        models.AlertType(""),
+						},
+					},
+					UsageNotes: &[]models.UsageNote{
+						{
+							Note:  "Test usage note",
+							Title: "",
+						},
+					},
+					Distributions: &[]models.Distribution{
+						{
+							Title:       "Test distribution",
+							Format:      models.DistributionFormat(""),
+							MediaType:   models.DistributionMediaType(""),
+							DownloadURL: "",
+							ByteSize:    0,
+						},
+					},
+					QualityDesignation: models.QualityDesignation("Test quality designation"),
+				},
+				Next: &models.Edition{
+					Edition:     "2023",
+					ID:          "",
+					DatasetID:   "123",
+					Version:     2,
+					LastUpdated: time.Date(2023, 9, 30, 12, 0, 0, 0, time.UTC),
+					ReleaseDate: "2023-10-01",
+					Links: &models.EditionUpdateLinks{
+						Dataset:       &models.LinkObject{HRef: "http://localhost:22000/datasets/123", ID: "123"},
+						LatestVersion: &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2023/versions/2", ID: "2"},
+						Self:          &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2023", ID: "2023"},
+						Versions:      &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2023/versions", ID: ""},
+					},
+					Alerts: &[]models.Alert{
+						{
+							Date:        "",
+							Description: "Test alert",
+							Type:        models.AlertType(""),
+						},
+					},
+					UsageNotes: &[]models.UsageNote{
+						{
+							Note:  "Test usage note",
+							Title: "",
+						},
+					},
+					Distributions: &[]models.Distribution{
+						{
+							Title:       "Test distribution",
+							Format:      models.DistributionFormat(""),
+							MediaType:   models.DistributionMediaType(""),
+							DownloadURL: "",
+							ByteSize:    0,
+						},
+					},
+					QualityDesignation: models.QualityDesignation("Test quality designation"),
+				},
+			},
+		}
+
+		versions := []*models.Version{
+			{
+				DatasetID:   "123",
+				Edition:     "2023",
+				ReleaseDate: "2023-10-01",
+				Links: &models.VersionLinks{
+					Dataset: &models.LinkObject{
+						HRef: "http://localhost:22000/datasets/123",
+						ID:   "123",
+					},
+					Version: &models.LinkObject{
+						HRef: "http://localhost:22000/datasets/123/editions/2023/versions/1",
+						ID:   "1",
+					},
+					Edition: &models.LinkObject{
+						HRef: "http://localhost:22000/datasets/123/editions/2023",
+						ID:   "2023",
+					},
+				},
+				Version:            1,
+				LastUpdated:        time.Date(2023, 9, 30, 12, 0, 0, 0, time.UTC),
+				Alerts:             &[]models.Alert{{Description: "Test alert"}},
+				UsageNotes:         &[]models.UsageNote{{Note: "Test usage note"}},
+				Distributions:      &[]models.Distribution{{Title: "Test distribution"}},
+				QualityDesignation: "Test quality designation",
+				State:              "published",
+			},
+			{
+				DatasetID:   "123",
+				Edition:     "2023",
+				ReleaseDate: "2023-10-01",
+				Links: &models.VersionLinks{
+					Dataset: &models.LinkObject{
+						HRef: "http://localhost:22000/datasets/123",
+						ID:   "123",
+					},
+					Version: &models.LinkObject{
+						HRef: "http://localhost:22000/datasets/123/editions/2023/versions/2",
+						ID:   "2",
+					},
+					Edition: &models.LinkObject{
+						HRef: "http://localhost:22000/datasets/123/editions/2023",
+						ID:   "2023",
+					},
+				},
+				Version:            2,
+				LastUpdated:        time.Date(2023, 9, 30, 12, 0, 0, 0, time.UTC),
+				Alerts:             &[]models.Alert{{Description: "Test alert"}},
+				UsageNotes:         &[]models.UsageNote{{Note: "Test usage note"}},
+				Distributions:      &[]models.Distribution{{Title: "Test distribution"}},
+				QualityDesignation: "Test quality designation",
+				State:              "associated",
+			},
+		}
+		publishedLatestVersion := &models.Version{
+			DatasetID:   "123",
+			Edition:     "2023",
+			ReleaseDate: "2023-10-01",
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123",
+					ID:   "123",
+				},
+				Version: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123/editions/2023/versions/1",
+					ID:   "1",
+				},
+				Edition: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123/editions/2023",
+					ID:   "2023",
+				},
+			},
+			Version:            1,
+			LastUpdated:        time.Date(2023, 9, 30, 12, 0, 0, 0, time.UTC),
+			Alerts:             &[]models.Alert{{Description: "Test alert"}},
+			UsageNotes:         &[]models.UsageNote{{Note: "Test usage note"}},
+			Distributions:      &[]models.Distribution{{Title: "Test distribution"}},
+			QualityDesignation: "Test quality designation",
+			State:              "published",
+		}
+		unpublishedLatestVersion := &models.Version{
+			DatasetID:   "123",
+			Edition:     "2023",
+			ReleaseDate: "2023-10-01",
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123",
+					ID:   "123",
+				},
+				Version: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123/editions/2023/versions/2",
+					ID:   "2",
+				},
+				Edition: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123/editions/2023",
+					ID:   "2023",
+				},
+			},
+			Version:            2,
+			LastUpdated:        time.Date(2023, 9, 30, 12, 0, 0, 0, time.UTC),
+			Alerts:             &[]models.Alert{{Description: "Test alert"}},
+			UsageNotes:         &[]models.UsageNote{{Note: "Test usage note"}},
+			Distributions:      &[]models.Distribution{{Title: "Test distribution"}},
+			QualityDesignation: "Test quality designation",
+			State:              "assosiated",
+		}
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
+				return models.Static.String(), nil
+			},
+			GetAllStaticVersionsFunc: func(ctx context.Context, ID, state string, offset, limit int) ([]*models.Version, int, error) {
+				return versions, 2, nil
+			},
+			GetLatestVersionStaticFunc: func(ctx context.Context, datasetID, editionID, state string) (*models.Version, error) {
+				return publishedLatestVersion, nil
+			},
+		}
+
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
+		_, totalCount, _ := api.getEditions(w, r, 20, 0)
+
+		editions, err := utils.MapVersionsToEditionUpdate(publishedLatestVersion, unpublishedLatestVersion)
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetAllStaticVersionsCalls()), ShouldEqual, 1)
+		So([]*models.EditionUpdate{editions}, ShouldEqual, editionsList)
 		So(totalCount, ShouldEqual, 2)
 		So(err, ShouldEqual, nil)
 	})

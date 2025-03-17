@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -56,8 +55,8 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 
 		versionResults, totalCount, err = api.dataStore.Backend.GetAllStaticVersions(ctx, datasetID, state, offset, limit)
 		if err != nil {
-			log.Error(ctx, "getEditions endpoint: unable to find editions for dataset", err, logData)
-			if err == errs.ErrEditionNotFound {
+			log.Error(ctx, "getEditions endpoint: unable to find versions for dataset", err, logData)
+			if err == errs.ErrVersionNotFound {
 				http.Error(w, err.Error(), http.StatusNotFound)
 			} else {
 				http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
@@ -71,7 +70,6 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 		}
 
 		for editionID := range editionMap {
-			fmt.Println("editionID", editionID)
 			publishedVersion, err := api.dataStore.Backend.GetLatestVersionStatic(ctx, datasetID, editionID, models.PublishedState)
 			if err != nil && err != errs.ErrVersionNotFound {
 				log.Error(ctx, "getEdition endpoint: unable to find latest published static version", err, logData)
