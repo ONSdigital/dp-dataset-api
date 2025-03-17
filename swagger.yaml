@@ -485,6 +485,7 @@ paths:
               * invalid request body
               * dataset id was incorrect
               * edition was incorrect
+              * an unpublished version of the dataset already exists
         401:
           description: "Unauthorised to update version of dataset"
         404:
