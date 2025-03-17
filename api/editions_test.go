@@ -27,11 +27,14 @@ var exampleStaticVersion = &models.Version{
 		},
 		Self: &models.LinkObject{
 			HRef: "http://localhost:22000/datasets/123-456/editions/678/versions/1",
-			ID:   "1",
 		},
 		Edition: &models.LinkObject{
 			HRef: "http://localhost:22000/datasets/123-456/editions/678",
 			ID:   "678",
+		},
+		Version: &models.LinkObject{
+			HRef: "http://localhost:22000/datasets/123-456/editions/678/versions/1",
+			ID:   "1",
 		},
 	},
 	LastUpdated: time.Date(2025, 3, 11, 0, 0, 0, 0, time.UTC),
@@ -196,9 +199,6 @@ func TestGetEditionReturnsOK(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
-				return &models.EditionUpdate{}, nil
-			},
 			GetDatasetTypeFunc: func(context.Context, string, bool) (string, error) {
 				return models.Static.String(), nil
 			},
@@ -321,5 +321,31 @@ func TestGetEditionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetLatestVersionStaticCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When dataset is static and version does not exist return status not found", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678", http.NoBody)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetTypeFunc: func(context.Context, string, bool) (string, error) {
+				return models.Static.String(), nil
+			},
+			GetLatestVersionStaticFunc: func(context.Context, string, string, string) (*models.Version, error) {
+				return nil, errs.ErrVersionNotFound
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
+		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetLatestVersionStaticCalls()), ShouldEqual, 1)
 	})
 }

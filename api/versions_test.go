@@ -3004,7 +3004,7 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
     {}
   ],
   "release_date": "2025-01-15",
-  "themes": [
+  "topics": [
     "Economy",
     "Prices"
   ],
@@ -3101,7 +3101,7 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
   },
   "release_date": "2025-01-15",
   "state": "associated",
-  "themes": [
+  "topics": [
     "Economy",
     "Prices"
   ],
@@ -3179,7 +3179,7 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
   },
   "release_date": "2025-01-15",
   "state": "associated",
-  "themes": [
+  "topics": [
     "Economy",
     "Prices"
   ],
@@ -3282,7 +3282,7 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
     {}
   ],
   "release_date": "2025-01-15",
-  "themes": [
+  "topics": [
     "Economy",
     "Prices"
   ],

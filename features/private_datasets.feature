@@ -236,7 +236,6 @@ Feature: Private Dataset API
                         "href":"http://localhost:22000/datasets/ageing-population-estimates"
                     }
                 },
-                "themes": ["canonical-topic-ID", "subtopic-ID"],
                 "description": "census",
                 "keywords": ["keyword"],
                 "next_release":"2016-04-04",
@@ -262,7 +261,7 @@ Feature: Private Dataset API
                 "description": "description",
                 "keywords": ["keyword"],
                 "next_release":"2016-04-04",
-                "themes": ["theme"],
+                "topics": ["topic"],
                 "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
             }
             """
@@ -282,7 +281,7 @@ Feature: Private Dataset API
                 "next_release":"2016-04-04",
                 "description": "census",
                 "keywords":["keyword"],
-                "themes": ["theme"],
+                "topics": ["topic"],
                 "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
             }
             """
@@ -302,7 +301,7 @@ Feature: Private Dataset API
                 "next_release":"2016-04-04",
                 "description": "census",
                 "keywords":["keyword"],
-                "themes": ["theme"],
+                "topics": ["topic"],
                 "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
             }
             """
@@ -322,7 +321,7 @@ Feature: Private Dataset API
                 "state": "anything",
                 "next_release":"2016-04-04",
                 "keywords":["keyword"],
-                "themes": ["theme"],
+                "topics": ["topic"],
                 "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
             }
             """
@@ -342,7 +341,7 @@ Feature: Private Dataset API
                 "state": "anything",
                 "next_release":"2016-04-04",
                 "description": "census",
-                "themes": ["theme"],
+                "topics": ["topic"],
                 "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
             }
             """
@@ -362,7 +361,7 @@ Feature: Private Dataset API
                 "state": "anything",
                 "description": "census",
                 "keywords":["keyword"],
-                "themes": ["theme"],
+                "topics": ["topic"],
                 "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
             }
             """
@@ -372,7 +371,7 @@ Feature: Private Dataset API
             invalid fields: [NextRelease]
             """
 
-    Scenario: Missing dataset themes in body and dataset type is static when creating a new dataset
+    Scenario: Missing dataset topics in body and dataset type is static when creating a new dataset
         When I POST "/datasets"
             """
             {
@@ -389,7 +388,7 @@ Feature: Private Dataset API
         Then the HTTP status code should be "400"
         And I should receive the following response:
             """
-            invalid fields: [Themes]
+            invalid fields: [Topics]
             """
 
     Scenario: Missing dataset contacts in body when creating a new dataset
@@ -403,7 +402,7 @@ Feature: Private Dataset API
                 "next_release":"2016-04-04",
                 "description": "census",
                 "keywords":["keyword"],
-                "themes": ["theme"]
+                "topics": ["topic"]
             }
             """
         Then the HTTP status code should be "400"
