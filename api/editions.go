@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -15,13 +16,12 @@ import (
 // This function returns a list of editions, the total count of editions that match the query parameters and an error
 // TODO: Refactor this to have named results
 //
-//nolint:gocritic // Naming results requires some refactoring here.
+//nolint:gocognit,gocyclo,gocritic // Naming results requires some refactoring here.
 func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit, offset int) (interface{}, int, error) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 	datasetID := vars["dataset_id"]
 	logData := log.Data{"dataset_id": datasetID}
-
 	authorised := api.authenticate(r, logData)
 
 	var state string
@@ -41,16 +41,71 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 		return nil, 0, err
 	}
 
-	results, totalCount, err := api.dataStore.Backend.GetEditions(ctx, datasetID, state, offset, limit, authorised)
+	datasetType, err := api.dataStore.Backend.GetDatasetType(ctx, datasetID, authorised)
 	if err != nil {
-		log.Error(ctx, "getEditions endpoint: unable to find editions for dataset", err, logData)
-		if err == errs.ErrEditionNotFound {
-			http.Error(w, err.Error(), http.StatusNotFound)
-		} else {
-			http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
-		}
+		log.Error(ctx, "getEdition endpoint: unable to find dataset type", err, logData)
 		return nil, 0, err
 	}
+
+	var results []*models.EditionUpdate
+	var totalCount int
+
+	if datasetType == models.Static.String() {
+		var versionResults []*models.Version
+		var unpublishedVersion *models.Version
+
+		versionResults, totalCount, err = api.dataStore.Backend.GetAllStaticVersions(ctx, datasetID, state, offset, limit)
+		if err != nil {
+			log.Error(ctx, "getEditions endpoint: unable to find editions for dataset", err, logData)
+			if err == errs.ErrEditionNotFound {
+				http.Error(w, err.Error(), http.StatusNotFound)
+			} else {
+				http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
+			}
+			return nil, 0, err
+		}
+
+		editionMap := make(map[string][]*models.Version)
+		for _, version := range versionResults {
+			editionMap[version.Edition] = append(editionMap[version.Edition], version)
+		}
+
+		for editionID := range editionMap {
+			fmt.Println("editionID", editionID)
+			publishedVersion, err := api.dataStore.Backend.GetLatestVersionStatic(ctx, datasetID, editionID, models.PublishedState)
+			if err != nil && err != errs.ErrVersionNotFound {
+				log.Error(ctx, "getEdition endpoint: unable to find latest published static version", err, logData)
+				return nil, 0, err
+			}
+
+			if authorised {
+				unpublishedVersion, err = api.dataStore.Backend.GetLatestVersionStatic(ctx, datasetID, editionID, "")
+				if err != nil && err != errs.ErrVersionNotFound {
+					log.Error(ctx, "getEdition endpoint: unable to find latest unpublished static version", err, logData)
+					return nil, 0, err
+				}
+			}
+
+			edition, err := utils.MapVersionsToEditionUpdate(publishedVersion, unpublishedVersion)
+			if err != nil {
+				log.Error(ctx, "getEditions endpoint: failed to map versions to edition", err, logData)
+				return nil, 0, err
+			}
+			results = append(results, edition)
+		}
+	} else {
+		results, totalCount, err = api.dataStore.Backend.GetEditions(ctx, datasetID, state, offset, limit, authorised)
+		if err != nil {
+			log.Error(ctx, "getEditions endpoint: unable to find editions for dataset", err, logData)
+			if err == errs.ErrEditionNotFound {
+				http.Error(w, err.Error(), http.StatusNotFound)
+			} else {
+				http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
+			}
+			return nil, 0, err
+		}
+	}
+
 	if api.enableURLRewriting {
 		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 

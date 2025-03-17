@@ -47,7 +47,11 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 		w := httptest.NewRecorder()
 		publicResult := &models.Edition{ID: "20"}
 		results := []*models.EditionUpdate{{Current: publicResult}}
+
 		mockedDataStore := &storetest.StorerMock{
+			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
+				return models.CantabularFlexibleTable.String(), nil
+			},
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
@@ -78,6 +82,9 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return errs.ErrInternalServer
 			},
+			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
+				return "", nil
+			},
 		}
 
 		datasetPermissions := getAuthorisationHandlerMock()
@@ -100,6 +107,9 @@ func TestGetEditionsReturnsError(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return errs.ErrDatasetNotFound
+			},
+			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
+				return "", nil
 			},
 		}
 
@@ -127,6 +137,9 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			GetEditionsFunc: func(context.Context, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
 				return nil, 0, errs.ErrEditionNotFound
 			},
+			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
+				return "", nil
+			},
 		}
 
 		datasetPermissions := getAuthorisationHandlerMock()
@@ -151,6 +164,9 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			},
 			GetEditionsFunc: func(context.Context, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
 				return nil, 0, errs.ErrEditionNotFound
+			},
+			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
+				return "", nil
 			},
 		}
 

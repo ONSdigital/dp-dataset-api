@@ -187,3 +187,47 @@ func (m *Mongo) GetDatasetType(ctx context.Context, datasetID string, authorised
 	}
 	return d.Current.Type, nil
 }
+
+func (m *Mongo) GetAllStaticVersions(ctx context.Context, datasetID, state string, offset, limit int) ([]*models.Version, int, error) {
+	selector := buildAllEditionsQuery(datasetID, state)
+	// get total count and paginated values according to provided offset and limit
+	results := []*models.Version{}
+	totalCount, err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Find(ctx, selector, &results,
+		mongodriver.Sort(bson.M{"last_updated": -1}),
+		mongodriver.Offset(offset),
+		mongodriver.Limit(limit))
+	if err != nil {
+		return results, 0, err
+	}
+
+	if totalCount < 1 {
+		return nil, 0, errs.ErrVersionNotFound
+	}
+
+	for i := 0; i < len(results); i++ {
+		results[i].Links.Self.HRef = results[i].Links.Version.HRef
+		results[i].DatasetID = datasetID
+	}
+	return results, totalCount, nil
+}
+
+func buildAllEditionsQuery(datasetID, state string) bson.M {
+	var selector bson.M
+	if state == "" {
+		selector = bson.M{
+			"links.dataset.id": datasetID,
+			"$or": []interface{}{
+				bson.M{"state": models.EditionConfirmedState},
+				bson.M{"state": models.AssociatedState},
+				bson.M{"state": models.PublishedState},
+			},
+		}
+	} else {
+		selector = bson.M{
+			"links.dataset.id": datasetID,
+			"state":            state,
+		}
+	}
+
+	return selector
+}
