@@ -474,10 +474,12 @@ func UpdateVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 		if versionUpdate != nil {
 			if versionUpdate.Type == models.Static.String() {
 				if _, errVersion := smDS.DataStore.Backend.UpdateVersionStatic(ctx, currentVersion, versionUpdate, eTag); errVersion != nil {
+					log.Error(ctx, "putVersion endpoint: UpdateVersionStatic returned an error", err)
 					return errVersion
 				}
 			} else {
 				if _, errVersion := smDS.DataStore.Backend.UpdateVersion(ctx, currentVersion, versionUpdate, eTag); errVersion != nil {
+					log.Error(ctx, "putVersion endpoint: UpdateVersion returned an error", err)
 					return errVersion
 				}
 			}
@@ -559,7 +561,7 @@ func PublishEdition(ctx context.Context, smDS *StateMachineDatasetAPI,
 
 	if datasetType == models.Static.String() {
 		if err := smDS.DataStore.Backend.UpsertVersionStatic(ctx, versionDetails.version, versionDoc); err != nil {
-			log.Error(ctx, "State Machine - Publish: PublishEdition: failed to update edition during publishing", err, data)
+			log.Error(ctx, "State Machine - Publish: PublishEdition: failed to update version during publishing", err, data)
 			return err
 		}
 	} else {

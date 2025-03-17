@@ -558,7 +558,7 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 	if versionUpdate != nil {
 		if versionUpdate.Type == models.Static.String() {
 			if err = api.dataStore.Backend.CheckEditionExistsStatic(ctx, versionDetails.datasetID, versionDetails.edition, ""); err != nil {
-				log.Error(ctx, "putVersion endpoint: failed to find edition of dataset", err, data)
+				log.Error(ctx, "putVersion endpoint: failed to find version of dataset", err, data)
 				return nil, nil, nil, err
 			}
 		} else {
@@ -609,10 +609,12 @@ func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, ve
 		if versionUpdate != nil {
 			if versionUpdate.Type == models.Static.String() {
 				if _, err := api.dataStore.Backend.UpdateVersionStatic(ctx, currentVersion, combinedVersionUpdate, eTag); err != nil {
+					log.Error(ctx, "putVersion endpoint: UpdateVersionStatic returned an error", err, data)
 					return err
 				}
 			} else {
 				if _, err := api.dataStore.Backend.UpdateVersion(ctx, currentVersion, combinedVersionUpdate, eTag); err != nil {
+					log.Error(ctx, "putVersion endpoint: UpdateVersion returned an error", err, data)
 					return err
 				}
 			}
