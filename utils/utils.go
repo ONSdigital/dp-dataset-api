@@ -85,7 +85,7 @@ func BuildTopics(canonicalTopic string, subtopics []string) []string {
 	return topics
 }
 
-func MapVersionToEdition(version *models.Version, authorised bool) *models.EditionUpdate {
+func MapVersionToEdition(version *models.Version) *models.Edition {
 	edition := &models.Edition{
 		DatasetID:   version.DatasetID,
 		Edition:     version.Edition,
@@ -115,10 +115,32 @@ func MapVersionToEdition(version *models.Version, authorised bool) *models.Editi
 		QualityDesignation: version.QualityDesignation,
 	}
 
-	if authorised {
-		return &models.EditionUpdate{Next: edition}
+	return edition
+}
+
+func MapVersionsToEditionUpdate(publishedVersion, unpublishedVersion *models.Version) (*models.EditionUpdate, error) {
+	var edition *models.EditionUpdate
+
+	switch {
+	case publishedVersion == nil && unpublishedVersion == nil:
+		return nil, errs.ErrVersionNotFound
+	case publishedVersion != nil && unpublishedVersion != nil:
+		edition = &models.EditionUpdate{
+			Current: MapVersionToEdition(publishedVersion),
+			Next:    MapVersionToEdition(unpublishedVersion),
+		}
+	case publishedVersion != nil && unpublishedVersion == nil:
+		edition = &models.EditionUpdate{
+			Current: MapVersionToEdition(publishedVersion),
+			Next:    MapVersionToEdition(publishedVersion),
+		}
+	case publishedVersion == nil && unpublishedVersion != nil:
+		edition = &models.EditionUpdate{
+			Next: MapVersionToEdition(unpublishedVersion),
+		}
 	}
-	return &models.EditionUpdate{Current: edition}
+
+	return edition, nil
 }
 
 func RewriteDatasetsWithAuth(ctx context.Context, results []*models.DatasetUpdate, datasetLinksBuilder *links.Builder) ([]*models.DatasetUpdate, error) {
