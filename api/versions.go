@@ -530,6 +530,7 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 	log.Info(ctx, "detachVersion endpoint: request successful", logData)
 }
 
+//nolint:gocognit,gocyclo // // high cyclomactic & cognitive complexity
 func (api *DatasetAPI) updateVersion(ctx context.Context, body io.ReadCloser, versionDetails VersionDetails) (currentDataset *models.DatasetUpdate, currentVersion, combinedVersionUpdate *models.Version, err error) {
 	data := versionDetails.baseLogData()
 
