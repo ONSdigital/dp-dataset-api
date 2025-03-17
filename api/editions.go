@@ -191,8 +191,10 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if err != nil {
-		if err == errs.ErrDatasetNotFound || err == errs.ErrEditionNotFound || err == errs.ErrVersionNotFound {
+		if err == errs.ErrDatasetNotFound || err == errs.ErrEditionNotFound {
 			http.Error(w, err.Error(), http.StatusNotFound)
+		} else if err == errs.ErrVersionNotFound {
+			http.Error(w, errs.ErrEditionNotFound.Error(), http.StatusNotFound)
 		} else {
 			http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
 		}
