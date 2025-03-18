@@ -57,7 +57,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 		if err != nil {
 			log.Error(ctx, "getEditions endpoint: unable to find versions for dataset", err, logData)
 			if err == errs.ErrVersionNotFound {
-				http.Error(w, errs.ErrVersionNotFound.Error(), http.StatusNotFound)
+				http.Error(w, errs.ErrEditionsNotFound.Error(), http.StatusNotFound)
 			} else {
 				http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
 			}

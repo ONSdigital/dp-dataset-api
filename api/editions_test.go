@@ -617,7 +617,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionsNotFound.Error())
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetAllStaticVersionsCalls()), ShouldEqual, 1)
 	})
