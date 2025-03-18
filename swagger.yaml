@@ -2420,7 +2420,6 @@ definitions:
             * `xls`
             * `xlsx`
             * `csdb`
-            * `csvw-metadata`
         type: string
         enum:
           - csv
@@ -2428,7 +2427,6 @@ definitions:
           - xls
           - xlsx
           - csdb
-          - csvw-metadata
       media_type:
         description: |
           The IANA media type for the download file referenced by `download_url`.
@@ -2439,7 +2437,6 @@ definitions:
             * `application/vnd.ms-excel`: Excel (XLS) files
             * `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`: Excel (XLSX) files
             * `text/plain`: Plain text (used for CSDB output structured text files)
-            * `application/ld+json`: JSON-LD metadata file. Commonly used to annotate tabular data in an associated CSV file as outlined in the CSVW standard.
         type: string
         readOnly: true
         enum:
@@ -2448,7 +2445,6 @@ definitions:
           - application/vnd.ms-excel
           - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
           - text/plain
-          - application/ld+json
   # Link objects
   DatasetLinks:
     description: "Navigational links related to the dataset resource to aid in API navigation."
