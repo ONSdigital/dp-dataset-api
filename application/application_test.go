@@ -22,6 +22,14 @@ var publishVersionUpdate = &models.Version{
 	CollectionID: "3434",
 }
 
+var publishVersionUpdateStatic = &models.Version{
+	State:        models.PublishedState,
+	ReleaseDate:  "2024-12-31",
+	ID:           "a1b2c3",
+	CollectionID: "3434",
+	Type:         "static",
+}
+
 var currentVersionEditionConfirmed = &models.Version{
 	State:        models.EditionConfirmedState,
 	CollectionID: "3434",
@@ -41,6 +49,15 @@ var versionUpdateAssociated = &models.Version{
 	ID:           "789",
 	CollectionID: "3434",
 	Type:         "cantabular_flexible_table",
+}
+
+var versionUpdateAssociatedStatic = &models.Version{
+	State:        models.AssociatedState,
+	ReleaseDate:  "2024-12-31",
+	Version:      1,
+	ID:           "789",
+	CollectionID: "3434",
+	Type:         "static",
 }
 
 var versionUpdateEditionConfirmed = &models.Version{
@@ -83,7 +100,24 @@ func setUpStatesTransitions() ([]State, []Transition) {
 			TargetState:         EditionConfirmed,
 			AllowedSourceStates: []string{"edition-confirmed", "completed", "published"},
 			Type:                "cantabular_flexible_table",
-		}}
+		},
+		{
+			Label:               "published",
+			TargetState:         Published,
+			AllowedSourceStates: []string{"associated", "published", "edition-confirmed"},
+			Type:                "static",
+		}, {
+			Label:               "associated",
+			TargetState:         Associated,
+			AllowedSourceStates: []string{"edition-confirmed", "associated", "created"},
+			Type:                "static",
+		}, {
+			Label:               "edition-confirmed",
+			TargetState:         EditionConfirmed,
+			AllowedSourceStates: []string{"edition-confirmed", "completed", "published"},
+			Type:                "static",
+		},
+	}
 
 	return states, transitions
 }
@@ -242,6 +276,78 @@ func TestAmendVersionPopulateVersionFails(t *testing.T) {
 	})
 }
 
+func TestAmendVersionStaticSuccess(t *testing.T) {
+	t.Parallel()
+
+	generatorMock := &mocks.DownloadsGeneratorMock{
+		GenerateFunc: func(context.Context, string, string, string, string) error {
+			return nil
+		},
+	}
+
+	vars := make(map[string]string)
+	vars["dataset_id"] = "123"
+	vars["edition"] = "2021"
+	vars["version"] = "1"
+
+	Convey("When a request is made to change a version from associated to published but the dataset is not found", t, func() {
+		mockedDataStore := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			UpdateVersionStaticFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
+				return "", nil
+			},
+			UpdateDatasetWithAssociationFunc: func(context.Context, string, string, *models.Version) error {
+				return nil
+			},
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					ID: "789",
+					Links: &models.VersionLinks{
+						Dataset: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123",
+							ID:   "123",
+						},
+						Dimensions: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions",
+						},
+						Edition: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/2017",
+							ID:   "456",
+						},
+						Self: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+						},
+					},
+					ReleaseDate: "2017-12-12",
+					State:       models.EditionConfirmedState,
+					ETag:        "12345",
+					Type:        "static",
+				}, nil
+			},
+			AcquireVersionsLockFunc: func(context.Context, string) (string, error) {
+				return "", nil
+			},
+			UnlockVersionsFunc: func(context.Context, string) {},
+		}
+
+		states, transitions := setUpStatesTransitions()
+
+		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+
+		err := smDS.AmendVersion(testContext, vars, versionUpdateAssociatedStatic)
+		So(err, ShouldBeNil)
+		So(len(mockedDataStore.AcquireVersionsLockCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UnlockVersionsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsStaticCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionStaticCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateVersionStaticCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
+	})
+}
+
 func TestAmendVersionSuccess(t *testing.T) {
 	t.Parallel()
 
@@ -328,7 +434,7 @@ func TestAmendVersionErrorLockFails(t *testing.T) {
 	vars["edition"] = "2021"
 	vars["version"] = "1"
 
-	Convey("When a request is made to change state from associated to published but the database lock fails", t, func() {
+	Convey("When a request is made to change state from associated to published but the instances collection lock fails", t, func() {
 		mockedDataStore := &storetest.StorerMock{
 			AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
 				return "", errors.New("Unable to acquire lock")
@@ -342,6 +448,25 @@ func TestAmendVersionErrorLockFails(t *testing.T) {
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 
 		err := smDS.AmendVersion(testContext, vars, publishVersionUpdate)
+
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "Unable to acquire lock")
+	})
+
+	Convey("When a request is made to change state from associated to published but the versions collection lock fails", t, func() {
+		mockedDataStore := &storetest.StorerMock{
+			AcquireVersionsLockFunc: func(context.Context, string) (string, error) {
+				return "", errors.New("Unable to acquire lock")
+			},
+			UnlockVersionsFunc: func(context.Context, string) {},
+		}
+
+		states, transitions := setUpStatesTransitions()
+
+		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+
+		err := smDS.AmendVersion(testContext, vars, publishVersionUpdateStatic)
 
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldContainSubstring, "Unable to acquire lock")
@@ -486,6 +611,9 @@ func TestAssociateStaticVersionNoErrors(t *testing.T) {
 			UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
 				return "", nil
 			},
+			UpdateVersionStaticFunc: func(ctx context.Context, currentVersion *models.Version, versionUpdate *models.Version, eTagSelector string) (string, error) {
+				return "", nil
+			},
 		}
 
 		states, transitions := setUpStatesTransitions()
@@ -496,7 +624,8 @@ func TestAssociateStaticVersionNoErrors(t *testing.T) {
 		err := AssociateVersion(testContext, smDS, currentStaticVersion, versionstaticUpdate, versionDetails, "")
 
 		So(err, ShouldBeNil)
-		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.UpdateVersionStaticCalls()), ShouldEqual, 1)
 	})
 }
 
@@ -893,6 +1022,32 @@ func TestPopulateVersionInfoVersionNotFound(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 	})
+
+	Convey("When the static version can't be found", t, func() {
+		mockedDataStore := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{}, errs.ErrVersionNotFound
+			},
+		}
+
+		states, transitions := setUpStatesTransitions()
+
+		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
+
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+
+		currentVersion, combinedVersionUpdate, err := smDS.PopulateVersionInfo(testContext, publishVersionUpdateStatic, versionDetails)
+
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "version not found")
+		So(currentVersion, ShouldBeNil)
+		So(combinedVersionUpdate, ShouldBeNil)
+		So(len(mockedDataStore.CheckEditionExistsStaticCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionStaticCalls()), ShouldEqual, 1)
+	})
 }
 
 func TestPopulateVersionInfoErrors(t *testing.T) {
@@ -924,6 +1079,28 @@ func TestPopulateVersionInfoErrors(t *testing.T) {
 		So(currentVersion, ShouldBeNil)
 		So(combinedVersionUpdate, ShouldBeNil)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+	})
+
+	Convey("When the version can't be found", t, func() {
+		mockedDataStore := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return errs.ErrVersionNotFound
+			},
+		}
+
+		states, transitions := setUpStatesTransitions()
+
+		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
+
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+
+		currentVersion, combinedVersionUpdate, err := smDS.PopulateVersionInfo(testContext, publishVersionUpdateStatic, versionDetails)
+
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "version not found")
+		So(currentVersion, ShouldBeNil)
+		So(combinedVersionUpdate, ShouldBeNil)
+		So(len(mockedDataStore.CheckEditionExistsStaticCalls()), ShouldEqual, 1)
 	})
 }
 
@@ -1059,6 +1236,9 @@ func TestPublishCMDVersionFailsToPublish(t *testing.T) {
 			SetInstanceIsPublishedFunc: func(context.Context, string) error {
 				return errors.New("failed to set is_published on the instance node")
 			},
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				return models.Filterable.String(), nil
+			},
 		}
 
 		states, transitions := setUpStatesTransitions()
@@ -1182,6 +1362,9 @@ func TestPublishVersionDatabaseFails(t *testing.T) {
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return errs.ErrDatasetNotFound
 			},
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				return models.CantabularFlexibleTable.String(), nil
+			},
 		}
 
 		states, transitions := setUpStatesTransitions()
@@ -1298,6 +1481,9 @@ func TestPublishVersionDatasetNotFound(t *testing.T) {
 			},
 			SetInstanceIsPublishedFunc: func(context.Context, string) error {
 				return nil
+			},
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				return models.CantabularFlexibleTable.String(), nil
 			},
 		}
 
@@ -1428,6 +1614,9 @@ func TestPublishVersionInvalidType(t *testing.T) {
 			},
 			UpsertEditionFunc: func(context.Context, string, string, *models.EditionUpdate) error {
 				return nil
+			},
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				return "not_a_type", nil
 			},
 		}
 
@@ -1568,6 +1757,9 @@ func TestPublishVersionDatasetDownloadsOK(t *testing.T) {
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				return models.CantabularFlexibleTable.String(), nil
+			},
 		}
 
 		states, transitions := setUpStatesTransitions()
@@ -1584,6 +1776,132 @@ func TestPublishVersionDatasetDownloadsOK(t *testing.T) {
 		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
+	})
+
+	Convey("When a static version is set to published from associated", t, func() {
+		currentVersion := &models.Version{
+			State:        models.AssociatedState,
+			CollectionID: "3434",
+			Type:         models.Static.String(),
+			Downloads: &models.DownloadList{
+				CSV: &models.DownloadObject{
+					Private: "s3://csv-exported/myfile.csv",
+					HRef:    "http://localhost:23600/datasets/123/editions/2017/versions/1.csv",
+					Size:    "1234",
+				},
+				XLS: &models.DownloadObject{
+					Private: "s3://csv-exported/myfile.xls",
+					HRef:    "http://localhost:23600/datasets/123/editions/2017/versions/1.xls",
+					Size:    "1234",
+				},
+			},
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123",
+					ID:   "123",
+				},
+				Dimensions: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions",
+				},
+				Edition: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123/editions/2017",
+					ID:   "2017",
+				},
+				Self: &models.LinkObject{
+					HRef: "http://localhost:22000/instances/765",
+				},
+				Version: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+					ID:   "1",
+				},
+			},
+		}
+
+		versionUpdate := &models.Version{
+			State:       models.PublishedState,
+			ReleaseDate: "2024-12-31",
+			Version:     1,
+			ID:          "789",
+			Type:        models.Static.String(),
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123",
+					ID:   "123",
+				},
+				Dimensions: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions",
+				},
+				Edition: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123/editions/2017",
+					ID:   "2017",
+				},
+				Self: &models.LinkObject{
+					HRef: "http://localhost:22000/instances/765",
+				},
+				Version: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+					ID:   "1",
+				},
+			},
+		}
+
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(context.Context, string, string, string, string) error {
+				return nil
+			},
+		}
+
+		mockedDataStore := &storetest.StorerMock{
+			UpdateVersionStaticFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
+				return "", nil
+			},
+			GetDatasetFunc: func(_ context.Context, _ string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					Next: &models.Dataset{Links: &models.DatasetLinks{LatestVersion: &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+						ID: "1"}}},
+					ID: "123",
+				}, nil
+			},
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					ID:    "123",
+					State: models.EditionConfirmedState,
+					Links: &models.VersionLinks{
+						Self: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/2017",
+						},
+						Version: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+							ID:   "1",
+						},
+					},
+				}, nil
+			},
+			UpsertVersionStaticFunc: func(context.Context, string, *models.Version) error {
+				return nil
+			},
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
+				return nil
+			},
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				return models.Static.String(), nil
+			},
+		}
+
+		states, transitions := setUpStatesTransitions()
+
+		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
+
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
+
+		So(err, ShouldBeNil)
+		So(len(mockedDataStore.UpdateVersionStaticCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionStaticCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpsertVersionStaticCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
 	})
 }
 
@@ -1772,6 +2090,9 @@ func TestPublishVersionPublishLinksFails(t *testing.T) {
 					},
 				}, nil
 			},
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				return models.CantabularFlexibleTable.String(), nil
+			},
 		}
 
 		states, transitions := setUpStatesTransitions()
@@ -1891,6 +2212,9 @@ func TestPublishVersionUpsertEditionFails(t *testing.T) {
 			},
 			UpsertEditionFunc: func(context.Context, string, string, *models.EditionUpdate) error {
 				return errs.ErrEditionNotFound
+			},
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				return models.CantabularFlexibleTable.String(), nil
 			},
 		}
 
@@ -2027,6 +2351,9 @@ func TestPublishVersionFailedToGenerateDownloads(t *testing.T) {
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				return models.CantabularFlexibleTable.String(), nil
+			},
 		}
 
 		states, transitions := setUpStatesTransitions()
@@ -2116,6 +2443,9 @@ func TestPublishVersionFailedToFindEdition(t *testing.T) {
 			},
 			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
 				return nil, errs.ErrEditionNotFound
+			},
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				return models.CantabularFlexibleTable.String(), nil
 			},
 		}
 

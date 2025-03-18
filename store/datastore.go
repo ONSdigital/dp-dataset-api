@@ -36,6 +36,7 @@ type dataMongoDB interface {
 	GetDimensionOptionsFromIDs(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error)
 	GetEdition(ctx context.Context, ID, editionID, state string) (*models.EditionUpdate, error)
 	GetEditions(ctx context.Context, ID, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error)
+	GetAllStaticVersions(ctx context.Context, ID, state string, offset, limit int) ([]*models.Version, int, error)
 	GetInstances(ctx context.Context, states []string, datasets []string, offset, limit int) ([]*models.Instance, int, error)
 	GetInstance(ctx context.Context, ID, eTagSelector string) (*models.Instance, error)
 	GetNextVersion(ctx context.Context, datasetID, editionID string) (int, error)
@@ -56,6 +57,7 @@ type dataMongoDB interface {
 	UpdateBuildSearchTaskState(ctx context.Context, currentInstance *models.Instance, dimension, state, eTagSelector string) (newETag string, err error)
 	UpdateETagForOptions(ctx context.Context, currentInstance *models.Instance, upserts []*models.CachedDimensionOption, updates []*models.DimensionOption, eTagSelector string) (newETag string, err error)
 	UpdateVersion(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (newETag string, err error)
+	UpdateVersionStatic(ctx context.Context, currentVersion, versionUpdate *models.Version, eTagSelector string) (newETag string, err error)
 	UpdateMetadata(ctx context.Context, datasetID string, versionID string, versionEtag string, updatedDataset *models.Dataset, updatedVersion *models.Version) error
 	UpsertContact(ctx context.Context, ID string, update interface{}) error
 	UpsertDataset(ctx context.Context, ID string, datasetDoc *models.DatasetUpdate) error
@@ -66,6 +68,8 @@ type dataMongoDB interface {
 	DeleteEdition(ctx context.Context, ID string) error
 	AcquireInstanceLock(ctx context.Context, instanceID string) (lockID string, err error)
 	UnlockInstance(ctx context.Context, lockID string)
+	AcquireVersionsLock(ctx context.Context, versionID string) (lockID string, err error)
+	UnlockVersions(ctx context.Context, lockID string)
 	RemoveDatasetVersionAndEditionLinks(ctx context.Context, id string) error
 }
 

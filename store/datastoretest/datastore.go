@@ -7,7 +7,7 @@ import (
 	"context"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
-	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"sync"
 )
 
@@ -23,6 +23,9 @@ var _ store.Storer = &StorerMock{}
 //		mockedStorer := &StorerMock{
 //			AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
 //				panic("mock out the AcquireInstanceLock method")
+//			},
+//			AcquireVersionsLockFunc: func(ctx context.Context, versionID string) (string, error) {
+//				panic("mock out the AcquireVersionsLock method")
 //			},
 //			AddEventToInstanceFunc: func(ctx context.Context, currentInstance *models.Instance, event *models.Event, eTagSelector string) (string, error) {
 //				panic("mock out the AddEventToInstance method")
@@ -51,6 +54,9 @@ var _ store.Storer = &StorerMock{}
 //			DeleteEditionFunc: func(ctx context.Context, ID string) error {
 //				panic("mock out the DeleteEdition method")
 //			},
+//			GetAllStaticVersionsFunc: func(ctx context.Context, ID string, state string, offset int, limit int) ([]*models.Version, int, error) {
+//				panic("mock out the GetAllStaticVersions method")
+//			},
 //			GetDatasetFunc: func(ctx context.Context, ID string) (*models.DatasetUpdate, error) {
 //				panic("mock out the GetDataset method")
 //			},
@@ -69,7 +75,7 @@ var _ store.Storer = &StorerMock{}
 //			GetDimensionOptionsFromIDsFunc: func(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error) {
 //				panic("mock out the GetDimensionOptionsFromIDs method")
 //			},
-//			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]bson.M, error) {
+//			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]primitive.M, error) {
 //				panic("mock out the GetDimensions method")
 //			},
 //			GetDimensionsFromInstanceFunc: func(ctx context.Context, ID string, offset int, limit int) ([]*models.DimensionOption, int, error) {
@@ -120,6 +126,9 @@ var _ store.Storer = &StorerMock{}
 //			UnlockInstanceFunc: func(ctx context.Context, lockID string)  {
 //				panic("mock out the UnlockInstance method")
 //			},
+//			UnlockVersionsFunc: func(ctx context.Context, lockID string)  {
+//				panic("mock out the UnlockVersions method")
+//			},
 //			UpdateBuildHierarchyTaskStateFunc: func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
 //				panic("mock out the UpdateBuildHierarchyTaskState method")
 //			},
@@ -153,6 +162,9 @@ var _ store.Storer = &StorerMock{}
 //			UpdateVersionFunc: func(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (string, error) {
 //				panic("mock out the UpdateVersion method")
 //			},
+//			UpdateVersionStaticFunc: func(ctx context.Context, currentVersion *models.Version, versionUpdate *models.Version, eTagSelector string) (string, error) {
+//				panic("mock out the UpdateVersionStatic method")
+//			},
 //			UpsertContactFunc: func(ctx context.Context, ID string, update interface{}) error {
 //				panic("mock out the UpsertContact method")
 //			},
@@ -181,6 +193,9 @@ type StorerMock struct {
 	// AcquireInstanceLockFunc mocks the AcquireInstanceLock method.
 	AcquireInstanceLockFunc func(ctx context.Context, instanceID string) (string, error)
 
+	// AcquireVersionsLockFunc mocks the AcquireVersionsLock method.
+	AcquireVersionsLockFunc func(ctx context.Context, versionID string) (string, error)
+
 	// AddEventToInstanceFunc mocks the AddEventToInstance method.
 	AddEventToInstanceFunc func(ctx context.Context, currentInstance *models.Instance, event *models.Event, eTagSelector string) (string, error)
 
@@ -208,6 +223,9 @@ type StorerMock struct {
 	// DeleteEditionFunc mocks the DeleteEdition method.
 	DeleteEditionFunc func(ctx context.Context, ID string) error
 
+	// GetAllStaticVersionsFunc mocks the GetAllStaticVersions method.
+	GetAllStaticVersionsFunc func(ctx context.Context, ID string, state string, offset int, limit int) ([]*models.Version, int, error)
+
 	// GetDatasetFunc mocks the GetDataset method.
 	GetDatasetFunc func(ctx context.Context, ID string) (*models.DatasetUpdate, error)
 
@@ -227,7 +245,7 @@ type StorerMock struct {
 	GetDimensionOptionsFromIDsFunc func(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error)
 
 	// GetDimensionsFunc mocks the GetDimensions method.
-	GetDimensionsFunc func(ctx context.Context, versionID string) ([]bson.M, error)
+	GetDimensionsFunc func(ctx context.Context, versionID string) ([]primitive.M, error)
 
 	// GetDimensionsFromInstanceFunc mocks the GetDimensionsFromInstance method.
 	GetDimensionsFromInstanceFunc func(ctx context.Context, ID string, offset int, limit int) ([]*models.DimensionOption, int, error)
@@ -277,6 +295,9 @@ type StorerMock struct {
 	// UnlockInstanceFunc mocks the UnlockInstance method.
 	UnlockInstanceFunc func(ctx context.Context, lockID string)
 
+	// UnlockVersionsFunc mocks the UnlockVersions method.
+	UnlockVersionsFunc func(ctx context.Context, lockID string)
+
 	// UpdateBuildHierarchyTaskStateFunc mocks the UpdateBuildHierarchyTaskState method.
 	UpdateBuildHierarchyTaskStateFunc func(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error)
 
@@ -310,6 +331,9 @@ type StorerMock struct {
 	// UpdateVersionFunc mocks the UpdateVersion method.
 	UpdateVersionFunc func(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (string, error)
 
+	// UpdateVersionStaticFunc mocks the UpdateVersionStatic method.
+	UpdateVersionStaticFunc func(ctx context.Context, currentVersion *models.Version, versionUpdate *models.Version, eTagSelector string) (string, error)
+
 	// UpsertContactFunc mocks the UpsertContact method.
 	UpsertContactFunc func(ctx context.Context, ID string, update interface{}) error
 
@@ -336,6 +360,13 @@ type StorerMock struct {
 			Ctx context.Context
 			// InstanceID is the instanceID argument value.
 			InstanceID string
+		}
+		// AcquireVersionsLock holds details about calls to the AcquireVersionsLock method.
+		AcquireVersionsLock []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// VersionID is the versionID argument value.
+			VersionID string
 		}
 		// AddEventToInstance holds details about calls to the AddEventToInstance method.
 		AddEventToInstance []struct {
@@ -419,6 +450,19 @@ type StorerMock struct {
 			Ctx context.Context
 			// ID is the ID argument value.
 			ID string
+		}
+		// GetAllStaticVersions holds details about calls to the GetAllStaticVersions method.
+		GetAllStaticVersions []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ID is the ID argument value.
+			ID string
+			// State is the state argument value.
+			State string
+			// Offset is the offset argument value.
+			Offset int
+			// Limit is the limit argument value.
+			Limit int
 		}
 		// GetDataset holds details about calls to the GetDataset method.
 		GetDataset []struct {
@@ -665,6 +709,13 @@ type StorerMock struct {
 			// LockID is the lockID argument value.
 			LockID string
 		}
+		// UnlockVersions holds details about calls to the UnlockVersions method.
+		UnlockVersions []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// LockID is the lockID argument value.
+			LockID string
+		}
 		// UpdateBuildHierarchyTaskState holds details about calls to the UpdateBuildHierarchyTaskState method.
 		UpdateBuildHierarchyTaskState []struct {
 			// Ctx is the ctx argument value.
@@ -792,6 +843,17 @@ type StorerMock struct {
 			// ETagSelector is the eTagSelector argument value.
 			ETagSelector string
 		}
+		// UpdateVersionStatic holds details about calls to the UpdateVersionStatic method.
+		UpdateVersionStatic []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// CurrentVersion is the currentVersion argument value.
+			CurrentVersion *models.Version
+			// VersionUpdate is the versionUpdate argument value.
+			VersionUpdate *models.Version
+			// ETagSelector is the eTagSelector argument value.
+			ETagSelector string
+		}
 		// UpsertContact holds details about calls to the UpsertContact method.
 		UpsertContact []struct {
 			// Ctx is the ctx argument value.
@@ -848,6 +910,7 @@ type StorerMock struct {
 		}
 	}
 	lockAcquireInstanceLock                 sync.RWMutex
+	lockAcquireVersionsLock                 sync.RWMutex
 	lockAddEventToInstance                  sync.RWMutex
 	lockAddInstance                         sync.RWMutex
 	lockAddVersionDetailsToInstance         sync.RWMutex
@@ -857,6 +920,7 @@ type StorerMock struct {
 	lockCheckEditionExistsStatic            sync.RWMutex
 	lockDeleteDataset                       sync.RWMutex
 	lockDeleteEdition                       sync.RWMutex
+	lockGetAllStaticVersions                sync.RWMutex
 	lockGetDataset                          sync.RWMutex
 	lockGetDatasetType                      sync.RWMutex
 	lockGetDatasets                         sync.RWMutex
@@ -880,6 +944,7 @@ type StorerMock struct {
 	lockRemoveDatasetVersionAndEditionLinks sync.RWMutex
 	lockSetInstanceIsPublished              sync.RWMutex
 	lockUnlockInstance                      sync.RWMutex
+	lockUnlockVersions                      sync.RWMutex
 	lockUpdateBuildHierarchyTaskState       sync.RWMutex
 	lockUpdateBuildSearchTaskState          sync.RWMutex
 	lockUpdateDataset                       sync.RWMutex
@@ -891,6 +956,7 @@ type StorerMock struct {
 	lockUpdateMetadata                      sync.RWMutex
 	lockUpdateObservationInserted           sync.RWMutex
 	lockUpdateVersion                       sync.RWMutex
+	lockUpdateVersionStatic                 sync.RWMutex
 	lockUpsertContact                       sync.RWMutex
 	lockUpsertDataset                       sync.RWMutex
 	lockUpsertDimensionsToInstance          sync.RWMutex
@@ -932,6 +998,42 @@ func (mock *StorerMock) AcquireInstanceLockCalls() []struct {
 	mock.lockAcquireInstanceLock.RLock()
 	calls = mock.calls.AcquireInstanceLock
 	mock.lockAcquireInstanceLock.RUnlock()
+	return calls
+}
+
+// AcquireVersionsLock calls AcquireVersionsLockFunc.
+func (mock *StorerMock) AcquireVersionsLock(ctx context.Context, versionID string) (string, error) {
+	if mock.AcquireVersionsLockFunc == nil {
+		panic("StorerMock.AcquireVersionsLockFunc: method is nil but Storer.AcquireVersionsLock was just called")
+	}
+	callInfo := struct {
+		Ctx       context.Context
+		VersionID string
+	}{
+		Ctx:       ctx,
+		VersionID: versionID,
+	}
+	mock.lockAcquireVersionsLock.Lock()
+	mock.calls.AcquireVersionsLock = append(mock.calls.AcquireVersionsLock, callInfo)
+	mock.lockAcquireVersionsLock.Unlock()
+	return mock.AcquireVersionsLockFunc(ctx, versionID)
+}
+
+// AcquireVersionsLockCalls gets all the calls that were made to AcquireVersionsLock.
+// Check the length with:
+//
+//	len(mockedStorer.AcquireVersionsLockCalls())
+func (mock *StorerMock) AcquireVersionsLockCalls() []struct {
+	Ctx       context.Context
+	VersionID string
+} {
+	var calls []struct {
+		Ctx       context.Context
+		VersionID string
+	}
+	mock.lockAcquireVersionsLock.RLock()
+	calls = mock.calls.AcquireVersionsLock
+	mock.lockAcquireVersionsLock.RUnlock()
 	return calls
 }
 
@@ -1299,6 +1401,54 @@ func (mock *StorerMock) DeleteEditionCalls() []struct {
 	return calls
 }
 
+// GetAllStaticVersions calls GetAllStaticVersionsFunc.
+func (mock *StorerMock) GetAllStaticVersions(ctx context.Context, ID string, state string, offset int, limit int) ([]*models.Version, int, error) {
+	if mock.GetAllStaticVersionsFunc == nil {
+		panic("StorerMock.GetAllStaticVersionsFunc: method is nil but Storer.GetAllStaticVersions was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		ID     string
+		State  string
+		Offset int
+		Limit  int
+	}{
+		Ctx:    ctx,
+		ID:     ID,
+		State:  state,
+		Offset: offset,
+		Limit:  limit,
+	}
+	mock.lockGetAllStaticVersions.Lock()
+	mock.calls.GetAllStaticVersions = append(mock.calls.GetAllStaticVersions, callInfo)
+	mock.lockGetAllStaticVersions.Unlock()
+	return mock.GetAllStaticVersionsFunc(ctx, ID, state, offset, limit)
+}
+
+// GetAllStaticVersionsCalls gets all the calls that were made to GetAllStaticVersions.
+// Check the length with:
+//
+//	len(mockedStorer.GetAllStaticVersionsCalls())
+func (mock *StorerMock) GetAllStaticVersionsCalls() []struct {
+	Ctx    context.Context
+	ID     string
+	State  string
+	Offset int
+	Limit  int
+} {
+	var calls []struct {
+		Ctx    context.Context
+		ID     string
+		State  string
+		Offset int
+		Limit  int
+	}
+	mock.lockGetAllStaticVersions.RLock()
+	calls = mock.calls.GetAllStaticVersions
+	mock.lockGetAllStaticVersions.RUnlock()
+	return calls
+}
+
 // GetDataset calls GetDatasetFunc.
 func (mock *StorerMock) GetDataset(ctx context.Context, ID string) (*models.DatasetUpdate, error) {
 	if mock.GetDatasetFunc == nil {
@@ -1560,7 +1710,7 @@ func (mock *StorerMock) GetDimensionOptionsFromIDsCalls() []struct {
 }
 
 // GetDimensions calls GetDimensionsFunc.
-func (mock *StorerMock) GetDimensions(ctx context.Context, versionID string) ([]bson.M, error) {
+func (mock *StorerMock) GetDimensions(ctx context.Context, versionID string) ([]primitive.M, error) {
 	if mock.GetDimensionsFunc == nil {
 		panic("StorerMock.GetDimensionsFunc: method is nil but Storer.GetDimensions was just called")
 	}
@@ -2295,6 +2445,42 @@ func (mock *StorerMock) UnlockInstanceCalls() []struct {
 	return calls
 }
 
+// UnlockVersions calls UnlockVersionsFunc.
+func (mock *StorerMock) UnlockVersions(ctx context.Context, lockID string) {
+	if mock.UnlockVersionsFunc == nil {
+		panic("StorerMock.UnlockVersionsFunc: method is nil but Storer.UnlockVersions was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		LockID string
+	}{
+		Ctx:    ctx,
+		LockID: lockID,
+	}
+	mock.lockUnlockVersions.Lock()
+	mock.calls.UnlockVersions = append(mock.calls.UnlockVersions, callInfo)
+	mock.lockUnlockVersions.Unlock()
+	mock.UnlockVersionsFunc(ctx, lockID)
+}
+
+// UnlockVersionsCalls gets all the calls that were made to UnlockVersions.
+// Check the length with:
+//
+//	len(mockedStorer.UnlockVersionsCalls())
+func (mock *StorerMock) UnlockVersionsCalls() []struct {
+	Ctx    context.Context
+	LockID string
+} {
+	var calls []struct {
+		Ctx    context.Context
+		LockID string
+	}
+	mock.lockUnlockVersions.RLock()
+	calls = mock.calls.UnlockVersions
+	mock.lockUnlockVersions.RUnlock()
+	return calls
+}
+
 // UpdateBuildHierarchyTaskState calls UpdateBuildHierarchyTaskStateFunc.
 func (mock *StorerMock) UpdateBuildHierarchyTaskState(ctx context.Context, currentInstance *models.Instance, dimension string, state string, eTagSelector string) (string, error) {
 	if mock.UpdateBuildHierarchyTaskStateFunc == nil {
@@ -2788,6 +2974,50 @@ func (mock *StorerMock) UpdateVersionCalls() []struct {
 	mock.lockUpdateVersion.RLock()
 	calls = mock.calls.UpdateVersion
 	mock.lockUpdateVersion.RUnlock()
+	return calls
+}
+
+// UpdateVersionStatic calls UpdateVersionStaticFunc.
+func (mock *StorerMock) UpdateVersionStatic(ctx context.Context, currentVersion *models.Version, versionUpdate *models.Version, eTagSelector string) (string, error) {
+	if mock.UpdateVersionStaticFunc == nil {
+		panic("StorerMock.UpdateVersionStaticFunc: method is nil but Storer.UpdateVersionStatic was just called")
+	}
+	callInfo := struct {
+		Ctx            context.Context
+		CurrentVersion *models.Version
+		VersionUpdate  *models.Version
+		ETagSelector   string
+	}{
+		Ctx:            ctx,
+		CurrentVersion: currentVersion,
+		VersionUpdate:  versionUpdate,
+		ETagSelector:   eTagSelector,
+	}
+	mock.lockUpdateVersionStatic.Lock()
+	mock.calls.UpdateVersionStatic = append(mock.calls.UpdateVersionStatic, callInfo)
+	mock.lockUpdateVersionStatic.Unlock()
+	return mock.UpdateVersionStaticFunc(ctx, currentVersion, versionUpdate, eTagSelector)
+}
+
+// UpdateVersionStaticCalls gets all the calls that were made to UpdateVersionStatic.
+// Check the length with:
+//
+//	len(mockedStorer.UpdateVersionStaticCalls())
+func (mock *StorerMock) UpdateVersionStaticCalls() []struct {
+	Ctx            context.Context
+	CurrentVersion *models.Version
+	VersionUpdate  *models.Version
+	ETagSelector   string
+} {
+	var calls []struct {
+		Ctx            context.Context
+		CurrentVersion *models.Version
+		VersionUpdate  *models.Version
+		ETagSelector   string
+	}
+	mock.lockUpdateVersionStatic.RLock()
+	calls = mock.calls.UpdateVersionStatic
+	mock.lockUpdateVersionStatic.RUnlock()
 	return calls
 }
 

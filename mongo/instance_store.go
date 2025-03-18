@@ -21,12 +21,12 @@ import (
 // If the instance is already locked, this function will block until it's released,
 // at which point we acquire the lock and return.
 func (m *Mongo) AcquireInstanceLock(ctx context.Context, instanceID string) (lockID string, err error) {
-	return m.lockClient.Acquire(ctx, instanceID)
+	return m.lockClientInstanceCollection.Acquire(ctx, instanceID)
 }
 
 // UnlockInstance releases an exclusive mongoDB lock for the provided lockId (if it exists)
 func (m *Mongo) UnlockInstance(ctx context.Context, lockID string) {
-	m.lockClient.Unlock(ctx, lockID)
+	m.lockClientInstanceCollection.Unlock(ctx, lockID)
 }
 
 // GetInstances from a mongo collection

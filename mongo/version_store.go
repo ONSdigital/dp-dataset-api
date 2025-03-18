@@ -13,17 +13,29 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
+// AcquireVersionsLock tries to lock the provided versionID.
+func (m *Mongo) AcquireVersionsLock(ctx context.Context, versionID string) (lockID string, err error) {
+	return m.lockClientVersionsCollection.Acquire(ctx, versionID)
+}
+
+func (m *Mongo) UnlockVersions(ctx context.Context, lockID string) {
+	m.lockClientVersionsCollection.Unlock(ctx, lockID)
+}
+
 // UpsertVersion adds or overrides an existing version document
 func (m *Mongo) UpsertVersionStatic(ctx context.Context, id string, version *models.Version) (err error) {
+	version.LastUpdated = time.Now()
 	update := bson.M{
 		"$set": version,
-		"$setOnInsert": bson.M{
-			"last_updated": time.Now(),
-		},
 	}
 
-	_, err = m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Upsert(ctx, bson.M{"id": id}, update)
+	sel := bson.M{
+		"edition": version.Edition,
+		"version": version.Version,
+		"e_tag":   version.ETag,
+	}
 
+	_, err = m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).UpsertOne(ctx, sel, update)
 	return err
 }
 
@@ -186,4 +198,51 @@ func (m *Mongo) GetDatasetType(ctx context.Context, datasetID string, authorised
 		return "", err
 	}
 	return d.Current.Type, nil
+}
+
+// UpdateVersionStatic updates an existing version document
+func (m *Mongo) UpdateVersionStatic(ctx context.Context, currentVersion, versionUpdate *models.Version, eTagSelector string) (newETag string, err error) {
+	// calculate the new eTag hash for the instance that would result from adding the event
+	newETag, err = newETagForVersionUpdate(currentVersion, versionUpdate)
+	if err != nil {
+		return "", err
+	}
+
+	sel := bson.M{
+		"edition": currentVersion.Edition,
+		"version": currentVersion.Version,
+		"e_tag":   eTagSelector,
+	}
+	updates := createVersionUpdateQuery(versionUpdate, newETag)
+
+	if _, err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Must().Update(ctx, sel, bson.M{"$set": updates, "$setOnInsert": bson.M{"last_updated": time.Now()}}); err != nil {
+		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
+			return "", errs.ErrVersionNotFound
+		}
+		return "", err
+	}
+
+	return newETag, nil
+}
+
+func (m *Mongo) GetAllStaticVersions(ctx context.Context, datasetID, state string, offset, limit int) ([]*models.Version, int, error) {
+	selector := bson.M{"links.dataset.id": datasetID}
+	if state != "" {
+		selector["state"] = state
+	}
+	// get total count and paginated values according to provided offset and limit
+	results := []*models.Version{}
+	totalCount, err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Find(ctx, selector, &results,
+		mongodriver.Sort(bson.M{"last_updated": -1}),
+		mongodriver.Offset(offset),
+		mongodriver.Limit(limit))
+	if err != nil {
+		return results, 0, err
+	}
+
+	if totalCount < 1 {
+		return nil, 0, errs.ErrVersionNotFound
+	}
+
+	return results, totalCount, nil
 }

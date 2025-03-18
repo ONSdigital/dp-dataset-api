@@ -71,13 +71,23 @@ func (smDS *StateMachineDatasetAPI) AmendVersion(ctx context.Context, vars map[s
 		version:   vars["version"],
 	}
 
-	lockID, lockErr := smDS.DataStore.Backend.AcquireInstanceLock(ctx, version.ID)
-	if lockErr != nil {
-		return lockErr
+	if version.Type == models.Static.String() {
+		lockID, lockErr := smDS.DataStore.Backend.AcquireVersionsLock(ctx, version.ID)
+		if lockErr != nil {
+			return lockErr
+		}
+		defer func() {
+			smDS.DataStore.Backend.UnlockVersions(ctx, lockID)
+		}()
+	} else {
+		lockID, lockErr := smDS.DataStore.Backend.AcquireInstanceLock(ctx, version.ID)
+		if lockErr != nil {
+			return lockErr
+		}
+		defer func() {
+			smDS.DataStore.Backend.UnlockInstance(ctx, lockID)
+		}()
 	}
-	defer func() {
-		smDS.DataStore.Backend.UnlockInstance(ctx, lockID)
-	}()
 
 	currentVersion, versionUpdate, err := smDS.PopulateVersionInfo(ctx, version, versionDetails)
 	if err != nil {
@@ -104,15 +114,34 @@ func (smDS *StateMachineDatasetAPI) PopulateVersionInfo(ctx context.Context, ver
 		return nil, nil, err
 	}
 
-	if err = smDS.DataStore.Backend.CheckEditionExists(ctx, versionDetails.datasetID, versionDetails.edition, ""); err != nil {
-		log.Error(ctx, "UpdateVersion: failed to find edition of dataset", err, data)
-		return nil, nil, err
+	if versionUpdate != nil {
+		if versionUpdate.Type == models.Static.String() {
+			if err = smDS.DataStore.Backend.CheckEditionExistsStatic(ctx, versionDetails.datasetID, versionDetails.edition, ""); err != nil {
+				log.Error(ctx, "UpdateVersion: failed to find version of dataset", err, data)
+				return nil, nil, err
+			}
+		} else {
+			if err = smDS.DataStore.Backend.CheckEditionExists(ctx, versionDetails.datasetID, versionDetails.edition, ""); err != nil {
+				log.Error(ctx, "UpdateVersion: failed to find edition of dataset", err, data)
+				return nil, nil, err
+			}
+		}
 	}
 
-	currentVersion, err = smDS.DataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
-	if err != nil {
-		log.Error(ctx, "UpdateVersion: datastore.GetVersion returned an error", err, data)
-		return nil, nil, err
+	if versionUpdate != nil {
+		if versionUpdate.Type == models.Static.String() {
+			currentVersion, err = smDS.DataStore.Backend.GetVersionStatic(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
+			if err != nil {
+				log.Error(ctx, "UpdateVersion: datastore.GetVersionStatic returned an error", err, data)
+				return nil, nil, err
+			}
+		} else {
+			currentVersion, err = smDS.DataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
+			if err != nil {
+				log.Error(ctx, "UpdateVersion: datastore.GetVersion returned an error", err, data)
+				return nil, nil, err
+			}
+		}
 	}
 
 	// doUpdate is an aux function that combines the existing version document with the update received in the body request,
@@ -442,8 +471,18 @@ func UpdateVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 	// then it validates the new model, and performs the update in MongoDB, passing the existing model ETag (if it exists) to be used in the query selector
 	// Note that the combined version update does not mutate versionUpdate because multiple retries might generate a different value depending on the currentVersion at that point.
 	var doUpdate = func() error {
-		if _, errVersion := smDS.DataStore.Backend.UpdateVersion(ctx, currentVersion, versionUpdate, eTag); errVersion != nil {
-			return errVersion
+		if versionUpdate != nil {
+			if versionUpdate.Type == models.Static.String() {
+				if _, errVersion := smDS.DataStore.Backend.UpdateVersionStatic(ctx, currentVersion, versionUpdate, eTag); errVersion != nil {
+					log.Error(ctx, "putVersion endpoint: UpdateVersionStatic returned an error", err)
+					return errVersion
+				}
+			} else {
+				if _, errVersion := smDS.DataStore.Backend.UpdateVersion(ctx, currentVersion, versionUpdate, eTag); errVersion != nil {
+					log.Error(ctx, "putVersion endpoint: UpdateVersion returned an error", err)
+					return errVersion
+				}
+			}
 		}
 
 		return nil
@@ -451,10 +490,20 @@ func UpdateVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 
 	if err := doUpdate(); err != nil {
 		if err == errs.ErrDatasetNotFound {
-			currentVersion, err = smDS.DataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
-			if err != nil {
-				log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err)
-				return nil, err
+			if versionUpdate != nil {
+				if versionUpdate.Type == models.Static.String() {
+					currentVersion, err = smDS.DataStore.Backend.GetVersionStatic(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
+					if err != nil {
+						log.Error(ctx, "putVersion endpoint: datastore.GetVersionStatic returned an error", err)
+						return nil, err
+					}
+				} else {
+					currentVersion, err = smDS.DataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
+					if err != nil {
+						log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err)
+						return nil, err
+					}
+				}
 			}
 
 			if err = doUpdate(); err != nil {
@@ -472,24 +521,54 @@ func UpdateVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 func PublishEdition(ctx context.Context, smDS *StateMachineDatasetAPI,
 	versionUpdate *models.Version, // Next version, that is the new version
 	versionDetails VersionDetails, data log.Data) error {
-	editionDoc, err := smDS.DataStore.Backend.GetEdition(ctx, versionDetails.datasetID, versionDetails.edition, "")
+	var editionDoc *models.EditionUpdate
+	var versionDoc *models.Version
+	var err error
+
+	datasetType, err := smDS.DataStore.Backend.GetDatasetType(ctx, versionDetails.datasetID, true)
 	if err != nil {
-		log.Error(ctx, "State Machine - Publish: PublishEdition: failed to find the edition we're trying to update", err, data)
+		log.Error(ctx, "State Machine - Publish: PublishEdition: failed to find dataset type", err, data)
 		return err
 	}
 
-	editionDoc.Next.State = models.PublishedState
+	if datasetType == models.Static.String() {
+		version, err := strconv.Atoi(versionDetails.version)
+		if err != nil {
+			log.Error(ctx, "State Machine - Publish: PublishEdition: failed to convert version to integer", err, data)
+			return err
+		}
+		versionDoc, err = smDS.DataStore.Backend.GetVersionStatic(ctx, versionDetails.datasetID, versionDetails.edition, version, "")
+		if err != nil {
+			log.Error(ctx, "State Machine - Publish: PublishEdition: failed to find the version we're trying to update", err, data)
+			return err
+		}
+	} else {
+		editionDoc, err = smDS.DataStore.Backend.GetEdition(ctx, versionDetails.datasetID, versionDetails.edition, "")
+		if err != nil {
+			log.Error(ctx, "State Machine - Publish: PublishEdition: failed to find the edition we're trying to update", err, data)
+			return err
+		}
 
-	if err := editionDoc.PublishLinks(ctx, versionUpdate.Links.Version); err != nil {
-		log.Error(ctx, "State Machine - Publish: PublishEdition: failed to update the edition links for the version we're trying to publish", err, data)
-		return err
+		editionDoc.Next.State = models.PublishedState
+
+		if err := editionDoc.PublishLinks(ctx, versionUpdate.Links.Version); err != nil {
+			log.Error(ctx, "State Machine - Publish: PublishEdition: failed to update the edition links for the version we're trying to publish", err, data)
+			return err
+		}
+
+		editionDoc.Current = editionDoc.Next
 	}
 
-	editionDoc.Current = editionDoc.Next
-
-	if err := smDS.DataStore.Backend.UpsertEdition(ctx, versionDetails.datasetID, versionDetails.edition, editionDoc); err != nil {
-		log.Error(ctx, "State Machine - Publish: PublishEdition: failed to update edition during publishing", err, data)
-		return err
+	if datasetType == models.Static.String() {
+		if err := smDS.DataStore.Backend.UpsertVersionStatic(ctx, versionDetails.version, versionDoc); err != nil {
+			log.Error(ctx, "State Machine - Publish: PublishEdition: failed to update version during publishing", err, data)
+			return err
+		}
+	} else {
+		if err := smDS.DataStore.Backend.UpsertEdition(ctx, versionDetails.datasetID, versionDetails.edition, editionDoc); err != nil {
+			log.Error(ctx, "State Machine - Publish: PublishEdition: failed to update edition during publishing", err, data)
+			return err
+		}
 	}
 
 	return nil
