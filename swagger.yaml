@@ -268,7 +268,7 @@ paths:
         201:
           description: "A JSON object containing the newly created dataset"
           schema:
-            $ref: "#/definitions/NewDatasetResponse"
+            $ref: "#/definitions/Dataset"
         400:
           description: "Invalid request body"
         401:
