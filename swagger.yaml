@@ -1908,6 +1908,9 @@ definitions:
         allOf:
           - readOnly: true
           - $ref: "#/definitions/DatasetID"
+      dataset_links:
+        readOnly: true
+        $ref: "#/definitions/DatasetLinks"
       description:
         description: "A description for a dataset"
         type: string
@@ -1923,16 +1926,20 @@ definitions:
 
           A list of media types that the version data of an edition of a dataset can be accessed
         type: array
+        readOnly: true
         items:
           type: string
       distributions:
         description: A list of representations of the dataset available and how to access them.
         type: array
+        readOnly: true
         minItems: 1
         items:
           $ref: "#/definitions/Distribution"
       downloads:
-        $ref: "#/definitions/VersionDownloads"
+        allOf:
+          - readOnly: true
+          - $ref: "#/definitions/VersionDownloads"
       edition:
         allOf:
           - readOnly: true
@@ -1944,6 +1951,7 @@ definitions:
       headers:
         description: "A list of headers for a census dataset"
         type: array
+        readOnly: true
         items:
           type: "string"
       keywords:
@@ -2003,6 +2011,11 @@ definitions:
           - accredited-official
           - official
           - official-in-development
+      related_content:
+        description: "A list of website content related to this dataset."
+        type: array
+        items:
+          $ref: "#/definitions/RelatedLink"
       related_datasets:
         description: "A list of other datasets related to this dataset."
         type: array
@@ -2025,8 +2038,13 @@ definitions:
         items:
           type: "string"
           example: "7755"
+      survey:
+        description: "The name of the survey the dataset was created from."
+        type: string
       temporal:
-        $ref: "#/definitions/Temporal"
+        allOf:
+          - readOnly: true
+          - $ref: "#/definitions/Temporal"
       title:
         description: "The title of the dataset"
         example: "Consumer Prices Index"
@@ -2039,7 +2057,9 @@ definitions:
           type: "string"
         example: ["7779", "7755"]
       type:
-        $ref: "#/definitions/DatasetType"
+        allOf:
+          - readOnly: true
+          - $ref: "#/definitions/DatasetType"
       unit_of_measure:
         description: "The unit of measure for the dataset observations"
         type: string
@@ -2691,6 +2711,7 @@ definitions:
       description:
         description: "A description for a dataset"
         type: string
+        example: "This dataset contains some very interesting data about the UK."
       dimensions:
         description: "A list of codelists for each dimension of this version"
         type: array
@@ -2729,8 +2750,26 @@ definitions:
         type: array
         items:
           $ref: "#/definitions/RelatedLink"
+      publishers:
+        description: A list of the publishers for the dataset.
+        type: array
+        items:
+          $ref: "#/definitions/Publisher"
       qmi:
         $ref: "#/definitions/QMILink"
+      quality_designation:
+        description: |
+          The official statistics quality designation level of this dataset version.
+
+          Possible quality designations:
+            * `accredited-official`
+            * `official`
+            * `official-in-development`
+        type: string
+        enum:
+          - accredited-official
+          - official
+          - official-in-development
       related_content:
         description: "A list of website content related to this dataset."
         type: array
@@ -2759,8 +2798,18 @@ definitions:
         description: "The title of the dataset"
         example: "CPI"
         type: string
+      topics:
+        description: "A list of topic IDs that the dataset relates to within the topic taxonomy. This field consolidates the previously separate `canonical_topic` and `subtopics` fields."
+        type: array
+        minItems: 1
+        items:
+          type: "string"
+        example: ["7779", "7755"]
       unit_of_measure:
         description: "The unit of measure for the dataset observations"
         type: string
       usage_notes:
-        $ref: "#/definitions/UsageNote"
+        description: "A list of usage notes relating to the dataset"
+        type: array
+        items:
+          $ref: "#/definitions/UsageNote"
