@@ -155,11 +155,19 @@ parameters:
     type: string
   version_update:
     name: version_update
-    description: "Update to a version for an edition of a dataset"
+    description: |
+      Update to a version for an edition of a dataset.
+
+      This model allows for the updating the deprecated `downloads` map for backwards compatability.
     in: body
     required: true
     schema:
-      $ref: "#/definitions/UpdateVersion"
+      allOf:
+        - $ref: "#/definitions/Version"
+        - properties:
+            downloads:
+              allOf:
+                - readOnly: false
   limit:
     name: limit
     description: "Maximum number of items that will be returned. A value of zero will return zero items."
@@ -2245,70 +2253,6 @@ definitions:
       label:
         description: "A human readable label for dimension"
         type: string
-  UpdateVersion:
-    description: "An object containing information to be updated on a version resource"
-    type: object
-    properties:
-      alerts:
-        description: "A list of alerts, for example corrections after the resource has been published"
-        type: array
-        items:
-          $ref: "#/definitions/Alert"
-      collection_id:
-        $ref: "#/definitions/CollectionID"
-      distributions:
-        description: A list of representations of the dataset available and how to access them.
-        type: array
-        minItems: 1
-        items:
-          $ref: "#/definitions/Distribution"
-      downloads:
-        $ref: "#/definitions/VersionDownloads"
-      edition_title:
-        description: The human readable title of the edition.
-        type: string
-        example: July to September 2017
-      latest_changes:
-        description: "A list of changes between version of an edition for a dataset and the previous version of the same dataset edition"
-        type: array
-        items:
-          $ref: "#/definitions/LatestChange"
-      links:
-        $ref: "#/definitions/VersionLinks"
-      lowest_geography:
-        description: "The lowest geography this dataset is available at (Census datasets only)"
-        type: string
-      quality_designation:
-        description: |
-          The official statistics quality designation level of this dataset version.
-
-          Possible quality designations:
-            * `accredited-official`
-            * `official`
-            * `official-in-development`
-        type: string
-        enum:
-          - accredited-official
-          - official
-          - official-in-development
-      release_date:
-        description: "The release date of this version of the dataset"
-        type: string
-        format: date-time
-      state:
-        $ref: "#/definitions/State"
-      temporal:
-        $ref: "#/definitions/Temporal"
-      version:
-        description: "A number identifying the version for an edition from a dataset"
-        example: 1
-        readOnly: true
-        type: integer
-      usage_notes:
-        description: "A list of usage notes relating to the dataset"
-        type: array
-        items:
-          $ref: "#/definitions/UsageNote"
   UsageNote:
     description: "A note relating to the dataset. This will appear in downloaded datasets"
     type: object
