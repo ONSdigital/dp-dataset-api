@@ -3038,6 +3038,11 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated"}}, nil
 			},
+			GetLatestVersionStaticFunc: func(context.Context, string, string, string) (*models.Version, error) {
+				return &models.Version{
+					State: models.PublishedState,
+				}, nil
+			},
 			GetNextVersionStaticFunc: func(context.Context, string, string) (int, error) {
 				return 2, nil
 			},
@@ -3263,6 +3268,11 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
+			GetLatestVersionStaticFunc: func(context.Context, string, string, string) (*models.Version, error) {
+				return &models.Version{
+					State: models.AssociatedState,
+				}, nil
+			},
 			AddVersionStaticFunc: func(context.Context, *models.Version) (*models.Version, error) {
 				return nil, nil
 			},
@@ -3322,6 +3332,11 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 			},
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
+			},
+			GetLatestVersionStaticFunc: func(context.Context, string, string, string) (*models.Version, error) {
+				return &models.Version{
+					State: models.PublishedState,
+				}, nil
 			},
 			AddVersionStaticFunc: func(context.Context, *models.Version) (*models.Version, error) {
 				return &models.Version{Version: 2}, nil

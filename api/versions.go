@@ -873,6 +873,8 @@ func handleVersionAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 }
 
 // condensed api call to add new version
+//
+//nolint:gocyclo,gocognit // high cyclomactic & cognitive complexity not in scope for maintenance
 func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http.Request) {
 	defer dphttp.DrainBody(r)
 
