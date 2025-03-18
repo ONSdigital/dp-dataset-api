@@ -1924,20 +1924,7 @@ definitions:
         items:
           $ref: "#/definitions/Distribution"
       downloads:
-        description: |
-          **Deprecated:** These fields have been deprecated and replaced by the `distributions` list.
-
-          A selection of download objects containing information of downloadable files.
-        type: object
-        properties:
-          csv:
-            $ref: "#/definitions/DownloadObject"
-          csvw:
-            $ref: "#/definitions/DownloadObject"
-          txt:
-            $ref: "#/definitions/DownloadObject"
-          xls:
-            $ref: "#/definitions/DownloadObject"
+        $ref: "#/definitions/VersionDownloads"
       edition:
         allOf:
           - readOnly: true
@@ -2276,13 +2263,7 @@ definitions:
         items:
           $ref: "#/definitions/Distribution"
       downloads:
-        description: "A selection of download objects containing information of downloadable files. These can only be updated via an authorised caller."
-        type: object
-        properties:
-          csv:
-            $ref: "#/definitions/DownloadObject"
-          xls:
-            $ref: "#/definitions/DownloadObject"
+        $ref: "#/definitions/VersionDownloads"
       edition_title:
         description: The human readable title of the edition.
         type: string
@@ -2294,6 +2275,22 @@ definitions:
           $ref: "#/definitions/LatestChange"
       links:
         $ref: "#/definitions/VersionLinks"
+      lowest_geography:
+        description: "The lowest geography this dataset is available at (Census datasets only)"
+        type: string
+      quality_designation:
+        description: |
+          The official statistics quality designation level of this dataset version.
+
+          Possible quality designations:
+            * `accredited-official`
+            * `official`
+            * `official-in-development`
+        type: string
+        enum:
+          - accredited-official
+          - official
+          - official-in-development
       release_date:
         description: "The release date of this version of the dataset"
         type: string
@@ -2358,6 +2355,7 @@ definitions:
       dimensions:
         description: "A list of codelists for each dimension of this version"
         type: array
+        readOnly: true
         items:
           $ref: "#/definitions/Dimension"
       distributions:
@@ -2367,21 +2365,9 @@ definitions:
         items:
           $ref: "#/definitions/Distribution"
       downloads:
-        description: |
-          **Deprecated:** These fields have been deprecated and replaced by the `distributions` list.
-
-          A selection of download objects containing information of downloadable files.
-        type: object
-        readOnly: true
-        properties:
-          csv:
-            $ref: "#/definitions/DownloadObject"
-          csvw:
-            $ref: "#/definitions/DownloadObject"
-          txt:
-            $ref: "#/definitions/DownloadObject"
-          xls:
-            $ref: "#/definitions/DownloadObject"
+        allOf:
+          - readOnly: true
+          - $ref: "#/definitions/VersionDownloads"
       edition:
         allOf:
           - readOnly: true
@@ -2439,6 +2425,25 @@ definitions:
         example: 1
         readOnly: true
         type: integer
+  VersionDownloads:
+    description: |
+      **Deprecated:** These fields have been deprecated and replaced by the `distributions` list.
+
+      A selection of download objects containing information of downloadable files.
+    type: object
+    properties:
+      csv:
+        $ref: "#/definitions/DownloadObject"
+      csvw:
+        allOf:
+          - readOnly: true
+          - $ref: "#/definitions/DownloadObject"
+      txt:
+        allOf:
+          - readOnly: true
+          - $ref: "#/definitions/DownloadObject"
+      xls:
+        $ref: "#/definitions/DownloadObject"
   Distribution:
     description: The details of specific representation of a dataset and how to access it.
     type: object
