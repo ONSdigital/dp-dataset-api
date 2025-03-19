@@ -3033,9 +3033,6 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
-			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
-				return nil
-			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated"}}, nil
 			},
@@ -3061,7 +3058,6 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusCreated)
 		So(mockedDataStore.CheckDatasetExistsCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.CheckEditionExistsStaticCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.GetNextVersionStaticCalls(), ShouldHaveLength, 1)
 	})
 
@@ -3224,6 +3220,11 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 			AddVersionStaticFunc: func(context.Context, *models.Version) (*models.Version, error) {
 				return &models.Version{Version: 1, Edition: "time-series"}, nil
 			},
+			GetLatestVersionStaticFunc: func(context.Context, string, string, string) (*models.Version, error) {
+				return &models.Version{
+					State: models.PublishedState,
+				}, nil
+			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated"}}, nil
 			},
@@ -3373,9 +3374,6 @@ func TestAddDatasetVersionCondensedReturnsError(t *testing.T) {
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
-			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
-				return nil
-			},
 			GetLatestVersionStaticFunc: func(context.Context, string, string, string) (*models.Version, error) {
 				return &models.Version{
 					Version: 1,
@@ -3391,7 +3389,6 @@ func TestAddDatasetVersionCondensedReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldContainSubstring, "cannot create new version when an unpublished version already exists")
 		So(mockedDataStore.CheckDatasetExistsCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.CheckEditionExistsStaticCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.GetLatestVersionStaticCalls(), ShouldHaveLength, 1)
 	})
 
@@ -3406,9 +3403,6 @@ func TestAddDatasetVersionCondensedReturnsError(t *testing.T) {
 
 		mockedDataStore := &storetest.StorerMock{
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
-				return nil
-			},
-			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
 			GetLatestVersionStaticFunc: func(context.Context, string, string, string) (*models.Version, error) {
@@ -3437,7 +3431,6 @@ func TestAddDatasetVersionCondensedReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusCreated)
 		So(mockedDataStore.CheckDatasetExistsCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.CheckEditionExistsStaticCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.GetLatestVersionStaticCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.GetNextVersionStaticCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.AddVersionStaticCalls(), ShouldHaveLength, 1)
@@ -3455,9 +3448,6 @@ func TestAddDatasetVersionCondensedReturnsError(t *testing.T) {
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
-			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
-				return nil
-			},
 			GetLatestVersionStaticFunc: func(context.Context, string, string, string) (*models.Version, error) {
 				return nil, errs.ErrInternalServer
 			},
@@ -3469,7 +3459,6 @@ func TestAddDatasetVersionCondensedReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(mockedDataStore.CheckDatasetExistsCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.CheckEditionExistsStaticCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.GetLatestVersionStaticCalls(), ShouldHaveLength, 1)
 	})
 }
