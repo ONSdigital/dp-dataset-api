@@ -955,7 +955,7 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 		return
 	}
 
-	if err == nil && latestVersion != nil && latestVersion.State != models.PublishedState {
+	if err == nil && latestVersion.State != models.PublishedState {
 		log.Error(ctx, "unpublished version already exists", errors.New("cannot create new version when unpublished version exists"),
 			log.Data{"state": latestVersion.State, "version": latestVersion.Version})
 
