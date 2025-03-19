@@ -87,9 +87,10 @@ func BuildTopics(canonicalTopic string, subtopics []string) []string {
 
 func MapVersionToEdition(version *models.Version) *models.Edition {
 	edition := &models.Edition{
-		DatasetID:   version.DatasetID,
-		Edition:     version.Edition,
-		ReleaseDate: version.ReleaseDate,
+		DatasetID:    version.DatasetID,
+		Edition:      version.Edition,
+		EditionTitle: version.EditionTitle,
+		ReleaseDate:  version.ReleaseDate,
 		Links: &models.EditionUpdateLinks{
 			Dataset: &models.LinkObject{
 				HRef: version.Links.Dataset.HRef,

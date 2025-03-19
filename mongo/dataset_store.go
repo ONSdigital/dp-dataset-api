@@ -534,6 +534,10 @@ func createVersionUpdateQuery(version *models.Version, newETag string) bson.M {
 		setUpdates["release_date"] = version.ReleaseDate
 	}
 
+	if version.EditionTitle != "" {
+		setUpdates["edition_title"] = version.EditionTitle
+	}
+
 	if version.State != "" {
 		setUpdates["state"] = version.State
 	}

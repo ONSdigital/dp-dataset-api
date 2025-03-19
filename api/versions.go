@@ -1088,7 +1088,9 @@ func validateVersionFields(version *models.Version) []string {
 	if version.Distributions == nil || len(*version.Distributions) == 0 {
 		missingFields = append(missingFields, "distributions")
 	}
-
+	if version.EditionTitle == "" {
+		missingFields = append(missingFields, "edition_title")
+	}
 	return missingFields
 }
 

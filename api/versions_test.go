@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	versionPayload           = `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04"}`
+	versionPayload           = `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04","edition_title": "Updated Edition titile"}`
 	versionAssociatedPayload = `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04","state":"associated","collection_id":"12345"}`
 	versionPublishedPayload  = `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04","state":"published","collection_id":"12345"}`
 	testLockID               = "testLockID"
@@ -2999,33 +2999,34 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 	t.Parallel()
 	Convey("When dataset and edition exist and version is added successfully", t, func() {
 		b := `{
-  "next_release": "2025-02-15",
-  "alerts": [
-    {}
-  ],
-  "release_date": "2025-01-15",
-  "topics": [
-    "Economy",
-    "Prices"
-  ],
-  "temporal": [
-    {
-      "start_date": "2025-01-01",
-      "end_date": "2025-01-31",
-      "frequency": "Monthly"
-    }
-  ],
-  "distributions": [
-    {}
-  ],
-  "usage_notes": [
-    {
-      "title": "Data usage guide",
-      "note": "This dataset is subject to revision and should be used in conjunction with the accompanying documentation."
-    }
-  ]
-}`
-		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123//editions/time-series/versions", bytes.NewBufferString(b))
+			"next_release": "2025-02-15",
+			"edition_title": "Edition Titile 2025",
+			"alerts": [
+				{}
+			],
+			"release_date": "2025-01-15",
+			"topics": [
+				"Economy",
+				"Prices"
+			],
+			"temporal": [
+				{
+				"start_date": "2025-01-01",
+				"end_date": "2025-01-31",
+				"frequency": "Monthly"
+				}
+			],
+			"distributions": [
+				{}
+			],
+			"usage_notes": [
+				{
+				"title": "Data usage guide",
+				"note": "This dataset is subject to revision and should be used in conjunction with the accompanying documentation."
+				}
+			]
+		}`
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/time-series/versions", bytes.NewBufferString(b))
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -3066,67 +3067,68 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 
 	Convey("When dataset does not exist", t, func() {
 		b := `{
-  "title": "test-dataset",
-  "description": "test dataset",
-  "type": "static",
-  "next_release": "2025-02-15",
-  "alerts": [
-    {}
-  ],
-  "latest_changes": [
-    {
-      "description": "Updated classification of housing components in CPIH.",
-      "name": "Changes in classification",
-      "type": "Summary of changes"
-    }
-  ],
-  "links": {
-    "dataset": {
-      "href": "http://localhost:10400/datasets/bara-test-ds-abcd",
-      "id": "cpih01"
-    },
-    "dimensions": {
-      "href": "http://localhost:10400/datasets/bara-test-ds-abcd/dimensions"
-    },
-    "edition": {
-      "href": "http://localhost:10400/datasets/bara-test-ds-abcd/editions/time-series",
-      "id": "time-series"
-    },
-    "job": {
-      "href": "http://localhost:10700/jobs/383df410-845e-4efd-9ba1-ab469361eae5",
-      "id": "383df410-845e-4efd-9ba1-ab469361eae5"
-    },
-    "version": {
-      "href": "http://localhost:10400/datasets/bara-test-ds-abcd/editions/time-series/versions/1",
-      "id": "1"
-    },
-    "spatial": {
-      "href": "http://localhost:10400/datasets/bara-test-ds-abcd"
-    }
-  },
-  "release_date": "2025-01-15",
-  "state": "associated",
-  "topics": [
-    "Economy",
-    "Prices"
-  ],
-  "temporal": [
-    {
-      "start_date": "2025-01-01",
-      "end_date": "2025-01-31",
-      "frequency": "Monthly"
-    }
-  ],
-  "distributions": [
-    {}
-  ],
-  "usage_notes": [
-    {
-      "title": "Data usage guide",
-      "note": "This dataset is subject to revision and should be used in conjunction with the accompanying documentation."
-    }
-  ]
-}`
+			"title": "test-dataset",
+			"description": "test dataset",
+			"type": "static",
+			"next_release": "2025-02-15",
+			"edition_title": "Edition Titile 2025",
+			"alerts": [
+				{}
+			],
+			"latest_changes": [
+				{
+				"description": "Updated classification of housing components in CPIH.",
+				"name": "Changes in classification",
+				"type": "Summary of changes"
+				}
+			],
+			"links": {
+				"dataset": {
+				"href": "http://localhost:10400/datasets/bara-test-ds-abcd",
+				"id": "cpih01"
+				},
+				"dimensions": {
+				"href": "http://localhost:10400/datasets/bara-test-ds-abcd/dimensions"
+				},
+				"edition": {
+				"href": "http://localhost:10400/datasets/bara-test-ds-abcd/editions/time-series",
+				"id": "time-series"
+				},
+				"job": {
+				"href": "http://localhost:10700/jobs/383df410-845e-4efd-9ba1-ab469361eae5",
+				"id": "383df410-845e-4efd-9ba1-ab469361eae5"
+				},
+				"version": {
+				"href": "http://localhost:10400/datasets/bara-test-ds-abcd/editions/time-series/versions/1",
+				"id": "1"
+				},
+				"spatial": {
+				"href": "http://localhost:10400/datasets/bara-test-ds-abcd"
+				}
+			},
+			"release_date": "2025-01-15",
+			"state": "associated",
+			"topics": [
+				"Economy",
+				"Prices"
+			],
+			"temporal": [
+				{
+				"start_date": "2025-01-01",
+				"end_date": "2025-01-31",
+				"frequency": "Monthly"
+				}
+			],
+			"distributions": [
+				{}
+			],
+			"usage_notes": [
+				{
+				"title": "Data usage guide",
+				"note": "This dataset is subject to revision and should be used in conjunction with the accompanying documentation."
+				}
+			]
+		}`
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123//editions/time-series/versions", bytes.NewBufferString(b))
 		w := httptest.NewRecorder()
 
@@ -3144,67 +3146,68 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 	})
 	Convey("When edition does not exist", t, func() {
 		b := `{
-  "title": "test-dataset",
-  "description": "test dataset",
-  "type": "static",
-  "next_release": "2025-02-15",
-  "alerts": [
-    {}
-  ],
-  "latest_changes": [
-    {
-      "description": "Updated classification of housing components in CPIH.",
-      "name": "Changes in classification",
-      "type": "Summary of changes"
-    }
-  ],
-  "links": {
-    "dataset": {
-      "href": "http://localhost:10400/datasets/bara-test-ds-abcd",
-      "id": "cpih01"
-    },
-    "dimensions": {
-      "href": "http://localhost:10400/datasets/bara-test-ds-abcd/dimensions"
-    },
-    "edition": {
-      "href": "http://localhost:10400/datasets/bara-test-ds-abcd/editions/time-series",
-      "id": "time-series"
-    },
-    "job": {
-      "href": "http://localhost:10700/jobs/383df410-845e-4efd-9ba1-ab469361eae5",
-      "id": "383df410-845e-4efd-9ba1-ab469361eae5"
-    },
-    "version": {
-      "href": "http://localhost:10400/datasets/bara-test-ds-abcd/editions/time-series/versions/1",
-      "id": "1"
-    },
-    "spatial": {
-      "href": "http://localhost:10400/datasets/bara-test-ds-abcd"
-    }
-  },
-  "release_date": "2025-01-15",
-  "state": "associated",
-  "topics": [
-    "Economy",
-    "Prices"
-  ],
-  "temporal": [
-    {
-      "start_date": "2025-01-01",
-      "end_date": "2025-01-31",
-      "frequency": "Monthly"
-    }
-  ],
-  "distributions": [
-    {}
-  ],
-  "usage_notes": [
-    {
-      "title": "Data usage guide",
-      "note": "This dataset is subject to revision and should be used in conjunction with the accompanying documentation."
-    }
-  ]
-}`
+			"title": "test-dataset",
+			"description": "test dataset",
+			"type": "static",
+			"next_release": "2025-02-15",
+			"edition_title": "Edition Titile 2025",
+			"alerts": [
+				{}
+			],
+			"latest_changes": [
+				{
+				"description": "Updated classification of housing components in CPIH.",
+				"name": "Changes in classification",
+				"type": "Summary of changes"
+				}
+			],
+			"links": {
+				"dataset": {
+				"href": "http://localhost:10400/datasets/bara-test-ds-abcd",
+				"id": "cpih01"
+				},
+				"dimensions": {
+				"href": "http://localhost:10400/datasets/bara-test-ds-abcd/dimensions"
+				},
+				"edition": {
+				"href": "http://localhost:10400/datasets/bara-test-ds-abcd/editions/time-series",
+				"id": "time-series"
+				},
+				"job": {
+				"href": "http://localhost:10700/jobs/383df410-845e-4efd-9ba1-ab469361eae5",
+				"id": "383df410-845e-4efd-9ba1-ab469361eae5"
+				},
+				"version": {
+				"href": "http://localhost:10400/datasets/bara-test-ds-abcd/editions/time-series/versions/1",
+				"id": "1"
+				},
+				"spatial": {
+				"href": "http://localhost:10400/datasets/bara-test-ds-abcd"
+				}
+			},
+			"release_date": "2025-01-15",
+			"state": "associated",
+			"topics": [
+				"Economy",
+				"Prices"
+			],
+			"temporal": [
+				{
+				"start_date": "2025-01-01",
+				"end_date": "2025-01-31",
+				"frequency": "Monthly"
+				}
+			],
+			"distributions": [
+				{}
+			],
+			"usage_notes": [
+				{
+				"title": "Data usage guide",
+				"note": "This dataset is subject to revision and should be used in conjunction with the accompanying documentation."
+				}
+			]
+		}`
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/time-series/versions", bytes.NewBufferString(b))
 		w := httptest.NewRecorder()
 
@@ -3287,32 +3290,33 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 
 	Convey("When edition exists, version should increment", t, func() {
 		b := `{
-  "next_release": "2025-02-15",
-  "alerts": [
-    {}
-  ],
-  "release_date": "2025-01-15",
-  "topics": [
-    "Economy",
-    "Prices"
-  ],
-  "temporal": [
-    {
-      "start_date": "2025-01-01",
-      "end_date": "2025-01-31",
-      "frequency": "Monthly"
-    }
-  ],
-  "distributions": [
-    {}
-  ],
-  "usage_notes": [
-    {
-      "title": "Data usage guide",
-      "note": "This dataset is subject to revision and should be used in conjunction with the accompanying documentation."
-    }
-  ]
-}`
+			"next_release": "2025-02-15",
+			"edition_title": "Edition Titile 2025",
+			"alerts": [
+				{}
+			],
+			"release_date": "2025-01-15",
+			"topics": [
+				"Economy",
+				"Prices"
+			],
+			"temporal": [
+				{
+				"start_date": "2025-01-01",
+				"end_date": "2025-01-31",
+				"frequency": "Monthly"
+				}
+			],
+			"distributions": [
+				{}
+			],
+			"usage_notes": [
+				{
+				"title": "Data usage guide",
+				"note": "This dataset is subject to revision and should be used in conjunction with the accompanying documentation."
+				}
+			]
+		}`
 
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/time-series/versions", bytes.NewBufferString(b))
 		w := httptest.NewRecorder()
@@ -3394,6 +3398,7 @@ func TestAddDatasetVersionCondensedReturnsError(t *testing.T) {
 	Convey("When the latest version of the dataset is published, it creates a new version", t, func() {
 		b := `{
 			"release_date": "2025-01-15",
+			"edition_title": "Edition Titile 2025",
 			"distributions": [{}]
 		}`
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/time-series/versions", bytes.NewBufferString(b))

@@ -32,6 +32,7 @@ type Version struct {
 	Dimensions         []Dimension          `bson:"dimensions,omitempty"            json:"dimensions,omitempty"`
 	Downloads          *DownloadList        `bson:"downloads,omitempty"             json:"downloads,omitempty"`
 	Edition            string               `bson:"edition,omitempty"               json:"edition,omitempty"`
+	EditionTitle       string               `bson:"edition_title,omitempty"         json:"edition_title,omitempty"`
 	Headers            []string             `bson:"headers,omitempty"               json:"-"`
 	ID                 string               `bson:"id,omitempty"                    json:"id,omitempty"`
 	LastUpdated        time.Time            `bson:"last_updated,omitempty"          json:"last_updated,omitempty"`

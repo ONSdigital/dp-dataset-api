@@ -16,6 +16,7 @@ type Metadata struct {
 	TableID         string               `json:"table_id,omitempty"`
 	CSVHeader       []string             `json:"headers,omitempty"`
 	Edition         string               `json:"edition,omitempty"`
+	EditionTitle    string               `json:"edition_title,omitempty"`
 	DatasetLinks    *DatasetLinks        `json:"dataset_links,omitempty"`
 	ID              string               `json:"id,omitempty"`
 	Publisher       *Publisher           `json:"publisher,omitempty"`
@@ -105,16 +106,17 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 			UsageNotes:         versionDoc.UsageNotes,
 			Topics:             topics,
 		},
-		Edition:   versionDoc.Edition,
-		ID:        datasetDoc.ID,
-		Links:     &MetadataLinks{},
-		Publisher: datasetDoc.Publisher,
-		Temporal:  versionDoc.Temporal,
-		Theme:     datasetDoc.Theme,
-		URI:       datasetDoc.URI,
-		IsBasedOn: datasetDoc.IsBasedOn,
-		Version:   versionDoc.Version,
-		Type:      datasetDoc.Type,
+		Edition:      versionDoc.Edition,
+		EditionTitle: versionDoc.EditionTitle,
+		ID:           datasetDoc.ID,
+		Links:        &MetadataLinks{},
+		Publisher:    datasetDoc.Publisher,
+		Temporal:     versionDoc.Temporal,
+		Theme:        datasetDoc.Theme,
+		URI:          datasetDoc.URI,
+		IsBasedOn:    datasetDoc.IsBasedOn,
+		Version:      versionDoc.Version,
+		Type:         datasetDoc.Type,
 	}
 
 	// Add relevant metdata links from dataset document
