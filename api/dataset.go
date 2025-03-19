@@ -46,7 +46,7 @@ var (
 )
 
 const IsBasedOn = "is_based_on"
-const DataseyType = "type"
+const DatasetType = "type"
 
 // getDatasets returns a list of datasets, the total count of datasets and an error
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit, offset int) (mappedDatasets interface{}, totalCount int, err error) {
@@ -57,8 +57,8 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 	isBasedOnExists := r.URL.Query().Has(IsBasedOn)
 	isBasedOn := r.URL.Query().Get(IsBasedOn)
 
-	isDatasetTypeExists := r.URL.Query().Has(DataseyType)
-	datasetType := r.URL.Query().Get(DataseyType)
+	isDatasetTypeExists := r.URL.Query().Has(DatasetType)
+	datasetType := r.URL.Query().Get(DatasetType)
 
 	if isBasedOnExists && isBasedOn == "" {
 		err := errs.ErrInvalidQueryParameter
