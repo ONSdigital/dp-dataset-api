@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	. "github.com/smartystreets/goconvey/convey"
 	"go.mongodb.org/mongo-driver/bson"
@@ -310,5 +311,120 @@ func TestVersionUpdateQuery(t *testing.T) {
 		selector := createVersionUpdateQuery(version, "newETag")
 		So(selector, ShouldNotBeNil)
 		So(selector, ShouldResemble, expectedUpdate)
+	})
+}
+
+func TestBuildDatasetsQueryWithIsBasedOnAndType(t *testing.T) {
+	t.Parallel()
+
+	Convey("When no datasetType and id are provided", t, func() {
+		expectedFilter := bson.M{}
+		filter, err := buildDatasetsQueryWithIsBasedOnAndType("", "", true)
+
+		So(err, ShouldBeNil)
+		So(filter, ShouldResemble, expectedFilter)
+	})
+
+	Convey("When a datasetType is provided", t, func() {
+		mockDatasetType := models.Static
+		expectedFilter := bson.M{
+			"$or": bson.A{
+				bson.M{"current.type": mockDatasetType.String()},
+				bson.M{"next.type": mockDatasetType.String()},
+			},
+		}
+		filter, err := buildDatasetsQueryWithIsBasedOnAndType("", mockDatasetType.String(), true)
+
+		So(err, ShouldBeNil)
+		So(filter, ShouldResemble, expectedFilter)
+	})
+
+	Convey("When an id is provided", t, func() {
+		mockID := "12345"
+		expectedFilter := bson.M{
+			"$or": bson.A{
+				bson.M{"current.is_based_on.id": mockID},
+				bson.M{"next.is_based_on.id": mockID},
+			},
+		}
+
+		filter, err := buildDatasetsQueryWithIsBasedOnAndType(mockID, "", true)
+
+		So(err, ShouldBeNil)
+		So(filter, ShouldResemble, expectedFilter)
+	})
+
+	Convey("When both datasetType and id are provided", t, func() {
+		mockID := "12345"
+		mockDatasetType := models.Static
+		expectedFilter := bson.M{
+			"$and": bson.A{
+				bson.M{
+					"$or": bson.A{
+						bson.M{"current.type": mockDatasetType.String()},
+						bson.M{"next.type": mockDatasetType.String()},
+					},
+				},
+				bson.M{
+					"$or": bson.A{
+						bson.M{"current.is_based_on.id": mockID},
+						bson.M{"next.is_based_on.id": mockID},
+					},
+				},
+			},
+		}
+
+		filter, err := buildDatasetsQueryWithIsBasedOnAndType(mockID, mockDatasetType.String(), true)
+
+		So(err, ShouldBeNil)
+		So(filter, ShouldResemble, expectedFilter)
+	})
+
+	Convey("When an unauthorised request is made", t, func() {
+		expectedFilter := bson.M{
+			"current": bson.M{"$exists": true},
+		}
+
+		filter, err := buildDatasetsQueryWithIsBasedOnAndType("", "", false)
+
+		So(err, ShouldBeNil)
+		So(filter, ShouldResemble, expectedFilter)
+	})
+
+	Convey("When both datasetType, id, and unauthorised request are combined", t, func() {
+		mockID := "12345"
+		mockDatasetType := models.Static
+		expectedFilter := bson.M{
+			"$and": bson.A{
+				bson.M{
+					"$or": bson.A{
+						bson.M{"current.type": mockDatasetType.String()},
+						bson.M{"next.type": mockDatasetType.String()},
+					},
+				},
+				bson.M{
+					"$or": bson.A{
+						bson.M{"current.is_based_on.id": mockID},
+						bson.M{"next.is_based_on.id": mockID},
+					},
+				},
+			},
+			"current": bson.M{"$exists": true},
+		}
+
+		filter, err := buildDatasetsQueryWithIsBasedOnAndType(mockID, mockDatasetType.String(), false)
+
+		So(err, ShouldBeNil)
+		So(filter, ShouldResemble, expectedFilter)
+	})
+
+	Convey("When an invalid datasetType is provided", t, func() {
+		invalidType := "invalid_type"
+
+		filter, err := buildDatasetsQueryWithIsBasedOnAndType("", invalidType, true)
+
+		So(err, ShouldNotBeNil)
+		So(filter, ShouldBeNil)
+		So(err, ShouldEqual, errs.ErrDatasetTypeInvalid)
 	})
 }

@@ -195,6 +195,12 @@ parameters:
     description: "A population type to search on to return datasets that are associated with that population type e.g. Usual-Residents.  This is applicable to Census 2021 datasets only."
     in: query
     type: string
+  type:
+    name: type
+    required: false
+    description: "A filter to search the datasets by dataset type e.g. type=static"
+    in: query
+    type: string
   metadata_update:
     name: metadata_update
     in: body
@@ -221,6 +227,7 @@ paths:
       description: "Returns a list of all datasets available via the ONS APIs."
       parameters:
         - $ref: "#/parameters/is_based_on"
+        - $ref: "#/parameters/type"
         - $ref: "#/parameters/limit"
         - $ref: "#/parameters/offset"
       security:
@@ -241,7 +248,7 @@ paths:
               description: The RFC9111 Cache-Control header field for the response which instructs how to handle caching the resource.
               type: string
         400:
-          description: "Parameter is_based_on was sent but no value was provided"
+          description: "Parameter is_based_on or type was sent but no value was provided"
         404:
           description: "No dataset was found with the population-type provided"
         500:

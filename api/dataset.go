@@ -46,6 +46,7 @@ var (
 )
 
 const IsBasedOn = "is_based_on"
+const DatasetType = "type"
 
 // getDatasets returns a list of datasets, the total count of datasets and an error
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit, offset int) (mappedDatasets interface{}, totalCount int, err error) {
@@ -56,6 +57,9 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 	isBasedOnExists := r.URL.Query().Has(IsBasedOn)
 	isBasedOn := r.URL.Query().Get(IsBasedOn)
 
+	isDatasetTypeExists := r.URL.Query().Has(DatasetType)
+	datasetType := r.URL.Query().Get(DatasetType)
+
 	if isBasedOnExists && isBasedOn == "" {
 		err := errs.ErrInvalidQueryParameter
 		log.Error(ctx, "malformed is_based_on parameter", err)
@@ -63,10 +67,17 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 		return nil, 0, err
 	}
 
+	if isDatasetTypeExists && datasetType == "" {
+		err := errs.ErrInvalidQueryParameter
+		log.Error(ctx, "malformed type parameter", err)
+		handleDatasetAPIErr(ctx, err, w, logData)
+		return nil, 0, err
+	}
+
 	var datasets []*models.DatasetUpdate
 
-	if isBasedOnExists {
-		datasets, totalCount, err = api.dataStore.Backend.GetDatasetsByBasedOn(ctx, isBasedOn, offset, limit, authorised)
+	if isBasedOnExists || isDatasetTypeExists {
+		datasets, totalCount, err = api.dataStore.Backend.GetDatasetsByQueryParams(ctx, isBasedOn, datasetType, offset, limit, authorised)
 	} else {
 		datasets, totalCount, err = api.dataStore.Backend.GetDatasets(
 			ctx,
