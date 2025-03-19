@@ -927,6 +927,8 @@ func handleVersionAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 }
 
 // condensed api call to add new version
+//
+//nolint:gocyclo,gocognit // high cyclomactic & cognitive complexity not in scope for maintenance
 func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http.Request) {
 	defer dphttp.DrainBody(r)
 
@@ -949,6 +951,37 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	editionExists := true
 	if err := api.dataStore.Backend.CheckEditionExistsStatic(ctx, datasetID, edition, ""); err != nil {
 		editionExists = false
+	}
+
+	if editionExists {
+		latestVersion, err := api.dataStore.Backend.GetLatestVersionStatic(ctx, datasetID, edition, "")
+		if err == nil && latestVersion != nil && latestVersion.State != models.PublishedState {
+			log.Error(ctx, "unpublished version already exists", errors.New("cannot create new version when unpublished version exists"),
+				log.Data{"state": latestVersion.State, "version": latestVersion.Version})
+
+			errorResponse := map[string]interface{}{
+				"error":               "cannot create new version when an unpublished version already exists",
+				"unpublished_version": latestVersion.Version,
+			}
+
+			responseBody, err := json.Marshal(errorResponse)
+			if err != nil {
+				log.Error(ctx, "failed to marshal error response", err, logData)
+				http.Error(w, "Internal server error", http.StatusInternalServerError)
+				return
+			}
+
+			setJSONContentType(w)
+			w.WriteHeader(http.StatusBadRequest)
+			if _, err := w.Write(responseBody); err != nil {
+				log.Error(ctx, "failed to write response", err, logData)
+			}
+			return
+		} else if err != nil && !errors.Is(err, errs.ErrVersionNotFound) {
+			log.Error(ctx, "failed to check latest version", err, logData)
+			handleDatasetAPIErr(ctx, errs.ErrInternalServer, w, nil)
+			return
+		}
 	}
 
 	versionRequest := &models.Version{}

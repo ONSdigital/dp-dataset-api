@@ -3038,6 +3038,11 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated"}}, nil
 			},
+			GetLatestVersionStaticFunc: func(context.Context, string, string, string) (*models.Version, error) {
+				return &models.Version{
+					State: models.PublishedState,
+				}, nil
+			},
 			GetNextVersionStaticFunc: func(context.Context, string, string) (int, error) {
 				return 2, nil
 			},
@@ -3263,6 +3268,11 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
+			GetLatestVersionStaticFunc: func(context.Context, string, string, string) (*models.Version, error) {
+				return &models.Version{
+					State: models.AssociatedState,
+				}, nil
+			},
 			AddVersionStaticFunc: func(context.Context, *models.Version) (*models.Version, error) {
 				return nil, nil
 			},
@@ -3323,6 +3333,11 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
+			GetLatestVersionStaticFunc: func(context.Context, string, string, string) (*models.Version, error) {
+				return &models.Version{
+					State: models.PublishedState,
+				}, nil
+			},
 			AddVersionStaticFunc: func(context.Context, *models.Version) (*models.Version, error) {
 				return &models.Version{Version: 2}, nil
 			},
@@ -3337,5 +3352,119 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		So(err, ShouldBeNil)
 		So(response.Version, ShouldEqual, 2)
+	})
+}
+
+func TestAddDatasetVersionCondensedReturnsError(t *testing.T) {
+	t.Parallel()
+	Convey("When an unpublished version already exists, it returns a 400 error", t, func() {
+		b := `{
+			"release_date": "2025-01-15",
+			"distributions": [{}]
+		}`
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/time-series/versions", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			GetLatestVersionStaticFunc: func(context.Context, string, string, string) (*models.Version, error) {
+				return &models.Version{
+					Version: 1,
+					State:   models.AssociatedState,
+				}, nil
+			},
+		}
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api.addDatasetVersionCondensed(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, "cannot create new version when an unpublished version already exists")
+		So(mockedDataStore.CheckDatasetExistsCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.CheckEditionExistsStaticCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetLatestVersionStaticCalls(), ShouldHaveLength, 1)
+	})
+
+	Convey("When the latest version of the dataset is published, it creates a new version", t, func() {
+		b := `{
+			"release_date": "2025-01-15",
+			"distributions": [{}]
+		}`
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/time-series/versions", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			GetLatestVersionStaticFunc: func(context.Context, string, string, string) (*models.Version, error) {
+				return &models.Version{
+					Version: 1,
+					State:   models.PublishedState,
+				}, nil
+			},
+			GetNextVersionStaticFunc: func(context.Context, string, string) (int, error) {
+				return 2, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated"}}, nil
+			},
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
+				return nil
+			},
+			AddVersionStaticFunc: func(context.Context, *models.Version) (*models.Version, error) {
+				return &models.Version{Version: 2}, nil
+			},
+		}
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api.addDatasetVersionCondensed(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusCreated)
+		So(mockedDataStore.CheckDatasetExistsCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.CheckEditionExistsStaticCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetLatestVersionStaticCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetNextVersionStaticCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.AddVersionStaticCalls(), ShouldHaveLength, 1)
+	})
+
+	Convey("When an error occurs checking the latest version", t, func() {
+		b := `{
+			"release_date": "2025-01-15",
+			"distributions": [{}]
+		}`
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/time-series/versions", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			GetLatestVersionStaticFunc: func(context.Context, string, string, string) (*models.Version, error) {
+				return nil, errs.ErrInternalServer
+			},
+		}
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api.addDatasetVersionCondensed(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(mockedDataStore.CheckDatasetExistsCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.CheckEditionExistsStaticCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetLatestVersionStaticCalls(), ShouldHaveLength, 1)
 	})
 }
