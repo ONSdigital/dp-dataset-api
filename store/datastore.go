@@ -28,7 +28,7 @@ type dataMongoDB interface {
 	CheckEditionExistsStatic(ctx context.Context, id, editionID, state string) error
 	GetDataset(ctx context.Context, ID string) (*models.DatasetUpdate, error)
 	GetDatasets(ctx context.Context, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error)
-	GetDatasetsByBasedOn(ctx context.Context, ID string, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error)
+	GetDatasetsByQueryParams(ctx context.Context, ID, datasetType string, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error)
 	GetDatasetType(ctx context.Context, datasetID string, authorised bool) (string, error)
 	GetDimensionsFromInstance(ctx context.Context, ID string, offset, limit int) ([]*models.DimensionOption, int, error)
 	GetDimensions(ctx context.Context, versionID string) ([]bson.M, error)

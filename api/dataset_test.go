@@ -241,6 +241,55 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 		So(mockedDataStore.GetDatasetsCalls()[0].Limit, ShouldEqual, 11)
 		So(mockedDataStore.GetDatasetsCalls()[0].Offset, ShouldEqual, 12)
 	})
+
+	Convey("A successful request to get datasetwith type query parameter returns 200 OK response, and limit and offset are delegated to the datastore", t, func() {
+		r := &http.Request{}
+		w := httptest.NewRecorder()
+		address, err := neturl.Parse("localhost:20000/datasets?type=static")
+		So(err, ShouldBeNil)
+		r.URL = address
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetsByQueryParamsFunc: func(ctx context.Context, ID, datasetType string, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
+				return []*models.DatasetUpdate{{ID: "123-456", Current: &models.Dataset{ID: "123-456", Type: "static"}, Next: &models.Dataset{ID: "123-456", Type: "static"}}}, 1, nil
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+
+		actualResponse, actualTotalCount, err := api.getDatasets(w, r, 11, 12)
+
+		So(actualResponse, ShouldResemble, []*models.Dataset{{ID: "123-456", Type: "static"}})
+		So(actualTotalCount, ShouldEqual, 1)
+		So(err, ShouldEqual, nil)
+		So(mockedDataStore.GetDatasetsByQueryParamsCalls()[0].Limit, ShouldEqual, 11)
+		So(mockedDataStore.GetDatasetsByQueryParamsCalls()[0].Offset, ShouldEqual, 12)
+	})
+
+	Convey("A successful request to get dataset with is_based_on returns 200 OK response, and limit and offset are delegated to the datastore", t, func() {
+		r := &http.Request{}
+		w := httptest.NewRecorder()
+		address, err := neturl.Parse("localhost:20000/datasets?is_based_on=Example")
+		So(err, ShouldBeNil)
+		r.URL = address
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetsByQueryParamsFunc: func(ctx context.Context, ID, datasetType string, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
+				return []*models.DatasetUpdate{{ID: "123-456", Current: &models.Dataset{ID: "123-456", Type: "static", IsBasedOn: &models.IsBasedOn{ID: "Example"}}, Next: &models.Dataset{ID: "123-456", Type: "static", IsBasedOn: &models.IsBasedOn{ID: "Example"}}}}, 1, nil
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+
+		actualResponse, actualTotalCount, err := api.getDatasets(w, r, 11, 12)
+		So(actualResponse, ShouldResemble, []*models.Dataset{{ID: "123-456", Type: "static", IsBasedOn: &models.IsBasedOn{ID: "Example"}}})
+		So(actualTotalCount, ShouldEqual, 1)
+		So(err, ShouldEqual, nil)
+		So(mockedDataStore.GetDatasetsByQueryParamsCalls()[0].Limit, ShouldEqual, 11)
+		So(mockedDataStore.GetDatasetsByQueryParamsCalls()[0].Offset, ShouldEqual, 12)
+	})
 }
 
 func TestGetDatasetsReturnsError(t *testing.T) {
@@ -271,6 +320,85 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 		So(err, ShouldEqual, errs.ErrInternalServer)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldEqual, "internal error\n")
+	})
+
+	Convey("When the type query is empty return an invalid query parameter error ", t, func() {
+		r := &http.Request{}
+		w := httptest.NewRecorder()
+		address, err := neturl.Parse("localhost:20000/datasets?type=")
+		So(err, ShouldBeNil)
+		r.URL = address
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetsFunc: func(context.Context, int, int, bool) ([]*models.DatasetUpdate, int, error) {
+				return nil, 0, errs.ErrInvalidQueryParameter
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		actualResponse, actualTotalCount, err := api.getDatasets(w, r, 6, 7)
+
+		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetDatasetsByQueryParamsCalls()), ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 0)
+		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(actualResponse, ShouldResemble, nil)
+		So(actualTotalCount, ShouldEqual, 0)
+		So(err, ShouldEqual, errs.ErrInvalidQueryParameter)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldEqual, "invalid query parameter\n")
+	})
+
+	Convey("When the is_based_on query is empty return an invalid query parameter error ", t, func() {
+		r := &http.Request{}
+		w := httptest.NewRecorder()
+		address, err := neturl.Parse("localhost:20000/datasets?is_based_on=")
+		So(err, ShouldBeNil)
+		r.URL = address
+		mockedDataStore := &storetest.StorerMock{}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		actualResponse, actualTotalCount, err := api.getDatasets(w, r, 6, 7)
+
+		So(len(mockedDataStore.GetDatasetsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetDatasetsByQueryParamsCalls()), ShouldEqual, 0)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 0)
+		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(actualResponse, ShouldResemble, nil)
+		So(actualTotalCount, ShouldEqual, 0)
+		So(err, ShouldEqual, errs.ErrInvalidQueryParameter)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldEqual, "invalid query parameter\n")
+	})
+
+	Convey("When the type query contains incorrect dataset type return an dataset type invalid error", t, func() {
+		r := &http.Request{}
+		w := httptest.NewRecorder()
+		address, err := neturl.Parse("localhost:20000/datasets?type=wrongdstype")
+		So(err, ShouldBeNil)
+		r.URL = address
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetsByQueryParamsFunc: func(ctx context.Context, ID, datasetType string, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
+				return nil, 0, errs.ErrDatasetTypeInvalid
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		actualResponse, actualTotalCount, err := api.getDatasets(w, r, 6, 7)
+
+		So(len(mockedDataStore.GetDatasetsByQueryParamsCalls()), ShouldEqual, 1)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 0)
+		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(actualResponse, ShouldResemble, nil)
+		So(actualTotalCount, ShouldEqual, 0)
+		So(err, ShouldEqual, errs.ErrDatasetTypeInvalid)
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldEqual, "invalid dataset type\n")
 	})
 }
 

@@ -8,7 +8,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/bson"
 	"sync"
 )
 
@@ -70,8 +70,8 @@ var _ store.MongoDB = &MongoDBMock{}
 //			GetDatasetsFunc: func(ctx context.Context, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
 //				panic("mock out the GetDatasets method")
 //			},
-//			GetDatasetsByBasedOnFunc: func(ctx context.Context, ID string, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
-//				panic("mock out the GetDatasetsByBasedOn method")
+//			GetDatasetsByQueryParamsFunc: func(ctx context.Context, ID string, datasetType string, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
+//				panic("mock out the GetDatasetsByQueryParams method")
 //			},
 //			GetDimensionOptionsFunc: func(ctx context.Context, version *models.Version, dimension string, offset int, limit int) ([]*models.PublicDimensionOption, int, error) {
 //				panic("mock out the GetDimensionOptions method")
@@ -79,7 +79,7 @@ var _ store.MongoDB = &MongoDBMock{}
 //			GetDimensionOptionsFromIDsFunc: func(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error) {
 //				panic("mock out the GetDimensionOptionsFromIDs method")
 //			},
-//			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]primitive.M, error) {
+//			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]bson.M, error) {
 //				panic("mock out the GetDimensions method")
 //			},
 //			GetDimensionsFromInstanceFunc: func(ctx context.Context, ID string, offset int, limit int) ([]*models.DimensionOption, int, error) {
@@ -239,8 +239,8 @@ type MongoDBMock struct {
 	// GetDatasetsFunc mocks the GetDatasets method.
 	GetDatasetsFunc func(ctx context.Context, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error)
 
-	// GetDatasetsByBasedOnFunc mocks the GetDatasetsByBasedOn method.
-	GetDatasetsByBasedOnFunc func(ctx context.Context, ID string, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error)
+	// GetDatasetsByQueryParamsFunc mocks the GetDatasetsByQueryParams method.
+	GetDatasetsByQueryParamsFunc func(ctx context.Context, ID string, datasetType string, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error)
 
 	// GetDimensionOptionsFunc mocks the GetDimensionOptions method.
 	GetDimensionOptionsFunc func(ctx context.Context, version *models.Version, dimension string, offset int, limit int) ([]*models.PublicDimensionOption, int, error)
@@ -249,7 +249,7 @@ type MongoDBMock struct {
 	GetDimensionOptionsFromIDsFunc func(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error)
 
 	// GetDimensionsFunc mocks the GetDimensions method.
-	GetDimensionsFunc func(ctx context.Context, versionID string) ([]primitive.M, error)
+	GetDimensionsFunc func(ctx context.Context, versionID string) ([]bson.M, error)
 
 	// GetDimensionsFromInstanceFunc mocks the GetDimensionsFromInstance method.
 	GetDimensionsFromInstanceFunc func(ctx context.Context, ID string, offset int, limit int) ([]*models.DimensionOption, int, error)
@@ -491,12 +491,14 @@ type MongoDBMock struct {
 			// Authorised is the authorised argument value.
 			Authorised bool
 		}
-		// GetDatasetsByBasedOn holds details about calls to the GetDatasetsByBasedOn method.
-		GetDatasetsByBasedOn []struct {
+		// GetDatasetsByQueryParams holds details about calls to the GetDatasetsByQueryParams method.
+		GetDatasetsByQueryParams []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// ID is the ID argument value.
 			ID string
+			// DatasetType is the datasetType argument value.
+			DatasetType string
 			// Offset is the offset argument value.
 			Offset int
 			// Limit is the limit argument value.
@@ -918,7 +920,7 @@ type MongoDBMock struct {
 	lockGetDataset                          sync.RWMutex
 	lockGetDatasetType                      sync.RWMutex
 	lockGetDatasets                         sync.RWMutex
-	lockGetDatasetsByBasedOn                sync.RWMutex
+	lockGetDatasetsByQueryParams            sync.RWMutex
 	lockGetDimensionOptions                 sync.RWMutex
 	lockGetDimensionOptionsFromIDs          sync.RWMutex
 	lockGetDimensions                       sync.RWMutex
@@ -1582,51 +1584,55 @@ func (mock *MongoDBMock) GetDatasetsCalls() []struct {
 	return calls
 }
 
-// GetDatasetsByBasedOn calls GetDatasetsByBasedOnFunc.
-func (mock *MongoDBMock) GetDatasetsByBasedOn(ctx context.Context, ID string, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
-	if mock.GetDatasetsByBasedOnFunc == nil {
-		panic("MongoDBMock.GetDatasetsByBasedOnFunc: method is nil but MongoDB.GetDatasetsByBasedOn was just called")
+// GetDatasetsByQueryParams calls GetDatasetsByQueryParamsFunc.
+func (mock *MongoDBMock) GetDatasetsByQueryParams(ctx context.Context, ID string, datasetType string, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
+	if mock.GetDatasetsByQueryParamsFunc == nil {
+		panic("MongoDBMock.GetDatasetsByQueryParamsFunc: method is nil but MongoDB.GetDatasetsByQueryParams was just called")
 	}
 	callInfo := struct {
-		Ctx        context.Context
-		ID         string
-		Offset     int
-		Limit      int
-		Authorised bool
+		Ctx         context.Context
+		ID          string
+		DatasetType string
+		Offset      int
+		Limit       int
+		Authorised  bool
 	}{
-		Ctx:        ctx,
-		ID:         ID,
-		Offset:     offset,
-		Limit:      limit,
-		Authorised: authorised,
+		Ctx:         ctx,
+		ID:          ID,
+		DatasetType: datasetType,
+		Offset:      offset,
+		Limit:       limit,
+		Authorised:  authorised,
 	}
-	mock.lockGetDatasetsByBasedOn.Lock()
-	mock.calls.GetDatasetsByBasedOn = append(mock.calls.GetDatasetsByBasedOn, callInfo)
-	mock.lockGetDatasetsByBasedOn.Unlock()
-	return mock.GetDatasetsByBasedOnFunc(ctx, ID, offset, limit, authorised)
+	mock.lockGetDatasetsByQueryParams.Lock()
+	mock.calls.GetDatasetsByQueryParams = append(mock.calls.GetDatasetsByQueryParams, callInfo)
+	mock.lockGetDatasetsByQueryParams.Unlock()
+	return mock.GetDatasetsByQueryParamsFunc(ctx, ID, datasetType, offset, limit, authorised)
 }
 
-// GetDatasetsByBasedOnCalls gets all the calls that were made to GetDatasetsByBasedOn.
+// GetDatasetsByQueryParamsCalls gets all the calls that were made to GetDatasetsByQueryParams.
 // Check the length with:
 //
-//	len(mockedMongoDB.GetDatasetsByBasedOnCalls())
-func (mock *MongoDBMock) GetDatasetsByBasedOnCalls() []struct {
-	Ctx        context.Context
-	ID         string
-	Offset     int
-	Limit      int
-	Authorised bool
+//	len(mockedMongoDB.GetDatasetsByQueryParamsCalls())
+func (mock *MongoDBMock) GetDatasetsByQueryParamsCalls() []struct {
+	Ctx         context.Context
+	ID          string
+	DatasetType string
+	Offset      int
+	Limit       int
+	Authorised  bool
 } {
 	var calls []struct {
-		Ctx        context.Context
-		ID         string
-		Offset     int
-		Limit      int
-		Authorised bool
+		Ctx         context.Context
+		ID          string
+		DatasetType string
+		Offset      int
+		Limit       int
+		Authorised  bool
 	}
-	mock.lockGetDatasetsByBasedOn.RLock()
-	calls = mock.calls.GetDatasetsByBasedOn
-	mock.lockGetDatasetsByBasedOn.RUnlock()
+	mock.lockGetDatasetsByQueryParams.RLock()
+	calls = mock.calls.GetDatasetsByQueryParams
+	mock.lockGetDatasetsByQueryParams.RUnlock()
 	return calls
 }
 
@@ -1723,7 +1729,7 @@ func (mock *MongoDBMock) GetDimensionOptionsFromIDsCalls() []struct {
 }
 
 // GetDimensions calls GetDimensionsFunc.
-func (mock *MongoDBMock) GetDimensions(ctx context.Context, versionID string) ([]primitive.M, error) {
+func (mock *MongoDBMock) GetDimensions(ctx context.Context, versionID string) ([]bson.M, error) {
 	if mock.GetDimensionsFunc == nil {
 		panic("MongoDBMock.GetDimensionsFunc: method is nil but MongoDB.GetDimensions was just called")
 	}

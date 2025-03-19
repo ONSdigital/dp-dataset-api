@@ -16,21 +16,13 @@ import (
 	bsonprim "go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// GetDatasetsByBasedOn checks Published...... TODO: FINISH
-// Filter condition checks for ... .TODO: FINISH
-func (m *Mongo) GetDatasetsByBasedOn(ctx context.Context, id string, offset, limit int, authorised bool) (values []*models.DatasetUpdate, totalCount int, err error) {
-	var filter = bson.M{
-		"$or": bson.A{
-			bson.M{"current.is_based_on.id": id},
-			bson.M{"next.is_based_on.id": id},
-		},
+func (m *Mongo) GetDatasetsByQueryParams(ctx context.Context, id, datasetType string, offset, limit int, authorised bool) (values []*models.DatasetUpdate, totalCount int, err error) {
+	filter, err := buildDatasetsQueryWithIsBasedOnAndType(id, datasetType, authorised)
+	if err != nil {
+		return nil, 0, err
 	}
 
-	// added for total_count to return true value.
-	if !authorised {
-		filter["current"] = bson.M{"$exists": true}
-	}
-
+	// Query MongoDB
 	values = []*models.DatasetUpdate{}
 	totalCount, err = m.Connection.
 		Collection(m.ActualCollectionName(config.DatasetsCollection)).
@@ -42,13 +34,59 @@ func (m *Mongo) GetDatasetsByBasedOn(ctx context.Context, id string, offset, lim
 			mongodriver.Offset(offset), mongodriver.Limit(limit),
 		)
 	if err != nil {
-		return nil, 0, fmt.Errorf("failed to insert to collection: %w", err)
+		return nil, 0, fmt.Errorf("failed to retrieve datasets: %w", err)
 	}
 	if len(values) == 0 {
 		return nil, 0, errs.ErrDatasetNotFound
 	}
 
 	return values, totalCount, nil
+}
+
+// buildDatasetsQuery constructs the MongoDB query for datasets
+func buildDatasetsQueryWithIsBasedOnAndType(id, datasetType string, authorised bool) (bson.M, error) {
+	filter := bson.M{}
+
+	// Apply datasetType filter if provided
+	if datasetType != "" {
+		dsType, err := models.GetDatasetType(datasetType)
+		if err != nil {
+			return nil, errs.ErrDatasetTypeInvalid
+		}
+
+		if dsType == models.Filterable || dsType == models.CantabularFlexibleTable || dsType == models.CantabularMultivariateTable || dsType == models.CantabularTable || dsType == models.Static {
+			filter = bson.M{
+				"$or": bson.A{
+					bson.M{"current.type": dsType.String()},
+					bson.M{"next.type": dsType.String()},
+				},
+			}
+		}
+	}
+
+	// Apply isBasedOn filter if provided
+	if id != "" {
+		idFilter := bson.M{
+			"$or": bson.A{
+				bson.M{"current.is_based_on.id": id},
+				bson.M{"next.is_based_on.id": id},
+			},
+		}
+
+		// Merge ID filter with datasetType filter (if any)
+		if len(filter) > 0 {
+			filter = bson.M{"$and": bson.A{filter, idFilter}}
+		} else {
+			filter = idFilter
+		}
+	}
+
+	// Restrict access for unauthorized users
+	if !authorised {
+		filter["current"] = bson.M{"$exists": true}
+	}
+
+	return filter, nil
 }
 
 // GetDatasets retrieves all dataset documents
