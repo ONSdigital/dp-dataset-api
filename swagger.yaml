@@ -1822,13 +1822,6 @@ definitions:
                 description: "The URL for this resource"
                 example: "https://api.beta.ons.gov.uk/v1/instances/45c4669b-3ae9-4ba7-b690-87e890a1c67f"
                 type: string
-          spatial:
-            description: "A link object describing the url to a list of geography ranges for the version of the dataset"
-            type: object
-            properties:
-              href:
-                description: "A url to a list of geography ranges for the version of the dataset"
-                type: string
           version:
             description: "An object describing the ID and URL of the dataset version associated with this instance"
             readOnly: true
@@ -1848,8 +1841,6 @@ definitions:
         format: date-time
       state:
         $ref: "#/definitions/State"
-      temporal:
-        $ref: "#/definitions/Temporal"
       total_observations:
         description: "The number of observations in this instance"
         type: integer
@@ -1875,14 +1866,11 @@ definitions:
       description:
         description: "A description of what has changed between versions"
         type: string
+        example: Some estimates for the periods between April 2011 and March 2019 have been updated. This is because of changes in guidance on suppressing data, where estimates are no longer required to be suppressed solely based on their co-efficient of variation (CV) values.
       name:
-        description: "The name of the change that has occurred between versions"
+        description: "The title of the change that has occurred between versions"
         type: string
-        example: "changes in classification"
-      type:
-        description: "The type of change"
-        type: string
-        example: "summary of changes"
+        example: "Data Suppression Changes"
   Metadata:
     description: "An object containing all metadata information against a version"
     type: object
@@ -2041,10 +2029,6 @@ definitions:
       survey:
         description: "The name of the survey the dataset was created from."
         type: string
-      temporal:
-        allOf:
-          - readOnly: true
-          - $ref: "#/definitions/Temporal"
       title:
         description: "The title of the dataset"
         example: "Consumer Prices Index"
@@ -2185,21 +2169,6 @@ definitions:
       - edition-confirmed
       - associated
       - published
-  Temporal:
-    description: "A list of frequencies the dataset covers for a particular period of time"
-    type: array
-    items:
-      type: object
-      properties:
-        start_date:
-          description: "The start date of the time period in which the version of the dataset covers this frequency"
-          type: string
-        end_date:
-          description: "The end date of the time period in which the version of the dataset covers this frequency"
-          type: string
-        frequency:
-          description: "The time frequency the version of the dataset covers for the period of time between start_date and end_date"
-          type: string
   UpdateDatasetResponse:
     description: "A model for the response body when creating a new dataset"
     type: object
@@ -2373,8 +2342,6 @@ definitions:
         format: date-time
       state:
         $ref: "#/definitions/State"
-      temporal:
-        $ref: "#/definitions/Temporal"
       type:
         readOnly: true
         allOf:
@@ -2523,8 +2490,6 @@ definitions:
             description: "A URL to this resource"
             type: string
             example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/july-september-2017/versions/5/metadata"
-      spatial:
-        $ref: "#/definitions/SpatialLink"
       version:
         $ref: "#/definitions/VersionLink"
       website_version:
@@ -2561,8 +2526,6 @@ definitions:
             description: "A URL to this resource"
             type: string
             example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/july-september-2017/versions/5"
-      spatial:
-        $ref: "#/definitions/SpatialLink"
       versions:
         type: object
         properties:
@@ -2620,12 +2583,6 @@ definitions:
     properties:
       href:
         description: "A URL to a list of options for this dimension"
-        type: string
-  SpatialLink:
-    type: object
-    properties:
-      href:
-        description: "A url to a list of geography ranges for the version of the dataset"
         type: string
   VersionLink:
     description: "The dataset version this resource belongs to"
