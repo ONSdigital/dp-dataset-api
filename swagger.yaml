@@ -1279,6 +1279,7 @@ definitions:
 
       The id of the unpublished collection (of datasets) that this dataset is associated with."
     type: string
+    example: 666c06bc09d337ab9d164c82f8f383c081a4e38cbd91b79d4a23ea0025fecb3f
   Contact:
     description: "Statistical point of contact for the dataset."
     type: object
@@ -1643,9 +1644,11 @@ definitions:
       href:
         description: "The URL to the generated file"
         type: string
+        example: https://download.ons.gov.uk/my-dataset-download.csv
       size:
         description: "The size of the file in bytes"
         type: string
+        example: "466807"
   EditionID:
     description: "The unique identifier for an edition of a dataset."
     example: july-september-2017
@@ -1886,6 +1889,7 @@ definitions:
 
           The canonical topic id for this dataset.  This indicates which topic this dataset belongs to within the topic taxonomy.
         type: string
+        example: "7779"
       contacts:
         description: "A list containing contact details of statisticians for a dataset"
         type: array
@@ -1917,6 +1921,7 @@ definitions:
         readOnly: true
         items:
           type: string
+          example: csv
       distributions:
         description: A list of representations of the dataset available and how to access them.
         type: array
@@ -1942,6 +1947,10 @@ definitions:
         readOnly: true
         items:
           type: "string"
+        example:
+          - cantabular_table
+          - ltla
+          - ethnic_group_tb_8a
       keywords:
         description: "A list of keywords for a dataset"
         type: array
@@ -2029,6 +2038,7 @@ definitions:
       survey:
         description: "The name of the survey the dataset was created from."
         type: string
+        example: census
       title:
         description: "The title of the dataset"
         example: "Consumer Prices Index"
@@ -2243,18 +2253,20 @@ definitions:
         description: "A human readable label for dimension"
         type: string
   UsageNote:
-    description: "A note relating to the dataset. This will appear in downloaded datasets"
+    description: Essential usage information a user needs to be aware of when interpreting the data.
     type: object
     required:
       - title
       - note
     properties:
       title:
-        description: "The title of the note"
+        description: The title of the usage note.
         type: string
+        example: Data Suppression
       note:
-        description: "The content of the note"
+        description: The usage note text.
         type: string
+        example: Individual estimates suppressed with "[c]" relate to statistics based on a small number of respondents (< 5). Such values have been suppressed on quality grounds and to maintain confidentiality.
   Versions:
     description: "A list of version history for a specific dataset edition."
     type: object
@@ -2321,8 +2333,24 @@ definitions:
       links:
         $ref: "#/definitions/VersionLinks"
       lowest_geography:
-        description: "The lowest geography this dataset is available at (Census datasets only)"
+        description: |
+          The lowest geography this dataset is available at (Census datasets only)
+
+          Possible geographies:
+            * `oa`: Output Areas
+            * `lsoa`: Lower layer Super Output Areas
+            * `msoa`: Middle layer Super Output Areas
+            * `wpc`: Westminster Parliamentary constituencies
+            * `ltla`: Lower Tier Local Authorities
+            * `rgn`: Regions
         type: string
+        enum:
+          - oa
+          - lsoa
+          - msoa
+          - wpc
+          - ltla
+          - rgn
       quality_designation:
         description: |
           The official statistics quality designation level of this dataset version.
@@ -2375,6 +2403,19 @@ definitions:
           - $ref: "#/definitions/DownloadObject"
       xls:
         $ref: "#/definitions/DownloadObject"
+    example:
+      csv:
+        href: https://download.ons.gov.uk/my-dataset-download.csv
+        size: "123456"
+      csvw:
+        href: https://download.ons.gov.uk/my-dataset.metadata.json
+        size: "123456"
+      txt:
+        href: https://download.ons.gov.uk/my-dataset.metadata.txt
+        size: "123456"
+      xls:
+        href: https://download.ons.gov.uk/my-dataset.xls
+        size: "123456"
   Distribution:
     description: The details of specific representation of a dataset and how to access it.
     type: object
@@ -2476,6 +2517,7 @@ definitions:
 
               The taxonomy path of the canonical topic for the dataset at the time of publish.
             type: string
+            example: https://www.ons.gov.uk/theme/topic
   MetadataLinks:
     description: "A list of links related to this resource"
     readOnly: true
