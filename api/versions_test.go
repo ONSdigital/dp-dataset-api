@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	versionPayload           = `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04","edition_title": "Updated Edition titile"}`
+	versionPayload           = `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04","edition_title": "Updated Edition Title"}`
 	versionAssociatedPayload = `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04","state":"associated","collection_id":"12345"}`
 	versionPublishedPayload  = `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04","state":"published","collection_id":"12345"}`
 	testLockID               = "testLockID"
@@ -3000,7 +3000,7 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 	Convey("When dataset and edition exist and version is added successfully", t, func() {
 		b := `{
 			"next_release": "2025-02-15",
-			"edition_title": "Edition Titile 2025",
+			"edition_title": "Edition Title 2025",
 			"alerts": [
 				{}
 			],
@@ -3067,7 +3067,7 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 			"description": "test dataset",
 			"type": "static",
 			"next_release": "2025-02-15",
-			"edition_title": "Edition Titile 2025",
+			"edition_title": "Edition Title 2025",
 			"alerts": [
 				{}
 			],
@@ -3146,7 +3146,7 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 			"description": "test dataset",
 			"type": "static",
 			"next_release": "2025-02-15",
-			"edition_title": "Edition Titile 2025",
+			"edition_title": "Edition Title 2025",
 			"alerts": [
 				{}
 			],
@@ -3292,7 +3292,7 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 	Convey("When edition exists, version should increment", t, func() {
 		b := `{
 			"next_release": "2025-02-15",
-			"edition_title": "Edition Titile 2025",
+			"edition_title": "Edition Title 2025",
 			"alerts": [
 				{}
 			],
@@ -3395,7 +3395,7 @@ func TestAddDatasetVersionCondensedReturnsError(t *testing.T) {
 	Convey("When the latest version of the dataset is published, it creates a new version", t, func() {
 		b := `{
 			"release_date": "2025-01-15",
-			"edition_title": "Edition Titile 2025",
+			"edition_title": "Edition Title 2025",
 			"distributions": [{}]
 		}`
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/time-series/versions", bytes.NewBufferString(b))

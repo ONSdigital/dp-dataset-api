@@ -170,7 +170,7 @@ type EditionUpdateLinks struct {
 // Edition represents information related to a single edition for a dataset
 type Edition struct {
 	Edition            string              `bson:"edition,omitempty"             json:"edition,omitempty"`
-	EditionTitle       string              `bson:"edition_title,omitempty"         json:"edition_title,omitempty"`
+	EditionTitle       string              `bson:"edition_title,omitempty"       json:"edition_title,omitempty"`
 	ID                 string              `bson:"id,omitempty"                  json:"id,omitempty"`
 	DatasetID          string              `bson:"dataset_id,omitempty"          json:"dataset_id,omitempty"`
 	Version            int                 `bson:"version,omitempty"             json:"version,omitempty"`
