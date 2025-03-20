@@ -1290,7 +1290,9 @@ definitions:
       email:
         description: "Email address to contact the statistician or statistician group responsible for the dataset."
         type: string
+        format: email
         example: "example@ons.gov.uk"
+        pattern: "@ons\\.gov\\.uk$"
       name:
         description: "The name of the statistician or statistician group contact point responsible for the dataset."
         type: string
@@ -1299,10 +1301,15 @@ definitions:
         description: "Telephone number to contact the statistician or statistician group responsible for the dataset."
         type: string
         example: "+44 1234 111111"
+        pattern: "^\\+44 (\\(0\\))?[1-9](\\d ?){8,10}$"
   DatasetID:
-    description: "The unique identifier for a dataset."
+    description: |
+      The unique identifier for a dataset.
+
+      The dataset ID cannot be changed once the series is first published.
     example: "my-dataset"
     type: string
+    minLength: 1
     maxLength: 100
     pattern: "^[a-z0-9]+(-[a-z0-9]+)*$"
   Datasets:
@@ -1349,6 +1356,8 @@ definitions:
         description: "A description for a dataset"
         type: string
         example: "This dataset contains some very interesting data about the UK."
+        minLength: 50
+        maxLength: 5000
       is_based_on:
         $ref: "#/definitions/IsBasedOn"
       keywords:
@@ -1387,8 +1396,12 @@ definitions:
       publishers:
         description: A list of the publishers for the dataset.
         type: array
+        minLength: 1
         items:
           $ref: "#/definitions/Publisher"
+        default:
+          - name: Office for National Statistics
+            href: https://www.ons.gov.uk
       qmi:
         $ref: "#/definitions/QMILink"
       related_datasets:
@@ -1424,6 +1437,7 @@ definitions:
         description: "The title of the dataset"
         example: "Consumer Prices Index"
         type: string
+        minLength: 1
       topics:
         description: "A list of topic IDs that the dataset relates to within the topic taxonomy. This field consolidates the previously separate `canonical_topic` and `subtopics` fields."
         type: array
@@ -1650,9 +1664,13 @@ definitions:
         type: string
         example: "466807"
   EditionID:
-    description: "The unique identifier for an edition of a dataset."
+    description: |
+      The unique identifier for an edition of a dataset.
+
+      The edition ID cannot be changed once first published. Ifa subsequent version of the edition attempts to change the edition ID, they will be treated as the first version of a new edition instead.
     example: july-september-2017
     type: string
+    minLength: 1
     maxLength: 100
     pattern: "^[a-z0-9]+(-[a-z0-9]+)*$"
   Editions:
@@ -1907,6 +1925,8 @@ definitions:
         description: "A description for a dataset"
         type: string
         example: "This dataset contains some very interesting data about the UK."
+        minLength: 50
+        maxLength: 5000
       dimensions:
         description: "A list of codelists for each dimension of this version"
         type: array
@@ -2111,6 +2131,7 @@ definitions:
         $ref: "#/definitions/ImportTasks"
       links:
         type: object
+        readOnly: true
         properties:
           dataset:
             description: "An object describing the ID and URL for a dataset which is associated with this instance"
@@ -2156,10 +2177,13 @@ definitions:
       name:
         description: "The name of the publisher"
         type: string
+        minLength: 1
         default: Office for National Statistics
       href:
         description: "A link to the publishers homepage"
         type: string
+        minLength: 1
+        format: url
         default: "https://www.ons.gov.uk"
   State:
     description: |
@@ -2320,6 +2344,7 @@ definitions:
       edition_title:
         description: The human readable title of the edition.
         type: string
+        minLength: 1
         example: July to September 2017
       is_based_on:
         $ref: "#/definitions/IsBasedOn"
@@ -2427,10 +2452,14 @@ definitions:
       title:
         description: The title or label of the distribution.
         type: string
+        minLength: 1
         example: Full Dataset (CSV)
       download_url:
         description: URL to directly download a file for the distribution in the specified format.
         type: string
+        format: url
+        minLength: 1
+        pattern: "^(/.+|https://[^/]+\\.ons\\.gov\\.uk/.+)"
         example: https://download.ons.gov.uk/my-dataset-download.csv
       byte_size:
         description: The size in bytes of the download file referenced by `download_url`.
@@ -2510,6 +2539,7 @@ definitions:
       taxonomy:
         description: "The taxonomy path of the dataset's canonical topic."
         type: object
+        readOnly: true
         properties:
           href:
             description: |
@@ -2537,6 +2567,7 @@ definitions:
       website_version:
         description: "A link to the location of this version of the dataset on the web"
         type: object
+        readOnly: true
         properties:
           href:
             description: "The uri to the location of this version of the dataset on the web"
@@ -2570,6 +2601,7 @@ definitions:
             example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/july-september-2017/versions/5"
       versions:
         type: object
+        readOnly: true
         properties:
           href:
             description: "A URL to all versions for an edition of a dataset"
@@ -2615,6 +2647,7 @@ definitions:
   MetadataLink:
     description: "The version metadata that is associated with this resource"
     type: object
+    readOnly: true
     properties:
       href:
         description: "A URL for the version metadata this resource relates to"
@@ -2622,6 +2655,7 @@ definitions:
   OptionsLink:
     description: "A list of links related to this dimension"
     type: object
+    readOnly: true
     properties:
       href:
         description: "A URL to a list of options for this dimension"
@@ -2629,6 +2663,7 @@ definitions:
   VersionLink:
     description: "The dataset version this resource belongs to"
     type: object
+    readOnly: true
     properties:
       href:
         description: "A URL to the version this resource relates to"
@@ -2648,9 +2683,12 @@ definitions:
         description: "The url of the linked item."
         type: string
         example: "https://www.ons.gov.uk/my-related-page"
+        format: url
+        pattern: "^(/.+|https://[^/]+\\.ons\\.gov\\.uk/.+)"
       title:
         description: "The title of the linked item."
         type: string
+        minLength: 1
         example: "Related Link Title"
       description:
         description: "The description of the linked item."
@@ -2664,6 +2702,8 @@ definitions:
       href:
         description: "The url to the quality and methodology information sheet for the dataset."
         type: string
+        format: url
+        pattern: "^(/.+|https://[^/]+\\.ons\\.gov\\.uk/.+)"
         example: "https://www.ons.gov.uk/businessindustryandtrade/retailindustry/methodologies/retailsalesindexrsiqmi"
   PaginationFields:
     type: object
