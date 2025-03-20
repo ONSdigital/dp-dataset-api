@@ -155,11 +155,19 @@ parameters:
     type: string
   version_update:
     name: version_update
-    description: "Update to a version for an edition of a dataset"
+    description: |
+      Update to a version for an edition of a dataset.
+
+      This model allows for the updating the deprecated `downloads` map for backwards compatability.
     in: body
     required: true
     schema:
-      $ref: "#/definitions/UpdateVersion"
+      allOf:
+        - $ref: "#/definitions/Version"
+        - properties:
+            downloads:
+              allOf:
+                - readOnly: false
   limit:
     name: limit
     description: "Maximum number of items that will be returned. A value of zero will return zero items."
@@ -206,7 +214,7 @@ parameters:
     in: body
     required: true
     schema:
-      $ref: "#/definitions/MetadataUpdate"
+      $ref: "#/definitions/Metadata"
 securityDefinitions:
   Authorization:
     name: Authorization
@@ -268,7 +276,7 @@ paths:
         201:
           description: "A JSON object containing the newly created dataset"
           schema:
-            $ref: "#/definitions/NewDatasetResponse"
+            $ref: "#/definitions/Dataset"
         400:
           description: "Invalid request body"
         401:
@@ -1271,6 +1279,7 @@ definitions:
 
       The id of the unpublished collection (of datasets) that this dataset is associated with."
     type: string
+    example: 666c06bc09d337ab9d164c82f8f383c081a4e38cbd91b79d4a23ea0025fecb3f
   Contact:
     description: "Statistical point of contact for the dataset."
     type: object
@@ -1281,7 +1290,9 @@ definitions:
       email:
         description: "Email address to contact the statistician or statistician group responsible for the dataset."
         type: string
+        format: email
         example: "example@ons.gov.uk"
+        pattern: "@ons\\.gov\\.uk$"
       name:
         description: "The name of the statistician or statistician group contact point responsible for the dataset."
         type: string
@@ -1290,6 +1301,17 @@ definitions:
         description: "Telephone number to contact the statistician or statistician group responsible for the dataset."
         type: string
         example: "+44 1234 111111"
+        pattern: "^\\+44 (\\(0\\))?[1-9](\\d ?){8,10}$"
+  DatasetID:
+    description: |
+      The unique identifier for a dataset.
+
+      The dataset ID cannot be changed once the series is first published.
+    example: "my-dataset"
+    type: string
+    minLength: 1
+    maxLength: 100
+    pattern: "^[a-z0-9]+(-[a-z0-9]+)*$"
   Datasets:
     description: "A list of datasets"
     type: object
@@ -1314,9 +1336,7 @@ definitions:
       - topics
     properties:
       id:
-        description: "The unique dataset id."
-        example: "my-dataset"
-        type: string
+        $ref: "#/definitions/DatasetID"
       canonical_topic:
         description: |
           **Deprecated:** This field has been deprecated and replaced by the `topics` field.
@@ -1336,6 +1356,8 @@ definitions:
         description: "A description for a dataset"
         type: string
         example: "This dataset contains some very interesting data about the UK."
+        minLength: 50
+        maxLength: 5000
       is_based_on:
         $ref: "#/definitions/IsBasedOn"
       keywords:
@@ -1374,8 +1396,12 @@ definitions:
       publishers:
         description: A list of the publishers for the dataset.
         type: array
+        minLength: 1
         items:
           $ref: "#/definitions/Publisher"
+        default:
+          - name: Office for National Statistics
+            href: https://www.ons.gov.uk
       qmi:
         $ref: "#/definitions/QMILink"
       related_datasets:
@@ -1411,6 +1437,7 @@ definitions:
         description: "The title of the dataset"
         example: "Consumer Prices Index"
         type: string
+        minLength: 1
       topics:
         description: "A list of topic IDs that the dataset relates to within the topic taxonomy. This field consolidates the previously separate `canonical_topic` and `subtopics` fields."
         type: array
@@ -1631,9 +1658,21 @@ definitions:
       href:
         description: "The URL to the generated file"
         type: string
+        example: https://download.ons.gov.uk/my-dataset-download.csv
       size:
         description: "The size of the file in bytes"
         type: string
+        example: "466807"
+  EditionID:
+    description: |
+      The unique identifier for an edition of a dataset.
+
+      The edition ID cannot be changed once first published. Ifa subsequent version of the edition attempts to change the edition ID, they will be treated as the first version of a new edition instead.
+    example: july-september-2017
+    type: string
+    minLength: 1
+    maxLength: 100
+    pattern: "^[a-z0-9]+(-[a-z0-9]+)*$"
   Editions:
     description: "A list of editions of a dataset."
     type: object
@@ -1729,8 +1768,7 @@ definitions:
           xls:
             $ref: "#/definitions/DownloadObject"
       edition:
-        description: "The edition of the dataset version"
-        type: string
+        $ref: "#/definitions/EditionID"
       events:
         description: "A list of events took place for this job"
         readOnly: true
@@ -1761,9 +1799,7 @@ definitions:
                 example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset"
                 type: string
               id:
-                description: "The ID of the dataset associated with this instance"
-                example: "my-dataset"
-                type: string
+                $ref: "#/definitions/DatasetID"
           dimensions:
             description: "An object describing the URL for the dimensions which are associated with this instance"
             readOnly: true
@@ -1771,7 +1807,7 @@ definitions:
             properties:
               href:
                 description: "The URL for a list of dimensions associated with this instance"
-                example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/2017/versions/1/dimensions"
+                example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/july-september-2017/versions/1/dimensions"
                 type: string
           edition:
             description: "An object describing the ID and URL for the dataset edition that is associated with this instance"
@@ -1780,11 +1816,10 @@ definitions:
             properties:
               href:
                 description: "The URL for the dataset edition associated with this instance"
-                example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/2017"
+                example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/july-september-2017"
                 type: string
               id:
-                description: "The ID for the dataset edition associated with this instance"
-                type: string
+                $ref: "#/definitions/EditionID"
           job:
             description: "An object describing the ID and URL of the job containing this instance"
             readOnly: true
@@ -1808,13 +1843,6 @@ definitions:
                 description: "The URL for this resource"
                 example: "https://api.beta.ons.gov.uk/v1/instances/45c4669b-3ae9-4ba7-b690-87e890a1c67f"
                 type: string
-          spatial:
-            description: "A link object describing the url to a list of geography ranges for the version of the dataset"
-            type: object
-            properties:
-              href:
-                description: "A url to a list of geography ranges for the version of the dataset"
-                type: string
           version:
             description: "An object describing the ID and URL of the dataset version associated with this instance"
             readOnly: true
@@ -1822,7 +1850,7 @@ definitions:
             properties:
               href:
                 description: "The URL for the dataset version associated with this instance"
-                example: "https://api.beta.ons.gov.uk/v1/dataset/my-dataset/edition/2017/version/1"
+                example: "https://api.beta.ons.gov.uk/v1/dataset/my-dataset/edition/july-september-2017/version/1"
                 type: string
               id:
                 description: "The ID of the dataset version associated with this instance"
@@ -1834,8 +1862,6 @@ definitions:
         format: date-time
       state:
         $ref: "#/definitions/State"
-      temporal:
-        $ref: "#/definitions/Temporal"
       total_observations:
         description: "The number of observations in this instance"
         type: integer
@@ -1861,14 +1887,11 @@ definitions:
       description:
         description: "A description of what has changed between versions"
         type: string
+        example: Some estimates for the periods between April 2011 and March 2019 have been updated. This is because of changes in guidance on suppressing data, where estimates are no longer required to be suppressed solely based on their co-efficient of variation (CV) values.
       name:
-        description: "The name of the change that has occurred between versions"
+        description: "The title of the change that has occurred between versions"
         type: string
-        example: "changes in classification"
-      type:
-        description: "The type of change"
-        type: string
-        example: "summary of changes"
+        example: "Data Suppression Changes"
   Metadata:
     description: "An object containing all metadata information against a version"
     type: object
@@ -1884,6 +1907,7 @@ definitions:
 
           The canonical topic id for this dataset.  This indicates which topic this dataset belongs to within the topic taxonomy.
         type: string
+        example: "7779"
       contacts:
         description: "A list containing contact details of statisticians for a dataset"
         type: array
@@ -1891,14 +1915,18 @@ definitions:
         items:
           $ref: "#/definitions/Contact"
       dataset_id:
-        description: "The identifier for the dataset."
-        type: string
+        allOf:
+          - readOnly: true
+          - $ref: "#/definitions/DatasetID"
+      dataset_links:
         readOnly: true
-        example: my-dataset
+        $ref: "#/definitions/DatasetLinks"
       description:
         description: "A description for a dataset"
         type: string
         example: "This dataset contains some very interesting data about the UK."
+        minLength: 50
+        maxLength: 5000
       dimensions:
         description: "A list of codelists for each dimension of this version"
         type: array
@@ -1910,39 +1938,39 @@ definitions:
 
           A list of media types that the version data of an edition of a dataset can be accessed
         type: array
+        readOnly: true
         items:
           type: string
+          example: csv
       distributions:
         description: A list of representations of the dataset available and how to access them.
         type: array
+        readOnly: true
         minItems: 1
         items:
           $ref: "#/definitions/Distribution"
       downloads:
-        description: |
-          **Deprecated:** These fields have been deprecated and replaced by the `distributions` list.
-
-          A selection of download objects containing information of downloadable files.
-        type: object
-        properties:
-          csv:
-            $ref: "#/definitions/DownloadObject"
-          csvw:
-            $ref: "#/definitions/DownloadObject"
-          txt:
-            $ref: "#/definitions/DownloadObject"
-          xls:
-            $ref: "#/definitions/DownloadObject"
+        allOf:
+          - readOnly: true
+          - $ref: "#/definitions/VersionDownloads"
       edition:
-        description: "The dataset edition for this version"
-        readOnly: true
+        allOf:
+          - readOnly: true
+          - $ref: "#/definitions/EditionID"
+      edition_title:
+        description: The human readable title of the edition.
         type: string
-        example: 2017
+        example: July to September 2017
       headers:
         description: "A list of headers for a census dataset"
         type: array
+        readOnly: true
         items:
           type: "string"
+        example:
+          - cantabular_table
+          - ltla
+          - ethnic_group_tb_8a
       keywords:
         description: "A list of keywords for a dataset"
         type: array
@@ -2000,6 +2028,11 @@ definitions:
           - accredited-official
           - official
           - official-in-development
+      related_content:
+        description: "A list of website content related to this dataset."
+        type: array
+        items:
+          $ref: "#/definitions/RelatedLink"
       related_datasets:
         description: "A list of other datasets related to this dataset."
         type: array
@@ -2022,8 +2055,10 @@ definitions:
         items:
           type: "string"
           example: "7755"
-      temporal:
-        $ref: "#/definitions/Temporal"
+      survey:
+        description: "The name of the survey the dataset was created from."
+        type: string
+        example: census
       title:
         description: "The title of the dataset"
         example: "Consumer Prices Index"
@@ -2036,7 +2071,9 @@ definitions:
           type: "string"
         example: ["7779", "7755"]
       type:
-        $ref: "#/definitions/DatasetType"
+        allOf:
+          - readOnly: true
+          - $ref: "#/definitions/DatasetType"
       unit_of_measure:
         description: "The unit of measure for the dataset observations"
         type: string
@@ -2056,7 +2093,7 @@ definitions:
     type: object
     properties:
       id:
-        description: "An unique id for a dataset"
+        description: "An unique database id for a dataset"
         example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
         type: string
       current:
@@ -2094,6 +2131,7 @@ definitions:
         $ref: "#/definitions/ImportTasks"
       links:
         type: object
+        readOnly: true
         properties:
           dataset:
             description: "An object describing the ID and URL for a dataset which is associated with this instance"
@@ -2104,9 +2142,7 @@ definitions:
                 example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset"
                 type: string
               id:
-                description: "The ID of the dataset associated with this instance"
-                example: "my-dataset"
-                type: string
+                $ref: "#/definitions/DatasetID"
           job:
             description: "An object describing the ID and URL of the job containing this instance"
             required: ["id", "href"]
@@ -2141,10 +2177,13 @@ definitions:
       name:
         description: "The name of the publisher"
         type: string
+        minLength: 1
         default: Office for National Statistics
       href:
         description: "A link to the publishers homepage"
         type: string
+        minLength: 1
+        format: url
         default: "https://www.ons.gov.uk"
   State:
     description: |
@@ -2164,27 +2203,12 @@ definitions:
       - edition-confirmed
       - associated
       - published
-  Temporal:
-    description: "A list of frequencies the dataset covers for a particular period of time"
-    type: array
-    items:
-      type: object
-      properties:
-        start_date:
-          description: "The start date of the time period in which the version of the dataset covers this frequency"
-          type: string
-        end_date:
-          description: "The end date of the time period in which the version of the dataset covers this frequency"
-          type: string
-        frequency:
-          description: "The time frequency the version of the dataset covers for the period of time between start_date and end_date"
-          type: string
   UpdateDatasetResponse:
     description: "A model for the response body when creating a new dataset"
     type: object
     properties:
       id:
-        description: "An unique id for a dataset"
+        description: "An unique database ID for a dataset"
         example: "DE3BC0B6-D6C4-4E20-917E-95D7EA8C91DC"
         type: string
       current:
@@ -2252,69 +2276,21 @@ definitions:
       label:
         description: "A human readable label for dimension"
         type: string
-  UpdateVersion:
-    description: "An object containing information to be updated on a version resource"
-    type: object
-    properties:
-      alerts:
-        description: "A list of alerts, for example corrections after the resource has been published"
-        type: array
-        items:
-          $ref: "#/definitions/Alert"
-      collection_id:
-        $ref: "#/definitions/CollectionID"
-      distributions:
-        description: A list of representations of the dataset available and how to access them.
-        type: array
-        minItems: 1
-        items:
-          $ref: "#/definitions/Distribution"
-      downloads:
-        description: "A selection of download objects containing information of downloadable files. These can only be updated via an authorised caller."
-        type: object
-        properties:
-          csv:
-            $ref: "#/definitions/DownloadObject"
-          xls:
-            $ref: "#/definitions/DownloadObject"
-      latest_changes:
-        description: "A list of changes between version of an edition for a dataset and the previous version of the same dataset edition"
-        type: array
-        items:
-          $ref: "#/definitions/LatestChange"
-      links:
-        $ref: "#/definitions/VersionLinks"
-      release_date:
-        description: "The release date of this version of the dataset"
-        type: string
-        format: date-time
-      state:
-        $ref: "#/definitions/State"
-      temporal:
-        $ref: "#/definitions/Temporal"
-      version:
-        description: "A number identifying the version for an edition from a dataset"
-        example: 1
-        readOnly: true
-        type: integer
-      usage_notes:
-        description: "A list of usage notes relating to the dataset"
-        type: array
-        items:
-          $ref: "#/definitions/UsageNote"
   UsageNote:
-    description: "A note relating to the dataset. This will appear in downloaded datasets"
+    description: Essential usage information a user needs to be aware of when interpreting the data.
     type: object
     required:
       - title
       - note
     properties:
       title:
-        description: "The title of the note"
+        description: The title of the usage note.
         type: string
+        example: Data Suppression
       note:
-        description: "The content of the note"
+        description: The usage note text.
         type: string
+        example: Individual estimates suppressed with "[c]" relate to statistics based on a small number of respondents (< 5). Such values have been suppressed on quality grounds and to maintain confidentiality.
   Versions:
     description: "A list of version history for a specific dataset edition."
     type: object
@@ -2331,6 +2307,7 @@ definitions:
     required:
       - distributions
       - release_date
+      - edition_title
     type: object
     properties:
       alerts:
@@ -2341,13 +2318,13 @@ definitions:
       collection_id:
         $ref: "#/definitions/CollectionID"
       dataset_id:
-        description: "The identifier for the dataset."
-        type: string
-        readOnly: true
-        example: my-dataset
+        allOf:
+          - readOnly: true
+          - $ref: "#/definitions/DatasetID"
       dimensions:
         description: "A list of codelists for each dimension of this version"
         type: array
+        readOnly: true
         items:
           $ref: "#/definitions/Dimension"
       distributions:
@@ -2357,26 +2334,18 @@ definitions:
         items:
           $ref: "#/definitions/Distribution"
       downloads:
-        description: |
-          **Deprecated:** These fields have been deprecated and replaced by the `distributions` list.
-
-          A selection of download objects containing information of downloadable files.
-        type: object
-        readOnly: true
-        properties:
-          csv:
-            $ref: "#/definitions/DownloadObject"
-          csvw:
-            $ref: "#/definitions/DownloadObject"
-          txt:
-            $ref: "#/definitions/DownloadObject"
-          xls:
-            $ref: "#/definitions/DownloadObject"
+        allOf:
+          - readOnly: true
+          - $ref: "#/definitions/VersionDownloads"
       edition:
-        description: "The dataset edition for this version"
-        readOnly: true
+        allOf:
+          - readOnly: true
+          - $ref: "#/definitions/EditionID"
+      edition_title:
+        description: The human readable title of the edition.
         type: string
-        example: 2017
+        minLength: 1
+        example: July to September 2017
       is_based_on:
         $ref: "#/definitions/IsBasedOn"
       last_updated:
@@ -2389,8 +2358,24 @@ definitions:
       links:
         $ref: "#/definitions/VersionLinks"
       lowest_geography:
-        description: "The lowest geography this dataset is available at (Census datasets only)"
+        description: |
+          The lowest geography this dataset is available at (Census datasets only)
+
+          Possible geographies:
+            * `oa`: Output Areas
+            * `lsoa`: Lower layer Super Output Areas
+            * `msoa`: Middle layer Super Output Areas
+            * `wpc`: Westminster Parliamentary constituencies
+            * `ltla`: Lower Tier Local Authorities
+            * `rgn`: Regions
         type: string
+        enum:
+          - oa
+          - lsoa
+          - msoa
+          - wpc
+          - ltla
+          - rgn
       quality_designation:
         description: |
           The official statistics quality designation level of this dataset version.
@@ -2410,8 +2395,6 @@ definitions:
         format: date-time
       state:
         $ref: "#/definitions/State"
-      temporal:
-        $ref: "#/definitions/Temporal"
       type:
         readOnly: true
         allOf:
@@ -2426,6 +2409,38 @@ definitions:
         example: 1
         readOnly: true
         type: integer
+  VersionDownloads:
+    description: |
+      **Deprecated:** These fields have been deprecated and replaced by the `distributions` list.
+
+      A selection of download objects containing information of downloadable files.
+    type: object
+    properties:
+      csv:
+        $ref: "#/definitions/DownloadObject"
+      csvw:
+        allOf:
+          - readOnly: true
+          - $ref: "#/definitions/DownloadObject"
+      txt:
+        allOf:
+          - readOnly: true
+          - $ref: "#/definitions/DownloadObject"
+      xls:
+        $ref: "#/definitions/DownloadObject"
+    example:
+      csv:
+        href: https://download.ons.gov.uk/my-dataset-download.csv
+        size: "123456"
+      csvw:
+        href: https://download.ons.gov.uk/my-dataset.metadata.json
+        size: "123456"
+      txt:
+        href: https://download.ons.gov.uk/my-dataset.metadata.txt
+        size: "123456"
+      xls:
+        href: https://download.ons.gov.uk/my-dataset.xls
+        size: "123456"
   Distribution:
     description: The details of specific representation of a dataset and how to access it.
     type: object
@@ -2437,10 +2452,14 @@ definitions:
       title:
         description: The title or label of the distribution.
         type: string
+        minLength: 1
         example: Full Dataset (CSV)
       download_url:
         description: URL to directly download a file for the distribution in the specified format.
         type: string
+        format: url
+        minLength: 1
+        pattern: "^(/.+|https://[^/]+\\.ons\\.gov\\.uk/.+)"
         example: https://download.ons.gov.uk/my-dataset-download.csv
       byte_size:
         description: The size in bytes of the download file referenced by `download_url`.
@@ -2458,7 +2477,6 @@ definitions:
             * `xls`
             * `xlsx`
             * `csdb`
-            * `csvw-metadata`
         type: string
         enum:
           - csv
@@ -2466,7 +2484,6 @@ definitions:
           - xls
           - xlsx
           - csdb
-          - csvw-metadata
       media_type:
         description: |
           The IANA media type for the download file referenced by `download_url`.
@@ -2477,7 +2494,6 @@ definitions:
             * `application/vnd.ms-excel`: Excel (XLS) files
             * `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`: Excel (XLSX) files
             * `text/plain`: Plain text (used for CSDB output structured text files)
-            * `application/ld+json`: JSON-LD metadata file. Commonly used to annotate tabular data in an associated CSV file as outlined in the CSVW standard.
         type: string
         readOnly: true
         enum:
@@ -2486,7 +2502,6 @@ definitions:
           - application/vnd.ms-excel
           - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
           - text/plain
-          - application/ld+json
   # Link objects
   DatasetLinks:
     description: "Navigational links related to the dataset resource to aid in API navigation."
@@ -2511,7 +2526,7 @@ definitions:
           href:
             description: "A link to the latest edition of the dataset."
             type: string
-            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/2017"
+            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/july-september-2017"
       self:
         description: "A link to this resource"
         readOnly: true
@@ -2524,6 +2539,7 @@ definitions:
       taxonomy:
         description: "The taxonomy path of the dataset's canonical topic."
         type: object
+        readOnly: true
         properties:
           href:
             description: |
@@ -2531,6 +2547,7 @@ definitions:
 
               The taxonomy path of the canonical topic for the dataset at the time of publish.
             type: string
+            example: https://www.ons.gov.uk/theme/topic
   MetadataLinks:
     description: "A list of links related to this resource"
     readOnly: true
@@ -2544,19 +2561,18 @@ definitions:
           href:
             description: "A URL to this resource"
             type: string
-            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/2017/versions/5/metadata"
-      spatial:
-        $ref: "#/definitions/SpatialLink"
+            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/july-september-2017/versions/5/metadata"
       version:
         $ref: "#/definitions/VersionLink"
       website_version:
         description: "A link to the location of this version of the dataset on the web"
         type: object
+        readOnly: true
         properties:
           href:
             description: "The uri to the location of this version of the dataset on the web"
             type: string
-            example: "https://www.ons.gov.uk/datasets/my-dataset/editions/2017/versions/5"
+            example: "https://www.ons.gov.uk/datasets/my-dataset/editions/july-september-2017/versions/5"
   VersionLinks:
     description: "A list of links related to this resource"
     type: object
@@ -2570,7 +2586,7 @@ definitions:
         properties:
           href:
             description: "A URL to list dimensions for this version"
-            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/2017/versions/5/dimensions"
+            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/july-september-2017/versions/5/dimensions"
             type: string
       edition:
         $ref: "#/definitions/EditionLink"
@@ -2582,15 +2598,14 @@ definitions:
           href:
             description: "A URL to this resource"
             type: string
-            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/2017/versions/5"
-      spatial:
-        $ref: "#/definitions/SpatialLink"
+            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/july-september-2017/versions/5"
       versions:
         type: object
+        readOnly: true
         properties:
           href:
             description: "A URL to all versions for an edition of a dataset"
-            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/edition/2017/versions"
+            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/edition/july-september-2017/versions"
             type: string
   DatasetLink:
     description: "An object containing the dataset id and link"
@@ -2602,9 +2617,7 @@ definitions:
         example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset"
         type: string
       id:
-        description: "The unique id for the dataset of this version"
-        type: string
-        example: "my-dataset"
+        $ref: "#/definitions/DatasetID"
   EditionLink:
     description: "An object containing the edition and link"
     readOnly: true
@@ -2612,12 +2625,12 @@ definitions:
     properties:
       href:
         description: "A URL to the dataset edition for a version"
-        example: "https://api.beta.ons.gov.uk/v1/datasets/my-datasets/editions/2017"
+        example: "https://api.beta.ons.gov.uk/v1/datasets/my-datasets/editions/july-september-2017"
         type: string
       id:
         description: "The unique id for the dataset edition for a version"
         type: string
-        example: "2017"
+        example: "july-september-2017"
   LatestVersionLink:
     description: "An object containing the latest version id and link"
     type: object
@@ -2625,7 +2638,7 @@ definitions:
     properties:
       href:
         description: "A link to the latest version and edition of the dataset"
-        example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/2017/versions/5"
+        example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/july-september-2017/versions/5"
         type: string
       id:
         description: "The unique id for the latest version of a dataset"
@@ -2634,6 +2647,7 @@ definitions:
   MetadataLink:
     description: "The version metadata that is associated with this resource"
     type: object
+    readOnly: true
     properties:
       href:
         description: "A URL for the version metadata this resource relates to"
@@ -2641,24 +2655,20 @@ definitions:
   OptionsLink:
     description: "A list of links related to this dimension"
     type: object
+    readOnly: true
     properties:
       href:
         description: "A URL to a list of options for this dimension"
         type: string
-  SpatialLink:
-    type: object
-    properties:
-      href:
-        description: "A url to a list of geography ranges for the version of the dataset"
-        type: string
   VersionLink:
     description: "The dataset version this resource belongs to"
     type: object
+    readOnly: true
     properties:
       href:
         description: "A URL to the version this resource relates to"
         type: string
-        example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/2017/versions/5"
+        example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/july-september-2017/versions/5"
       id:
         description: "The version number this resource relates to"
         type: string
@@ -2673,9 +2683,12 @@ definitions:
         description: "The url of the linked item."
         type: string
         example: "https://www.ons.gov.uk/my-related-page"
+        format: url
+        pattern: "^(/.+|https://[^/]+\\.ons\\.gov\\.uk/.+)"
       title:
         description: "The title of the linked item."
         type: string
+        minLength: 1
         example: "Related Link Title"
       description:
         description: "The description of the linked item."
@@ -2689,6 +2702,8 @@ definitions:
       href:
         description: "The url to the quality and methodology information sheet for the dataset."
         type: string
+        format: url
+        pattern: "^(/.+|https://[^/]+\\.ons\\.gov\\.uk/.+)"
         example: "https://www.ons.gov.uk/businessindustryandtrade/retailindustry/methodologies/retailsalesindexrsiqmi"
   PaginationFields:
     type: object
@@ -2714,93 +2729,3 @@ definitions:
         readOnly: true
         type: integer
         example: 123
-
-  MetadataUpdate:
-    description: "An object containing all editable metadata fields on a dataset and a version resource"
-    type: object
-    properties:
-      alerts:
-        description: "A list of alerts against a version"
-        type: array
-        items:
-          $ref: "#/definitions/Alert"
-      canonical_topic:
-        description: "The canonical topic id for this dataset.  This indicates which topic this dataset belongs to within the topic taxonomy."
-        type: string
-      contacts:
-        description: "A list containing contact details of statisticians for a dataset"
-        type: array
-        items:
-          $ref: "#/definitions/Contact"
-      description:
-        description: "A description for a dataset"
-        type: string
-      dimensions:
-        description: "A list of codelists for each dimension of this version"
-        type: array
-        items:
-          $ref: "#/definitions/Dimension"
-      keywords:
-        description: "A list of keywords for a dataset"
-        type: array
-        items:
-          type: "string"
-      latest_changes:
-        description: "A list of changes between version of an edition for a dataset and the previous version of the same dataset edition"
-        type: array
-        items:
-          $ref: "#/definitions/LatestChange"
-      license:
-        description: "The license the dataset is released under."
-        type: string
-        default: "Open Government Licence v3.0"
-      methodologies:
-        description: "A list of methodologies for the dataset."
-        type: array
-        items:
-          $ref: "#/definitions/RelatedLink"
-      national_statistic:
-        description: "The flag indicating the resource is a national statistic. These are certified as compliant with the Code of Practice for Official Statistics"
-        type: boolean
-      next_release:
-        $ref: "#/definitions/NextRelease"
-      publications:
-        description: "A list of publications related to this dataset."
-        type: array
-        items:
-          $ref: "#/definitions/RelatedLink"
-      qmi:
-        $ref: "#/definitions/QMILink"
-      related_content:
-        description: "A list of website content related to this dataset."
-        type: array
-        items:
-          $ref: "#/definitions/RelatedLink"
-      related_datasets:
-        description: "A list of other datasets related to this dataset."
-        type: array
-        items:
-          $ref: "#/definitions/RelatedLink"
-      release_date:
-        description: "The release date of this version of the dataset"
-        type: string
-      release_frequency:
-        description: "The release frequency of a dataset"
-        type: string
-      subtopics:
-        description: "A list of subtopic ids that the dataset relates to within the topic taxonomy."
-        type: array
-        items:
-          type: "string"
-      survey:
-        description: "The name of the survey the dataset was created from."
-        type: string
-      title:
-        description: "The title of the dataset"
-        example: "CPI"
-        type: string
-      unit_of_measure:
-        description: "The unit of measure for the dataset observations"
-        type: string
-      usage_notes:
-        $ref: "#/definitions/UsageNote"
