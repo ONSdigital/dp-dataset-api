@@ -22,6 +22,7 @@ var (
 	datasetsForbidden = map[error]bool{
 		errs.ErrDeletePublishedDatasetForbidden: true,
 		errs.ErrAddDatasetAlreadyExists:         true,
+		errs.ErrAddDatasetTitleAlreadyExists:    true,
 	}
 
 	// errors that should return a 204 status
@@ -342,6 +343,19 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 	if err != errs.ErrDatasetNotFound {
 		log.Error(ctx, "addDatasetNew endpoint: error checking if dataset exists", err, logData)
 		handleDatasetAPIErr(ctx, err, w, logData)
+		return
+	}
+
+	datasetTitleExist, err := api.dataStore.Backend.CheckDatasetTitleExist(ctx, dataset.Title)
+	if err != nil {
+		log.Error(ctx, "addDatasetNew endpoint: error checking if dataset title exists", err, logData)
+		handleDatasetAPIErr(ctx, err, w, logData)
+		return
+	}
+
+	if datasetTitleExist {
+		log.Error(ctx, "addDatasetNew endpoint: unable to create a dataset with title that already exists", errs.ErrAddDatasetTitleAlreadyExists, logData)
+		handleDatasetAPIErr(ctx, errs.ErrAddDatasetTitleAlreadyExists, w, logData)
 		return
 	}
 

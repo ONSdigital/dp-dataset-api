@@ -24,6 +24,7 @@ type dataMongoDB interface {
 	AddInstance(ctx context.Context, instance *models.Instance) (*models.Instance, error)
 	AddVersionStatic(ctx context.Context, version *models.Version) (inst *models.Version, err error)
 	CheckDatasetExists(ctx context.Context, ID, state string) error
+	CheckDatasetTitleExist(ctx context.Context, title string) (bool, error)
 	CheckEditionExists(ctx context.Context, ID, editionID, state string) error
 	CheckEditionExistsStatic(ctx context.Context, id, editionID, state string) error
 	GetDataset(ctx context.Context, ID string) (*models.DatasetUpdate, error)

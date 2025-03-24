@@ -16,6 +16,7 @@ func (e ErrInvalidPatch) Error() string {
 // A list of error messages for Dataset API
 var (
 	ErrAddDatasetAlreadyExists           = errors.New("forbidden - dataset already exists")
+	ErrAddDatasetTitleAlreadyExists      = errors.New("forbidden - dataset title already exists")
 	ErrDatasetTypeInvalid                = errors.New("invalid dataset type")
 	ErrTypeMismatch                      = errors.New("type mismatch")
 	ErrAddUpdateDatasetBadRequest        = errors.New("failed to parse json body")

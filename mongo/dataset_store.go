@@ -122,6 +122,24 @@ func (m *Mongo) GetDataset(ctx context.Context, id string) (*models.DatasetUpdat
 	return &dataset, nil
 }
 
+func (m *Mongo) CheckDatasetTitleExist(ctx context.Context, title string) (bool, error) {
+	titleFilter := bson.M{
+		"$or": bson.A{
+			bson.M{"current.title": title},
+			bson.M{"next.title": title},
+		},
+	}
+	count, err := m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).Count(ctx, titleFilter)
+	if err != nil {
+		return false, err
+	}
+	if count > 0 {
+		return true, nil
+	} else {
+		return false, nil
+	}
+}
+
 // GetEditions retrieves all edition documents for a dataset
 func (m *Mongo) GetEditions(ctx context.Context, id, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
 	selector := buildEditionsQuery(id, state, authorised)
