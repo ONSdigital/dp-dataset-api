@@ -45,6 +45,7 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^these cantabular generator downloads events are produced:$`, c.theseCantabularGeneratorDownloadsEventsAreProduced)
 	ctx.Step(`^these generate downloads events are produced:$`, c.theseGenerateDownloadsEventsAreProduced)
 	ctx.Step(`^the state machine is enabled$`, c.StateMachineIsEnabled)
+	ctx.Step(`^I have a static dataset with version:$`, c.iHaveStaticDatasetWithVersion)
 }
 
 func (c *DatasetComponent) thereAreNoDatasets() error {
@@ -463,5 +464,47 @@ func (c *DatasetComponent) putDocumentInDatabase(document interface{}, id, colle
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (c *DatasetComponent) iHaveStaticDatasetWithVersion(jsonData *godog.DocString) error {
+	var data struct {
+		Dataset models.Dataset `json:"dataset"`
+		Edition models.Edition `json:"edition"`
+		Version models.Version `json:"version"`
+	}
+
+	if err := json.Unmarshal([]byte(jsonData.Content), &data); err != nil {
+		return fmt.Errorf("failed to unmarshal static dataset data: %w", err)
+	}
+
+	datasetID := data.Dataset.ID
+	data.Dataset.Type = "static"
+	datasetUp := models.DatasetUpdate{
+		ID:      datasetID,
+		Next:    &data.Dataset,
+		Current: &data.Dataset,
+	}
+	datasetsCollection := c.MongoClient.ActualCollectionName(config.DatasetsCollection)
+	if err := c.putDocumentInDatabase(datasetUp, datasetID, datasetsCollection, 0); err != nil {
+		return fmt.Errorf("failed to insert static dataset: %w", err)
+	}
+
+	versionID := data.Version.ID
+
+	if data.Version.Links.Version == nil {
+		data.Version.Links.Version = &models.LinkObject{
+			HRef: data.Version.Links.Self.HRef,
+			ID:   "1",
+		}
+	}
+
+	data.Version.ETag = "etag-" + versionID
+
+	versionsCollection := c.MongoClient.ActualCollectionName(config.VersionsCollection)
+	if err := c.putDocumentInDatabase(data.Version, versionID, versionsCollection, 0); err != nil {
+		return fmt.Errorf("failed to insert static version: %w", err)
+	}
+
 	return nil
 }
