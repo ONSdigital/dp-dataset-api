@@ -548,6 +548,9 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
+			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
+				return false, nil
+			},
 		}
 
 		datasetPermissions := getAuthorisationHandlerMock()
@@ -573,6 +576,9 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			},
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
+			},
+			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
+				return false, nil
 			},
 		}
 
@@ -600,6 +606,9 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
+			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
+				return false, nil
+			},
 		}
 
 		datasetPermissions := getAuthorisationHandlerMock()
@@ -625,6 +634,9 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			},
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
+			},
+			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
+				return false, nil
 			},
 		}
 
@@ -652,6 +664,9 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
+			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
+				return false, nil
+			},
 		}
 
 		datasetPermissions := getAuthorisationHandlerMock()
@@ -677,6 +692,9 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			},
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
+			},
+			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
+				return false, nil
 			},
 		}
 
@@ -898,6 +916,9 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
+			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
+				return false, nil
+			},
 		}
 
 		datasetPermissions := getAuthorisationHandlerMock()
@@ -910,6 +931,72 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
+
+		Convey("then the request body has been drained", func() {
+			_, err := r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
+	})
+}
+
+func TestPostDatasetsReturnsError(t *testing.T) {
+	Convey("When the request contains duplicate dataset title a forbidden request status is returned", t, func() {
+		b := datasetPayloadWithID
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return nil, errs.ErrDatasetNotFound
+			},
+			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
+				return true, nil
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusForbidden)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrAddDatasetTitleAlreadyExists.Error())
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckDatasetTitleExistCalls()), ShouldEqual, 1)
+
+		Convey("then the request body has been drained", func() {
+			_, err := r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
+	})
+
+	Convey("When CheckDatasetTitleExistFunc return an error, an internal server error status is returned", t, func() {
+		b := datasetPayloadWithID
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return nil, errs.ErrDatasetNotFound
+			},
+			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
+				return false, errors.New("internal error")
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckDatasetTitleExistCalls()), ShouldEqual, 1)
 
 		Convey("then the request body has been drained", func() {
 			_, err := r.Body.Read(make([]byte, 1))
