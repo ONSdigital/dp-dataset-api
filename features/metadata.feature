@@ -841,8 +841,7 @@ Scenario: GET metadata for a static dataset
                         "telephone": "01234 567890"
                     }
                 ],
-                "topics": ["economy", "demographics"],
-                "uri": "http://example.com/static-dataset"
+                "topics": ["economy", "demographics"]
             },
             "edition": {
                 "id": "time-series",
@@ -925,7 +924,6 @@ Scenario: GET metadata for a static dataset
                 }
             ],
             "type": "static",
-            "uri": "http://example.com/static-dataset",
             "version": 1
         }
         """
