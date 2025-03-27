@@ -1,5 +1,4 @@
 ---
-
 platform: linux
 
 image_resource:
@@ -13,3 +12,6 @@ inputs:
 
 run:
   path: dp-dataset-api/ci/scripts/lint.sh
+
+caches:
+  - path: /go

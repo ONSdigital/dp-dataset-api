@@ -1,5 +1,4 @@
 ---
-
 platform: linux
 
 image_resource:
@@ -16,3 +15,6 @@ outputs:
 
 run:
   path: dp-dataset-api/ci/scripts/build.sh
+
+caches:
+  - path: /go
