@@ -20,7 +20,6 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/log.go/v2/log"
-	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -3054,77 +3053,78 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.addDatasetVersionCondensed(w, r)
+		successResponse, errorResponse := api.addDatasetVersionCondensed(testContext, w, r)
 
-		So(w.Code, ShouldEqual, http.StatusCreated)
+		So(successResponse.Status, ShouldEqual, http.StatusCreated)
+		So(errorResponse, ShouldBeNil)
 		So(mockedDataStore.CheckDatasetExistsCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.GetNextVersionStaticCalls(), ShouldHaveLength, 1)
 	})
 
 	Convey("When dataset does not exist", t, func() {
 		b := `{
-			"title": "test-dataset",
-			"description": "test dataset",
-			"type": "static",
-			"next_release": "2025-02-15",
-			"edition_title": "Edition Title 2025",
-			"alerts": [
-				{}
-			],
-			"latest_changes": [
-				{
-				"description": "Updated classification of housing components in CPIH.",
-				"name": "Changes in classification",
-				"type": "Summary of changes"
-				}
-			],
-			"links": {
-				"dataset": {
-				"href": "http://localhost:10400/datasets/bara-test-ds-abcd",
-				"id": "cpih01"
+				"title": "test-dataset",
+				"description": "test dataset",
+				"type": "static",
+				"next_release": "2025-02-15",
+				"edition_title": "Edition Title 2025",
+				"alerts": [
+					{}
+				],
+				"latest_changes": [
+					{
+					"description": "Updated classification of housing components in CPIH.",
+					"name": "Changes in classification",
+					"type": "Summary of changes"
+					}
+				],
+				"links": {
+					"dataset": {
+					"href": "http://localhost:10400/datasets/bara-test-ds-abcd",
+					"id": "cpih01"
+					},
+					"dimensions": {
+					"href": "http://localhost:10400/datasets/bara-test-ds-abcd/dimensions"
+					},
+					"edition": {
+					"href": "http://localhost:10400/datasets/bara-test-ds-abcd/editions/time-series",
+					"id": "time-series"
+					},
+					"job": {
+					"href": "http://localhost:10700/jobs/383df410-845e-4efd-9ba1-ab469361eae5",
+					"id": "383df410-845e-4efd-9ba1-ab469361eae5"
+					},
+					"version": {
+					"href": "http://localhost:10400/datasets/bara-test-ds-abcd/editions/time-series/versions/1",
+					"id": "1"
+					},
+					"spatial": {
+					"href": "http://localhost:10400/datasets/bara-test-ds-abcd"
+					}
 				},
-				"dimensions": {
-				"href": "http://localhost:10400/datasets/bara-test-ds-abcd/dimensions"
-				},
-				"edition": {
-				"href": "http://localhost:10400/datasets/bara-test-ds-abcd/editions/time-series",
-				"id": "time-series"
-				},
-				"job": {
-				"href": "http://localhost:10700/jobs/383df410-845e-4efd-9ba1-ab469361eae5",
-				"id": "383df410-845e-4efd-9ba1-ab469361eae5"
-				},
-				"version": {
-				"href": "http://localhost:10400/datasets/bara-test-ds-abcd/editions/time-series/versions/1",
-				"id": "1"
-				},
-				"spatial": {
-				"href": "http://localhost:10400/datasets/bara-test-ds-abcd"
-				}
-			},
-			"release_date": "2025-01-15",
-			"state": "associated",
-			"topics": [
-				"Economy",
-				"Prices"
-			],
-			"temporal": [
-				{
-				"start_date": "2025-01-01",
-				"end_date": "2025-01-31",
-				"frequency": "Monthly"
-				}
-			],
-			"distributions": [
-				{}
-			],
-			"usage_notes": [
-				{
-				"title": "Data usage guide",
-				"note": "This dataset is subject to revision and should be used in conjunction with the accompanying documentation."
-				}
-			]
-		}`
+				"release_date": "2025-01-15",
+				"state": "associated",
+				"topics": [
+					"Economy",
+					"Prices"
+				],
+				"temporal": [
+					{
+					"start_date": "2025-01-01",
+					"end_date": "2025-01-31",
+					"frequency": "Monthly"
+					}
+				],
+				"distributions": [
+					{}
+				],
+				"usage_notes": [
+					{
+					"title": "Data usage guide",
+					"note": "This dataset is subject to revision and should be used in conjunction with the accompanying documentation."
+					}
+				]
+			}`
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123//editions/time-series/versions", bytes.NewBufferString(b))
 		w := httptest.NewRecorder()
 
@@ -3136,74 +3136,75 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.addDatasetVersionCondensed(w, r)
+		successResponse, errorResponse := api.addDatasetVersionCondensed(testContext, w, r)
 
-		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(errorResponse.Status, ShouldEqual, http.StatusNotFound)
+		So(successResponse, ShouldBeNil)
 	})
 	Convey("When edition does not exist", t, func() {
 		b := `{
-			"title": "test-dataset",
-			"description": "test dataset",
-			"type": "static",
-			"next_release": "2025-02-15",
-			"edition_title": "Edition Title 2025",
-			"alerts": [
-				{}
-			],
-			"latest_changes": [
-				{
-				"description": "Updated classification of housing components in CPIH.",
-				"name": "Changes in classification",
-				"type": "Summary of changes"
-				}
-			],
-			"links": {
-				"dataset": {
-				"href": "http://localhost:10400/datasets/bara-test-ds-abcd",
-				"id": "cpih01"
+				"title": "test-dataset",
+				"description": "test dataset",
+				"type": "static",
+				"next_release": "2025-02-15",
+				"edition_title": "Edition Title 2025",
+				"alerts": [
+					{}
+				],
+				"latest_changes": [
+					{
+					"description": "Updated classification of housing components in CPIH.",
+					"name": "Changes in classification",
+					"type": "Summary of changes"
+					}
+				],
+				"links": {
+					"dataset": {
+					"href": "http://localhost:10400/datasets/bara-test-ds-abcd",
+					"id": "cpih01"
+					},
+					"dimensions": {
+					"href": "http://localhost:10400/datasets/bara-test-ds-abcd/dimensions"
+					},
+					"edition": {
+					"href": "http://localhost:10400/datasets/bara-test-ds-abcd/editions/time-series",
+					"id": "time-series"
+					},
+					"job": {
+					"href": "http://localhost:10700/jobs/383df410-845e-4efd-9ba1-ab469361eae5",
+					"id": "383df410-845e-4efd-9ba1-ab469361eae5"
+					},
+					"version": {
+					"href": "http://localhost:10400/datasets/bara-test-ds-abcd/editions/time-series/versions/1",
+					"id": "1"
+					},
+					"spatial": {
+					"href": "http://localhost:10400/datasets/bara-test-ds-abcd"
+					}
 				},
-				"dimensions": {
-				"href": "http://localhost:10400/datasets/bara-test-ds-abcd/dimensions"
-				},
-				"edition": {
-				"href": "http://localhost:10400/datasets/bara-test-ds-abcd/editions/time-series",
-				"id": "time-series"
-				},
-				"job": {
-				"href": "http://localhost:10700/jobs/383df410-845e-4efd-9ba1-ab469361eae5",
-				"id": "383df410-845e-4efd-9ba1-ab469361eae5"
-				},
-				"version": {
-				"href": "http://localhost:10400/datasets/bara-test-ds-abcd/editions/time-series/versions/1",
-				"id": "1"
-				},
-				"spatial": {
-				"href": "http://localhost:10400/datasets/bara-test-ds-abcd"
-				}
-			},
-			"release_date": "2025-01-15",
-			"state": "associated",
-			"topics": [
-				"Economy",
-				"Prices"
-			],
-			"temporal": [
-				{
-				"start_date": "2025-01-01",
-				"end_date": "2025-01-31",
-				"frequency": "Monthly"
-				}
-			],
-			"distributions": [
-				{}
-			],
-			"usage_notes": [
-				{
-				"title": "Data usage guide",
-				"note": "This dataset is subject to revision and should be used in conjunction with the accompanying documentation."
-				}
-			]
-		}`
+				"release_date": "2025-01-15",
+				"state": "associated",
+				"topics": [
+					"Economy",
+					"Prices"
+				],
+				"temporal": [
+					{
+					"start_date": "2025-01-01",
+					"end_date": "2025-01-31",
+					"frequency": "Monthly"
+					}
+				],
+				"distributions": [
+					{}
+				],
+				"usage_notes": [
+					{
+					"title": "Data usage guide",
+					"note": "This dataset is subject to revision and should be used in conjunction with the accompanying documentation."
+					}
+				]
+			}`
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/time-series/versions", bytes.NewBufferString(b))
 		w := httptest.NewRecorder()
 
@@ -3236,16 +3237,14 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 		permissions := getAuthorisationHandlerMock()
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 
-		router := mux.NewRouter()
-		router.HandleFunc("/datasets/{dataset_id}/editions/{edition}/versions", api.addDatasetVersionCondensed).Methods("POST")
+		successResponse, errorResponse := api.addDatasetVersionCondensed(testContext, w, r)
 
-		router.ServeHTTP(w, r)
-
-		So(w.Code, ShouldEqual, http.StatusCreated)
+		So(successResponse.Status, ShouldEqual, http.StatusCreated)
+		So(errorResponse, ShouldBeNil)
 		So(mockedDataStore.AddVersionStaticCalls(), ShouldHaveLength, 1)
 
 		var response models.Version
-		err := json.Unmarshal(w.Body.Bytes(), &response)
+		err := json.Unmarshal(successResponse.Body, &response)
 		So(err, ShouldBeNil)
 		So(response.Version, ShouldEqual, 1)
 		So(response.Edition, ShouldEqual, "time-series")
@@ -3253,7 +3252,7 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 
 	Convey("When request body is not valid", t, func() {
 		b := `{"title":"test-dataset","description":"test dataset","type":"static","next_release":"2025-02-15"}`
-		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123//editions/time-series/versions", bytes.NewBufferString(b))
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/time-series/versions", bytes.NewBufferString(b))
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -3284,40 +3283,41 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.addDatasetVersionCondensed(w, r)
+		successResponse, errorResponse := api.addDatasetVersionCondensed(testContext, w, r)
 
-		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(errorResponse.Status, ShouldEqual, http.StatusBadRequest)
+		So(successResponse, ShouldBeNil)
 	})
 
 	Convey("When edition exists, version should increment", t, func() {
 		b := `{
-			"next_release": "2025-02-15",
-			"edition_title": "Edition Title 2025",
-			"alerts": [
-				{}
-			],
-			"release_date": "2025-01-15",
-			"topics": [
-				"Economy",
-				"Prices"
-			],
-			"temporal": [
-				{
-				"start_date": "2025-01-01",
-				"end_date": "2025-01-31",
-				"frequency": "Monthly"
-				}
-			],
-			"distributions": [
-				{}
-			],
-			"usage_notes": [
-				{
-				"title": "Data usage guide",
-				"note": "This dataset is subject to revision and should be used in conjunction with the accompanying documentation."
-				}
-			]
-		}`
+				"next_release": "2025-02-15",
+				"edition_title": "Edition Title 2025",
+				"alerts": [
+					{}
+				],
+				"release_date": "2025-01-15",
+				"topics": [
+					"Economy",
+					"Prices"
+				],
+				"temporal": [
+					{
+					"start_date": "2025-01-01",
+					"end_date": "2025-01-31",
+					"frequency": "Monthly"
+					}
+				],
+				"distributions": [
+					{}
+				],
+				"usage_notes": [
+					{
+					"title": "Data usage guide",
+					"note": "This dataset is subject to revision and should be used in conjunction with the accompanying documentation."
+					}
+				]
+			}`
 
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/time-series/versions", bytes.NewBufferString(b))
 		w := httptest.NewRecorder()
@@ -3349,12 +3349,13 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 		}
 
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getAuthorisationHandlerMock(), getAuthorisationHandlerMock())
-		api.addDatasetVersionCondensed(w, r)
+		successResponse, errorResponse := api.addDatasetVersionCondensed(testContext, w, r)
 
-		So(w.Code, ShouldEqual, http.StatusCreated)
+		So(successResponse.Status, ShouldEqual, http.StatusCreated)
+		So(errorResponse, ShouldBeNil)
 
 		var response models.Version
-		err := json.Unmarshal(w.Body.Bytes(), &response)
+		err := json.Unmarshal(successResponse.Body, &response)
 		So(err, ShouldBeNil)
 		So(response.Version, ShouldEqual, 2)
 	})
@@ -3364,9 +3365,10 @@ func TestAddDatasetVersionCondensedReturnsError(t *testing.T) {
 	t.Parallel()
 	Convey("When an unpublished version already exists, it returns a 400 error", t, func() {
 		b := `{
-			"release_date": "2025-01-15",
-			"distributions": [{}]
-		}`
+				"release_date": "2025-01-15",
+				"edition_title": "test-edition",
+				"distributions": [{}]
+			}`
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/time-series/versions", bytes.NewBufferString(b))
 		w := httptest.NewRecorder()
 
@@ -3380,24 +3382,29 @@ func TestAddDatasetVersionCondensedReturnsError(t *testing.T) {
 					State:   models.AssociatedState,
 				}, nil
 			},
+			GetNextVersionStaticFunc: func(context.Context, string, string) (int, error) {
+				return 2, nil
+			},
 		}
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.addDatasetVersionCondensed(w, r)
+		successResponse, errorResponse := api.addDatasetVersionCondensed(testContext, w, r)
 
-		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(w.Body.String(), ShouldContainSubstring, "cannot create new version when an unpublished version already exists")
+		castErr := errorResponse.Errors[0].(*models.Error)
+		So(errorResponse.Status, ShouldEqual, http.StatusBadRequest)
+		So(castErr.Code, ShouldEqual, models.ErrVersionAlreadyExists)
+		So(successResponse, ShouldBeNil)
 		So(mockedDataStore.CheckDatasetExistsCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.GetLatestVersionStaticCalls(), ShouldHaveLength, 1)
 	})
 
 	Convey("When the latest version of the dataset is published, it creates a new version", t, func() {
 		b := `{
-			"release_date": "2025-01-15",
-			"edition_title": "Edition Title 2025",
-			"distributions": [{}]
-		}`
+				"release_date": "2025-01-15",
+				"edition_title": "Edition Title 2025",
+				"distributions": [{}]
+			}`
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/time-series/versions", bytes.NewBufferString(b))
 		w := httptest.NewRecorder()
 
@@ -3427,9 +3434,10 @@ func TestAddDatasetVersionCondensedReturnsError(t *testing.T) {
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.addDatasetVersionCondensed(w, r)
+		successResponse, errorResponse := api.addDatasetVersionCondensed(testContext, w, r)
 
-		So(w.Code, ShouldEqual, http.StatusCreated)
+		So(successResponse.Status, ShouldEqual, http.StatusCreated)
+		So(errorResponse, ShouldBeNil)
 		So(mockedDataStore.CheckDatasetExistsCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.GetLatestVersionStaticCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.GetNextVersionStaticCalls(), ShouldHaveLength, 1)
@@ -3438,9 +3446,10 @@ func TestAddDatasetVersionCondensedReturnsError(t *testing.T) {
 
 	Convey("When an error occurs checking the latest version", t, func() {
 		b := `{
-			"release_date": "2025-01-15",
-			"distributions": [{}]
-		}`
+				"release_date": "2025-01-15",
+				"edition_title": "Edition Title 2025",
+				"distributions": [{}]
+			}`
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/time-series/versions", bytes.NewBufferString(b))
 		w := httptest.NewRecorder()
 
@@ -3451,13 +3460,17 @@ func TestAddDatasetVersionCondensedReturnsError(t *testing.T) {
 			GetLatestVersionStaticFunc: func(context.Context, string, string, string) (*models.Version, error) {
 				return nil, errs.ErrInternalServer
 			},
+			GetNextVersionStaticFunc: func(context.Context, string, string) (int, error) {
+				return 2, nil
+			},
 		}
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		api.addDatasetVersionCondensed(w, r)
+		successResponse, errorResponse := api.addDatasetVersionCondensed(testContext, w, r)
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(errorResponse.Status, ShouldEqual, http.StatusInternalServerError)
+		So(successResponse, ShouldBeNil)
 		So(mockedDataStore.CheckDatasetExistsCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.GetLatestVersionStaticCalls(), ShouldHaveLength, 1)
 	})

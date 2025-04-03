@@ -4,6 +4,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -148,6 +149,68 @@ func (api *DatasetAPI) enablePublicEndpoints(paginator *pagination.Paginator) {
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options", paginator.Paginate(api.getDimensionOptions))
 }
 
+func writeErrorResponse(ctx context.Context, w http.ResponseWriter, errorResponse *models.ErrorResponse) {
+	var jsonResponse []byte
+	var err error
+	w.Header().Set("Content-Type", "application/json")
+	// process custom headers
+	if errorResponse.Headers != nil {
+		for key := range errorResponse.Headers {
+			w.Header().Set(key, errorResponse.Headers[key])
+		}
+	}
+	w.WriteHeader(errorResponse.Status)
+	if errorResponse.Status == http.StatusInternalServerError {
+		jsonResponse, err = json.Marshal(models.Error{Code: models.InternalError, Description: models.InternalErrorDescription})
+	} else {
+		jsonResponse, err = json.Marshal(errorResponse)
+	}
+	if err != nil {
+		responseErr := models.NewError(ctx, err, models.JSONMarshalError, models.ErrorMarshalFailedDescription)
+		http.Error(w, responseErr.Description, http.StatusInternalServerError)
+		return
+	}
+
+	_, err = w.Write(jsonResponse)
+	if err != nil {
+		responseErr := models.NewError(ctx, err, models.WriteResponseError, models.WriteResponseFailedDescription)
+		http.Error(w, responseErr.Description, http.StatusInternalServerError)
+		return
+	}
+}
+
+func writeSuccessResponse(ctx context.Context, w http.ResponseWriter, successResponse *models.SuccessResponse) {
+	w.Header().Set("Content-Type", "application/json")
+	// process custom headers
+	if successResponse.Headers != nil {
+		for key := range successResponse.Headers {
+			w.Header().Set(key, successResponse.Headers[key])
+		}
+	}
+	w.WriteHeader(successResponse.Status)
+
+	_, err := w.Write(successResponse.Body)
+	if err != nil {
+		responseErr := models.NewError(ctx, err, models.WriteResponseError, models.WriteResponseFailedDescription)
+		http.Error(w, responseErr.Description, http.StatusInternalServerError)
+		return
+	}
+}
+
+type baseHandler func(ctx context.Context, w http.ResponseWriter, r *http.Request) (*models.SuccessResponse, *models.ErrorResponse)
+
+func contextAndErrors(h baseHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		ctx := req.Context()
+		response, err := h(ctx, w, req)
+		if err != nil {
+			writeErrorResponse(ctx, w, err)
+			return
+		}
+		writeSuccessResponse(ctx, w, response)
+	}
+}
+
 // enablePrivateDatasetEndpoints register the datasets endpoints with the appropriate authentication and authorisation
 // checks required when running the dataset API in publishing (private) mode.
 func (api *DatasetAPI) enablePrivateDatasetEndpoints(paginator *pagination.Paginator) {
@@ -250,7 +313,7 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(paginator *pagination.Pagin
 		"/datasets/{dataset_id}/editions/{edition}/versions",
 		api.isAuthenticated(
 			api.isAuthorisedForDatasets(createPermission,
-				api.addDatasetVersionCondensed)),
+				contextAndErrors(api.addDatasetVersionCondensed))),
 	)
 
 	if api.enableDetachDataset {
