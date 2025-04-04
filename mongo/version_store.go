@@ -39,30 +39,6 @@ func (m *Mongo) UpsertVersionStatic(ctx context.Context, id string, version *mod
 	return err
 }
 
-// GetNextVersion retrieves the latest version for an edition of a dataset
-func (m *Mongo) GetNextVersionStatic(ctx context.Context, datasetID, edition string) (int, error) {
-	var version models.Version
-	var nextVersion int
-
-	selector := bson.M{
-		"links.dataset.id": datasetID,
-		"links.edition.id": edition,
-	}
-
-	// Results are sorted in reverse order to get latest version
-	err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).FindOne(ctx, selector, &version, mongodriver.Sort(bson.M{"version": -1}))
-	if err != nil {
-		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
-			return 1, nil
-		}
-		return nextVersion, err
-	}
-
-	nextVersion = version.Version + 1
-
-	return nextVersion, nil
-}
-
 // AddVersion to the versions collection
 func (m *Mongo) AddVersionStatic(ctx context.Context, version *models.Version) (inst *models.Version, err error) {
 	version.LastUpdated = time.Now().UTC()

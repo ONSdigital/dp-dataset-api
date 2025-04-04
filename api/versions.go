@@ -971,11 +971,7 @@ func (api *DatasetAPI) addDatasetVersionCondensed(ctx context.Context, w http.Re
 		log.Warn(ctx, "edition not found, defaulting to version 1", logData)
 		nextVersion = 1
 	} else {
-		nextVersion, err = api.dataStore.Backend.GetNextVersionStatic(ctx, datasetID, edition)
-		if err != nil {
-			log.Error(ctx, "failed to get next version", err, logData)
-			return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(ctx, errs.ErrInternalServer, "failed to get next version", "internal error"))
-		}
+		nextVersion = latestVersion.Version + 1
 	}
 
 	if err == nil && latestVersion.State != models.PublishedState {

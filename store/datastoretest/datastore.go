@@ -102,9 +102,6 @@ var _ store.Storer = &StorerMock{}
 //			GetNextVersionFunc: func(ctx context.Context, datasetID string, editionID string) (int, error) {
 //				panic("mock out the GetNextVersion method")
 //			},
-//			GetNextVersionStaticFunc: func(ctx context.Context, datasetID string, editionID string) (int, error) {
-//				panic("mock out the GetNextVersionStatic method")
-//			},
 //			GetUniqueDimensionAndOptionsFunc: func(ctx context.Context, ID string, dimension string) ([]*string, int, error) {
 //				panic("mock out the GetUniqueDimensionAndOptions method")
 //			},
@@ -273,9 +270,6 @@ type StorerMock struct {
 
 	// GetNextVersionFunc mocks the GetNextVersion method.
 	GetNextVersionFunc func(ctx context.Context, datasetID string, editionID string) (int, error)
-
-	// GetNextVersionStaticFunc mocks the GetNextVersionStatic method.
-	GetNextVersionStaticFunc func(ctx context.Context, datasetID string, editionID string) (int, error)
 
 	// GetUniqueDimensionAndOptionsFunc mocks the GetUniqueDimensionAndOptions method.
 	GetUniqueDimensionAndOptionsFunc func(ctx context.Context, ID string, dimension string) ([]*string, int, error)
@@ -629,15 +623,6 @@ type StorerMock struct {
 			// EditionID is the editionID argument value.
 			EditionID string
 		}
-		// GetNextVersionStatic holds details about calls to the GetNextVersionStatic method.
-		GetNextVersionStatic []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// DatasetID is the datasetID argument value.
-			DatasetID string
-			// EditionID is the editionID argument value.
-			EditionID string
-		}
 		// GetUniqueDimensionAndOptions holds details about calls to the GetUniqueDimensionAndOptions method.
 		GetUniqueDimensionAndOptions []struct {
 			// Ctx is the ctx argument value.
@@ -951,7 +936,6 @@ type StorerMock struct {
 	lockGetInstances                        sync.RWMutex
 	lockGetLatestVersionStatic              sync.RWMutex
 	lockGetNextVersion                      sync.RWMutex
-	lockGetNextVersionStatic                sync.RWMutex
 	lockGetUniqueDimensionAndOptions        sync.RWMutex
 	lockGetVersion                          sync.RWMutex
 	lockGetVersionStatic                    sync.RWMutex
@@ -2110,46 +2094,6 @@ func (mock *StorerMock) GetNextVersionCalls() []struct {
 	mock.lockGetNextVersion.RLock()
 	calls = mock.calls.GetNextVersion
 	mock.lockGetNextVersion.RUnlock()
-	return calls
-}
-
-// GetNextVersionStatic calls GetNextVersionStaticFunc.
-func (mock *StorerMock) GetNextVersionStatic(ctx context.Context, datasetID string, editionID string) (int, error) {
-	if mock.GetNextVersionStaticFunc == nil {
-		panic("StorerMock.GetNextVersionStaticFunc: method is nil but Storer.GetNextVersionStatic was just called")
-	}
-	callInfo := struct {
-		Ctx       context.Context
-		DatasetID string
-		EditionID string
-	}{
-		Ctx:       ctx,
-		DatasetID: datasetID,
-		EditionID: editionID,
-	}
-	mock.lockGetNextVersionStatic.Lock()
-	mock.calls.GetNextVersionStatic = append(mock.calls.GetNextVersionStatic, callInfo)
-	mock.lockGetNextVersionStatic.Unlock()
-	return mock.GetNextVersionStaticFunc(ctx, datasetID, editionID)
-}
-
-// GetNextVersionStaticCalls gets all the calls that were made to GetNextVersionStatic.
-// Check the length with:
-//
-//	len(mockedStorer.GetNextVersionStaticCalls())
-func (mock *StorerMock) GetNextVersionStaticCalls() []struct {
-	Ctx       context.Context
-	DatasetID string
-	EditionID string
-} {
-	var calls []struct {
-		Ctx       context.Context
-		DatasetID string
-		EditionID string
-	}
-	mock.lockGetNextVersionStatic.RLock()
-	calls = mock.calls.GetNextVersionStatic
-	mock.lockGetNextVersionStatic.RUnlock()
 	return calls
 }
 

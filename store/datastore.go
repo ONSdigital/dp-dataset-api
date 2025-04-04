@@ -41,7 +41,6 @@ type dataMongoDB interface {
 	GetInstances(ctx context.Context, states []string, datasets []string, offset, limit int) ([]*models.Instance, int, error)
 	GetInstance(ctx context.Context, ID, eTagSelector string) (*models.Instance, error)
 	GetNextVersion(ctx context.Context, datasetID, editionID string) (int, error)
-	GetNextVersionStatic(ctx context.Context, datasetID, editionID string) (int, error)
 	GetVersion(ctx context.Context, datasetID, editionID string, version int, state string) (*models.Version, error)
 	GetVersionStatic(ctx context.Context, datasetID, editionID string, version int, state string) (*models.Version, error)
 	GetLatestVersionStatic(ctx context.Context, datasetID, editionID string, state string) (*models.Version, error)

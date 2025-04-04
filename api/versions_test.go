@@ -3040,9 +3040,6 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 					State: models.PublishedState,
 				}, nil
 			},
-			GetNextVersionStaticFunc: func(context.Context, string, string) (int, error) {
-				return 2, nil
-			},
 			AddVersionStaticFunc: func(context.Context, *models.Version) (*models.Version, error) {
 				return &models.Version{Edition: "time-series"}, nil
 			},
@@ -3058,7 +3055,6 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 		So(successResponse.Status, ShouldEqual, http.StatusCreated)
 		So(errorResponse, ShouldBeNil)
 		So(mockedDataStore.CheckDatasetExistsCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.GetNextVersionStaticCalls(), ShouldHaveLength, 1)
 	})
 
 	Convey("When dataset does not exist", t, func() {
@@ -3215,9 +3211,6 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
 				return errors.New("edition does not exist")
 			},
-			GetNextVersionStaticFunc: func(context.Context, string, string) (int, error) {
-				return 1, nil
-			},
 			AddVersionStaticFunc: func(context.Context, *models.Version) (*models.Version, error) {
 				return &models.Version{Version: 1, Edition: "time-series"}, nil
 			},
@@ -3261,9 +3254,6 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 			},
 			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
 				return nil
-			},
-			GetNextVersionStaticFunc: func(context.Context, string, string) (int, error) {
-				return 2, nil
 			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated"}}, nil
@@ -3329,9 +3319,6 @@ func TestAddDatasetVersionCondensed(t *testing.T) {
 			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
-			GetNextVersionStaticFunc: func(context.Context, string, string) (int, error) {
-				return 2, nil
-			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated"}}, nil
 			},
@@ -3382,9 +3369,6 @@ func TestAddDatasetVersionCondensedReturnsError(t *testing.T) {
 					State:   models.AssociatedState,
 				}, nil
 			},
-			GetNextVersionStaticFunc: func(context.Context, string, string) (int, error) {
-				return 2, nil
-			},
 		}
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
@@ -3418,9 +3402,6 @@ func TestAddDatasetVersionCondensedReturnsError(t *testing.T) {
 					State:   models.PublishedState,
 				}, nil
 			},
-			GetNextVersionStaticFunc: func(context.Context, string, string) (int, error) {
-				return 2, nil
-			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated"}}, nil
 			},
@@ -3440,7 +3421,6 @@ func TestAddDatasetVersionCondensedReturnsError(t *testing.T) {
 		So(errorResponse, ShouldBeNil)
 		So(mockedDataStore.CheckDatasetExistsCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.GetLatestVersionStaticCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.GetNextVersionStaticCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.AddVersionStaticCalls(), ShouldHaveLength, 1)
 	})
 
@@ -3459,9 +3439,6 @@ func TestAddDatasetVersionCondensedReturnsError(t *testing.T) {
 			},
 			GetLatestVersionStaticFunc: func(context.Context, string, string, string) (*models.Version, error) {
 				return nil, errs.ErrInternalServer
-			},
-			GetNextVersionStaticFunc: func(context.Context, string, string) (int, error) {
-				return 2, nil
 			},
 		}
 		datasetPermissions := getAuthorisationHandlerMock()
