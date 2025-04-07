@@ -1097,10 +1097,6 @@ func (api *DatasetAPI) generateVersionLinks(datasetID, edition string, version i
 			HRef: fmt.Sprintf("%s/datasets/%s", api.host, datasetID),
 			ID:   datasetID,
 		},
-		Dimensions: &models.LinkObject{
-			HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%d/dimensions", api.host, datasetID, edition, version),
-			ID:   datasetID,
-		},
 		Self: &models.LinkObject{
 			HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%d", api.host, datasetID, edition, version),
 		},
