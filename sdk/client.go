@@ -2,9 +2,12 @@ package sdk
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 
 	"github.com/ONSdigital/dp-api-clients-go/v2/health"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
+	dpNetRequest "github.com/ONSdigital/dp-net/v2/request"
 )
 
 const (
@@ -43,4 +46,28 @@ func (cli *Client) Health() *health.Client {
 // Checker calls topic api health endpoint and returns a check object to the caller
 func (cli *Client) Checker(ctx context.Context, check *healthcheck.CheckState) error {
 	return cli.hcCli.Checker(ctx, check)
+}
+
+// Adds collectID to request header if not empty
+// TODO: Add to dp-net?
+func addCollectionIDHeader(r *http.Request, collectionID string) {
+	if collectionID != "" {
+		r.Header.Add(dpNetRequest.CollectionIDHeaderKey, collectionID)
+	}
+}
+
+// closeResponseBody closes the response body and logs an error if unsuccessful
+// TODO: Add to dp-net?
+func closeResponseBody(resp *http.Response) (statusError *StatusError) {
+	statusError = &StatusError{}
+
+	if resp.Body != nil {
+		if err := resp.Body.Close(); err != nil {
+			statusError.Err = fmt.Errorf("error closing http response body from call to %s, error is: %v", service, err)
+			statusError.Code = http.StatusInternalServerError
+			return
+		}
+	}
+
+	return nil
 }

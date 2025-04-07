@@ -4,13 +4,17 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/ONSdigital/dp-api-clients-go/v2/health"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
+	dpNetRequest "github.com/ONSdigital/dp-net/v2/request"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -95,6 +99,73 @@ func TestHealthCheckerClient(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(initialStateCheck.Name(), ShouldEqual, service)
 			So(initialStateCheck.Status(), ShouldEqual, healthcheck.StatusOK)
+		})
+	})
+}
+
+// Tests for the `addCollectionIDHeader` function
+func TestAddCollectionIDHeader(t *testing.T) {
+	mockRequest := httptest.NewRequest("GET", "/", http.NoBody)
+
+	Convey("If collectionID is empty string", t, func() {
+		collectionID := ""
+		Convey("Test `CollectionIDHeaderKey` field is not added to the request header", func() {
+			addCollectionIDHeader(mockRequest, collectionID)
+			So(mockRequest.Header.Values(dpNetRequest.CollectionIDHeaderKey), ShouldBeEmpty)
+		})
+	})
+
+	Convey("If collectionID is a valid string", t, func() {
+		collectionID := "1234"
+		Convey("Test `CollectionIDHeaderKey` field is set to the request header", func() {
+			addCollectionIDHeader(mockRequest, collectionID)
+			So(mockRequest.Header.Values(dpNetRequest.CollectionIDHeaderKey), ShouldNotBeEmpty)
+			So(mockRequest.Header.Get(dpNetRequest.CollectionIDHeaderKey), ShouldEqual, collectionID)
+		})
+	})
+}
+
+type mockReadCloser struct {
+	raiseError bool
+}
+
+// Implemented just to keep compiler happy for mock object
+func (m *mockReadCloser) Read(p []byte) (n int, err error) {
+	return 0, io.EOF
+}
+
+// Returns an error if `raiseError` is `true`, otherwise `false`
+func (m *mockReadCloser) Close() error {
+	if m.raiseError {
+		return errors.New("error closing body")
+	}
+	return nil
+}
+
+// Tests for `closeResponseBody` function
+func TestCloseResponseBody(t *testing.T) {
+	Convey("If response body is nil", t, func() {
+		mockResponse := http.Response{Body: nil}
+
+		Convey("Test function returns nil (no body to close)", func() {
+			returnValue := closeResponseBody(&mockResponse)
+			So(returnValue, ShouldBeNil)
+		})
+	})
+
+	Convey("If response body is not nil", t, func() {
+		Convey("Test function returns nil if body.Close() completes without error", func() {
+			mockResponse := http.Response{Body: &mockReadCloser{raiseError: false}}
+
+			returnValue := closeResponseBody(&mockResponse)
+			So(returnValue, ShouldBeNil)
+		})
+		Convey("Test function returns an error if body.Close() returns an error", func() {
+			mockResponse := http.Response{Body: &mockReadCloser{raiseError: true}}
+
+			returnValue := closeResponseBody(&mockResponse)
+			So(returnValue, ShouldNotBeNil)
+			So(returnValue.Err.Error(), ShouldContainSubstring, fmt.Sprintf("error closing http response body from call to %s", service))
 		})
 	})
 }
