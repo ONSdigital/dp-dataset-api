@@ -13,6 +13,59 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+// Tests for the `QueryParams.Validate()` method
+func TestQueryParamsValidate(t *testing.T) {
+	Convey("If query params are valid", t, func() {
+		// Create some valid query params
+		queryParams := QueryParams{
+			Offset:    1,
+			Limit:     1,
+			IsBasedOn: "IsBasedOn",
+			IDs:       []string{"1", "2", "3"},
+		}
+
+		Convey("Test `Validate()` method returns nil", func() {
+			So(queryParams.Validate(), ShouldBeNil)
+		})
+	})
+
+	Convey("If query params are invalid", t, func() {
+		// Create some valid query params
+		queryParams := QueryParams{
+			Offset:    1,
+			Limit:     1,
+			IsBasedOn: "IsBasedOn",
+			IDs:       []string{"1", "2", "3"},
+		}
+		Convey("Test `Validate()` method raises error if `Offset` is negative", func() {
+			// Update `queryParams` to make `Offset` negative
+			queryParams.Offset = -1
+			result := queryParams.Validate()
+			So(result, ShouldNotBeNil)
+			So(result.Error(), ShouldEqual, "negative offsets or limits are not allowed")
+		})
+		Convey("Test `Validate()` method raises error if `Limit` is negative", func() {
+			// Update `queryParams` to make `Limit` negative
+			queryParams.Limit = -1
+			result := queryParams.Validate()
+			So(result, ShouldNotBeNil)
+			So(result.Error(), ShouldEqual, "negative offsets or limits are not allowed")
+		})
+		Convey("Test `Validate()` method raises error if `IDs` is too long", func() {
+			// Update `queryParams` to make `IDs` longer than `maxIDs` constant
+			iDsArray := make([]string, maxIDs+1)
+			for i := range iDsArray {
+				iDsArray[i] = strconv.Itoa(i)
+			}
+
+			queryParams.IDs = iDsArray
+			result := queryParams.Validate()
+			So(result, ShouldNotBeNil)
+			So(result.Error(), ShouldEqual, fmt.Sprintf("too many query parameters have been provided. Maximum allowed: %d", maxIDs))
+		})
+	})
+}
+
 // Tests for the `GetVersion` client method
 func TestGetVersion(t *testing.T) {
 	datasetID := "1234"
