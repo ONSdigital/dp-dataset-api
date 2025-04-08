@@ -48,8 +48,7 @@ func (c *Client) Checker(ctx context.Context, check *healthcheck.CheckState) err
 	return c.hcCli.Checker(ctx, check)
 }
 
-// Adds collectID to request header if not empty
-// TODO: Add to dp-net?
+// Adds input collectionID to request header if not empty
 func addCollectionIDHeader(r *http.Request, collectionID string) {
 	if collectionID != "" {
 		r.Header.Add(dpNetRequest.CollectionIDHeaderKey, collectionID)
@@ -57,7 +56,6 @@ func addCollectionIDHeader(r *http.Request, collectionID string) {
 }
 
 // closeResponseBody closes the response body and logs an error if unsuccessful
-// TODO: Add to dp-net?
 func closeResponseBody(ctx context.Context, resp *http.Response) {
 	if resp.Body != nil {
 		if err := resp.Body.Close(); err != nil {
