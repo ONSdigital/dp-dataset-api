@@ -145,6 +145,7 @@ func (m *mockReadCloser) Close() error {
 // Tests for `closeResponseBody` function
 func TestCloseResponseBody(t *testing.T) {
 	ctx := context.Background()
+	// Create a buffer to capture log output for tests
 	var buf bytes.Buffer
 	var fbBuf bytes.Buffer
 	log.SetDestination(&buf, &fbBuf)
@@ -156,11 +157,6 @@ func TestCloseResponseBody(t *testing.T) {
 		So(buf.String(), ShouldBeEmpty)
 	})
 	Convey("Test function logs an error if body.Close() returns an error", t, func() {
-		// Create a buffer to capture log output for this test
-		var buf bytes.Buffer
-		var fbBuf bytes.Buffer
-		log.SetDestination(&buf, &fbBuf)
-
 		mockResponse := http.Response{Body: &mockReadCloser{raiseError: true}}
 
 		closeResponseBody(ctx, &mockResponse)
