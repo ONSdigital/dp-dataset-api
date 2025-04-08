@@ -246,6 +246,13 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(paginator *pagination.Pagin
 				api.putMetadata)),
 	)
 
+	api.put(
+		"/datasets/{dataset_id}/editions/{edition}/versions/{version}/state",
+		api.isAuthenticated(
+			api.isAuthorisedForDatasets(updatePermission,
+				api.putState)),
+	)
+
 	api.post(
 		"/datasets/{dataset_id}/editions/{edition}/versions",
 		api.isAuthenticated(

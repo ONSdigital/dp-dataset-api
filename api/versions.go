@@ -41,6 +41,7 @@ var (
 		models.ErrPublishedVersionCollectionIDInvalid:  true,
 		models.ErrAssociatedVersionCollectionIDInvalid: true,
 		models.ErrVersionStateInvalid:                  true,
+		errs.ErrInvalidBody:                            true,
 	}
 
 	// HTTP 500 responses with a specific message
@@ -913,6 +914,8 @@ func handleVersionAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 		status = http.StatusBadRequest
 	case strings.HasPrefix(err.Error(), "invalid version requested"):
 		status = http.StatusBadRequest
+	case strings.HasPrefix(err.Error(), "state not allowed to transition"):
+		status = http.StatusBadRequest
 	default:
 		err = fmt.Errorf("%s: %w", errs.ErrInternalServer.Error(), err)
 		status = http.StatusInternalServerError
@@ -1114,4 +1117,67 @@ func (api *DatasetAPI) generateVersionLinks(datasetID, edition string, version i
 		},
 		Spatial: spatial,
 	}
+}
+
+func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
+	defer dphttp.DrainBody(r)
+
+	ctx := r.Context()
+	vars := mux.Vars(r)
+
+	datasetID := vars["dataset_id"]
+	edition := vars["edition"]
+	version := vars["version"]
+
+	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
+
+	log.Info(ctx, "putState endpoint: endpoint called", logData)
+
+	versionID, err := models.ParseAndValidateVersionNumber(ctx, version)
+	if err != nil {
+		log.Error(ctx, "putState endpoint: invalid version request", err, logData)
+		handleVersionAPIErr(ctx, err, w, logData)
+		return
+	}
+
+	log.Info(ctx, "putState endpoint: version request", log.Data{"version_id": versionID})
+
+	var stateUpdate models.StateUpdate
+	if err := json.NewDecoder(r.Body).Decode(&stateUpdate); err != nil {
+		log.Error(ctx, "putState endpoint: failed to unmarshal state update", err, logData)
+		handleVersionAPIErr(ctx, errs.ErrUnableToParseJSON, w, logData)
+		return
+	}
+
+	if stateUpdate.State == "" {
+		log.Error(ctx, "putState endpoint: state is empty", errs.ErrInvalidBody, logData)
+		handleVersionAPIErr(ctx, errs.ErrInvalidBody, w, logData)
+		return
+	}
+
+	log.Info(ctx, "putState endpoint: state update", log.Data{"state_update": stateUpdate})
+
+	currentVersion, err := api.dataStore.Backend.GetVersionStatic(ctx, datasetID, edition, versionID, "")
+	if err != nil {
+		log.Error(ctx, "putState endpoint: failed to get version", err, logData)
+		handleVersionAPIErr(ctx, err, w, logData)
+		return
+	}
+
+	log.Info(ctx, "putState endpoint: current version", log.Data{"current_version": currentVersion})
+
+	if currentVersion != nil {
+		currentVersion.State = stateUpdate.State
+		currentVersion.Type = models.Static.String()
+	}
+
+	err = api.smDatasetAPI.AmendVersion(r.Context(), vars, currentVersion)
+	if err != nil {
+		handleVersionAPIErr(ctx, err, w, logData)
+		return
+	}
+
+	setJSONContentType(w)
+	w.WriteHeader(http.StatusOK)
+	log.Info(ctx, "putState endpoint: request successful", logData)
 }
