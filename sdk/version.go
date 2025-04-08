@@ -3,6 +3,7 @@ package sdk
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -35,6 +36,16 @@ func (c *Client) GetVersion(ctx context.Context, userAccessToken, serviceToken,
 	}
 
 	defer closeResponseBody(ctx, resp)
+
+	if resp.StatusCode != http.StatusOK {
+		var errString string
+		errResponseReadErr := json.NewDecoder(resp.Body).Decode(&errString)
+		if errResponseReadErr != nil {
+			errString = "Client failed to read DatasetAPI body"
+		}
+		err = errors.New(errString)
+		return
+	}
 
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {

@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	dpNetRequest "github.com/ONSdigital/dp-net/v2/request"
 	. "github.com/smartystreets/goconvey/convey"
@@ -31,7 +32,7 @@ func TestGetVersion(t *testing.T) {
 		Version:      versionID,
 	}
 
-	Convey("If requested version is valid", t, func() {
+	Convey("If requested version is valid and get request returns 200", t, func() {
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, requestedVersion, map[string]string{}})
 		datasetApiClient := newDatasetAPIHealthcheckClient(t, httpClient)
 		returnedVersion, err := datasetApiClient.GetVersion(ctx, userAccessToken, serviceToken,
@@ -50,6 +51,17 @@ func TestGetVersion(t *testing.T) {
 		Convey("Test that the requested version is returned without error", func() {
 			So(err, ShouldBeNil)
 			So(returnedVersion, ShouldResemble, requestedVersion)
+		})
+	})
+
+	Convey("If requested version is not valid and get request returns 404", t, func() {
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusNotFound, apierrors.ErrVersionNotFound.Error(), map[string]string{}})
+		datasetApiClient := newDatasetAPIHealthcheckClient(t, httpClient)
+		_, err := datasetApiClient.GetVersion(ctx, userAccessToken, serviceToken,
+			downloadServiceToken, collectionID, datasetID, editionID, strconv.Itoa(versionID))
+		Convey("Test that an error is raised and should contain status code", func() {
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldEqual, apierrors.ErrVersionNotFound.Error())
 		})
 	})
 }
