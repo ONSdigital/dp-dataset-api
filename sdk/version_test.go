@@ -34,8 +34,8 @@ func TestGetVersion(t *testing.T) {
 
 	Convey("If requested version is valid and get request returns 200", t, func() {
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, requestedVersion, map[string]string{}})
-		datasetApiClient := newDatasetAPIHealthcheckClient(t, httpClient)
-		returnedVersion, err := datasetApiClient.GetVersion(ctx, userAccessToken, serviceToken,
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+		returnedVersion, err := datasetAPIClient.GetVersion(ctx, userAccessToken, serviceToken,
 			downloadServiceToken, collectionID, datasetID, editionID, strconv.Itoa(versionID))
 		Convey("Test that the request URI is constructed correctly and the correct method is used", func() {
 			expectedURI := fmt.Sprintf("/datasets/%s/editions/%s/versions/%s", datasetID, editionID, strconv.Itoa(versionID))
@@ -56,8 +56,8 @@ func TestGetVersion(t *testing.T) {
 
 	Convey("If requested version is not valid and get request returns 404", t, func() {
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusNotFound, apierrors.ErrVersionNotFound.Error(), map[string]string{}})
-		datasetApiClient := newDatasetAPIHealthcheckClient(t, httpClient)
-		_, err := datasetApiClient.GetVersion(ctx, userAccessToken, serviceToken,
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+		_, err := datasetAPIClient.GetVersion(ctx, userAccessToken, serviceToken,
 			downloadServiceToken, collectionID, datasetID, editionID, strconv.Itoa(versionID))
 		Convey("Test that an error is raised and should contain status code", func() {
 			So(err, ShouldNotBeNil)

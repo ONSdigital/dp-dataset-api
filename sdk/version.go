@@ -21,7 +21,7 @@ func (c *Client) GetVersion(ctx context.Context, userAccessToken, serviceToken,
 
 	req, err := http.NewRequest(http.MethodGet, uri, http.NoBody)
 	if err != nil {
-		return
+		return v, err
 	}
 
 	// Add auth headers
@@ -32,7 +32,7 @@ func (c *Client) GetVersion(ctx context.Context, userAccessToken, serviceToken,
 
 	resp, err := c.hcCli.Client.Do(ctx, req)
 	if err != nil {
-		return
+		return v, err
 	}
 
 	defer closeResponseBody(ctx, resp)
@@ -44,15 +44,15 @@ func (c *Client) GetVersion(ctx context.Context, userAccessToken, serviceToken,
 			errString = "Client failed to read DatasetAPI body"
 		}
 		err = errors.New(errString)
-		return
+		return v, err
 	}
 
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return
+		return v, err
 	}
 
 	err = json.Unmarshal(b, &v)
 
-	return
+	return v, err
 }

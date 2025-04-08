@@ -34,18 +34,18 @@ func NewWithHealthClient(hcCli *health.Client) *Client {
 }
 
 // URL returns the URL used by this client
-func (cli *Client) URL() string {
-	return cli.hcCli.URL
+func (c *Client) URL() string {
+	return c.hcCli.URL
 }
 
 // Health returns the underlying Healthcheck Client for this API client
-func (cli *Client) Health() *health.Client {
-	return cli.hcCli
+func (c *Client) Health() *health.Client {
+	return c.hcCli
 }
 
 // Checker calls topic api health endpoint and returns a check object to the caller
-func (cli *Client) Checker(ctx context.Context, check *healthcheck.CheckState) error {
-	return cli.hcCli.Checker(ctx, check)
+func (c *Client) Checker(ctx context.Context, check *healthcheck.CheckState) error {
+	return c.hcCli.Checker(ctx, check)
 }
 
 // Adds collectID to request header if not empty
@@ -58,12 +58,10 @@ func addCollectionIDHeader(r *http.Request, collectionID string) {
 
 // closeResponseBody closes the response body and logs an error if unsuccessful
 // TODO: Add to dp-net?
-func closeResponseBody(ctx context.Context, resp *http.Response) (err error) {
+func closeResponseBody(ctx context.Context, resp *http.Response) {
 	if resp.Body != nil {
 		if err := resp.Body.Close(); err != nil {
 			log.Error(ctx, "error closing http response body", err)
 		}
 	}
-
-	return nil
 }
