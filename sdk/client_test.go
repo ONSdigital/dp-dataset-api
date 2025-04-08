@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -15,6 +14,7 @@ import (
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	dphttp "github.com/ONSdigital/dp-net/v2/http"
 	dpNetRequest "github.com/ONSdigital/dp-net/v2/request"
+	"github.com/ONSdigital/log.go/v2/log"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -144,11 +144,13 @@ func (m *mockReadCloser) Close() error {
 
 // Tests for `closeResponseBody` function
 func TestCloseResponseBody(t *testing.T) {
+	ctx := context.Background()
+
 	Convey("If response body is nil", t, func() {
 		mockResponse := http.Response{Body: nil}
 
 		Convey("Test function returns nil (no body to close)", func() {
-			returnValue := closeResponseBody(&mockResponse)
+			returnValue := closeResponseBody(ctx, &mockResponse)
 			So(returnValue, ShouldBeNil)
 		})
 	})
@@ -157,15 +159,20 @@ func TestCloseResponseBody(t *testing.T) {
 		Convey("Test function returns nil if body.Close() completes without error", func() {
 			mockResponse := http.Response{Body: &mockReadCloser{raiseError: false}}
 
-			returnValue := closeResponseBody(&mockResponse)
+			returnValue := closeResponseBody(ctx, &mockResponse)
 			So(returnValue, ShouldBeNil)
 		})
-		Convey("Test function returns an error if body.Close() returns an error", func() {
+		Convey("Test function logs an error if body.Close() returns an error", func() {
+			// Create a buffer to capture log output for this test
+			var buf bytes.Buffer
+			var fbBuf bytes.Buffer
+			log.SetDestination(&buf, &fbBuf)
+
 			mockResponse := http.Response{Body: &mockReadCloser{raiseError: true}}
 
-			returnValue := closeResponseBody(&mockResponse)
-			So(returnValue, ShouldNotBeNil)
-			So(returnValue.Err.Error(), ShouldContainSubstring, fmt.Sprintf("error closing http response body from call to %s", service))
+			returnValue := closeResponseBody(ctx, &mockResponse)
+			So(returnValue, ShouldBeNil)
+			So(buf.String(), ShouldContainSubstring, "error closing http response body")
 		})
 	})
 }

@@ -2,12 +2,12 @@ package sdk
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/ONSdigital/dp-api-clients-go/v2/health"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	dpNetRequest "github.com/ONSdigital/dp-net/v2/request"
+	"github.com/ONSdigital/log.go/v2/log"
 )
 
 const (
@@ -58,14 +58,10 @@ func addCollectionIDHeader(r *http.Request, collectionID string) {
 
 // closeResponseBody closes the response body and logs an error if unsuccessful
 // TODO: Add to dp-net?
-func closeResponseBody(resp *http.Response) (statusError *StatusError) {
-	statusError = &StatusError{}
-
+func closeResponseBody(ctx context.Context, resp *http.Response) (err error) {
 	if resp.Body != nil {
 		if err := resp.Body.Close(); err != nil {
-			statusError.Err = fmt.Errorf("error closing http response body from call to %s, error is: %v", service, err)
-			statusError.Code = http.StatusInternalServerError
-			return
+			log.Error(ctx, "error closing http response body", err)
 		}
 	}
 
