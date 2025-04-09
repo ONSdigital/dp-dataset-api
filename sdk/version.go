@@ -8,9 +8,9 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
-	dpNetRequest "github.com/ONSdigital/dp-net/v2/request"
 )
 
 const (
@@ -23,16 +23,6 @@ type QueryParams struct {
 	IsBasedOn string
 	Limit     int
 	Offset    int
-}
-
-// VersionsList represents an object containing a list of paginated versions. This struct is based
-// on the `pagination.page` struct which is returned when we call the `getVersions` endpoint
-type VersionsList struct {
-	Items      []models.Version `json:"items"`
-	Count      int              `json:"count"`
-	Offset     int              `json:"offset"`
-	Limit      int              `json:"limit"`
-	TotalCount int              `json:"total_count"`
 }
 
 // Validate validates tht no negative values are provided for limit or offset, and that the length of
@@ -48,8 +38,7 @@ func (q *QueryParams) Validate() error {
 }
 
 // GetVersion gets a specific version for an edition from the dataset api
-func (c *Client) GetVersion(ctx context.Context, userAccessToken, serviceToken, downloadServiceToken,
-	collectionID, datasetID, editionID, versionID string) (version models.Version, err error) {
+func (c *Client) GetVersion(ctx context.Context, headers Headers, datasetID, editionID, versionID string) (version models.Version, err error) {
 	version = models.Version{}
 	uri, err := url.JoinPath(c.hcCli.URL, "datasets", datasetID, "editions", editionID, "versions", versionID)
 	if err != nil {
@@ -61,11 +50,8 @@ func (c *Client) GetVersion(ctx context.Context, userAccessToken, serviceToken, 
 		return version, err
 	}
 
-	// Add auth headers
-	addCollectionIDHeader(req, collectionID)
-	dpNetRequest.AddFlorenceHeader(req, userAccessToken)
-	dpNetRequest.AddServiceTokenHeader(req, serviceToken)
-	dpNetRequest.AddDownloadServiceTokenHeader(req, downloadServiceToken)
+	// Add auth headers to the request
+	headers.Add(req)
 
 	resp, err := c.hcCli.Client.Do(ctx, req)
 	if err != nil {
@@ -94,10 +80,66 @@ func (c *Client) GetVersion(ctx context.Context, userAccessToken, serviceToken, 
 	return version, err
 }
 
+// VersionsList represents an object containing a list of paginated versions. This struct is based
+// on the `pagination.page` struct which is returned when we call the `api.getVersions` endpoint
+type VersionsList struct {
+	Items      []models.Version `json:"items"`
+	Count      int              `json:"count"`
+	Offset     int              `json:"offset"`
+	Limit      int              `json:"limit"`
+	TotalCount int              `json:"total_count"`
+}
+
 // GetVersions gets all versions for an edition from the dataset api
-func (c *Client) GetVersions(ctx context.Context, userAccessToken, serviceToken, downloadServiceToken,
-	collectionID, datasetID, editionID string, queryParams *QueryParams) (versionsList VersionsList, err error) {
+func (c *Client) GetVersions(ctx context.Context, headers Headers, datasetID, editionID string, queryParams *QueryParams) (versionsList VersionsList, err error) {
 	versionsList = VersionsList{}
+	uri, err := url.JoinPath(c.hcCli.URL, "datasets", datasetID, "editions", editionID, "versions")
+	if err != nil {
+		return versionsList, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, uri, http.NoBody)
+	if err != nil {
+		return versionsList, err
+	}
+
+	// Add auth headers to the request
+	headers.Add(req)
+
+	// Add query params to request if valid
+	if queryParams != nil {
+		if err = queryParams.Validate(); err != nil {
+			return versionsList, err
+		}
+		requestQuery := req.URL.Query()
+		requestQuery.Add("limit", strconv.Itoa(queryParams.Limit))
+		requestQuery.Add("offset", strconv.Itoa(queryParams.Offset))
+		req.URL.RawQuery = requestQuery.Encode()
+	}
+
+	resp, err := c.hcCli.Client.Do(ctx, req)
+	if err != nil {
+		return versionsList, err
+	}
+
+	defer closeResponseBody(ctx, resp)
+
+	if resp.StatusCode != http.StatusOK {
+		var errString string
+		errResponseReadErr := json.NewDecoder(resp.Body).Decode(&errString)
+		if errResponseReadErr != nil {
+			errString = "Client failed to read DatasetAPI body"
+		}
+		err = errors.New(errString)
+		return versionsList, err
+	}
+
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return versionsList, err
+	}
+
+	err = json.Unmarshal(b, &versionsList)
 
 	return versionsList, err
 }
