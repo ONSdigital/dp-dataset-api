@@ -69,7 +69,12 @@ Feature: Private Dataset API
                     "survey": "mockSurvey"
             }
             """
-        Then the HTTP status code should be "200"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "survey": "mockSurvey"
+            }
+            """
         And the document in the database for id "population-estimates" should be:
         """
             {
@@ -94,7 +99,13 @@ Feature: Private Dataset API
                     "subtopics": ["subtopic-ID"]
             }
             """
-        Then the HTTP status code should be "200"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                    "canonical_topic": "canonical-topic-ID",
+                    "subtopics": ["subtopic-ID"]
+            }
+            """
         And the document in the database for id "population-estimates" should be:
         """
             {
@@ -123,7 +134,16 @@ Feature: Private Dataset API
 	                }]
             }
             """
-        Then the HTTP status code should be "200"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                    "related_content": [{
+		                "description": "Related content description",
+		                "href": "http://localhost:22000/datasets/123/relatedContent",
+		                "title": "Related content"
+	                }]
+            }
+            """
         And the document in the database for id "population-estimates" should be:
         """
             {
