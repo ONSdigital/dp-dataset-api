@@ -12,6 +12,24 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+const (
+	datasetID            = "1234"
+	downloadServiceToken = "mydownloadservicetoken"
+	collectionID         = "collection"
+	editionID            = "my-edition"
+	serviceToken         = "myservicetoken"
+	userAccessToken      = "myuseraccesstoken"
+)
+
+var ctx = context.Background()
+
+var headers = Headers{
+	CollectionID:         collectionID,
+	DownloadServiceToken: downloadServiceToken,
+	ServiceToken:         serviceToken,
+	UserAccessToken:      userAccessToken,
+}
+
 // Tests for the `QueryParams.Validate()` method
 func TestQueryParamsValidate(t *testing.T) {
 	Convey("If query params are valid", t, func() {
@@ -67,19 +85,6 @@ func TestQueryParamsValidate(t *testing.T) {
 
 // Tests for the `GetVersion` client method
 func TestGetVersion(t *testing.T) {
-	datasetID := "1234"
-	downloadServiceToken := "mydownloadservicetoken"
-	collectionID := "collection"
-	ctx := context.Background()
-	editionID := "my-edition"
-	serviceToken := "myservicetoken"
-	userAccessToken := "myuseraccesstoken"
-	headers := Headers{
-		CollectionID:         collectionID,
-		DownloadServiceToken: downloadServiceToken,
-		ServiceToken:         serviceToken,
-		UserAccessToken:      userAccessToken,
-	}
 	versionID := 1
 
 	requestedVersion := models.Version{
@@ -116,19 +121,6 @@ func TestGetVersion(t *testing.T) {
 }
 
 func TestGetVersions(t *testing.T) {
-	datasetID := "1234"
-	downloadServiceToken := "mydownloadservicetoken"
-	collectionID := "collection"
-	ctx := context.Background()
-	editionID := "my-edition"
-	serviceToken := "myservicetoken"
-	userAccessToken := "myuseraccesstoken"
-	headers := Headers{
-		CollectionID:         collectionID,
-		DownloadServiceToken: downloadServiceToken,
-		ServiceToken:         serviceToken,
-		UserAccessToken:      userAccessToken,
-	}
 	Convey("If input query params are nil", t, func() {
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, nil, map[string]string{}})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
