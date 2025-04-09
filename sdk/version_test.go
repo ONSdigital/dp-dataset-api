@@ -129,9 +129,8 @@ func TestGetVersions(t *testing.T) {
 		ServiceToken:         serviceToken,
 		UserAccessToken:      userAccessToken,
 	}
-	requestedVersionList := VersionsList{}
 	Convey("If input query params are nil", t, func() {
-		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, requestedVersionList, map[string]string{}})
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, nil, map[string]string{}})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
 		datasetAPIClient.GetVersions(ctx, headers, datasetID, editionID, nil)
 		Convey("Test that the request URI is constructed correctly and the correct method is used", func() {
@@ -140,8 +139,8 @@ func TestGetVersions(t *testing.T) {
 			So(httpClient.DoCalls()[0].Req.URL.RequestURI(), ShouldResemble, expectedURI)
 		})
 	})
-	Convey("If input query params are nil", t, func() {
-		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, requestedVersionList, map[string]string{}})
+	Convey("If input query params are empty", t, func() {
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, nil, map[string]string{}})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
 		queryParams := QueryParams{}
 		datasetAPIClient.GetVersions(ctx, headers, datasetID, editionID, &queryParams)
@@ -153,7 +152,7 @@ func TestGetVersions(t *testing.T) {
 		})
 	})
 	Convey("If input query params are not empty but invalid", t, func() {
-		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, requestedVersionList, map[string]string{}})
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, nil, map[string]string{}})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
 		// Create some invalid query params
 		queryParams := QueryParams{
@@ -166,13 +165,10 @@ func TestGetVersions(t *testing.T) {
 		Convey("Test that the client method raises an error", func() {
 			So(err, ShouldNotBeNil)
 			So(err.Error(), ShouldEqual, "negative offsets or limits are not allowed")
-			// expectedURI := fmt.Sprintf("/datasets/%s/editions/%s/versions", datasetID, editionID)
-			// So(httpClient.DoCalls()[0].Req.Method, ShouldEqual, http.MethodGet)
-			// So(httpClient.DoCalls()[0].Req.URL.RequestURI(), ShouldResemble, expectedURI)
 		})
 	})
 	Convey("If input query params are not empty and valid", t, func() {
-		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, requestedVersionList, map[string]string{}})
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, nil, map[string]string{}})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
 		// Create some valid query params
 		limit := 1
@@ -188,6 +184,27 @@ func TestGetVersions(t *testing.T) {
 			expectedURI := fmt.Sprintf("/datasets/%s/editions/%s/versions?limit=%d&offset=%d", datasetID, editionID, limit, offset)
 			So(httpClient.DoCalls()[0].Req.Method, ShouldEqual, http.MethodGet)
 			So(httpClient.DoCalls()[0].Req.URL.RequestURI(), ShouldResemble, expectedURI)
+		})
+	})
+	Convey("If requested dataset and edition is valid", t, func() {
+		requestedVersionList := VersionsList{}
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, requestedVersionList, map[string]string{}})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+		queryParams := QueryParams{}
+		returnedVersionsList, err := datasetAPIClient.GetVersions(ctx, headers, datasetID, editionID, &queryParams)
+		Convey("Test that the requested version is returned without error", func() {
+			So(err, ShouldBeNil)
+			So(returnedVersionsList, ShouldResemble, requestedVersionList)
+		})
+	})
+	Convey("If requested dataset and edition is not valid and get request returns 404", t, func() {
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusNotFound, apierrors.ErrVersionNotFound.Error(), map[string]string{}})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+		queryParams := QueryParams{}
+		_, err := datasetAPIClient.GetVersions(ctx, headers, datasetID, editionID, &queryParams)
+		Convey("Test that an error is raised and should contain status code", func() {
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldEqual, apierrors.ErrVersionNotFound.Error())
 		})
 	})
 }
