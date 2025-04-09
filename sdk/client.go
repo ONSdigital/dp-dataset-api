@@ -2,9 +2,11 @@ package sdk
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/ONSdigital/dp-api-clients-go/v2/health"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
+	dpNetRequest "github.com/ONSdigital/dp-net/v2/request"
 )
 
 const (
@@ -13,6 +15,25 @@ const (
 
 type Client struct {
 	hcCli *health.Client
+}
+
+// Contains the headers to be added to any request
+type Headers struct {
+	CollectionID         string
+	DownloadServiceToken string
+	ServiceToken         string
+	UserAccessToken      string
+}
+
+// Adds headers to the input request
+func (h *Headers) Add(request *http.Request) {
+	if h.CollectionID != "" {
+		request.Header.Add(dpNetRequest.CollectionIDHeaderKey, h.CollectionID)
+	}
+	dpNetRequest.AddDownloadServiceTokenHeader(request, h.DownloadServiceToken)
+	dpNetRequest.AddFlorenceHeader(request, h.UserAccessToken)
+	dpNetRequest.AddServiceTokenHeader(request, h.ServiceToken)
+
 }
 
 // Checker calls topic api health endpoint and returns a check object to the caller
