@@ -30,6 +30,15 @@ var headers = Headers{
 	UserAccessToken:      userAccessToken,
 }
 
+// This is the shape of a paginated list get request response
+type MockGetListRequestResponse struct {
+	Items      interface{}
+	Count      int
+	Offset     int
+	Limit      int
+	TotalCount int
+}
+
 // Tests for the `QueryParams.Validate()` method
 func TestQueryParamsValidate(t *testing.T) {
 	Convey("If query params are valid", t, func() {
@@ -87,7 +96,7 @@ func TestQueryParamsValidate(t *testing.T) {
 func TestGetVersion(t *testing.T) {
 	versionID := 1
 
-	requestedVersion := models.Version{
+	mockGetResponse := models.Version{
 		CollectionID: collectionID,
 		DatasetID:    datasetID,
 		Edition:      editionID,
@@ -95,7 +104,7 @@ func TestGetVersion(t *testing.T) {
 	}
 
 	Convey("If requested version is valid and get request returns 200", t, func() {
-		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, requestedVersion, map[string]string{}})
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, mockGetResponse, map[string]string{}})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
 		returnedVersion, err := datasetAPIClient.GetVersion(ctx, headers, datasetID, editionID, strconv.Itoa(versionID))
 		Convey("Test that the request URI is constructed correctly and the correct method is used", func() {
@@ -105,7 +114,7 @@ func TestGetVersion(t *testing.T) {
 		})
 		Convey("Test that the requested version is returned without error", func() {
 			So(err, ShouldBeNil)
-			So(returnedVersion, ShouldResemble, requestedVersion)
+			So(returnedVersion, ShouldResemble, mockGetResponse)
 		})
 	})
 
@@ -120,7 +129,62 @@ func TestGetVersion(t *testing.T) {
 	})
 }
 
+// Tests for the `GetVersionDimensions` client method
+func TestGetVersionDimensions(t *testing.T) {
+	versionID := 1
+	versionDimensions := []models.Dimension{
+		{
+			Description: "my 1st dimension",
+			ID:          "1",
+		},
+		{
+			Description: "my 2nd dimension",
+			ID:          "2",
+		},
+	}
+	mockGetResponse := MockGetListRequestResponse{
+		Items: versionDimensions,
+	}
+
+	Convey("If requested version is valid and get request returns 200", t, func() {
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, mockGetResponse, map[string]string{}})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+		returnedVersionDimensions, err := datasetAPIClient.GetVersionDimensions(ctx, headers, datasetID, editionID, strconv.Itoa(versionID))
+		Convey("Test that the request URI is constructed correctly and the correct method is used", func() {
+			expectedURI := fmt.Sprintf("/datasets/%s/editions/%s/versions/%d/dimensions", datasetID, editionID, versionID)
+			So(httpClient.DoCalls()[0].Req.Method, ShouldEqual, http.MethodGet)
+			So(httpClient.DoCalls()[0].Req.URL.RequestURI(), ShouldResemble, expectedURI)
+		})
+		Convey("Test that the requested version is returned without error", func() {
+			expectedVersionDimensionsList := VersionDimensionsList{
+				Items: versionDimensions,
+			}
+			So(err, ShouldBeNil)
+			So(returnedVersionDimensions, ShouldResemble, expectedVersionDimensionsList)
+		})
+	})
+}
+
+// Tests for the `GetVersions` client method
 func TestGetVersions(t *testing.T) {
+	versions := []models.Version{
+		{
+			CollectionID: collectionID,
+			DatasetID:    datasetID,
+			Edition:      editionID,
+			Version:      1,
+		},
+		{
+			CollectionID: collectionID,
+			DatasetID:    datasetID,
+			Edition:      editionID,
+			Version:      2,
+		},
+	}
+	mockGetResponse := MockGetListRequestResponse{
+		Items: versions,
+	}
+
 	Convey("If input query params are nil", t, func() {
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, nil, map[string]string{}})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
@@ -179,8 +243,10 @@ func TestGetVersions(t *testing.T) {
 		})
 	})
 	Convey("If requested dataset and edition is valid", t, func() {
-		requestedVersionList := VersionsList{}
-		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, requestedVersionList, map[string]string{}})
+		requestedVersionList := VersionsList{
+			Items: versions,
+		}
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, mockGetResponse, map[string]string{}})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
 		queryParams := QueryParams{}
 		returnedVersionsList, err := datasetAPIClient.GetVersions(ctx, headers, datasetID, editionID, &queryParams)
