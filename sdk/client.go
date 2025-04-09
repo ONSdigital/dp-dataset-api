@@ -7,6 +7,7 @@ import (
 	"github.com/ONSdigital/dp-api-clients-go/v2/health"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	dpNetRequest "github.com/ONSdigital/dp-net/v2/request"
+	"github.com/ONSdigital/log.go/v2/log"
 )
 
 const (
@@ -63,5 +64,14 @@ func New(datasetAPIUrl string) *Client {
 func NewWithHealthClient(hcCli *health.Client) *Client {
 	return &Client{
 		hcCli: health.NewClientWithClienter(service, hcCli.URL, hcCli.Client),
+	}
+}
+
+// closeResponseBody closes the response body and logs an error if unsuccessful
+func closeResponseBody(ctx context.Context, resp *http.Response) {
+	if resp.Body != nil {
+		if err := resp.Body.Close(); err != nil {
+			log.Error(ctx, "error closing http response body", err)
+		}
 	}
 }
