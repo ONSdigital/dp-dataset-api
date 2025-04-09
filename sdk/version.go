@@ -108,7 +108,7 @@ func (c *Client) GetVersions(ctx context.Context, headers Headers, datasetID, ed
 
 	// Add query params to request if valid
 	if queryParams != nil {
-		if err = queryParams.Validate(); err != nil {
+		if err := queryParams.Validate(); err != nil {
 			return versionsList, err
 		}
 		requestQuery := req.URL.Query()

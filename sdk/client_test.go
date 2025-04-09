@@ -136,7 +136,6 @@ func TestHeaders(t *testing.T) {
 			So(request.Header, ShouldNotContainKey, dpNetRequest.CollectionIDHeaderKey)
 			So(request.Header, ShouldNotContainKey, dpNetRequest.FlorenceHeaderKey)
 		})
-
 	})
 	Convey("If Headers struct contains value for `CollectionID`", t, func() {
 		headers := Headers{
@@ -174,7 +173,6 @@ func TestHeaders(t *testing.T) {
 			So(request.Header, ShouldNotContainKey, dpNetRequest.DownloadServiceHeaderKey)
 			So(request.Header, ShouldNotContainKey, dpNetRequest.FlorenceHeaderKey)
 		})
-
 	})
 	Convey("If Headers struct contains value for `UserAccessToken`", t, func() {
 		headers := Headers{

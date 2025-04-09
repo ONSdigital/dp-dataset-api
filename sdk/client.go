@@ -34,7 +34,6 @@ func (h *Headers) Add(request *http.Request) {
 	dpNetRequest.AddDownloadServiceTokenHeader(request, h.DownloadServiceToken)
 	dpNetRequest.AddFlorenceHeader(request, h.UserAccessToken)
 	dpNetRequest.AddServiceTokenHeader(request, h.ServiceToken)
-
 }
 
 // Checker calls topic api health endpoint and returns a check object to the caller
