@@ -80,6 +80,56 @@ func (c *Client) GetVersion(ctx context.Context, headers Headers, datasetID, edi
 	return version, err
 }
 
+// VersionDimensions represent a list of versionDimension
+type VersionDimensionsList struct {
+	Items []models.Dimension
+}
+
+// GetVersionDimensions will return a list of dimensions for a given version of a dataset
+func (c *Client) GetVersionDimensions(ctx context.Context, headers Headers, datasetID, editionID, versionID string) (versionDimensionsList VersionDimensionsList, err error) {
+	versionDimensionsList = VersionDimensionsList{}
+	// Build uri
+	uri, err := url.JoinPath(c.hcCli.URL, "datasets", datasetID, "editions", editionID, "versions", versionID, "dimensions")
+	if err != nil {
+		return versionDimensionsList, err
+	}
+
+	// Create new request
+	req, err := http.NewRequest(http.MethodGet, uri, http.NoBody)
+	if err != nil {
+		return versionDimensionsList, err
+	}
+
+	// Add auth headers to the request
+	headers.Add(req)
+
+	resp, err := c.hcCli.Client.Do(ctx, req)
+	if err != nil {
+		return versionDimensionsList, err
+	}
+
+	defer closeResponseBody(ctx, resp)
+
+	if resp.StatusCode != http.StatusOK {
+		var errString string
+		errResponseReadErr := json.NewDecoder(resp.Body).Decode(&errString)
+		if errResponseReadErr != nil {
+			errString = "Client failed to read DatasetAPI body"
+		}
+		err = errors.New(errString)
+		return versionDimensionsList, err
+	}
+
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return versionDimensionsList, err
+	}
+
+	err = json.Unmarshal(b, &versionDimensionsList)
+
+	return versionDimensionsList, err
+}
+
 // VersionsList represents an object containing a list of paginated versions. This struct is based
 // on the `pagination.page` struct which is returned when we call the `api.getVersions` endpoint
 type VersionsList struct {
