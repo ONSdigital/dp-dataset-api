@@ -1143,9 +1143,9 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if stateUpdate.State == "" {
-		log.Error(ctx, "putState endpoint: state is empty", errs.ErrInvalidBody, logData)
-		handleVersionAPIErr(ctx, errs.ErrInvalidBody, w, logData)
+	if err = models.CheckState("version", stateUpdate.State); err != nil {
+		log.Error(ctx, "putState endpoint: state is invalid", err, log.Data{"state": stateUpdate.State})
+		handleVersionAPIErr(ctx, models.ErrVersionStateInvalid, w, logData)
 		return
 	}
 

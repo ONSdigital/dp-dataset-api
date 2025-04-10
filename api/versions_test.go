@@ -3668,7 +3668,7 @@ func TestPutStateReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrInvalidBody.Error())
+		So(w.Body.String(), ShouldContainSubstring, models.ErrVersionStateInvalid.Error())
 	})
 
 	Convey("When the version is not found, return a not found error", t, func() {
