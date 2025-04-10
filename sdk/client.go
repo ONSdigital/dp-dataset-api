@@ -18,6 +18,39 @@ type Client struct {
 	hcCli *health.Client
 }
 
+// Contains the headers to be added to any request
+type Headers struct {
+	CollectionID         string
+	DownloadServiceToken string
+	ServiceToken         string
+	UserAccessToken      string
+}
+
+// Adds headers to the input request
+func (h *Headers) Add(request *http.Request) {
+	if h.CollectionID != "" {
+		request.Header.Add(dpNetRequest.CollectionIDHeaderKey, h.CollectionID)
+	}
+	dpNetRequest.AddDownloadServiceTokenHeader(request, h.DownloadServiceToken)
+	dpNetRequest.AddFlorenceHeader(request, h.UserAccessToken)
+	dpNetRequest.AddServiceTokenHeader(request, h.ServiceToken)
+}
+
+// Checker calls topic api health endpoint and returns a check object to the caller
+func (c *Client) Checker(ctx context.Context, check *healthcheck.CheckState) error {
+	return c.hcCli.Checker(ctx, check)
+}
+
+// Health returns the underlying Healthcheck Client for this API client
+func (c *Client) Health() *health.Client {
+	return c.hcCli
+}
+
+// URL returns the URL used by this client
+func (c *Client) URL() string {
+	return c.hcCli.URL
+}
+
 // New creates a new instance of Client for the service
 func New(datasetAPIUrl string) *Client {
 	return &Client{
@@ -30,28 +63,6 @@ func New(datasetAPIUrl string) *Client {
 func NewWithHealthClient(hcCli *health.Client) *Client {
 	return &Client{
 		hcCli: health.NewClientWithClienter(service, hcCli.URL, hcCli.Client),
-	}
-}
-
-// URL returns the URL used by this client
-func (c *Client) URL() string {
-	return c.hcCli.URL
-}
-
-// Health returns the underlying Healthcheck Client for this API client
-func (c *Client) Health() *health.Client {
-	return c.hcCli
-}
-
-// Checker calls topic api health endpoint and returns a check object to the caller
-func (c *Client) Checker(ctx context.Context, check *healthcheck.CheckState) error {
-	return c.hcCli.Checker(ctx, check)
-}
-
-// Adds input collectionID to request header if not empty
-func addCollectionIDHeader(r *http.Request, collectionID string) {
-	if collectionID != "" {
-		r.Header.Add(dpNetRequest.CollectionIDHeaderKey, collectionID)
 	}
 }
 
