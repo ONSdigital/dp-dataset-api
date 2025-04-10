@@ -2,10 +2,8 @@ package sdk
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -60,22 +58,8 @@ func (c *Client) GetVersion(ctx context.Context, headers Headers, datasetID, edi
 
 	defer closeResponseBody(ctx, resp)
 
-	if resp.StatusCode != http.StatusOK {
-		var errString string
-		errResponseReadErr := json.NewDecoder(resp.Body).Decode(&errString)
-		if errResponseReadErr != nil {
-			errString = "Client failed to read DatasetAPI body"
-		}
-		err = errors.New(errString)
-		return version, err
-	}
-
-	b, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return version, err
-	}
-
-	err = json.Unmarshal(b, &version)
+	// Unmarshall the response body to target
+	err = unmarshalResponseBody(resp, &version)
 
 	return version, err
 }
@@ -110,22 +94,8 @@ func (c *Client) GetVersionDimensions(ctx context.Context, headers Headers, data
 
 	defer closeResponseBody(ctx, resp)
 
-	if resp.StatusCode != http.StatusOK {
-		var errString string
-		errResponseReadErr := json.NewDecoder(resp.Body).Decode(&errString)
-		if errResponseReadErr != nil {
-			errString = "Client failed to read DatasetAPI body"
-		}
-		err = errors.New(errString)
-		return versionDimensionsList, err
-	}
-
-	b, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return versionDimensionsList, err
-	}
-
-	err = json.Unmarshal(b, &versionDimensionsList)
+	// Unmarshall the response body to target
+	err = unmarshalResponseBody(resp, &versionDimensionsList)
 
 	return versionDimensionsList, err
 }
@@ -153,22 +123,8 @@ func (c *Client) GetVersionMetadata(ctx context.Context, headers Headers, datase
 
 	defer closeResponseBody(ctx, resp)
 
-	if resp.StatusCode != http.StatusOK {
-		var errString string
-		errResponseReadErr := json.NewDecoder(resp.Body).Decode(&errString)
-		if errResponseReadErr != nil {
-			errString = "Client failed to read DatasetAPI body"
-		}
-		err = errors.New(errString)
-		return metadata, err
-	}
-
-	b, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return metadata, err
-	}
-
-	err = json.Unmarshal(b, &metadata)
+	// Unmarshall the response body to target
+	err = unmarshalResponseBody(resp, &metadata)
 
 	return metadata, err
 }
@@ -217,22 +173,8 @@ func (c *Client) GetVersions(ctx context.Context, headers Headers, datasetID, ed
 
 	defer closeResponseBody(ctx, resp)
 
-	if resp.StatusCode != http.StatusOK {
-		var errString string
-		errResponseReadErr := json.NewDecoder(resp.Body).Decode(&errString)
-		if errResponseReadErr != nil {
-			errString = "Client failed to read DatasetAPI body"
-		}
-		err = errors.New(errString)
-		return versionsList, err
-	}
-
-	b, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return versionsList, err
-	}
-
-	err = json.Unmarshal(b, &versionsList)
+	// Unmarshall the response body to target
+	err = unmarshalResponseBody(resp, &versionsList)
 
 	return versionsList, err
 }

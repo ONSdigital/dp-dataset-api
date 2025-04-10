@@ -2,6 +2,9 @@ package sdk
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 
 	"github.com/ONSdigital/dp-api-clients-go/v2/health"
@@ -73,4 +76,24 @@ func closeResponseBody(ctx context.Context, resp *http.Response) {
 			log.Error(ctx, "error closing http response body", err)
 		}
 	}
+}
+
+// Takes the input http response and unmarshalls the body to the input target
+func unmarshalResponseBody(response *http.Response, target interface{}) (err error) {
+	if response.StatusCode != http.StatusOK {
+		var errString string
+		errResponseReadErr := json.NewDecoder(response.Body).Decode(&errString)
+		if errResponseReadErr != nil {
+			errString = "Client failed to read DatasetAPI body"
+		}
+		err = errors.New(errString)
+		return err
+	}
+
+	b, err := io.ReadAll(response.Body)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(b, &target)
 }
