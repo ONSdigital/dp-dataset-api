@@ -130,6 +130,49 @@ func (c *Client) GetVersionDimensions(ctx context.Context, headers Headers, data
 	return versionDimensionsList, err
 }
 
+// GetVersionMetadata returns the metadata for a given dataset id, edition and version
+func (c *Client) GetVersionMetadata(ctx context.Context, headers Headers, datasetID, editionID, versionID string) (metadata models.Metadata, err error) {
+	metadata = models.Metadata{}
+	uri, err := url.JoinPath(c.hcCli.URL, "datasets", datasetID, "editions", editionID, "versions", versionID, "metadata")
+	if err != nil {
+		return metadata, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, uri, http.NoBody)
+	if err != nil {
+		return metadata, err
+	}
+
+	// Add auth headers to the request
+	headers.Add(req)
+
+	resp, err := c.hcCli.Client.Do(ctx, req)
+	if err != nil {
+		return metadata, err
+	}
+
+	defer closeResponseBody(ctx, resp)
+
+	if resp.StatusCode != http.StatusOK {
+		var errString string
+		errResponseReadErr := json.NewDecoder(resp.Body).Decode(&errString)
+		if errResponseReadErr != nil {
+			errString = "Client failed to read DatasetAPI body"
+		}
+		err = errors.New(errString)
+		return metadata, err
+	}
+
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return metadata, err
+	}
+
+	err = json.Unmarshal(b, &metadata)
+
+	return metadata, err
+}
+
 // VersionsList represents an object containing a list of paginated versions. This struct is based
 // on the `pagination.page` struct which is returned when we call the `api.getVersions` endpoint
 type VersionsList struct {

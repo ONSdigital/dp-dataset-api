@@ -163,6 +163,49 @@ func TestGetVersionDimensions(t *testing.T) {
 			So(returnedVersionDimensions, ShouldResemble, expectedVersionDimensionsList)
 		})
 	})
+	Convey("If requested version is not valid and get request returns 404", t, func() {
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusNotFound, apierrors.ErrVersionNotFound.Error(), map[string]string{}})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+		_, err := datasetAPIClient.GetVersionDimensions(ctx, headers, datasetID, editionID, strconv.Itoa(versionID))
+		Convey("Test that an error is raised and should contain status code", func() {
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldEqual, apierrors.ErrVersionNotFound.Error())
+		})
+	})
+}
+
+// Tests for the `GetVersionMetadata` client method
+func TestGetVersionMetadata(t *testing.T) {
+	versionID := 1
+	versionMetadata := models.Metadata{
+		Edition: editionID,
+		Version: versionID,
+	}
+	mockGetResponse := versionMetadata
+
+	Convey("If requested version is valid and get request returns 200", t, func() {
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, mockGetResponse, map[string]string{}})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+		returnedVersionDimensions, err := datasetAPIClient.GetVersionMetadata(ctx, headers, datasetID, editionID, strconv.Itoa(versionID))
+		Convey("Test that the request URI is constructed correctly and the correct method is used", func() {
+			expectedURI := fmt.Sprintf("/datasets/%s/editions/%s/versions/%d/metadata", datasetID, editionID, versionID)
+			So(httpClient.DoCalls()[0].Req.Method, ShouldEqual, http.MethodGet)
+			So(httpClient.DoCalls()[0].Req.URL.RequestURI(), ShouldResemble, expectedURI)
+		})
+		Convey("Test that the requested version is returned without error", func() {
+			So(err, ShouldBeNil)
+			So(returnedVersionDimensions, ShouldResemble, versionMetadata)
+		})
+	})
+	Convey("If requested version is not valid and get request returns 404", t, func() {
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusNotFound, apierrors.ErrVersionNotFound.Error(), map[string]string{}})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+		_, err := datasetAPIClient.GetVersionMetadata(ctx, headers, datasetID, editionID, strconv.Itoa(versionID))
+		Convey("Test that an error is raised and should contain status code", func() {
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldEqual, apierrors.ErrVersionNotFound.Error())
+		})
+	})
 }
 
 // Tests for the `GetVersions` client method
