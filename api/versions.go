@@ -1136,8 +1136,6 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Info(ctx, "putState endpoint: version request", log.Data{"version_id": versionID})
-
 	var stateUpdate models.StateUpdate
 	if err := json.NewDecoder(r.Body).Decode(&stateUpdate); err != nil {
 		log.Error(ctx, "putState endpoint: failed to unmarshal state update", err, logData)
@@ -1151,16 +1149,12 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Info(ctx, "putState endpoint: state update", log.Data{"state_update": stateUpdate})
-
 	currentVersion, err := api.dataStore.Backend.GetVersionStatic(ctx, datasetID, edition, versionID, "")
 	if err != nil {
 		log.Error(ctx, "putState endpoint: failed to get version", err, logData)
 		handleVersionAPIErr(ctx, err, w, logData)
 		return
 	}
-
-	log.Info(ctx, "putState endpoint: current version", log.Data{"current_version": currentVersion})
 
 	if currentVersion != nil {
 		currentVersion.State = stateUpdate.State
