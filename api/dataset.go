@@ -428,17 +428,17 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 	datasetID := vars["dataset_id"]
 	data := log.Data{"dataset_id": datasetID}
 
-	err := func() error {
+	b, err := func() ([]byte, error) {
 		dataset, err := models.CreateDataset(r.Body)
 		if err != nil {
 			log.Error(ctx, "putDataset endpoint: failed to model dataset resource based on request", err, data)
-			return errs.ErrAddUpdateDatasetBadRequest
+			return nil, errs.ErrAddUpdateDatasetBadRequest
 		}
 
 		currentDataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 		if err != nil {
 			log.Error(ctx, "putDataset endpoint: datastore.getDataset returned an error", err, data)
-			return err
+			return nil, err
 		}
 
 		dataset.Type = currentDataset.Next.Type
@@ -447,21 +447,27 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 
 		if err = models.ValidateDataset(dataset); err != nil {
 			log.Error(ctx, "putDataset endpoint: failed validation check to update dataset", err, data)
-			return err
+			return nil, err
 		}
 
 		if dataset.State == models.PublishedState {
 			if err := api.publishDataset(ctx, currentDataset, nil); err != nil {
 				log.Error(ctx, "putDataset endpoint: failed to update dataset document to published", err, data)
-				return err
+				return nil, err
 			}
 		} else {
 			if err := api.dataStore.Backend.UpdateDataset(ctx, datasetID, dataset, currentDataset.Next.State); err != nil {
 				log.Error(ctx, "putDataset endpoint: failed to update dataset resource", err, data)
-				return err
+				return nil, err
 			}
 		}
-		return nil
+
+		b, err := json.Marshal(dataset)
+		if err != nil {
+			log.Error(ctx, "putDataset endpoint: failed to marshal dataset resource into bytes", err, data)
+			return nil, err
+		}
+		return b, nil
 	}()
 
 	if err != nil {
@@ -471,6 +477,10 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusOK)
+	if _, err = w.Write(b); err != nil {
+		log.Error(ctx, "putDataset endpoint: error writing bytes to response", err, data)
+		handleDatasetAPIErr(ctx, err, w, data)
+	}
 	log.Info(ctx, "putDataset endpoint: request successful", data)
 }
 
