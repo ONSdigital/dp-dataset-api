@@ -140,6 +140,18 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 			TargetState:         application.Associated,
 			AllowedSourceStates: []string{"created"},
 			Type:                "static",
+		},
+		{
+			Label:               "published",
+			TargetState:         application.Published,
+			AllowedSourceStates: []string{"created", "associated", "published"},
+			Type:                "static",
+		},
+		{
+			Label:               "associated",
+			TargetState:         application.Associated,
+			AllowedSourceStates: []string{"created", "associated"},
+			Type:                "static",
 		}}
 
 	mockStatemachineDatasetAPI := application.StateMachineDatasetAPI{

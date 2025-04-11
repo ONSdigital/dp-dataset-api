@@ -3462,3 +3462,252 @@ func TestAddDatasetVersionCondensedReturnsError(t *testing.T) {
 		So(mockedDataStore.GetLatestVersionStaticCalls(), ShouldHaveLength, 1)
 	})
 }
+
+func TestPutStateReturnsOk(t *testing.T) {
+	Convey("When we make a valid request to the state endpoint", t, func() {
+		b := `{"state":"published"}`
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1/state", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionStaticFunc: func(ctx context.Context, datasetID string, editionID string, version int, state string) (*models.Version, error) {
+				jsonData := `{
+						"alerts": [
+						  {}
+						],
+						"edition": "test-edition-1",
+						"edition_title": "test-edition-1",
+						"last_updated": "2025-04-09T12:14:31.593Z",
+						"links": {
+						  "dataset": {
+							"href": "http://dp-dataset-api:22000/datasets/test-static-dataset",
+							"id": "test-static-dataset"
+						  },
+						  "dimensions": {
+							"href": "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1/dimensions",
+							"id": "test-static-dataset"
+						  },
+						  "edition": {
+							"href": "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1",
+							"id": "test-edition-1"
+						  },
+						  "self": {
+							"href": "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1"
+						  }
+						},
+						"release_date": "2025-01-15",
+						"state": "associated",
+						"temporal": [
+						  {
+							"end_date": "2025-01-31",
+							"frequency": "Monthly",
+							"start_date": "2025-01-01"
+						  }
+						],
+						"usage_notes": [
+						  {
+							"note": "This dataset is subject to revision and should be used in conjunction with the accompanying documentation.",
+							"title": "Data usage guide"
+						  }
+						],
+						"version": 1,
+						"type": "static",
+						"distributions": [
+						  {}
+						]
+					  }`
+
+				var versionModel models.Version
+
+				err := json.Unmarshal([]byte(jsonData), &versionModel)
+				So(err, ShouldBeNil)
+
+				versionModel.Links.Version = &models.LinkObject{
+					ID:   "1",
+					HRef: "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1",
+				}
+
+				return &versionModel, nil
+			},
+
+			AcquireVersionsLockFunc: func(context.Context, string) (string, error) {
+				return testLockID, nil
+			},
+
+			UnlockVersionsFunc: func(ctx context.Context, lockID string) {
+			},
+
+			CheckEditionExistsStaticFunc: func(ctx context.Context, id string, editionID string, state string) error {
+				return nil
+			},
+
+			UpdateVersionStaticFunc: func(ctx context.Context, currentVersion *models.Version, versionUpdate *models.Version, eTagSelector string) (string, error) {
+				return "", nil
+			},
+
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				return models.Static.String(), nil
+			},
+
+			UpsertVersionStaticFunc: func(ctx context.Context, ID string, versionDoc *models.Version) error {
+				return nil
+			},
+
+			GetDatasetFunc: func(ctx context.Context, ID string) (*models.DatasetUpdate, error) {
+				jsonData := `{
+					"id": "test-static-dataset",
+					"next": {
+					  "contacts": [
+						{
+						  "email": "contact-dataset-email@gmail.com",
+						  "name": "Dataset Contact name",
+						  "telephone": "999"
+						}
+					  ],
+					  "description": "This is an example of a static overview page. The contents of this description will also be used by google tags to improve search engine results directing people here.",
+					  "keywords": [
+						"keyword"
+					  ],
+					  "id": "test-static-dataset",
+					  "links": {
+						"editions": {
+						  "href": "http://dp-dataset-api:22000/datasets/test-static-dataset/editions"
+						},
+						"self": {
+						  "href": "http://dp-dataset-api:22000/datasets/test-static-dataset"
+						}
+					  },
+					  "next_release": "tomorrow",
+					  "publisher": {
+						"href": "publishers-url",
+						"name": "publishers-name",
+						"type": "publishers-type"
+					  },
+					  "state": "associated",
+					  "title": "Static overview page example",
+					  "type": "static",
+					  "topics": [
+						"subtopic 1",
+						"canonical-topic 1"
+					  ]
+					}
+				  }`
+
+				var datasetUpdate models.DatasetUpdate
+				err := json.Unmarshal([]byte(jsonData), &datasetUpdate)
+				So(err, ShouldBeNil)
+				return &datasetUpdate, nil
+			},
+
+			UpsertDatasetFunc: func(ctx context.Context, ID string, datasetDoc *models.DatasetUpdate) error {
+				return nil
+			},
+		}
+
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(mockedDataStore.GetVersionStaticCalls(), ShouldHaveLength, 3)
+		So(mockedDataStore.AcquireVersionsLockCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UnlockVersionsCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpdateVersionStaticCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetDatasetTypeCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpsertVersionStaticCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.CheckEditionExistsStaticCalls(), ShouldHaveLength, 1)
+	})
+}
+
+func TestPutStateReturnsError(t *testing.T) {
+	t.Parallel()
+
+	Convey("When the request has an invalid version ID, return a bad request error", t, func() {
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123-456/editions/678/versions/-123/state", http.NoBody)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{}
+
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
+
+		api.putState(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInvalidVersion.Error())
+	})
+
+	Convey("When the request has an invalid body, return a bad request error", t, func() {
+		b := `{"state":"invalid-body}`
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123-456/editions/678/versions/1/state", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{}
+
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrUnableToParseJSON.Error())
+	})
+
+	Convey("When the request has an empty state, return a bad request error", t, func() {
+		b := `{"state":""}`
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123-456/editions/678/versions/1/state", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{}
+
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, models.ErrVersionStateInvalid.Error())
+	})
+
+	Convey("When the version is not found, return a not found error", t, func() {
+		b := `{"state":"published"}`
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123-456/editions/678/versions/1/state", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionStaticFunc: func(ctx context.Context, datasetID string, editionID string, version int, state string) (*models.Version, error) {
+				return nil, errs.ErrVersionNotFound
+			},
+		}
+
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
+	})
+
+	Convey("When an error occurs, return internal server error", t, func() {
+		b := `{"state":"published"}`
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123-456/editions/678/versions/1/state", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionStaticFunc: func(ctx context.Context, datasetID string, editionID string, version int, state string) (*models.Version, error) {
+				return nil, errors.New("some error")
+			},
+		}
+
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+	})
+}
