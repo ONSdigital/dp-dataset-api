@@ -64,7 +64,7 @@ func (c *Client) GetVersion(ctx context.Context, headers Headers, datasetID, edi
 	return version, err
 }
 
-// VersionDimensions represent a list of versionDimension
+// VersionDimensionsList represent a list of Dimension
 type VersionDimensionsList struct {
 	Items []models.Dimension
 }
@@ -98,6 +98,52 @@ func (c *Client) GetVersionDimensions(ctx context.Context, headers Headers, data
 	err = unmarshalResponseBody(resp, &versionDimensionsList)
 
 	return versionDimensionsList, err
+}
+
+// VersionDimensionOptionsList represent a list of PublicDimensionOption
+type VersionDimensionOptionsList struct {
+	Items []models.PublicDimensionOption
+}
+
+// Returns the options for a dimension
+func (c *Client) GetVersionDimensionOptions(ctx context.Context, headers Headers, datasetID, editionID, versionID, dimensionID string, queryParams *QueryParams) (versionDimensionOptionsList VersionDimensionOptionsList, err error) {
+	versionDimensionOptionsList = VersionDimensionOptionsList{}
+	// Build uri
+	uri, err := url.JoinPath(c.hcCli.URL, "datasets", datasetID, "editions", editionID, "versions", versionID, "dimensions", dimensionID, "options")
+	if err != nil {
+		return versionDimensionOptionsList, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, uri, http.NoBody)
+	if err != nil {
+		return versionDimensionOptionsList, err
+	}
+
+	// Add auth headers to the request
+	headers.Add(req)
+
+	// Add query params to request if valid
+	if queryParams != nil {
+		if err := queryParams.Validate(); err != nil {
+			return versionDimensionOptionsList, err
+		}
+		requestQuery := req.URL.Query()
+		requestQuery.Add("limit", strconv.Itoa(queryParams.Limit))
+		requestQuery.Add("offset", strconv.Itoa(queryParams.Offset))
+		req.URL.RawQuery = requestQuery.Encode()
+	}
+
+	resp, err := c.hcCli.Client.Do(ctx, req)
+	if err != nil {
+		return versionDimensionOptionsList, err
+	}
+
+	defer closeResponseBody(ctx, resp)
+
+	// Unmarshal the response body to target
+	err = unmarshalResponseBody(resp, &versionDimensionOptionsList)
+
+	return versionDimensionOptionsList, err
 }
 
 // GetVersionMetadata returns the metadata for a given dataset id, edition and version

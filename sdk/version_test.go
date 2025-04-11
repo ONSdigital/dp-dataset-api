@@ -174,6 +174,104 @@ func TestGetVersionDimensions(t *testing.T) {
 	})
 }
 
+// Tests for the `GetVersionDimensionOptions` client method
+func TestGetVersionDimensionOptions(t *testing.T) {
+	versionID := "1"
+	dimensionID := "1"
+	dimensionOptions := []models.PublicDimensionOption{
+		{
+			Label: "my 1st option",
+		},
+		{
+			Label: "my 2nd option",
+		},
+	}
+	mockGetResponse := MockGetListRequestResponse{
+		Items: dimensionOptions,
+	}
+
+	Convey("If input query params are nil", t, func() {
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, nil, map[string]string{}})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+		datasetAPIClient.GetVersionDimensionOptions(ctx, headers, datasetID, editionID, versionID, dimensionID, nil)
+		Convey("Test that the request URI is constructed correctly and the correct method is used", func() {
+			expectedURI := fmt.Sprintf("/datasets/%s/editions/%s/versions/%s/dimensions/%s/options", datasetID, editionID, versionID, dimensionID)
+			So(httpClient.DoCalls()[0].Req.Method, ShouldEqual, http.MethodGet)
+			So(httpClient.DoCalls()[0].Req.URL.RequestURI(), ShouldResemble, expectedURI)
+		})
+	})
+	Convey("If input query params are empty", t, func() {
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, nil, map[string]string{}})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+		queryParams := QueryParams{}
+		datasetAPIClient.GetVersionDimensionOptions(ctx, headers, datasetID, editionID, versionID, dimensionID, &queryParams)
+		Convey("Test that the request URI is constructed correctly and the correct method is used", func() {
+			// URI should be built with default values
+			expectedURI := fmt.Sprintf("/datasets/%s/editions/%s/versions/%s/dimensions/%s/options?limit=0&offset=0", datasetID, editionID, versionID, dimensionID)
+			So(httpClient.DoCalls()[0].Req.Method, ShouldEqual, http.MethodGet)
+			So(httpClient.DoCalls()[0].Req.URL.RequestURI(), ShouldResemble, expectedURI)
+		})
+	})
+	Convey("If input query params are not empty but invalid", t, func() {
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, nil, map[string]string{}})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+		// Create some invalid query params
+		queryParams := QueryParams{
+			IDs:       []string{"1", "2", "3"},
+			IsBasedOn: "mytestdataset",
+			Limit:     -1,
+			Offset:    2,
+		}
+		_, err := datasetAPIClient.GetVersionDimensionOptions(ctx, headers, datasetID, editionID, versionID, dimensionID, &queryParams)
+		Convey("Test that the client method raises an error", func() {
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldEqual, "negative offsets or limits are not allowed")
+		})
+	})
+	Convey("If input query params are not empty and valid", t, func() {
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, nil, map[string]string{}})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+		// Create some valid query params
+		limit := 1
+		offset := 2
+		queryParams := QueryParams{
+			IDs:       []string{"1", "2", "3"},
+			IsBasedOn: "mytestdataset",
+			Limit:     limit,
+			Offset:    offset,
+		}
+		datasetAPIClient.GetVersionDimensionOptions(ctx, headers, datasetID, editionID, versionID, dimensionID, &queryParams)
+		Convey("Test that the request URI is constructed correctly and the correct method is used", func() {
+			expectedURI := fmt.Sprintf("/datasets/%s/editions/%s/versions/%s/dimensions/%s/options?limit=%d&offset=%d", datasetID, editionID, versionID, dimensionID, limit, offset)
+			So(httpClient.DoCalls()[0].Req.Method, ShouldEqual, http.MethodGet)
+			So(httpClient.DoCalls()[0].Req.URL.RequestURI(), ShouldResemble, expectedURI)
+		})
+	})
+	Convey("If requested dataset and edition is valid", t, func() {
+		requestedVersionDimensionOptions := VersionDimensionOptionsList{
+			Items: dimensionOptions,
+		}
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, mockGetResponse, map[string]string{}})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+		queryParams := QueryParams{}
+		returnedVersionDimensionOptions, err := datasetAPIClient.GetVersionDimensionOptions(ctx, headers, datasetID, editionID, versionID, dimensionID, &queryParams)
+		Convey("Test that the requested version is returned without error", func() {
+			So(err, ShouldBeNil)
+			So(returnedVersionDimensionOptions, ShouldResemble, requestedVersionDimensionOptions)
+		})
+	})
+	Convey("If requested dataset and edition is not valid and get request returns 404", t, func() {
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusNotFound, apierrors.ErrVersionNotFound.Error(), map[string]string{}})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+		queryParams := QueryParams{}
+		_, err := datasetAPIClient.GetVersionDimensionOptions(ctx, headers, datasetID, editionID, versionID, dimensionID, &queryParams)
+		Convey("Test that an error is raised and should contain status code", func() {
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldEqual, apierrors.ErrVersionNotFound.Error())
+		})
+	})
+}
+
 // Tests for the `GetVersionMetadata` client method
 func TestGetVersionMetadata(t *testing.T) {
 	versionID := 1
