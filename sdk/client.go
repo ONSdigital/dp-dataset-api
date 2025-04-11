@@ -78,7 +78,7 @@ func closeResponseBody(ctx context.Context, resp *http.Response) {
 	}
 }
 
-// Takes the input http response and unmarshalls the body to the input target
+// Takes the input http response and unmarshals the body to the input target
 func unmarshalResponseBody(response *http.Response, target interface{}) (err error) {
 	if response.StatusCode != http.StatusOK {
 		var errString string

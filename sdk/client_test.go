@@ -251,7 +251,7 @@ func TestUnmarshalResponseBody(t *testing.T) {
 			Body:       io.NopCloser(bytes.NewBuffer(responseJSON)),
 		}
 		target := mockTarget{}
-		Convey("Test response body is unmarshalled to target", func() {
+		Convey("Test response body is unmarshaled to target", func() {
 			err := unmarshalResponseBody(mockResponse, &target)
 			So(err, ShouldBeNil)
 			So(target, ShouldResemble, requestedData)
