@@ -34,7 +34,7 @@ func (c *Client) GetEdition(ctx context.Context, headers Headers, datasetID, edi
 
 // EditionList represents an object containing a list of paginated versions. This struct is based
 // on the `pagination.page` struct which is returned when we call the `api.getEditions` endpoint
-type EditionList struct {
+type EditionsList struct {
 	Items      []models.Edition `json:"items"`
 	Count      int              `json:"count"`
 	Offset     int              `json:"offset"`
@@ -43,8 +43,8 @@ type EditionList struct {
 }
 
 // GetEditions returns all editions for a dataset
-func (c *Client) GetEditions(ctx context.Context, headers Headers, datasetID string, queryParams *QueryParams) (editionList EditionList, err error) {
-	editionList = EditionList{}
+func (c *Client) GetEditions(ctx context.Context, headers Headers, datasetID string, queryParams *QueryParams) (editionList EditionsList, err error) {
+	editionList = EditionsList{}
 	// Build uri
 	uri := &url.URL{}
 	uri.Path, err = url.JoinPath(c.hcCli.URL, "datasets", datasetID, "editions")
