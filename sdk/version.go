@@ -43,15 +43,8 @@ func (c *Client) GetVersion(ctx context.Context, headers Headers, datasetID, edi
 		return version, err
 	}
 
-	req, err := http.NewRequest(http.MethodGet, uri, http.NoBody)
-	if err != nil {
-		return version, err
-	}
-
-	// Add auth headers to the request
-	headers.Add(req)
-
-	resp, err := c.hcCli.Client.Do(ctx, req)
+	// Make request
+	resp, err := c.DoAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {
 		return version, err
 	}
@@ -78,16 +71,8 @@ func (c *Client) GetVersionDimensions(ctx context.Context, headers Headers, data
 		return versionDimensionsList, err
 	}
 
-	// Create new request
-	req, err := http.NewRequest(http.MethodGet, uri, http.NoBody)
-	if err != nil {
-		return versionDimensionsList, err
-	}
-
-	// Add auth headers to the request
-	headers.Add(req)
-
-	resp, err := c.hcCli.Client.Do(ctx, req)
+	// Make request
+	resp, err := c.DoAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {
 		return versionDimensionsList, err
 	}
@@ -154,15 +139,8 @@ func (c *Client) GetVersionMetadata(ctx context.Context, headers Headers, datase
 		return metadata, err
 	}
 
-	req, err := http.NewRequest(http.MethodGet, uri, http.NoBody)
-	if err != nil {
-		return metadata, err
-	}
-
-	// Add auth headers to the request
-	headers.Add(req)
-
-	resp, err := c.hcCli.Client.Do(ctx, req)
+	// Make request
+	resp, err := c.DoAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {
 		return metadata, err
 	}

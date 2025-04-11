@@ -44,6 +44,20 @@ func (c *Client) Checker(ctx context.Context, check *healthcheck.CheckState) err
 	return c.hcCli.Checker(ctx, check)
 }
 
+// Creates new request object, executes a get request using the input `headers` and `uri` and returns the response
+func (c *Client) DoAuthenticatedGetRequest(ctx context.Context, headers Headers, uri string) (resp *http.Response, err error) {
+	resp = &http.Response{}
+	req, err := http.NewRequest(http.MethodGet, uri, http.NoBody)
+	if err != nil {
+		return resp, err
+	}
+
+	// Add auth headers to the request
+	headers.Add(req)
+
+	return c.hcCli.Client.Do(ctx, req)
+}
+
 // Health returns the underlying Healthcheck Client for this API client
 func (c *Client) Health() *health.Client {
 	return c.hcCli
