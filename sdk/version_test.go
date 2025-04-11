@@ -1,7 +1,6 @@
 package sdk
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -11,24 +10,6 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	. "github.com/smartystreets/goconvey/convey"
 )
-
-const (
-	datasetID            = "1234"
-	downloadServiceToken = "mydownloadservicetoken"
-	collectionID         = "collection"
-	editionID            = "my-edition"
-	serviceToken         = "myservicetoken"
-	userAccessToken      = "myuseraccesstoken"
-)
-
-var ctx = context.Background()
-
-var headers = Headers{
-	CollectionID:         collectionID,
-	DownloadServiceToken: downloadServiceToken,
-	ServiceToken:         serviceToken,
-	UserAccessToken:      userAccessToken,
-}
 
 // This is the shape of a paginated list get request response
 type MockGetListRequestResponse struct {
