@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/ONSdigital/dp-api-clients-go/v2/health"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
@@ -45,9 +46,9 @@ func (c *Client) Checker(ctx context.Context, check *healthcheck.CheckState) err
 }
 
 // Creates new request object, executes a get request using the input `headers` and `uri` and returns the response
-func (c *Client) DoAuthenticatedGetRequest(ctx context.Context, headers Headers, uri string) (resp *http.Response, err error) {
+func (c *Client) DoAuthenticatedGetRequest(ctx context.Context, headers Headers, uri *url.URL) (resp *http.Response, err error) {
 	resp = &http.Response{}
-	req, err := http.NewRequest(http.MethodGet, uri, http.NoBody)
+	req, err := http.NewRequest(http.MethodGet, uri.RequestURI(), http.NoBody)
 	if err != nil {
 		return resp, err
 	}

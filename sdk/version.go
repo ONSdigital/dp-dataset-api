@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"net/url"
 	"strconv"
 
@@ -38,7 +37,9 @@ func (q *QueryParams) Validate() error {
 // GetVersion gets a specific version for an edition from the dataset api
 func (c *Client) GetVersion(ctx context.Context, headers Headers, datasetID, editionID, versionID string) (version models.Version, err error) {
 	version = models.Version{}
-	uri, err := url.JoinPath(c.hcCli.URL, "datasets", datasetID, "editions", editionID, "versions", versionID)
+	// Build uri
+	uri := &url.URL{}
+	uri.Path, err = url.JoinPath(c.hcCli.URL, "datasets", datasetID, "editions", editionID, "versions", versionID)
 	if err != nil {
 		return version, err
 	}
@@ -66,7 +67,8 @@ type VersionDimensionsList struct {
 func (c *Client) GetVersionDimensions(ctx context.Context, headers Headers, datasetID, editionID, versionID string) (versionDimensionsList VersionDimensionsList, err error) {
 	versionDimensionsList = VersionDimensionsList{}
 	// Build uri
-	uri, err := url.JoinPath(c.hcCli.URL, "datasets", datasetID, "editions", editionID, "versions", versionID, "dimensions")
+	uri := &url.URL{}
+	uri.Path, err = url.JoinPath(c.hcCli.URL, "datasets", datasetID, "editions", editionID, "versions", versionID, "dimensions")
 	if err != nil {
 		return versionDimensionsList, err
 	}
@@ -94,31 +96,26 @@ type VersionDimensionOptionsList struct {
 func (c *Client) GetVersionDimensionOptions(ctx context.Context, headers Headers, datasetID, editionID, versionID, dimensionID string, queryParams *QueryParams) (versionDimensionOptionsList VersionDimensionOptionsList, err error) {
 	versionDimensionOptionsList = VersionDimensionOptionsList{}
 	// Build uri
-	uri, err := url.JoinPath(c.hcCli.URL, "datasets", datasetID, "editions", editionID, "versions", versionID, "dimensions", dimensionID, "options")
+	uri := &url.URL{}
+	uri.Path, err = url.JoinPath(c.hcCli.URL, "datasets", datasetID, "editions", editionID, "versions", versionID, "dimensions", dimensionID, "options")
 	if err != nil {
 		return versionDimensionOptionsList, err
 	}
-
-	req, err := http.NewRequest(http.MethodGet, uri, http.NoBody)
-	if err != nil {
-		return versionDimensionOptionsList, err
-	}
-
-	// Add auth headers to the request
-	headers.Add(req)
 
 	// Add query params to request if valid
 	if queryParams != nil {
 		if err := queryParams.Validate(); err != nil {
 			return versionDimensionOptionsList, err
 		}
-		requestQuery := req.URL.Query()
-		requestQuery.Add("limit", strconv.Itoa(queryParams.Limit))
-		requestQuery.Add("offset", strconv.Itoa(queryParams.Offset))
-		req.URL.RawQuery = requestQuery.Encode()
+		// Add query parameters
+		query := uri.Query()
+		query.Set("limit", strconv.Itoa(queryParams.Limit))
+		query.Set("offset", strconv.Itoa(queryParams.Offset))
+		uri.RawQuery = query.Encode()
 	}
 
-	resp, err := c.hcCli.Client.Do(ctx, req)
+	// Make request
+	resp, err := c.DoAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {
 		return versionDimensionOptionsList, err
 	}
@@ -134,7 +131,9 @@ func (c *Client) GetVersionDimensionOptions(ctx context.Context, headers Headers
 // GetVersionMetadata returns the metadata for a given dataset id, edition and version
 func (c *Client) GetVersionMetadata(ctx context.Context, headers Headers, datasetID, editionID, versionID string) (metadata models.Metadata, err error) {
 	metadata = models.Metadata{}
-	uri, err := url.JoinPath(c.hcCli.URL, "datasets", datasetID, "editions", editionID, "versions", versionID, "metadata")
+	// Build uri
+	uri := &url.URL{}
+	uri.Path, err = url.JoinPath(c.hcCli.URL, "datasets", datasetID, "editions", editionID, "versions", versionID, "metadata")
 	if err != nil {
 		return metadata, err
 	}
@@ -166,31 +165,27 @@ type VersionsList struct {
 // GetVersions gets all versions for an edition from the dataset api
 func (c *Client) GetVersions(ctx context.Context, headers Headers, datasetID, editionID string, queryParams *QueryParams) (versionsList VersionsList, err error) {
 	versionsList = VersionsList{}
-	uri, err := url.JoinPath(c.hcCli.URL, "datasets", datasetID, "editions", editionID, "versions")
+	// Build uri
+	uri := &url.URL{}
+	uri.Path, err = url.JoinPath(c.hcCli.URL, "datasets", datasetID, "editions", editionID, "versions")
 	if err != nil {
 		return versionsList, err
 	}
-
-	req, err := http.NewRequest(http.MethodGet, uri, http.NoBody)
-	if err != nil {
-		return versionsList, err
-	}
-
-	// Add auth headers to the request
-	headers.Add(req)
 
 	// Add query params to request if valid
 	if queryParams != nil {
 		if err := queryParams.Validate(); err != nil {
 			return versionsList, err
 		}
-		requestQuery := req.URL.Query()
-		requestQuery.Add("limit", strconv.Itoa(queryParams.Limit))
-		requestQuery.Add("offset", strconv.Itoa(queryParams.Offset))
-		req.URL.RawQuery = requestQuery.Encode()
+		// Add query parameters
+		query := uri.Query()
+		query.Set("limit", strconv.Itoa(queryParams.Limit))
+		query.Set("offset", strconv.Itoa(queryParams.Offset))
+		uri.RawQuery = query.Encode()
 	}
 
-	resp, err := c.hcCli.Client.Do(ctx, req)
+	// Make request
+	resp, err := c.DoAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {
 		return versionsList, err
 	}
