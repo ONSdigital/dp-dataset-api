@@ -30,7 +30,6 @@ func (c *Client) GetDataset(ctx context.Context, headers Headers, collectionID, 
 	err = unmarshalResponseBody(resp, &dataset)
 
 	return dataset, err
-
 }
 
 // GetDatasetByPath returns dataset level information for a given dataset path

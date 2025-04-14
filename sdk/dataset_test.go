@@ -56,7 +56,6 @@ func TestGetDataset(t *testing.T) {
 			So(err.Error(), ShouldEqual, "Internal server error")
 		})
 	})
-
 }
 
 func TestGetDatasetByPath(t *testing.T) {
