@@ -1275,7 +1275,10 @@ func TestPostDatasetReturnsError(t *testing.T) {
 
 	Convey("When the request body has an empty type field it should create a dataset with type defaulted to filterable", t, func() {
 		b := `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","url":"https://www.ons.gov.uk/"},"type":""}`
-		res := `{"id":"123123","next":{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","id":"123123","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"},"editions":{"href":"http://localhost:22000/datasets/123123/editions"},"self":{"href":"http://localhost:22000/datasets/123123"}},"next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department"},"state":"created","theme":"population","title":"CensusEthnicity","type":"filterable"}}`
+		// split up expected result since last_updated is added by the API and exact value cannot be known in advance
+		res1 := `{"id":"123123","next":{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","id":"123123",`
+		res2 := `"links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"},"editions":{"href":"http://localhost:22000/datasets/123123/editions"},"self":{"href":"http://localhost:22000/datasets/123123"}},"next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department"},"state":"created","theme":"population","title":"CensusEthnicity","type":"filterable"}}`
+		resLastUpdated := `"last_updated":"`
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
@@ -1294,7 +1297,9 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusCreated)
-		So(w.Body.String(), ShouldContainSubstring, res)
+		So(w.Body.String(), ShouldContainSubstring, res1)
+		So(w.Body.String(), ShouldContainSubstring, res2)
+		So(w.Body.String(), ShouldContainSubstring, resLastUpdated)
 		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 1)
 
@@ -1339,7 +1344,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		})
 
 		Convey("and the response body contains the dataset we sent with the request", func() {
-			var expected, actual map[string]interface{}
+			var expected, actual models.Dataset
 
 			err := json.Unmarshal([]byte(datasetPayload), &expected)
 			So(err, ShouldBeNil)
