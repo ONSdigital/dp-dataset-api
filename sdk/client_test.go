@@ -19,7 +19,7 @@ import (
 
 // Used throughout the sdk tests
 const (
-	datasetAPIURL        = "http://localhost:25700"
+	datasetAPIURL        = "http://localhost:22000"
 	datasetID            = "1234"
 	downloadServiceToken = "mydownloadservicetoken"
 	collectionID         = "collection"
