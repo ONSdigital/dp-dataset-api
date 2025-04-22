@@ -71,7 +71,7 @@ func TestGetDatasetByPath(t *testing.T) {
 	Convey("If requested path is valid and get request returns 200", t, func() {
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, mockGetResponse, map[string]string{}})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
-		returnedDataset, err := datasetAPIClient.GetDatsetByPath(ctx, headers, testPath)
+		returnedDataset, err := datasetAPIClient.GetDatasetByPath(ctx, headers, testPath)
 
 		Convey("Test that the request URI is constructed correctly and the correct method is used", func() {
 			expectedURI := "/datasets/custom/path"
@@ -88,7 +88,7 @@ func TestGetDatasetByPath(t *testing.T) {
 	Convey("If path has leading/trailing slashes, they are correctly trimmed", t, func() {
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, mockGetResponse, map[string]string{}})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
-		returnedDataset, err := datasetAPIClient.GetDatsetByPath(ctx, headers, "/datasets/custom/path/")
+		returnedDataset, err := datasetAPIClient.GetDatasetByPath(ctx, headers, "/datasets/custom/path/")
 
 		Convey("Test that the request URI is constructed correctly with trimmed path", func() {
 			expectedURI := "/datasets/custom/path"
@@ -105,7 +105,7 @@ func TestGetDatasetByPath(t *testing.T) {
 	Convey("If requested path is not valid and get request returns 404", t, func() {
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusNotFound, apierrors.ErrDatasetNotFound.Error(), map[string]string{}})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
-		_, err := datasetAPIClient.GetDatsetByPath(ctx, headers, testPath)
+		_, err := datasetAPIClient.GetDatasetByPath(ctx, headers, testPath)
 
 		Convey("Test that an error is raised and should contain status code", func() {
 			So(err, ShouldNotBeNil)
@@ -116,7 +116,7 @@ func TestGetDatasetByPath(t *testing.T) {
 	Convey("If the request encounters a server error and returns 500", t, func() {
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusInternalServerError, "Internal server error", map[string]string{}})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
-		_, err := datasetAPIClient.GetDatsetByPath(ctx, headers, testPath)
+		_, err := datasetAPIClient.GetDatasetByPath(ctx, headers, testPath)
 
 		Convey("Test that an error is raised with the correct message", func() {
 			So(err, ShouldNotBeNil)

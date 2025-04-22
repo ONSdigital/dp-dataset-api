@@ -33,7 +33,7 @@ func (c *Client) GetDataset(ctx context.Context, headers Headers, collectionID, 
 }
 
 // GetDatasetByPath returns dataset level information for a given dataset path
-func (c *Client) GetDatsetByPath(ctx context.Context, headers Headers, path string) (dataset models.Dataset, err error) {
+func (c *Client) GetDatasetByPath(ctx context.Context, headers Headers, path string) (dataset models.Dataset, err error) {
 	dataset = models.Dataset{}
 	// Build uri
 	uri := &url.URL{}
