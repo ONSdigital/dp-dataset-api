@@ -89,7 +89,7 @@ type Dataset struct {
 	Description       string           `bson:"description,omitempty"            json:"description,omitempty"`
 	Keywords          []string         `bson:"keywords,omitempty"               json:"keywords,omitempty"`
 	ID                string           `bson:"_id,omitempty"                    json:"id,omitempty"`
-	LastUpdated       time.Time        `bson:"last_updated,omitempty"           json:"-"`
+	LastUpdated       time.Time        `bson:"last_updated,omitempty"           json:"last_updated,omitempty"`
 	License           string           `bson:"license,omitempty"                json:"license,omitempty"`
 	Links             *DatasetLinks    `bson:"links,omitempty"                  json:"links,omitempty"`
 	Methodologies     []GeneralDetails `bson:"methodologies,omitempty"          json:"methodologies,omitempty"`
