@@ -17,9 +17,25 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+// Used throughout the sdk tests
 const (
-	datasetAPIURL = "http://localhost:25700"
+	datasetAPIURL        = "http://localhost:22000"
+	datasetID            = "1234"
+	downloadServiceToken = "mydownloadservicetoken"
+	collectionID         = "collection"
+	editionID            = "my-edition"
+	serviceToken         = "myservicetoken"
+	userAccessToken      = "myuseraccesstoken"
 )
+
+var ctx = context.Background()
+
+var headers = Headers{
+	CollectionID:         collectionID,
+	DownloadServiceToken: downloadServiceToken,
+	ServiceToken:         serviceToken,
+	UserAccessToken:      userAccessToken,
+}
 
 type MockedHTTPResponse struct {
 	StatusCode int
@@ -76,7 +92,6 @@ func TestClient(t *testing.T) {
 
 // Tests for the `NewWithHealthClient()` sdk client method
 func TestHealthCheckerClient(t *testing.T) {
-	ctx := context.Background()
 	initialStateCheck := health.CreateCheckState(service)
 
 	Convey("If http client returns 200 OK response", t, func() {
@@ -213,7 +228,6 @@ func (m *mockReadCloser) Close() error {
 
 // Tests for `closeResponseBody` function
 func TestCloseResponseBody(t *testing.T) {
-	ctx := context.Background()
 	// Create a buffer to capture log output for tests
 	var buf bytes.Buffer
 	var fbBuf bytes.Buffer
