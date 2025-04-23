@@ -10,7 +10,7 @@ import (
 
 	"github.com/ONSdigital/dp-api-clients-go/v2/health"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
-	dpNetRequest "github.com/ONSdigital/dp-net/v2/request"
+	dpNetRequest "github.com/ONSdigital/dp-net/v3/request"
 	"github.com/ONSdigital/log.go/v2/log"
 )
 

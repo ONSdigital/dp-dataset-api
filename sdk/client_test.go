@@ -11,8 +11,8 @@ import (
 
 	"github.com/ONSdigital/dp-api-clients-go/v2/health"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
-	dphttp "github.com/ONSdigital/dp-net/v2/http"
-	dpNetRequest "github.com/ONSdigital/dp-net/v2/request"
+	dphttp "github.com/ONSdigital/dp-net/v3/http"
+	dpNetRequest "github.com/ONSdigital/dp-net/v3/request"
 	"github.com/ONSdigital/log.go/v2/log"
 	. "github.com/smartystreets/goconvey/convey"
 )

@@ -19,7 +19,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/dp-dataset-api/url"
-	dprequest "github.com/ONSdigital/dp-net/v2/request"
+	dprequest "github.com/ONSdigital/dp-net/v3/request"
 	"github.com/gorilla/mux"
 
 	"github.com/ONSdigital/dp-dataset-api/config"
