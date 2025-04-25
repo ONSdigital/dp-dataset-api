@@ -9,7 +9,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/utils"
-	"github.com/ONSdigital/dp-net/v2/links"
+	"github.com/ONSdigital/dp-net/v3/links"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"

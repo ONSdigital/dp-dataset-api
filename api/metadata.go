@@ -9,8 +9,8 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/utils"
-	dphttp "github.com/ONSdigital/dp-net/v2/http"
-	"github.com/ONSdigital/dp-net/v2/links"
+	dphttp "github.com/ONSdigital/dp-net/v3/http"
+	"github.com/ONSdigital/dp-net/v3/links"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -153,6 +153,13 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 			err = utils.RewriteDownloadLinks(ctx, metaDataDoc.Downloads, api.urlBuilder.GetDownloadServiceURL())
 			if err != nil {
 				log.Error(ctx, "getMetadata endpoint: failed to rewrite download links", err, logData)
+				handleMetadataErr(w, err)
+				return nil, err
+			}
+
+			metaDataDoc.Distributions, err = utils.RewriteDistributions(ctx, metaDataDoc.Distributions, api.urlBuilder.GetDownloadServiceURL())
+			if err != nil {
+				log.Error(ctx, "getMetadata endpoint: failed to rewrite distributions DownloadURL", err, logData)
 				handleMetadataErr(w, err)
 				return nil, err
 			}

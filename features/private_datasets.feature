@@ -72,7 +72,8 @@ Feature: Private Dataset API
         Then I should receive the following JSON response with status "200":
             """
             {
-                "survey": "mockSurvey"
+                "survey": "mockSurvey",
+                "last_updated":"0001-01-01T00:00:00Z"
             }
             """
         And the document in the database for id "population-estimates" should be:
@@ -103,7 +104,8 @@ Feature: Private Dataset API
             """
             {
                     "canonical_topic": "canonical-topic-ID",
-                    "subtopics": ["subtopic-ID"]
+                    "subtopics": ["subtopic-ID"],
+                    "last_updated":"0001-01-01T00:00:00Z"
             }
             """
         And the document in the database for id "population-estimates" should be:
@@ -141,7 +143,8 @@ Feature: Private Dataset API
 		                "description": "Related content description",
 		                "href": "http://localhost:22000/datasets/123/relatedContent",
 		                "title": "Related content"
-	                }]
+	                }],
+                    "last_updated":"0001-01-01T00:00:00Z"
             }
             """
         And the document in the database for id "population-estimates" should be:
@@ -174,10 +177,12 @@ Feature: Private Dataset API
                     {
                         "id": "population-estimates",
                         "next": {
-                            "id": "population-estimates"
+                            "id": "population-estimates",
+                            "last_updated":"0001-01-01T00:00:00Z"
                         },
                         "current": {
-                            "id": "population-estimates"
+                            "id": "population-estimates",
+                            "last_updated":"0001-01-01T00:00:00Z"
                         }
                     }
                 ],
@@ -208,12 +213,14 @@ Feature: Private Dataset API
             		"next": {
             			"id": "population-estimates",
             			"canonical_topic": "canonical-topic-ID",
-            			"subtopics": ["subtopic-ID"]
+            			"subtopics": ["subtopic-ID"],
+                        "last_updated":"0001-01-01T00:00:00Z"
             		},
                     "current": {
                         "id": "population-estimates",
             			"canonical_topic": "canonical-topic-ID",
-            			"subtopics": ["subtopic-ID"]
+            			"subtopics": ["subtopic-ID"],
+                        "last_updated":"0001-01-01T00:00:00Z"
                     }
             	}],
             	"limit": 20,

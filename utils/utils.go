@@ -8,7 +8,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/dp-net/v2/links"
+	"github.com/ONSdigital/dp-net/v3/links"
 	"github.com/ONSdigital/log.go/v2/log"
 )
 
@@ -424,7 +424,7 @@ func RewriteDimensionOptionLinks(ctx context.Context, oldLinks *models.Dimension
 	return nil
 }
 
-func RewriteEditionsWithAuth(ctx context.Context, results []*models.EditionUpdate, datasetLinksBuilder *links.Builder) ([]*models.EditionUpdate, error) {
+func RewriteEditionsWithAuth(ctx context.Context, results []*models.EditionUpdate, datasetLinksBuilder *links.Builder, downloadServiceURL *url.URL) ([]*models.EditionUpdate, error) {
 	if len(results) == 0 {
 		return results, nil
 	}
@@ -437,6 +437,12 @@ func RewriteEditionsWithAuth(ctx context.Context, results []*models.EditionUpdat
 				log.Error(ctx, "failed to rewrite 'current' links", err)
 				return nil, err
 			}
+
+			item.Current.Distributions, err = RewriteDistributions(ctx, item.Current.Distributions, downloadServiceURL)
+			if err != nil {
+				log.Error(ctx, "failed to rewrite 'current' distributions DownloadURLs", err)
+				return nil, err
+			}
 		}
 
 		if item.Next != nil {
@@ -445,33 +451,48 @@ func RewriteEditionsWithAuth(ctx context.Context, results []*models.EditionUpdat
 				log.Error(ctx, "failed to rewrite 'next' links", err)
 				return nil, err
 			}
+
+			item.Next.Distributions, err = RewriteDistributions(ctx, item.Next.Distributions, downloadServiceURL)
+			if err != nil {
+				log.Error(ctx, "failed to rewrite 'next' distributions DownloadURLs", err)
+				return nil, err
+			}
 		}
 		items = append(items, item)
 	}
 	return items, nil
 }
 
-func RewriteEditionsWithoutAuth(ctx context.Context, results []*models.EditionUpdate, datasetLinksBuilder *links.Builder) ([]*models.Edition, error) {
+func RewriteEditionsWithoutAuth(ctx context.Context, results []*models.EditionUpdate, datasetLinksBuilder *links.Builder, downloadServiceURL *url.URL) ([]*models.Edition, error) {
 	if len(results) == 0 {
 		return []*models.Edition{}, nil
 	}
 
 	items := []*models.Edition{}
 	for _, item := range results {
-		if item.Current != nil {
-			err := RewriteEditionLinks(ctx, item.Current.Links, datasetLinksBuilder)
-			if err != nil {
-				log.Error(ctx, "failed to rewrite 'current' links", err)
-				return nil, err
-			}
-			item.Current.ID = item.ID
-			items = append(items, item.Current)
+		if item.Current == nil {
+			continue
 		}
+
+		err := RewriteEditionLinks(ctx, item.Current.Links, datasetLinksBuilder)
+		if err != nil {
+			log.Error(ctx, "failed to rewrite 'current' links", err)
+			return nil, err
+		}
+
+		item.Current.Distributions, err = RewriteDistributions(ctx, item.Current.Distributions, downloadServiceURL)
+		if err != nil {
+			log.Error(ctx, "failed to rewrite 'current' distributions DownloadURLs", err)
+			return nil, err
+		}
+
+		item.Current.ID = item.ID
+		items = append(items, item.Current)
 	}
 	return items, nil
 }
 
-func RewriteEditionWithAuth(ctx context.Context, edition *models.EditionUpdate, datasetLinksBuilder *links.Builder) (*models.EditionUpdate, error) {
+func RewriteEditionWithAuth(ctx context.Context, edition *models.EditionUpdate, datasetLinksBuilder *links.Builder, downloadServiceURL *url.URL) (*models.EditionUpdate, error) {
 	if edition == nil {
 		log.Info(ctx, "getEdition endpoint: published or unpublished edition not found")
 		return nil, errs.ErrEditionNotFound
@@ -483,6 +504,11 @@ func RewriteEditionWithAuth(ctx context.Context, edition *models.EditionUpdate, 
 			log.Error(ctx, "failed to rewrite 'current' links", err)
 			return nil, err
 		}
+		edition.Current.Distributions, err = RewriteDistributions(ctx, edition.Current.Distributions, downloadServiceURL)
+		if err != nil {
+			log.Error(ctx, "failed to rewrite 'current' distributions DownloadURLs", err)
+			return nil, err
+		}
 	}
 
 	if edition.Next != nil {
@@ -491,12 +517,17 @@ func RewriteEditionWithAuth(ctx context.Context, edition *models.EditionUpdate, 
 			log.Error(ctx, "failed to rewrite 'next' links", err)
 			return nil, err
 		}
+		edition.Next.Distributions, err = RewriteDistributions(ctx, edition.Next.Distributions, downloadServiceURL)
+		if err != nil {
+			log.Error(ctx, "failed to rewrite 'next' distributions DownloadURLs", err)
+			return nil, err
+		}
 	}
 
 	return edition, nil
 }
 
-func RewriteEditionWithoutAuth(ctx context.Context, edition *models.EditionUpdate, datasetLinksBuilder *links.Builder) (*models.Edition, error) {
+func RewriteEditionWithoutAuth(ctx context.Context, edition *models.EditionUpdate, datasetLinksBuilder *links.Builder, downloadServiceURL *url.URL) (*models.Edition, error) {
 	if edition == nil {
 		log.Info(ctx, "getEdition endpoint: published edition not found")
 		return nil, errs.ErrEditionNotFound
@@ -514,6 +545,11 @@ func RewriteEditionWithoutAuth(ctx context.Context, edition *models.EditionUpdat
 	err := RewriteEditionLinks(ctx, editionResponse.Links, datasetLinksBuilder)
 	if err != nil {
 		log.Error(ctx, "failed to rewrite 'current' links", err)
+		return nil, err
+	}
+	editionResponse.Distributions, err = RewriteDistributions(ctx, editionResponse.Distributions, downloadServiceURL)
+	if err != nil {
+		log.Error(ctx, "failed to rewrite 'current' distributions DownloadURLs", err)
 		return nil, err
 	}
 
@@ -598,6 +634,12 @@ func RewriteVersions(ctx context.Context, results []models.Version, datasetLinks
 		err = RewriteDownloadLinks(ctx, item.Downloads, downloadServiceURL)
 		if err != nil {
 			log.Error(ctx, "failed to rewrite download links", err)
+			return nil, err
+		}
+
+		item.Distributions, err = RewriteDistributions(ctx, item.Distributions, downloadServiceURL)
+		if err != nil {
+			log.Error(ctx, "failed to rewrite distributions DownloadURLs", err)
 			return nil, err
 		}
 
@@ -725,4 +767,26 @@ func RewriteDownloadLinks(ctx context.Context, oldLinks *models.DownloadList, do
 		}
 	}
 	return nil
+}
+
+func RewriteDistributions(ctx context.Context, results *[]models.Distribution, downloadServiceURL *url.URL) (*[]models.Distribution, error) {
+	if results == nil || len(*results) == 0 {
+		return results, nil
+	}
+
+	items := &[]models.Distribution{}
+
+	var err error
+
+	for _, item := range *results {
+		if item.DownloadURL != "" {
+			item.DownloadURL, err = links.BuildDownloadNewLink(item.DownloadURL, downloadServiceURL)
+			if err != nil {
+				log.Error(ctx, "failed to rewrite DownloadURL", err)
+				return nil, err
+			}
+			*items = append(*items, item)
+		}
+	}
+	return items, nil
 }

@@ -127,7 +127,16 @@ Feature: Dataset API
                             "href": "/datasets/population-estimates/editions/hello/versions/1"
                         }
                     },
-                    "edition": "hello"
+                    "edition": "hello",
+                    "distributions": [
+                        {
+                            "title": "Distribution 1",
+                            "format": "csv",
+                            "media_type": "text/csv",
+                            "download_url": "/datasets/population-estimates/editions/hello/versions/1.csv",
+                            "byte_size": 100000
+                        }
+                    ]
                 },
                 {
                     "id": "test-item-2",
@@ -141,7 +150,16 @@ Feature: Dataset API
                             "href": "/datasets/population-estimates/editions/hello/versions/2"
                         }
                     },
-                    "edition": "hello"
+                    "edition": "hello",
+                    "distributions": [
+                        {
+                            "title": "Distribution 2",
+                            "format": "csv",
+                            "media_type": "text/csv",
+                            "download_url": "/datasets/population-estimates/editions/hello/versions/2.csv",
+                            "byte_size": 100000
+                        }
+                    ]
                 },
                 {
                     "id": "test-item-3",
@@ -155,7 +173,16 @@ Feature: Dataset API
                             "href": "/datasets/population-estimates/editions/hellov2/versions/3"
                         }
                     },
-                    "edition": "hellov2"
+                    "edition": "hellov2",
+                    "distributions": [
+                        {
+                            "title": "Distribution 3",
+                            "format": "csv",
+                            "media_type": "text/csv",
+                            "download_url": "/datasets/population-estimates/editions/hellov2/versions/3.csv",
+                            "byte_size": 100000
+                        }
+                    ]
                 },
                 {
                     "id": "test-item-4",
@@ -170,7 +197,16 @@ Feature: Dataset API
                         }
                     },
                     "edition": "hello",
-                    "lowest_geography": "ltla"
+                    "lowest_geography": "ltla",
+                    "distributions": [
+                        {
+                            "title": "Distribution 4",
+                            "format": "csv",
+                            "media_type": "text/csv",
+                            "download_url": "/datasets/population-estimates/editions/hello/versions/4.csv",
+                            "byte_size": 100000
+                        }
+                    ]
                 },
                 {
                     "id": "test-cantabular-version-1",
@@ -185,7 +221,16 @@ Feature: Dataset API
                             "href": "/datasets/test-cantabular-dataset-1/editions/2021/versions/1"
                         }
                     },
-                    "edition": "2021"
+                    "edition": "2021",
+                    "distributions": [
+                        {
+                            "title": "Distribution 1",
+                            "format": "csv",
+                            "media_type": "text/csv",
+                            "download_url": "/datasets/test-cantabular-dataset-1/editions/2021/versions/1.csv",
+                            "byte_size": 100000
+                        }
+                    ]
                 },
                 {
                     "id": "test-cantabular-version-2",
@@ -207,7 +252,16 @@ Feature: Dataset API
                         "size": "1",
                         "href": "/downloads/datasets/test-cantabular-dataset-2/editions/2021/versions/1.csv"
                       }
-                    }
+                    },
+                    "distributions": [
+                        {
+                            "title": "Distribution 1",
+                            "format": "csv",
+                            "media_type": "text/csv",
+                            "download_url": "/datasets/test-cantabular-dataset-2/editions/2021/versions/1.csv",
+                            "byte_size": 100000
+                        }
+                    ]
                 },
                 {
                     "id": "test-static-version-1",
@@ -222,7 +276,16 @@ Feature: Dataset API
                             "href": "/datasets/test-static/editions/test-edition-static/versions/1"
                         }
                     },
-                    "edition": "test-edition-static"
+                    "edition": "test-edition-static",
+                    "distributions": [
+                        {
+                            "title": "Distribution 1",
+                            "format": "csv",
+                            "media_type": "text/csv",
+                            "download_url": "/datasets/test-static/editions/test-edition-static/versions/1.csv",
+                            "byte_size": 100000
+                        }
+                    ]
                 }
             ]
             """
@@ -252,7 +315,16 @@ Feature: Dataset API
                                 "href": "https://api.example.com/v1/datasets/population-estimates/editions/hello/versions/4"
                             }
                         },
-                        "lowest_geography": "ltla"
+                        "lowest_geography": "ltla",
+                        "distributions": [
+                            {
+                                "title": "Distribution 4",
+                                "format": "csv",
+                                "media_type": "text/csv",
+                                "download_url": "http://localhost:23600/downloads-new/datasets/population-estimates/editions/hello/versions/4.csv",
+                                "byte_size": 100000
+                            }
+                        ]
                     },
                     {
                         "dataset_id": "population-estimates",
@@ -268,7 +340,16 @@ Feature: Dataset API
                             "self": {
                                 "href": "https://api.example.com/v1/datasets/population-estimates/editions/hello/versions/1"
                             }
-                        }
+                        },
+                        "distributions": [
+                            {
+                                "title": "Distribution 1",
+                                "format": "csv",
+                                "media_type": "text/csv",
+                                "download_url": "http://localhost:23600/downloads-new/datasets/population-estimates/editions/hello/versions/1.csv",
+                                "byte_size": 100000
+                            }
+                        ]
                     }
                 ],
                 "limit": 20,
@@ -299,7 +380,16 @@ Feature: Dataset API
                                 "href": "/datasets/population-estimates/editions/hello/versions/4"
                             }
                         },
-                        "lowest_geography": "ltla"
+                        "lowest_geography": "ltla",
+                        "distributions": [
+                            {
+                                "title": "Distribution 4",
+                                "format": "csv",
+                                "media_type": "text/csv",
+                                "download_url": "/datasets/population-estimates/editions/hello/versions/4.csv",
+                                "byte_size": 100000
+                            }
+                        ]
                     },
                     {
                         "dataset_id": "population-estimates",
@@ -315,7 +405,16 @@ Feature: Dataset API
                             "self": {
                                 "href": "/datasets/population-estimates/editions/hello/versions/1"
                             }
-                        }
+                        },
+                        "distributions": [
+                            {
+                                "title": "Distribution 1",
+                                "format": "csv",
+                                "media_type": "text/csv",
+                                "download_url": "/datasets/population-estimates/editions/hello/versions/1.csv",
+                                "byte_size": 100000
+                            }
+                        ]
                     }
                 ],
                 "limit": 20,
@@ -352,7 +451,16 @@ Feature: Dataset API
                             }
                         },
                         "edition": "hello",
-                        "lowest_geography": "ltla"
+                        "lowest_geography": "ltla",
+                        "distributions": [
+                            {
+                                "title": "Distribution 4",
+                                "format": "csv",
+                                "media_type": "text/csv",
+                                "download_url": "http://localhost:23600/downloads-new/datasets/population-estimates/editions/hello/versions/4.csv",
+                                "byte_size": 100000
+                            }
+                        ]
                     },
                     {
                         "dataset_id": "population-estimates",
@@ -368,7 +476,16 @@ Feature: Dataset API
                                 "href": "https://api.example.com/v1/datasets/population-estimates/editions/hello/versions/2"
                             }
                         },
-                        "edition": "hello"
+                        "edition": "hello",
+                        "distributions": [
+                            {
+                                "title": "Distribution 2",
+                                "format": "csv",
+                                "media_type": "text/csv",
+                                "download_url": "http://localhost:23600/downloads-new/datasets/population-estimates/editions/hello/versions/2.csv",
+                                "byte_size": 100000
+                            }
+                        ]
                     },
                     {
                         "dataset_id": "population-estimates",
@@ -384,7 +501,16 @@ Feature: Dataset API
                                 "href": "https://api.example.com/v1/datasets/population-estimates/editions/hello/versions/1"
                             }
                         },
-                        "edition": "hello"
+                        "edition": "hello",
+                        "distributions": [
+                            {
+                                "title": "Distribution 1",
+                                "format": "csv",
+                                "media_type": "text/csv",
+                                "download_url": "http://localhost:23600/downloads-new/datasets/population-estimates/editions/hello/versions/1.csv",
+                                "byte_size": 100000
+                            }
+                        ]
                     }
                 ],
                 "limit": 20,
@@ -418,7 +544,16 @@ Feature: Dataset API
                             }
                         },
                         "edition": "hello",
-                        "lowest_geography": "ltla"
+                        "lowest_geography": "ltla",
+                        "distributions": [
+                            {
+                                "title": "Distribution 4",
+                                "format": "csv",
+                                "media_type": "text/csv",
+                                "download_url": "/datasets/population-estimates/editions/hello/versions/4.csv",
+                                "byte_size": 100000
+                            }
+                        ]
                     },
                     {
                         "dataset_id": "population-estimates",
@@ -434,7 +569,16 @@ Feature: Dataset API
                                 "href": "/datasets/population-estimates/editions/hello/versions/2"
                             }
                         },
-                        "edition": "hello"
+                        "edition": "hello",
+                        "distributions": [
+                            {
+                                "title": "Distribution 2",
+                                "format": "csv",
+                                "media_type": "text/csv",
+                                "download_url": "/datasets/population-estimates/editions/hello/versions/2.csv",
+                                "byte_size": 100000
+                            }
+                        ]
                     },
                     {
                         "dataset_id": "population-estimates",
@@ -450,7 +594,16 @@ Feature: Dataset API
                                 "href": "/datasets/population-estimates/editions/hello/versions/1"
                             }
                         },
-                        "edition": "hello"
+                        "edition": "hello",
+                        "distributions": [
+                            {
+                                "title": "Distribution 1",
+                                "format": "csv",
+                                "media_type": "text/csv",
+                                "download_url": "/datasets/population-estimates/editions/hello/versions/1.csv",
+                                "byte_size": 100000
+                            }
+                        ]
                     }
                 ],
                 "limit": 20,
@@ -504,7 +657,16 @@ Feature: Dataset API
                 }
             },
             "edition": "hello",
-            "lowest_geography": "ltla"
+            "lowest_geography": "ltla",
+            "distributions": [
+                {
+                    "title": "Distribution 4",
+                    "format": "csv",
+                    "media_type": "text/csv",
+                    "download_url": "http://localhost:23600/downloads-new/datasets/population-estimates/editions/hello/versions/4.csv",
+                    "byte_size": 100000
+                }
+            ]
         }
         """
     And the response header "ETag" should be "etag-test-item-4"
@@ -527,7 +689,16 @@ Feature: Dataset API
                 }
             },
             "edition": "hello",
-            "lowest_geography": "ltla"
+            "lowest_geography": "ltla",
+            "distributions": [
+                {
+                    "title": "Distribution 4",
+                    "format": "csv",
+                    "media_type": "text/csv",
+                    "download_url": "/datasets/population-estimates/editions/hello/versions/4.csv",
+                    "byte_size": 100000
+                }
+            ]
         }
         """
     And the response header "ETag" should be "etag-test-item-4"
@@ -555,7 +726,16 @@ Feature: Dataset API
                     "href": "https://api.example.com/v1/datasets/population-estimates/editions/hello/versions/2"
                 }
             },
-            "edition": "hello"
+            "edition": "hello",
+            "distributions": [
+                {
+                    "title": "Distribution 2",
+                    "format": "csv",
+                    "media_type": "text/csv",
+                    "download_url": "http://localhost:23600/downloads-new/datasets/population-estimates/editions/hello/versions/2.csv",
+                    "byte_size": 100000
+                }
+            ]
         }
         """
     And the response header "ETag" should be "etag-test-item-2"
@@ -580,7 +760,16 @@ Feature: Dataset API
                     "href": "/datasets/population-estimates/editions/hello/versions/2"
                 }
             },
-            "edition": "hello"
+            "edition": "hello",
+            "distributions": [
+                {
+                    "title": "Distribution 2",
+                    "format": "csv",
+                    "media_type": "text/csv",
+                    "download_url": "/datasets/population-estimates/editions/hello/versions/2.csv",
+                    "byte_size": 100000
+                }
+            ]
         }
         """
     And the response header "ETag" should be "etag-test-item-2"

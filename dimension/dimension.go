@@ -14,10 +14,10 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/url"
 	"github.com/ONSdigital/dp-dataset-api/utils"
-	dpresponse "github.com/ONSdigital/dp-net/v2/handlers/response"
-	dphttp "github.com/ONSdigital/dp-net/v2/http"
-	"github.com/ONSdigital/dp-net/v2/links"
-	dprequest "github.com/ONSdigital/dp-net/v2/request"
+	dpresponse "github.com/ONSdigital/dp-net/v3/handlers/response"
+	dphttp "github.com/ONSdigital/dp-net/v3/http"
+	"github.com/ONSdigital/dp-net/v3/links"
+	dprequest "github.com/ONSdigital/dp-net/v3/request"
 	"github.com/ONSdigital/log.go/v2/log"
 )
 

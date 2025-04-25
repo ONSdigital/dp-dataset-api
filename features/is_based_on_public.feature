@@ -54,7 +54,8 @@ Feature: Dataset API
               "is_based_on": {
                 "@type": "",
                 "@id": "included"
-              }
+              },
+              "last_updated":"0001-01-01T00:00:00Z"
             }
           ]
             }

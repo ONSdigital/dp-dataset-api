@@ -879,7 +879,16 @@ Scenario: GET metadata for a static dataset
                         "id": "1"
                     }
                 },
-                "edition": "time-series"
+                "edition": "time-series",
+                "distributions": [
+                    {
+                        "title": "Distribution 1",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "download_url": "/datasets/static-dataset/editions/time-series/versions/1.csv",
+                        "byte_size": 100000
+                    }
+                ]
             }
         }
         """
@@ -924,6 +933,143 @@ Scenario: GET metadata for a static dataset
                 }
             ],
             "type": "static",
-            "version": 1
+            "version": 1,
+            "distributions": [
+                {
+                    "title": "Distribution 1",
+                    "format": "csv",
+                    "media_type": "text/csv",
+                    "download_url": "/datasets/static-dataset/editions/time-series/versions/1.csv",
+                    "byte_size": 100000
+                }
+            ]
+        }
+        """
+
+Scenario: GET metadata for a static dataset with URL rewriting enabled
+    Given I have a static dataset with version:
+        """
+        {
+            "dataset": {
+                "id": "static-dataset",
+                "title": "static title",
+                "description": "static description",
+                "state": "published",
+                "type": "static",
+                "next_release": "2023-12-01",
+                "license": "license",
+                "keywords": ["statistics", "population"],
+                "contacts": [
+                    {
+                        "name": "name",
+                        "email": "name@example.com",
+                        "telephone": "01234 567890"
+                    }
+                ],
+                "topics": ["economy", "demographics"]
+            },
+            "edition": {
+                "id": "time-series",
+                "edition": "time-series",
+                "state": "published",
+                "links": {
+                    "dataset": {
+                        "id": "static-dataset"
+                    }
+                }
+            },
+            "version": {
+                "version": 1,
+                "state": "published",
+                "release_date": "2023-01-15",
+                "temporal": [
+                    {
+                        "frequency": "Monthly",
+                        "start_date": "2023-01-01",
+                        "end_date": "2023-01-31"
+                    }
+                ],
+                "links": {
+                    "dataset": {
+                        "id": "static-dataset"
+                    },
+                    "edition": {
+                        "id": "time-series"
+                    },
+                    "self": {
+                        "href": "/datasets/static-dataset/editions/time-series/versions/1"
+                    },
+                    "version": {
+                        "href": "/datasets/static-dataset/editions/time-series/versions/1",
+                        "id": "1"
+                    }
+                },
+                "edition": "time-series",
+                "distributions": [
+                    {
+                        "title": "Distribution 1",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "download_url": "/datasets/static-dataset/editions/time-series/versions/1.csv",
+                        "byte_size": 100000
+                    }
+                ]
+            }
+        }
+        """
+    And URL rewriting is enabled
+    And I set the "X-Forwarded-Host" header to "api.example.com"
+    And I set the "X-Forwarded-Path-Prefix" header to "v1"
+    When I GET "/datasets/static-dataset/editions/time-series/versions/1/metadata"
+    Then I should receive the following JSON response with status "200":
+        """
+        {
+            "contacts": [
+                {
+                    "name": "name",
+                    "email": "name@example.com",
+                    "telephone": "01234 567890"
+                }
+            ],
+            "description": "static description",
+            "keywords": ["statistics", "population"],
+            "last_updated": "0001-01-01T00:00:00Z",
+            "license": "license",
+            "next_release": "2023-12-01",
+            "release_date": "2023-01-15",
+            "title": "static title",
+            "topics": ["economy", "demographics"],
+            "links": {
+                "self": {
+                    "href": "https://api.example.com/v1/datasets/static-dataset/editions/time-series/versions/1/metadata"
+                },
+                "version": {
+                    "href": "https://api.example.com/v1/datasets/static-dataset/editions/time-series/versions/1",
+                    "id": "1"
+                },
+                "website_version": {
+                    "href": "http://localhost:20000/datasets/static-dataset/editions/time-series/versions/1"
+                }
+            },
+            "edition": "time-series",
+            "id": "static-dataset",
+            "temporal": [
+                {
+                    "frequency": "Monthly",
+                    "start_date": "2023-01-01",
+                    "end_date": "2023-01-31"
+                }
+            ],
+            "type": "static",
+            "version": 1,
+            "distributions": [
+                {
+                    "title": "Distribution 1",
+                    "format": "csv",
+                    "media_type": "text/csv",
+                    "download_url": "http://localhost:23600/downloads-new/datasets/static-dataset/editions/time-series/versions/1.csv",
+                    "byte_size": 100000
+                }
+            ]
         }
         """

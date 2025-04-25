@@ -13,10 +13,10 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/utils"
-	dpresponse "github.com/ONSdigital/dp-net/v2/handlers/response"
-	dphttp "github.com/ONSdigital/dp-net/v2/http"
-	"github.com/ONSdigital/dp-net/v2/links"
-	dprequest "github.com/ONSdigital/dp-net/v2/request"
+	dpresponse "github.com/ONSdigital/dp-net/v3/handlers/response"
+	dphttp "github.com/ONSdigital/dp-net/v3/http"
+	"github.com/ONSdigital/dp-net/v3/links"
+	dprequest "github.com/ONSdigital/dp-net/v3/request"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
@@ -167,7 +167,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 
 		list, err = utils.RewriteVersions(ctx, list, datasetLinksBuilder, codeListLinksBuilder, api.urlBuilder.GetDownloadServiceURL())
 		if err != nil {
-			log.Error(ctx, "getVersions endpoint: error rewriting dimension, version or download links", err)
+			log.Error(ctx, "getVersions endpoint: error rewriting dimension, version, download or distribution links", err)
 			handleVersionAPIErr(ctx, err, w, logData)
 			return nil, 0, err
 		}
@@ -295,6 +295,13 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 		err = utils.RewriteDownloadLinks(ctx, v.Downloads, api.urlBuilder.GetDownloadServiceURL())
 		if err != nil {
 			log.Error(ctx, "getVersion endpoint: failed to rewrite download links", err)
+			handleVersionAPIErr(ctx, err, w, logData)
+			return
+		}
+
+		v.Distributions, err = utils.RewriteDistributions(ctx, v.Distributions, api.urlBuilder.GetDownloadServiceURL())
+		if err != nil {
+			log.Error(ctx, "getVersion endpoint: failed to rewrite distributions DownloadURLs", err)
 			handleVersionAPIErr(ctx, err, w, logData)
 			return
 		}

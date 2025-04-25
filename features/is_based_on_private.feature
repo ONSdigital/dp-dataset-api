@@ -58,14 +58,16 @@ Feature: Private Dataset API
                     "is_based_on":{
                        "@type":"",
                        "@id":"included"
-                    }
+                    },
+                    "last_updated":"0001-01-01T00:00:00Z"
                  },
                  "next":{
                     "id":"test-2",
                     "is_based_on":{
                        "@type":"",
                        "@id":"included"
-                    }
+                    },
+                    "last_updated":"0001-01-01T00:00:00Z"
                  }
               },
               {
@@ -75,7 +77,8 @@ Feature: Private Dataset API
                     "is_based_on":{
                        "@type":"",
                        "@id":"included"
-                    }
+                    },
+                    "last_updated":"0001-01-01T00:00:00Z"
                  }
               }
            ]
