@@ -738,9 +738,6 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
-			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
-				return false, nil
-			},
 		}
 
 		datasetPermissions := getAuthorisationHandlerMock()
@@ -772,9 +769,6 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 			},
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
-			},
-			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
-				return false, nil
 			},
 		}
 
@@ -808,9 +802,6 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
-			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
-				return false, nil
-			},
 		}
 
 		datasetPermissions := getAuthorisationHandlerMock()
@@ -842,9 +833,6 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 			},
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
-			},
-			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
-				return false, nil
 			},
 		}
 
@@ -878,9 +866,6 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
-			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
-				return false, nil
-			},
 		}
 
 		datasetPermissions := getAuthorisationHandlerMock()
@@ -912,9 +897,6 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 			},
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
-			},
-			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
-				return false, nil
 			},
 		}
 
@@ -1273,9 +1255,6 @@ func TestPostDatasetReturnsError(t *testing.T) {
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
-			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
-				return false, nil
-			},
 		}
 
 		datasetPermissions := getAuthorisationHandlerMock()
@@ -1309,9 +1288,6 @@ func TestPostDatasetReturnsError(t *testing.T) {
 			},
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
-			},
-			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
-				return false, nil
 			},
 		}
 
