@@ -289,7 +289,8 @@ Feature: Private Dataset API
                 "keywords": ["keyword"],
                 "next_release":"2016-04-04",
                 "topics": ["topic"],
-                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
+                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],
+                "license":"license"
             }
             """
         Then the HTTP status code should be "403"
@@ -309,13 +310,14 @@ Feature: Private Dataset API
                 "description": "census",
                 "keywords":["keyword"],
                 "topics": ["topic"],
-                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
+                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],
+                "license":"license"
             }
             """
         Then the HTTP status code should be "400"
         And I should receive the following response:
             """
-            invalid fields: missing dataset id in request body
+            invalid fields: [ID]
             """
 
     Scenario: Missing dataset title in body when creating a new dataset
@@ -329,7 +331,8 @@ Feature: Private Dataset API
                 "description": "census",
                 "keywords":["keyword"],
                 "topics": ["topic"],
-                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
+                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],
+                "license":"license"
             }
             """
         Then the HTTP status code should be "400"
@@ -349,7 +352,8 @@ Feature: Private Dataset API
                 "next_release":"2016-04-04",
                 "keywords":["keyword"],
                 "topics": ["topic"],
-                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
+                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],
+                "license":"license"
             }
             """
         Then the HTTP status code should be "400"
@@ -369,7 +373,8 @@ Feature: Private Dataset API
                 "next_release":"2016-04-04",
                 "description": "census",
                 "topics": ["topic"],
-                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
+                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],
+                "license":"license"
             }
             """
         Then the HTTP status code should be "400"
@@ -389,7 +394,8 @@ Feature: Private Dataset API
                 "description": "census",
                 "keywords":["keyword"],
                 "topics": ["topic"],
-                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
+                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],
+                "license":"license"
             }
             """
         Then the HTTP status code should be "400"
@@ -409,7 +415,8 @@ Feature: Private Dataset API
                 "next_release":"2016-04-04",
                 "description": "census",
                 "keywords":["keyword"],
-                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
+                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],
+                "license":"license"
             }
             """
         Then the HTTP status code should be "400"
@@ -429,11 +436,33 @@ Feature: Private Dataset API
                 "next_release":"2016-04-04",
                 "description": "census",
                 "keywords":["keyword"],
-                "topics": ["topic"]
+                "topics": ["topic"],
+                "license":"license"
             }
             """
         Then the HTTP status code should be "400"
         And I should receive the following response:
             """
             invalid fields: [Contacts]
+            """
+
+    Scenario: Missing dataset license in body when creating a new dataset
+        When I POST "/datasets"
+            """
+            {
+                "id": "ageing-population-estimates",
+                "title": "title",
+                "type": "static",
+                "state": "anything",
+                "next_release":"2016-04-04",
+                "description": "census",
+                "keywords":["keyword"],
+                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],
+                "topics": ["topic"]
+            }
+            """
+        Then the HTTP status code should be "400"
+        And I should receive the following response:
+            """
+            invalid fields: [License]
             """

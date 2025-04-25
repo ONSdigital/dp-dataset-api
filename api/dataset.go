@@ -228,6 +228,7 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 
 	// TODO Could just do an insert, if dataset already existed we would get a duplicate key error instead of reading then writing doc
 	b, err := func() ([]byte, error) {
+
 		dataset, err := models.CreateDataset(r.Body)
 		if err != nil {
 			log.Error(ctx, "addDataset endpoint: failed to model dataset resource based on request", err, logData)
@@ -249,17 +250,6 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 		} else {
 			log.Error(ctx, "addDataset endpoint: unable to create a dataset that already exists", errs.ErrAddDatasetAlreadyExists, logData)
 			return nil, errs.ErrAddDatasetAlreadyExists
-		}
-
-		datasetTitleExist, err := api.dataStore.Backend.CheckDatasetTitleExist(ctx, dataset.Title)
-		if err != nil {
-			log.Error(ctx, "addDatasetNew endpoint: error checking if dataset title exists", err, logData)
-			return nil, errs.ErrAddDatasetTitleAlreadyExists
-		}
-
-		if datasetTitleExist {
-			log.Error(ctx, "addDatasetNew endpoint: unable to create a dataset with title that already exists", errs.ErrAddDatasetTitleAlreadyExists, logData)
-			return nil, errs.ErrAddDatasetTitleAlreadyExists
 		}
 
 		dataType, err := models.ValidateDatasetType(ctx, dataset.Type)
