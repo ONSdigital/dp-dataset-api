@@ -89,7 +89,7 @@ func Get() (*Configuration, error) {
 		CantabularExportStartTopic:     "cantabular-export-start",
 		CodeListAPIURL:                 "http://localhost:22400",
 		DatasetAPIURL:                  "http://localhost:22000",
-		FilesAPIURL:                    "http://dp-files-api:26900",
+		FilesAPIURL:                    "http://localhost:26900",
 		DownloadServiceURL:             "http://localhost:23600",
 		ImportAPIURL:                   "http://localhost:21800",
 		WebsiteURL:                     "http://localhost:20000",
