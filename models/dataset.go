@@ -379,6 +379,7 @@ func ValidateDataset(dataset *Dataset) error {
 			"Title":       dataset.Title,
 			"Description": dataset.Description,
 			"NextRelease": dataset.NextRelease,
+			"License":     dataset.License,
 		}
 
 		for fieldName, fieldValue := range mandatoryStringFields {
