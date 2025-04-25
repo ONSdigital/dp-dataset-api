@@ -228,7 +228,6 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 
 	// TODO Could just do an insert, if dataset already existed we would get a duplicate key error instead of reading then writing doc
 	b, err := func() ([]byte, error) {
-
 		dataset, err := models.CreateDataset(r.Body)
 		if err != nil {
 			log.Error(ctx, "addDataset endpoint: failed to model dataset resource based on request", err, logData)
