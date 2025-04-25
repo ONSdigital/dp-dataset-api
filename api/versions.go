@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"strings"
 
@@ -1167,7 +1168,73 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if stateUpdate.State == models.PublishedState && currentVersion.Distributions != nil && len(*currentVersion.Distributions) > 0 {
+		err = api.publishDistributionFiles(ctx, currentVersion, logData)
+		if err != nil {
+			log.Error(ctx, "putState endpoint: failed to publish distribution files", err, logData)
+		}
+	}
+
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusOK)
 	log.Info(ctx, "putState endpoint: request successful", logData)
+}
+
+func (api *DatasetAPI) publishDistributionFiles(ctx context.Context, version *models.Version, logData log.Data) error {
+	if api.filesAPIClient == nil {
+		return fmt.Errorf("files API client not configured")
+	}
+
+	if version.Distributions == nil || len(*version.Distributions) == 0 {
+		return nil
+	}
+
+	var lastError error
+	totalFiles := len(*version.Distributions)
+	successCount := 0
+
+	for _, distribution := range *version.Distributions {
+		if distribution.DownloadURL == "" {
+			continue
+		}
+
+		filepath := distribution.DownloadURL
+
+		fileLogData := log.Data{
+			"filepath":            filepath,
+			"distribution_title":  distribution.Title,
+			"distribution_format": distribution.Format,
+		}
+
+		maps.Copy(fileLogData, logData)
+
+		fileMetadata, err := api.filesAPIClient.GetFile(ctx, filepath, api.authToken)
+		if err != nil {
+			log.Error(ctx, "failed to get file metadata", err, fileLogData)
+			lastError = err
+			continue
+		}
+
+		err = api.filesAPIClient.MarkFilePublished(ctx, filepath, fileMetadata.Etag)
+		if err != nil {
+			log.Error(ctx, "failed to publish file", err, fileLogData)
+			lastError = err
+			continue
+		}
+
+		successCount++
+		log.Info(ctx, "successfully published file", fileLogData)
+	}
+
+	log.Info(ctx, "completed publishing distribution files", log.Data{
+		"total_files": totalFiles,
+		"successful":  successCount,
+		"failed":      totalFiles - successCount,
+	})
+
+	if lastError != nil {
+		return fmt.Errorf("one or more errors occurred while publishing files: %w", lastError)
+	}
+
+	return nil
 }

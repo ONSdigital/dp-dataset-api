@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"io"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ONSdigital/dp-api-clients-go/v2/files"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
@@ -32,6 +34,19 @@ const (
 	testLockID               = "testLockID"
 	testETag                 = "testETag"
 )
+
+type mockFilesClient struct {
+	GetFileFunc           func(ctx context.Context, path, authToken string) (files.FileMetaData, error)
+	MarkFilePublishedFunc func(ctx context.Context, path, etag string) error
+}
+
+func (m *mockFilesClient) GetFile(ctx context.Context, path, authToken string) (files.FileMetaData, error) {
+	return m.GetFileFunc(ctx, path, authToken)
+}
+
+func (m *mockFilesClient) MarkFilePublished(ctx context.Context, path, etag string) error {
+	return m.MarkFilePublishedFunc(ctx, path, etag)
+}
 
 func TestGetVersionsReturnsOK(t *testing.T) {
 	t.Parallel()
@@ -3710,4 +3725,333 @@ func TestPutStateReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 	})
+}
+
+func TestPublishDistributionFiles(t *testing.T) {
+	ctx := context.Background()
+
+	Convey("Given a version with no distributions", t, func() {
+		version := &models.Version{}
+		logData := log.Data{}
+
+		Convey("When publishDistributionFiles is called on an API with no files client", func() {
+			api := &DatasetAPI{}
+			err := api.publishDistributionFiles(ctx, version, logData)
+
+			Convey("Then an error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "files API client not configured")
+			})
+		})
+	})
+
+	Convey("Given a version with distributions", t, func() {
+		distributions := []models.Distribution{
+			{
+				Title:       "Test Distribution 1",
+				Format:      "CSV",
+				DownloadURL: "test-file-1.csv",
+			},
+			{
+				Title:       "Test Distribution 2",
+				Format:      "XLSX",
+				DownloadURL: "test-file-2.xlsx",
+			},
+		}
+		version := &models.Version{
+			Distributions: &distributions,
+		}
+		logData := log.Data{}
+
+		Convey("When publishDistributionFiles is called with a mocked files client that succeeds", func() {
+			getFileCalls := 0
+			markPublishedCalls := 0
+			authToken := "test-auth-token"
+
+			mockClient := &mockFilesClient{
+				GetFileFunc: func(ctx context.Context, path string, token string) (files.FileMetaData, error) {
+					getFileCalls++
+					So(token, ShouldEqual, authToken)
+					return files.FileMetaData{
+						Path: path,
+						Etag: "etag-" + path,
+					}, nil
+				},
+				MarkFilePublishedFunc: func(ctx context.Context, path string, etag string) error {
+					markPublishedCalls++
+					So(etag, ShouldEqual, "etag-"+path)
+					return nil
+				},
+			}
+
+			testFunc := func() error {
+				getFileFn := func(ctx context.Context, path string, token string) (files.FileMetaData, error) {
+					return mockClient.GetFile(ctx, path, token)
+				}
+
+				markPublishedFn := func(ctx context.Context, path string, etag string) error {
+					return mockClient.MarkFilePublished(ctx, path, etag)
+				}
+
+				return publishDistributionFilesTest(ctx, version, logData, getFileFn, markPublishedFn, authToken)
+			}
+
+			err := testFunc()
+
+			Convey("Then no error should be returned", func() {
+				So(err, ShouldBeNil)
+				So(getFileCalls, ShouldEqual, 2)
+				So(markPublishedCalls, ShouldEqual, 2)
+			})
+		})
+
+		Convey("When publishDistributionFiles is called with a mocked files client that fails on GetFile", func() {
+			getFileCalls := 0
+			markPublishedCalls := 0
+			authToken := "test-auth-token"
+
+			mockClient := &mockFilesClient{
+				GetFileFunc: func(ctx context.Context, path string, token string) (files.FileMetaData, error) {
+					getFileCalls++
+					return files.FileMetaData{}, errors.New("get file error")
+				},
+				MarkFilePublishedFunc: func(ctx context.Context, path string, etag string) error {
+					markPublishedCalls++
+					return nil
+				},
+			}
+
+			testFunc := func() error {
+				getFileFn := func(ctx context.Context, path string, token string) (files.FileMetaData, error) {
+					return mockClient.GetFile(ctx, path, token)
+				}
+
+				markPublishedFn := func(ctx context.Context, path string, etag string) error {
+					return mockClient.MarkFilePublished(ctx, path, etag)
+				}
+
+				return publishDistributionFilesTest(ctx, version, logData, getFileFn, markPublishedFn, authToken)
+			}
+
+			err := testFunc()
+
+			Convey("Then an error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "get file error")
+				So(getFileCalls, ShouldEqual, 2)
+				So(markPublishedCalls, ShouldEqual, 0)
+			})
+		})
+
+		Convey("When publishDistributionFiles is called with a mocked files client that fails on MarkFilePublished", func() {
+			getFileCalls := 0
+			markPublishedCalls := 0
+			authToken := "test-auth-token"
+
+			mockClient := &mockFilesClient{
+				GetFileFunc: func(ctx context.Context, path string, token string) (files.FileMetaData, error) {
+					getFileCalls++
+					return files.FileMetaData{
+						Path: path,
+						Etag: "etag-" + path,
+					}, nil
+				},
+				MarkFilePublishedFunc: func(ctx context.Context, path string, etag string) error {
+					markPublishedCalls++
+					return errors.New("mark published error")
+				},
+			}
+
+			testFunc := func() error {
+				getFileFn := func(ctx context.Context, path string, token string) (files.FileMetaData, error) {
+					return mockClient.GetFile(ctx, path, token)
+				}
+
+				markPublishedFn := func(ctx context.Context, path string, etag string) error {
+					return mockClient.MarkFilePublished(ctx, path, etag)
+				}
+
+				return publishDistributionFilesTest(ctx, version, logData, getFileFn, markPublishedFn, authToken)
+			}
+
+			err := testFunc()
+
+			Convey("Then an error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "mark published error")
+				So(getFileCalls, ShouldEqual, 2)
+				So(markPublishedCalls, ShouldEqual, 2)
+			})
+		})
+	})
+}
+
+func TestPutStatePublishDistributionFilesCondition(t *testing.T) {
+	Convey("Given a version with distributions", t, func() {
+		distributions := []models.Distribution{
+			{
+				Title:       "Test Distribution",
+				Format:      "CSV",
+				DownloadURL: "test-file.csv",
+			},
+		}
+
+		version := &models.Version{
+			State:         models.AssociatedState,
+			Distributions: &distributions,
+		}
+
+		publishDistributionFilesCalled := false
+		publishDistributionFilesErr := error(nil)
+
+		testPublishDistributionFiles := func(ctx context.Context, v *models.Version, logData log.Data) error {
+			publishDistributionFilesCalled = true
+			So(v, ShouldEqual, version)
+			return publishDistributionFilesErr
+		}
+
+		Convey("When state is PublishedState", func() {
+			state := models.PublishedState
+
+			shouldCallPublishDistributionFiles := state == models.PublishedState &&
+				version.Distributions != nil &&
+				len(*version.Distributions) > 0
+
+			Convey("Then the condition should be true", func() {
+				So(shouldCallPublishDistributionFiles, ShouldBeTrue)
+
+				if shouldCallPublishDistributionFiles {
+					testPublishDistributionFiles(context.Background(), version, log.Data{})
+				}
+
+				So(publishDistributionFilesCalled, ShouldBeTrue)
+			})
+		})
+
+		Convey("When state is not PublishedState", func() {
+			state := models.AssociatedState
+
+			publishDistributionFilesCalled = false
+
+			shouldCallPublishDistributionFiles := state == models.PublishedState &&
+				version.Distributions != nil &&
+				len(*version.Distributions) > 0
+
+			Convey("Then the condition should be false", func() {
+				So(shouldCallPublishDistributionFiles, ShouldBeFalse)
+
+				if shouldCallPublishDistributionFiles {
+					testPublishDistributionFiles(context.Background(), version, log.Data{})
+				}
+
+				So(publishDistributionFilesCalled, ShouldBeFalse)
+			})
+		})
+
+		Convey("When version has no distributions", func() {
+			state := models.PublishedState
+			versionNoDistributions := &models.Version{
+				State: models.AssociatedState,
+			}
+
+			publishDistributionFilesCalled = false
+
+			shouldCallPublishDistributionFiles := state == models.PublishedState &&
+				versionNoDistributions.Distributions != nil &&
+				len(*versionNoDistributions.Distributions) > 0
+
+			Convey("Then the condition should be false", func() {
+				So(shouldCallPublishDistributionFiles, ShouldBeFalse)
+
+				if shouldCallPublishDistributionFiles {
+					testPublishDistributionFiles(context.Background(), versionNoDistributions, log.Data{})
+				}
+
+				So(publishDistributionFilesCalled, ShouldBeFalse)
+			})
+		})
+
+		Convey("When publishDistributionFiles returns an error", func() {
+			state := models.PublishedState
+
+			publishDistributionFilesCalled = false
+			publishDistributionFilesErr = errors.New("test error")
+
+			shouldCallPublishDistributionFiles := state == models.PublishedState &&
+				version.Distributions != nil &&
+				len(*version.Distributions) > 0
+
+			Convey("Then the condition should be true but error should be logged", func() {
+				So(shouldCallPublishDistributionFiles, ShouldBeTrue)
+
+				if shouldCallPublishDistributionFiles {
+					err := testPublishDistributionFiles(context.Background(), version, log.Data{})
+					if err != nil {
+						So(err.Error(), ShouldEqual, "test error")
+					}
+				}
+
+				So(publishDistributionFilesCalled, ShouldBeTrue)
+			})
+		})
+	})
+}
+
+func publishDistributionFilesTest(ctx context.Context, version *models.Version, logData log.Data,
+	getFileFn func(context.Context, string, string) (files.FileMetaData, error),
+	markPublishedFn func(context.Context, string, string) error, authToken string) error {
+	if version.Distributions == nil || len(*version.Distributions) == 0 {
+		return nil
+	}
+
+	var lastError error
+	totalFiles := len(*version.Distributions)
+	successCount := 0
+
+	for _, distribution := range *version.Distributions {
+		if distribution.DownloadURL == "" {
+			continue
+		}
+
+		filepath := distribution.DownloadURL
+
+		fileLogData := log.Data{
+			"filepath":            filepath,
+			"distribution_title":  distribution.Title,
+			"distribution_format": distribution.Format,
+		}
+
+		for k, v := range logData {
+			fileLogData[k] = v
+		}
+
+		fileMetadata, err := getFileFn(ctx, filepath, authToken)
+		if err != nil {
+			log.Error(ctx, "failed to get file metadata", err, fileLogData)
+			lastError = err
+			continue
+		}
+
+		err = markPublishedFn(ctx, filepath, fileMetadata.Etag)
+		if err != nil {
+			log.Error(ctx, "failed to publish file", err, fileLogData)
+			lastError = err
+			continue
+		}
+
+		successCount++
+		log.Info(ctx, "successfully published file", fileLogData)
+	}
+
+	log.Info(ctx, "completed publishing distribution files", log.Data{
+		"total_files": totalFiles,
+		"successful":  successCount,
+		"failed":      totalFiles - successCount,
+	})
+
+	if lastError != nil {
+		return fmt.Errorf("one or more errors occurred while publishing files: %w", lastError)
+	}
+
+	return nil
 }

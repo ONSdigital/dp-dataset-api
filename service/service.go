@@ -7,6 +7,7 @@ import (
 	"slices"
 	"sync"
 
+	"github.com/ONSdigital/dp-api-clients-go/v2/files"
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
 	"github.com/ONSdigital/dp-authorisation/auth"
 	"github.com/ONSdigital/dp-dataset-api/api"
@@ -49,6 +50,7 @@ type Service struct {
 	generateCMDDownloadsProducer        kafka.IProducer
 	generateCantabularDownloadsProducer kafka.IProducer
 	identityClient                      *clientsidentity.Client
+	filesAPIClient                      *files.Client
 	server                              HTTPServer
 	healthCheck                         HealthChecker
 	api                                 *api.DatasetAPI
@@ -203,6 +205,11 @@ func (svc *Service) SetGraphDBErrorConsumer(graphDBErrorConsumer Closer) {
 	svc.graphDBErrorConsumer = graphDBErrorConsumer
 }
 
+// SetFilesAPIClient sets the files API client for a service
+func (svc *Service) SetFilesAPIClient(filesAPIClient *files.Client) {
+	svc.filesAPIClient = filesAPIClient
+}
+
 // Run the service
 func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version string, svcErrors chan error) (err error) {
 	// Copilot used to move initMongoDB and initGraphDB functions out of Run
@@ -265,6 +272,14 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		svc.identityClient = clientsidentity.New(svc.config.ZebedeeURL)
 	}
 
+	// Initialise Files API Client (if private endpoints are enabled)
+	if svc.config.EnablePrivateEndpoints {
+		if svc.filesAPIClient == nil {
+			svc.filesAPIClient = files.NewAPIClient(svc.config.FilesAPIURL, svc.config.ServiceAuthToken)
+			log.Info(ctx, "files API client created", log.Data{"url": svc.config.FilesAPIURL})
+		}
+	}
+
 	// Get HealthCheck
 	svc.healthCheck, err = svc.serviceList.GetHealthCheck(svc.config, buildTime, gitCommit, version)
 	if err != nil {
@@ -307,6 +322,12 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	sm := GetStateMachine(ctx, ds)
 	svc.smDS = application.Setup(ds, smDownloadGenerators, sm)
 	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions, enableURLRewriting, svc.smDS, enableStateMachine)
+
+	// Set the files API client on the DatasetAPI after initialisation
+	if svc.config.EnablePrivateEndpoints && svc.filesAPIClient != nil {
+		svc.api.SetFilesAPIClient(svc.filesAPIClient, svc.config.ServiceAuthToken)
+		log.Info(ctx, "files API client set on dataset API")
+	}
 
 	svc.healthCheck.Start(ctx)
 

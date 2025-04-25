@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/ONSdigital/dp-api-clients-go/v2/files"
 	"github.com/ONSdigital/dp-authorisation/auth"
 	"github.com/ONSdigital/dp-dataset-api/application"
 	"github.com/ONSdigital/dp-dataset-api/config"
@@ -72,6 +73,8 @@ type DatasetAPI struct {
 	MaxRequestOptions        int
 	smDatasetAPI             *application.StateMachineDatasetAPI
 	EnableStateMachine       bool
+	filesAPIClient           *files.Client
+	authToken                string
 }
 
 // Setup creates a new Dataset API instance and register the API routes based on the application configuration.
@@ -133,6 +136,12 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		api.enablePublicEndpoints(paginator)
 	}
 	return api
+}
+
+// SetFilesAPIClient sets the files API client and auth token for the API
+func (api *DatasetAPI) SetFilesAPIClient(client *files.Client, authToken string) {
+	api.filesAPIClient = client
+	api.authToken = authToken
 }
 
 // enablePublicEndpoints register only the public GET endpoints.
