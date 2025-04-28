@@ -228,7 +228,19 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 
 	// TODO Could just do an insert, if dataset already existed we would get a duplicate key error instead of reading then writing doc
 	b, err := func() ([]byte, error) {
-		_, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
+		dataset, err := models.CreateDataset(r.Body)
+		if err != nil {
+			log.Error(ctx, "addDataset endpoint: failed to model dataset resource based on request", err, logData)
+			return nil, errs.ErrAddUpdateDatasetBadRequest
+		}
+
+		models.CleanDataset(dataset)
+		if err = models.ValidateDataset(dataset); err != nil {
+			log.Error(ctx, "addDataset endpoint: dataset failed validation checks", err)
+			return nil, err
+		}
+
+		_, err = api.dataStore.Backend.GetDataset(ctx, datasetID)
 		if err != nil {
 			if err != errs.ErrDatasetNotFound {
 				log.Error(ctx, "addDataset endpoint: error checking if dataset exists", err, logData)
@@ -239,22 +251,9 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 			return nil, errs.ErrAddDatasetAlreadyExists
 		}
 
-		dataset, err := models.CreateDataset(r.Body)
-		if err != nil {
-			log.Error(ctx, "addDataset endpoint: failed to model dataset resource based on request", err, logData)
-			return nil, errs.ErrAddUpdateDatasetBadRequest
-		}
-
 		dataType, err := models.ValidateDatasetType(ctx, dataset.Type)
 		if err != nil {
 			log.Error(ctx, "addDataset endpoint: error Invalid dataset type", err, logData)
-			return nil, err
-		}
-
-		models.CleanDataset(dataset)
-
-		if err = models.ValidateDataset(dataset); err != nil {
-			log.Error(ctx, "addDataset endpoint: dataset failed validation checks", err)
 			return nil, err
 		}
 
@@ -325,14 +324,20 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 	}
 
 	datasetID := dataset.ID
+	logData := log.Data{"dataset_id": datasetID}
+
+	models.CleanDataset(dataset)
+	if err = models.ValidateDataset(dataset); err != nil {
+		log.Error(ctx, "addDatasetNew endpoint: dataset failed validation checks", err)
+		handleDatasetAPIErr(ctx, err, w, logData)
+		return
+	}
 
 	if datasetID == "" {
 		log.Error(ctx, "addDatasetNew endpoint: dataset ID is empty", nil)
 		handleDatasetAPIErr(ctx, errs.ErrMissingDatasetID, w, nil)
 		return
 	}
-
-	logData := log.Data{"dataset_id": datasetID}
 
 	_, err = api.dataStore.Backend.GetDataset(ctx, datasetID)
 	if err == nil {
@@ -362,13 +367,6 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 	dataType, err := models.ValidateDatasetType(ctx, dataset.Type)
 	if err != nil {
 		log.Error(ctx, "addDatasetNew endpoint: error Invalid dataset type", err, logData)
-		handleDatasetAPIErr(ctx, err, w, logData)
-		return
-	}
-
-	models.CleanDataset(dataset)
-	if err = models.ValidateDataset(dataset); err != nil {
-		log.Error(ctx, "addDatasetNew endpoint: dataset failed validation checks", err)
 		handleDatasetAPIErr(ctx, err, w, logData)
 		return
 	}
