@@ -1179,6 +1179,8 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 		err = api.publishDistributionFiles(ctx, currentVersion, logData)
 		if err != nil {
 			log.Error(ctx, "putState endpoint: failed to publish distribution files", err, logData)
+			handleVersionAPIErr(ctx, err, w, logData)
+			return
 		}
 	}
 

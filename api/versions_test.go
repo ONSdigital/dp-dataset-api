@@ -3526,10 +3526,7 @@ func TestPutStateReturnsOk(t *testing.T) {
 						  }
 						],
 						"version": 1,
-						"type": "static",
-						"distributions": [
-						  {}
-						]
+						"type": "static"
 					  }`
 
 				var versionModel models.Version
@@ -3541,6 +3538,8 @@ func TestPutStateReturnsOk(t *testing.T) {
 					ID:   "1",
 					HRef: "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1",
 				}
+
+				versionModel.Distributions = nil
 
 				return &versionModel, nil
 			},
