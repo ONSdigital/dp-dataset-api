@@ -1,6 +1,8 @@
 package models
 
 import (
+	"bytes"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -332,4 +334,33 @@ func (v *Version) UpdateMetadata(metadata EditableMetadata) {
 	v.Dimensions = metadata.Dimensions
 	v.UsageNotes = metadata.UsageNotes
 	v.LatestChanges = metadata.LatestChanges
+}
+
+// ToString builds a string of metadata information
+func (m Metadata) ToString() string {
+	var b bytes.Buffer
+
+	// Default values
+	nationalStatistic := false
+
+	b.WriteString(fmt.Sprintf("Title: %s\n", m.Title))
+	b.WriteString(fmt.Sprintf("Description: %s\n", m.Description))
+	b.WriteString(fmt.Sprintf("Issued: %s\n", m.ReleaseDate))
+	b.WriteString(fmt.Sprintf("Next Release: %s\n", m.NextRelease))
+	b.WriteString(fmt.Sprintf("Identifier: %s\n", m.Title))
+	b.WriteString(fmt.Sprintf("Language: %s\n", "English"))
+	b.WriteString(fmt.Sprintf("Periodicity: %s\n", m.ReleaseFrequency))
+	b.WriteString(fmt.Sprintf("Distribution:\n"))
+	b.WriteString(fmt.Sprintf("Unit of measure: %s\n", m.UnitOfMeasure))
+	b.WriteString(fmt.Sprintf("License: %s\n", m.License))
+
+	if m.NationalStatistic != nil {
+		nationalStatistic = *m.NationalStatistic
+	}
+	b.WriteString(fmt.Sprintf("National Statistic: %t\n", nationalStatistic))
+	b.WriteString(fmt.Sprintf("Canonical Topic: %s\n", m.CanonicalTopic))
+	b.WriteString(fmt.Sprintf("Survey: %s\n", m.Survey))
+	b.WriteString(fmt.Sprintf("Lowest Geography: \n"))
+
+	return b.String()
 }

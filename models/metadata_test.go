@@ -552,3 +552,73 @@ func TestUpdateMetadata(t *testing.T) {
 		})
 	})
 }
+
+func expectedData(isEmpty bool) string {
+	if isEmpty {
+		return "Title: \n" +
+			"Description: \n" +
+			"Issued: \n" +
+			"Next Release: \n" +
+			"Identifier: \n" +
+			"Language: English\n" +
+			"Periodicity: \n" +
+			"Distribution:\n" +
+			"Unit of measure: \n" +
+			"License: \n" +
+			"National Statistic: false\n" +
+			"Canonical Topic: \n" +
+			"Survey: \n" +
+			"Lowest Geography: \n"
+	}
+
+	return "Title: title\n" +
+		"Description: description\n" +
+		"Publisher: {url name type}\n" +
+		"Issued: release date\n" +
+		"Next Release: next release\n" +
+		"Identifier: title\n" +
+		"Keywords: [keyword_1 keyword_2]\n" +
+		"Language: English\n" +
+		"Contact: Bob, bob@test.com, 01657923723\n" +
+		"Latest Changes: [{change description change name change type}]\n" +
+		"Periodicity: release frequency\n" +
+		"Distribution:\n" +
+		"\tExtension: xls\n" +
+		"\tSize: size\n" +
+		"\tURL: url\n\n" +
+		"Unit of measure: unit of measure\n" +
+		"License: license\n" +
+		"Methodologies: [{methodology description methodology url methodology title}]\n" +
+		"National Statistic: true\n" +
+		"Publications: [{publication description publication url publication title}]\n" +
+		"Related Links: [{related dataset url related dataset title}]\n" +
+		"Canonical Topic: canonicalTopicID\n" +
+		"Subtopics: [secondaryTopic1ID secondaryTopic2ID]\n" +
+		"Survey: census\n" +
+		"Related Content: [{related content description related content url related content title}]\n" +
+		"Lowest Geography: lowest geography\n"
+}
+
+func TestMetadataToString(t *testing.T) {
+	Convey("If metadata model is empty", t, func() {
+		Convey("Test that the `ToString()` method returns the correct string", func() {
+			expectedString := "Title: \n" +
+				"Description: \n" +
+				"Issued: \n" +
+				"Next Release: \n" +
+				"Identifier: \n" +
+				"Language: English\n" +
+				"Periodicity: \n" +
+				"Distribution:\n" +
+				"Unit of measure: \n" +
+				"License: \n" +
+				"National Statistic: false\n" +
+				"Canonical Topic: \n" +
+				"Survey: \n" +
+				"Lowest Geography: \n"
+			m := Metadata{}
+			returnedString := m.ToString()
+			So(returnedString, ShouldEqual, expectedString)
+		})
+	})
+}
