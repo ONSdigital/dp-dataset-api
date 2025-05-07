@@ -577,60 +577,48 @@ func TestMetadataToString(t *testing.T) {
 		})
 	})
 	Convey("If metadata model is not empty", t, func() {
+		nationalStatistic := false
+		m := Metadata{
+			EditableMetadata: EditableMetadata{
+				CanonicalTopic: "canon",
+				Description:    "metadata description",
+				Keywords:       []string{"key1", "key2", "key3"},
+				LatestChanges: &[]LatestChange{
+					{
+						Description: "my 1st change",
+						Name:        "change-1",
+						Type:        "revision",
+					},
+					{
+						Description: "my 2nd change",
+						Name:        "change-2",
+						Type:        "correction",
+					},
+				},
+				License:           "MIT",
+				NationalStatistic: &nationalStatistic,
+				NextRelease:       "2025-06-06T16:06:00.000Z",
+				ReleaseDate:       "2025-05-06T16:06:00.000Z",
+				ReleaseFrequency:  "monthly",
+				Survey:            "my survey",
+				Title:             "metadata title",
+				UnitOfMeasure:     "miles",
+			},
+			Temporal: &[]TemporalFrequency{
+				{
+					EndDate:   "2025-06-06T16:06:00.000Z",
+					Frequency: "every day",
+					StartDate: "2025-05-06T16:06:00.000Z",
+				},
+				{
+					EndDate:   "2025-06-06T16:06:00.000Z",
+					Frequency: "every week",
+					StartDate: "2025-05-06T16:06:00.000Z",
+				},
+			},
+			Version: 1,
+		}
 		Convey("Test that the `ToString()` method returns the correct string", func() {
-			nationalStatistic := false
-			m := Metadata{
-				EditableMetadata: EditableMetadata{
-					CanonicalTopic: "canon",
-					Contacts: []ContactDetails{
-						{
-							Email:     "test.user@ons.gov.uk",
-							Name:      "Test User",
-							Telephone: "01234 567890",
-						},
-						{
-							Email:     "best.user@ons.gov.uk",
-							Name:      "Best User",
-							Telephone: "09876 543210",
-						},
-					},
-					Description: "metadata description",
-					Keywords:    []string{"key1", "key2", "key3"},
-					LatestChanges: &[]LatestChange{
-						{
-							Description: "my 1st change",
-							Name:        "change-1",
-							Type:        "revision",
-						},
-						{
-							Description: "my 2nd change",
-							Name:        "change-2",
-							Type:        "correction",
-						},
-					},
-					License:           "MIT",
-					NationalStatistic: &nationalStatistic,
-					NextRelease:       "2025-06-06T16:06:00.000Z",
-					ReleaseDate:       "2025-05-06T16:06:00.000Z",
-					ReleaseFrequency:  "monthly",
-					Survey:            "my survey",
-					Title:             "metadata title",
-					UnitOfMeasure:     "miles",
-				},
-				Temporal: &[]TemporalFrequency{
-					{
-						EndDate:   "2025-06-06T16:06:00.000Z",
-						Frequency: "every day",
-						StartDate: "2025-05-06T16:06:00.000Z",
-					},
-					{
-						EndDate:   "2025-06-06T16:06:00.000Z",
-						Frequency: "every week",
-						StartDate: "2025-05-06T16:06:00.000Z",
-					},
-				},
-				Version: 1,
-			}
 			expectedString := fmt.Sprintf("Title: %s\n", m.Title) +
 				fmt.Sprintf("Description: %s\n", m.Description) +
 				fmt.Sprintf("Issued: %s\n", m.ReleaseDate) +
@@ -646,6 +634,37 @@ func TestMetadataToString(t *testing.T) {
 				fmt.Sprintf("Survey: %s\n", m.Survey) +
 				"Lowest Geography: \n"
 
+			So(m.ToString(), ShouldEqual, expectedString)
+		})
+		Convey("Test that the `ToString()` method contains contact details", func() {
+			// Update the model to include contacts
+			m.EditableMetadata.Contacts = []ContactDetails{
+				{
+					Email:     "test.user@ons.gov.uk",
+					Name:      "Test User",
+					Telephone: "01234 567890",
+				},
+				{
+					Email:     "my.user@ons.gov.uk",
+					Name:      "My User",
+					Telephone: "01098 765432",
+				},
+			}
+			expectedString := fmt.Sprintf("Title: %s\n", m.Title) +
+				fmt.Sprintf("Description: %s\n", m.Description) +
+				fmt.Sprintf("Issued: %s\n", m.ReleaseDate) +
+				fmt.Sprintf("Next Release: %s\n", m.NextRelease) +
+				fmt.Sprintf("Identifier: %s\n", m.Title) +
+				"Language: English\n" +
+				fmt.Sprintf("Contact: %s, %s, %s\n", m.Contacts[0].Name, m.Contacts[0].Email, m.Contacts[0].Telephone) +
+				fmt.Sprintf("Periodicity: %s\n", m.ReleaseFrequency) +
+				"Distribution:\n" +
+				fmt.Sprintf("Unit of measure: %s\n", m.UnitOfMeasure) +
+				fmt.Sprintf("License: %s\n", m.License) +
+				fmt.Sprintf("National Statistic: %v\n", nationalStatistic) +
+				fmt.Sprintf("Canonical Topic: %s\n", m.CanonicalTopic) +
+				fmt.Sprintf("Survey: %s\n", m.Survey) +
+				"Lowest Geography: \n"
 			So(m.ToString(), ShouldEqual, expectedString)
 		})
 	})

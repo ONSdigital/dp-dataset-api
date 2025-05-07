@@ -349,7 +349,15 @@ func (m Metadata) ToString() string {
 	b.WriteString(fmt.Sprintf("Next Release: %s\n", m.NextRelease))
 	b.WriteString(fmt.Sprintf("Identifier: %s\n", m.Title))
 	b.WriteString(fmt.Sprintf("Language: %s\n", "English"))
+
+	if len(m.Contacts) > 0 {
+		// Write first contact irrespective of number in list
+		contact := m.Contacts[0]
+		b.WriteString(fmt.Sprintf("Contact: %s, %s, %s\n", contact.Name, contact.Email, contact.Telephone))
+	}
+
 	b.WriteString(fmt.Sprintf("Periodicity: %s\n", m.ReleaseFrequency))
+
 	b.WriteString(fmt.Sprintf("Distribution:\n"))
 	b.WriteString(fmt.Sprintf("Unit of measure: %s\n", m.UnitOfMeasure))
 	b.WriteString(fmt.Sprintf("License: %s\n", m.License))
