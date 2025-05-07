@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	neturl "net/url"
 	"testing"
 	"time"
@@ -553,55 +554,10 @@ func TestUpdateMetadata(t *testing.T) {
 	})
 }
 
-func expectedData(isEmpty bool) string {
-	if isEmpty {
-		return "Title: \n" +
-			"Description: \n" +
-			"Issued: \n" +
-			"Next Release: \n" +
-			"Identifier: \n" +
-			"Language: English\n" +
-			"Periodicity: \n" +
-			"Distribution:\n" +
-			"Unit of measure: \n" +
-			"License: \n" +
-			"National Statistic: false\n" +
-			"Canonical Topic: \n" +
-			"Survey: \n" +
-			"Lowest Geography: \n"
-	}
-
-	return "Title: title\n" +
-		"Description: description\n" +
-		"Publisher: {url name type}\n" +
-		"Issued: release date\n" +
-		"Next Release: next release\n" +
-		"Identifier: title\n" +
-		"Keywords: [keyword_1 keyword_2]\n" +
-		"Language: English\n" +
-		"Contact: Bob, bob@test.com, 01657923723\n" +
-		"Latest Changes: [{change description change name change type}]\n" +
-		"Periodicity: release frequency\n" +
-		"Distribution:\n" +
-		"\tExtension: xls\n" +
-		"\tSize: size\n" +
-		"\tURL: url\n\n" +
-		"Unit of measure: unit of measure\n" +
-		"License: license\n" +
-		"Methodologies: [{methodology description methodology url methodology title}]\n" +
-		"National Statistic: true\n" +
-		"Publications: [{publication description publication url publication title}]\n" +
-		"Related Links: [{related dataset url related dataset title}]\n" +
-		"Canonical Topic: canonicalTopicID\n" +
-		"Subtopics: [secondaryTopic1ID secondaryTopic2ID]\n" +
-		"Survey: census\n" +
-		"Related Content: [{related content description related content url related content title}]\n" +
-		"Lowest Geography: lowest geography\n"
-}
-
 func TestMetadataToString(t *testing.T) {
 	Convey("If metadata model is empty", t, func() {
 		Convey("Test that the `ToString()` method returns the correct string", func() {
+			m := Metadata{}
 			expectedString := "Title: \n" +
 				"Description: \n" +
 				"Issued: \n" +
@@ -616,9 +572,81 @@ func TestMetadataToString(t *testing.T) {
 				"Canonical Topic: \n" +
 				"Survey: \n" +
 				"Lowest Geography: \n"
-			m := Metadata{}
-			returnedString := m.ToString()
-			So(returnedString, ShouldEqual, expectedString)
+
+			So(m.ToString(), ShouldEqual, expectedString)
+		})
+	})
+	Convey("If metadata model is not empty", t, func() {
+		Convey("Test that the `ToString()` method returns the correct string", func() {
+			nationalStatistic := false
+			m := Metadata{
+				EditableMetadata: EditableMetadata{
+					CanonicalTopic: "canon",
+					Contacts: []ContactDetails{
+						{
+							Email:     "test.user@ons.gov.uk",
+							Name:      "Test User",
+							Telephone: "01234 567890",
+						},
+						{
+							Email:     "best.user@ons.gov.uk",
+							Name:      "Best User",
+							Telephone: "09876 543210",
+						},
+					},
+					Description: "metadata description",
+					Keywords:    []string{"key1", "key2", "key3"},
+					LatestChanges: &[]LatestChange{
+						{
+							Description: "my 1st change",
+							Name:        "change-1",
+							Type:        "revision",
+						},
+						{
+							Description: "my 2nd change",
+							Name:        "change-2",
+							Type:        "correction",
+						},
+					},
+					License:           "MIT",
+					NationalStatistic: &nationalStatistic,
+					NextRelease:       "2025-06-06T16:06:00.000Z",
+					ReleaseDate:       "2025-05-06T16:06:00.000Z",
+					ReleaseFrequency:  "monthly",
+					Survey:            "my survey",
+					Title:             "metadata title",
+					UnitOfMeasure:     "miles",
+				},
+				Temporal: &[]TemporalFrequency{
+					{
+						EndDate:   "2025-06-06T16:06:00.000Z",
+						Frequency: "every day",
+						StartDate: "2025-05-06T16:06:00.000Z",
+					},
+					{
+						EndDate:   "2025-06-06T16:06:00.000Z",
+						Frequency: "every week",
+						StartDate: "2025-05-06T16:06:00.000Z",
+					},
+				},
+				Version: 1,
+			}
+			expectedString := fmt.Sprintf("Title: %s\n", m.Title) +
+				fmt.Sprintf("Description: %s\n", m.Description) +
+				fmt.Sprintf("Issued: %s\n", m.ReleaseDate) +
+				fmt.Sprintf("Next Release: %s\n", m.NextRelease) +
+				fmt.Sprintf("Identifier: %s\n", m.Title) +
+				"Language: English\n" +
+				fmt.Sprintf("Periodicity: %s\n", m.ReleaseFrequency) +
+				"Distribution:\n" +
+				fmt.Sprintf("Unit of measure: %s\n", m.UnitOfMeasure) +
+				fmt.Sprintf("License: %s\n", m.License) +
+				fmt.Sprintf("National Statistic: %v\n", nationalStatistic) +
+				fmt.Sprintf("Canonical Topic: %s\n", m.CanonicalTopic) +
+				fmt.Sprintf("Survey: %s\n", m.Survey) +
+				"Lowest Geography: \n"
+
+			So(m.ToString(), ShouldEqual, expectedString)
 		})
 	})
 }
