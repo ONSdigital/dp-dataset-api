@@ -694,8 +694,8 @@ func TestMetadataToString(t *testing.T) {
 			m.Downloads = &DownloadList{
 				CSV:  &csvDownload,
 				CSVW: &csvwDownload,
-				XLS:  &xlsDownload,
 				TXT:  &txtDownload,
+				XLS:  &xlsDownload,
 				XLSX: &xlsxDownload,
 			}
 
