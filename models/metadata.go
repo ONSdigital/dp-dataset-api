@@ -356,19 +356,42 @@ func (m Metadata) ToString() string {
 		b.WriteString(fmt.Sprintf("Contact: %s, %s, %s\n", contact.Name, contact.Email, contact.Telephone))
 	}
 
+	if m.Temporal != nil {
+		// Write first temporal irrespective of number in list
+		temporalList := *m.Temporal
+		b.WriteString(fmt.Sprintf("Temporal: %s\n", temporalList[0].Frequency))
+	}
+
 	b.WriteString(fmt.Sprintf("Periodicity: %s\n", m.ReleaseFrequency))
 
 	b.WriteString(fmt.Sprintf("Distribution:\n"))
 	b.WriteString(fmt.Sprintf("Unit of measure: %s\n", m.UnitOfMeasure))
 	b.WriteString(fmt.Sprintf("License: %s\n", m.License))
 
+	if len(m.Methodologies) > 0 {
+		b.WriteString(fmt.Sprintf("Methodologies: %s\n", m.Methodologies))
+	}
+
 	if m.NationalStatistic != nil {
 		nationalStatistic = *m.NationalStatistic
 	}
 	b.WriteString(fmt.Sprintf("National Statistic: %t\n", nationalStatistic))
+
+	if len(m.Publications) > 0 {
+		b.WriteString(fmt.Sprintf("Publications: %s\n", m.Publications))
+	}
+
 	b.WriteString(fmt.Sprintf("Canonical Topic: %s\n", m.CanonicalTopic))
+
+	if len(m.Subtopics) > 0 {
+		b.WriteString(fmt.Sprintf("Subtopics: %s\n", m.Subtopics))
+	}
+
 	b.WriteString(fmt.Sprintf("Survey: %s\n", m.Survey))
-	b.WriteString(fmt.Sprintf("Lowest Geography: \n"))
+
+	if len(m.RelatedContent) > 0 {
+		b.WriteString(fmt.Sprintf("Related content: %s\n", m.RelatedContent))
+	}
 
 	return b.String()
 }
