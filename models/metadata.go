@@ -365,6 +365,20 @@ func (m Metadata) ToString() string {
 	b.WriteString(fmt.Sprintf("Periodicity: %s\n", m.ReleaseFrequency))
 
 	b.WriteString(fmt.Sprintf("Distribution:\n"))
+	// Map `DownloadObject`s in `DownloadList` to extension strings, loop through and output if
+	// valid objects
+	if m.Downloads != nil {
+		downloadObjects := m.Downloads.ExtensionsMapping()
+
+		for downloadObject, extension := range downloadObjects {
+			if downloadObject != nil {
+				b.WriteString(fmt.Sprintf("\tExtension: %s\n", extension))
+				b.WriteString(fmt.Sprintf("\tSize: %s\n", downloadObject.Size))
+				b.WriteString(fmt.Sprintf("\tURL: %s\n\n", downloadObject.HRef))
+			}
+		}
+	}
+
 	b.WriteString(fmt.Sprintf("Unit of measure: %s\n", m.UnitOfMeasure))
 	b.WriteString(fmt.Sprintf("License: %s\n", m.License))
 
