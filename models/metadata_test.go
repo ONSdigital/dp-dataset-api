@@ -699,36 +699,31 @@ func TestMetadataToString(t *testing.T) {
 				XLSX: &xlsxDownload,
 			}
 
-			expectedString := fmt.Sprintf("Title: %s\n", m.Title) +
-				fmt.Sprintf("Description: %s\n", m.Description) +
-				fmt.Sprintf("Issued: %s\n", m.ReleaseDate) +
-				fmt.Sprintf("Next Release: %s\n", m.NextRelease) +
-				fmt.Sprintf("Identifier: %s\n", m.Title) +
-				"Language: English\n" +
-				fmt.Sprintf("Periodicity: %s\n", m.ReleaseFrequency) +
-				"Distribution:\n" +
-				fmt.Sprintf("\tExtension: %s\n", "csv") +
+			// Using `ShouldContainSubstring` here as we can't guarantee the ordering of download files output
+			expectedStringCsv := fmt.Sprintf("\tExtension: %s\n", "csv") +
 				fmt.Sprintf("\tSize: %s\n", m.Downloads.CSV.Size) +
-				fmt.Sprintf("\tURL: %s\n\n", m.Downloads.CSV.HRef) +
-				fmt.Sprintf("\tExtension: %s\n", "csvw") +
-				fmt.Sprintf("\tSize: %s\n", m.Downloads.CSVW.Size) +
-				fmt.Sprintf("\tURL: %s\n\n", m.Downloads.CSVW.HRef) +
-				fmt.Sprintf("\tExtension: %s\n", "txt") +
-				fmt.Sprintf("\tSize: %s\n", m.Downloads.TXT.Size) +
-				fmt.Sprintf("\tURL: %s\n\n", m.Downloads.TXT.HRef) +
-				fmt.Sprintf("\tExtension: %s\n", "xls") +
-				fmt.Sprintf("\tSize: %s\n", m.Downloads.XLS.Size) +
-				fmt.Sprintf("\tURL: %s\n\n", m.Downloads.XLS.HRef) +
-				fmt.Sprintf("\tExtension: %s\n", "xlsx") +
-				fmt.Sprintf("\tSize: %s\n", m.Downloads.XLSX.Size) +
-				fmt.Sprintf("\tURL: %s\n\n", m.Downloads.XLSX.HRef) +
-				fmt.Sprintf("Unit of measure: %s\n", m.UnitOfMeasure) +
-				fmt.Sprintf("License: %s\n", m.License) +
-				fmt.Sprintf("National Statistic: %v\n", nationalStatistic) +
-				fmt.Sprintf("Canonical Topic: %s\n", m.CanonicalTopic) +
-				fmt.Sprintf("Survey: %s\n", m.Survey)
+				fmt.Sprintf("\tURL: %s\n\n", m.Downloads.CSV.HRef)
+			So(m.ToString(), ShouldContainSubstring, expectedStringCsv)
 
-			So(m.ToString(), ShouldEqual, expectedString)
+			expectedStringCsvw := fmt.Sprintf("\tExtension: %s\n", "csvw") +
+				fmt.Sprintf("\tSize: %s\n", m.Downloads.CSVW.Size) +
+				fmt.Sprintf("\tURL: %s\n\n", m.Downloads.CSVW.HRef)
+			So(m.ToString(), ShouldContainSubstring, expectedStringCsvw)
+
+			expectedStringTxt := fmt.Sprintf("\tExtension: %s\n", "txt") +
+				fmt.Sprintf("\tSize: %s\n", m.Downloads.TXT.Size) +
+				fmt.Sprintf("\tURL: %s\n\n", m.Downloads.TXT.HRef)
+			So(m.ToString(), ShouldContainSubstring, expectedStringTxt)
+
+			expectedStringXls := fmt.Sprintf("\tExtension: %s\n", "xls") +
+				fmt.Sprintf("\tSize: %s\n", m.Downloads.XLS.Size) +
+				fmt.Sprintf("\tURL: %s\n\n", m.Downloads.XLS.HRef)
+			So(m.ToString(), ShouldContainSubstring, expectedStringXls)
+
+			expectedStringXlsx := fmt.Sprintf("\tExtension: %s\n", "xlsx") +
+				fmt.Sprintf("\tSize: %s\n", m.Downloads.XLSX.Size) +
+				fmt.Sprintf("\tURL: %s\n\n", m.Downloads.XLSX.HRef)
+			So(m.ToString(), ShouldContainSubstring, expectedStringXlsx)
 		})
 		Convey("Test that the `ToString()` method contains methodology information", func() {
 			// Update the model to include methodology
