@@ -338,48 +338,16 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		"version":   vars["version"],
 	}
 
-	if api.EnableStateMachine {
-		version, err := models.CreateVersion(r.Body, vars["dataset_id"])
-		if err != nil {
-			handleVersionAPIErr(ctx, err, w, data)
-			return
-		}
+	version, err := models.CreateVersion(r.Body, vars["dataset_id"])
+	if err != nil {
+		handleVersionAPIErr(ctx, err, w, data)
+		return
+	}
 
-		err = api.smDatasetAPI.AmendVersion(r.Context(), vars, version)
-		if err != nil {
-			handleVersionAPIErr(ctx, err, w, data)
-			return
-		}
-	} else {
-		versionDetails := VersionDetails{
-			datasetID: vars["dataset_id"],
-			edition:   vars["edition"],
-			version:   vars["version"],
-		}
-
-		currentDataset, currentVersion, versionUpdate, err := api.updateVersion(ctx, r.Body, versionDetails)
-		if err != nil {
-			handleVersionAPIErr(ctx, err, w, data)
-			return
-		}
-
-		// If update was to add downloads do not try to publish/associate version
-		if vars[hasDownloads] != trueStringified {
-			data["updated_state"] = versionUpdate.State
-			if versionUpdate.State == models.PublishedState {
-				if err := api.publishVersion(ctx, currentDataset, currentVersion, versionUpdate, versionDetails); err != nil {
-					handleVersionAPIErr(ctx, err, w, data)
-					return
-				}
-			}
-
-			if versionUpdate.State == models.AssociatedState && currentVersion.State != models.AssociatedState {
-				if err := api.associateVersion(ctx, currentVersion, versionUpdate, versionDetails); err != nil {
-					handleVersionAPIErr(ctx, err, w, data)
-					return
-				}
-			}
-		}
+	err = api.smDatasetAPI.AmendVersion(r.Context(), vars, version)
+	if err != nil {
+		handleVersionAPIErr(ctx, err, w, data)
+		return
 	}
 
 	setJSONContentType(w)
