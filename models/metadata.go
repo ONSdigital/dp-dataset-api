@@ -364,7 +364,7 @@ func (m Metadata) ToString() string {
 
 	b.WriteString(fmt.Sprintf("Periodicity: %s\n", m.ReleaseFrequency))
 
-	b.WriteString(fmt.Sprintf("Distribution:\n"))
+	b.WriteString("Distribution:\n")
 	// Map `DownloadObject`s in `DownloadList` to extension strings, loop through and output if
 	// valid objects
 	if m.Downloads != nil {
