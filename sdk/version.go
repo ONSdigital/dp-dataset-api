@@ -1,6 +1,7 @@
 package sdk
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -90,6 +91,26 @@ func (c *Client) GetVersionDimensions(ctx context.Context, headers Headers, data
 // VersionDimensionOptionsList represent a list of PublicDimensionOption
 type VersionDimensionOptionsList struct {
 	Items []models.PublicDimensionOption
+}
+
+func (m VersionDimensionOptionsList) ToString() string {
+	var b bytes.Buffer
+
+	if len(m.Items) > 0 {
+		b.WriteString(fmt.Sprintf("\n\tTitle: %s\n", m.Items[0].Name))
+		var labels, options []string
+
+		for i := range m.Items {
+			dim := m.Items[i]
+			labels = append(labels, dim.Label)
+			options = append(options, dim.Option)
+		}
+
+		b.WriteString(fmt.Sprintf("\tLabels: %s\n", labels))
+		b.WriteString(fmt.Sprintf("\tOptions: %v\n", options))
+	}
+
+	return b.String()
 }
 
 // Returns the options for a dimension
