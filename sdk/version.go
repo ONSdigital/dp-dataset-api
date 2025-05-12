@@ -100,7 +100,8 @@ func (m VersionDimensionOptionsList) ToString() string {
 		b.WriteString(fmt.Sprintf("\n\tTitle: %s\n", m.Items[0].Name))
 		var labels, options []string
 
-		for _, dim := range m.Items {
+		for i := range m.Items {
+			dim := m.Items[i]
 			labels = append(labels, dim.Label)
 			options = append(options, dim.Option)
 		}
