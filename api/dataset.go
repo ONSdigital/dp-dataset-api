@@ -448,6 +448,19 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
+		if dataset.Type == models.Static.String() {
+			datasetTitleExists, err := api.dataStore.Backend.CheckDatasetTitleExist(ctx, dataset.Title)
+			if err != nil {
+				log.Error(ctx, "putDataset endpoint: error checking if dataset title exists", err, data)
+				return nil, err
+			}
+
+			if datasetTitleExists && dataset.Title != currentDataset.Next.Title {
+				log.Error(ctx, "putDataset endpoint: unable to update a dataset with title that already exists", errs.ErrAddDatasetTitleAlreadyExists, data)
+				return nil, errs.ErrAddDatasetTitleAlreadyExists
+			}
+		}
+
 		if dataset.State == models.PublishedState {
 			if err := api.publishDataset(ctx, currentDataset, nil); err != nil {
 				log.Error(ctx, "putDataset endpoint: failed to update dataset document to published", err, data)
