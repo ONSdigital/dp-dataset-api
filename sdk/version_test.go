@@ -253,6 +253,40 @@ func TestGetVersionDimensionOptions(t *testing.T) {
 	})
 }
 
+// Tests for the `GetVersionDimensionOptions` model `ToString` method
+func TestGetVersionDimensionOptionsToString(t *testing.T) {
+	Convey("If VersionDimensionOptionsList model is empty", t, func() {
+		m := VersionDimensionOptionsList{}
+		Convey("Test `ToString()` method returns an empty string", func() {
+			So(m.ToString(), ShouldEqual, "")
+		})
+	})
+	Convey("If VersionDimensionOptionsList model is not empty", t, func() {
+		dimensionOptions := []models.PublicDimensionOption{
+			{
+				Label:  "my 1st option",
+				Name:   "Option 1",
+				Option: "op1",
+			},
+			{
+				Label:  "my 2nd option",
+				Name:   "Option 2",
+				Option: "op2",
+			},
+		}
+		m := VersionDimensionOptionsList{
+			Items: dimensionOptions,
+		}
+		Convey("Test `ToString()` method returns the correct string", func() {
+			expectedString := fmt.Sprintf("\n\tTitle: %s\n", dimensionOptions[0].Name) +
+				fmt.Sprintf("\tLabels: %s\n", []string{dimensionOptions[0].Label, dimensionOptions[1].Label}) +
+				fmt.Sprintf("\tOptions: %s\n", []string{dimensionOptions[0].Option, dimensionOptions[1].Option})
+
+			So(m.ToString(), ShouldEqual, expectedString)
+		})
+	})
+}
+
 // Tests for the `GetVersionMetadata` client method
 func TestGetVersionMetadata(t *testing.T) {
 	versionID := 1
