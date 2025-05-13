@@ -434,7 +434,7 @@ func ValidateVersion(version *Version) error {
 			return ErrPublishedVersionCollectionIDInvalid
 		}
 	case AssociatedState:
-		if version.CollectionID == "" {
+		if version.Type != Static.String() && version.CollectionID == "" {
 			return ErrAssociatedVersionCollectionIDInvalid
 		}
 	default:
