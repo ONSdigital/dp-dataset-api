@@ -40,6 +40,23 @@ func TestCreateVersion(t *testing.T) {
 			So(version.QualityDesignation, ShouldEqual, QualityDesignationOfficial)
 			So(version.Distributions, ShouldResemble, &[]Distribution{distribution})
 		})
+
+		Convey("when the version state is associated for a static dataset without collection_id", func() {
+			staticVersion := Version{
+				ReleaseDate: "2017-10-12",
+				State:       AssociatedState,
+				Type:        Static.String(),
+				Downloads: &DownloadList{
+					CSV: &DownloadObject{
+						HRef: "test-href",
+						Size: "1234",
+					},
+				},
+			}
+
+			err := ValidateVersion(&staticVersion)
+			So(err, ShouldBeNil)
+		})
 	})
 
 	Convey("Return with error when the request body contains the correct fields but of the wrong type", t, func() {
@@ -154,6 +171,24 @@ func TestValidateVersion(t *testing.T) {
 
 			v.Downloads = &DownloadList{TXT: &DownloadObject{HRef: "/", Size: "bob"}}
 			assertVersionDownloadError(fmt.Errorf("invalid fields: %v", []string{"Downloads.TXT.Size not a number"}), v)
+		})
+
+		Convey("when the version state is associated for a non-static dataset without collection_id", func() {
+			nonStaticVersion := Version{
+				ReleaseDate: "2017-10-12",
+				State:       AssociatedState,
+				Type:        "filterable",
+				Downloads: &DownloadList{
+					CSV: &DownloadObject{
+						HRef: "test-href",
+						Size: "1234",
+					},
+				},
+			}
+
+			err := ValidateVersion(&nonStaticVersion)
+			So(err, ShouldNotBeNil)
+			So(err, ShouldEqual, ErrAssociatedVersionCollectionIDInvalid)
 		})
 	})
 }
