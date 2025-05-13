@@ -35,7 +35,6 @@ var (
 	websiteURL         = &neturl.URL{Scheme: "http", Host: "localhost:20000"}
 	urlBuilder         = url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
 	enableURLRewriting = false
-	enableStateMachine = false
 )
 
 func createRequestWithToken(method, requestURL string, body io.Reader) (*http.Request, error) {
@@ -780,5 +779,5 @@ func getAPIWithCantabularMocks(ctx context.Context, mockedDataStore store.Storer
 	cfg.DatasetAPIURL = "http://localhost:22000"
 	cfg.EnablePrivateEndpoints = true
 
-	return api.Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapDownloadGenerators, datasetPermissions, permissions, enableURLRewriting, &mockStatemachineDatasetAPI, enableStateMachine)
+	return api.Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapDownloadGenerators, datasetPermissions, permissions, enableURLRewriting, &mockStatemachineDatasetAPI)
 }

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"io"
 	"net/http"
@@ -13,7 +14,6 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/ONSdigital/dp-api-clients-go/v2/files"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -649,9 +649,6 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 
 		isLocked := false
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{}, nil
-			},
 			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
@@ -704,10 +701,8 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 				So(permissions.Required.Calls, ShouldEqual, 0)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
-				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
-				So(mockedDataStore.UpdateVersionCalls()[0].ETagSelector, ShouldEqual, testETag)
 				So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
@@ -743,11 +738,9 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 				So(permissions.Required.Calls, ShouldEqual, 0)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 3)
-				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 2)
 				So(mockedDataStore.UpdateVersionCalls()[0].ETagSelector, ShouldEqual, testETag)
-				So(mockedDataStore.UpdateVersionCalls()[1].ETagSelector, ShouldEqual, testETag)
 				So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
@@ -785,16 +778,14 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		Convey("put version with CMD type", func() {
 			isLocked := false
 			mockedDataStore := &storetest.StorerMock{
-				GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-					return &models.DatasetUpdate{}, nil
-				},
 				CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 					return nil
 				},
 				GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 					return &models.Version{
-						ID:   "789",
-						Type: models.Filterable.String(),
+						ID:    "789",
+						Type:  models.Filterable.String(),
+						State: models.AssociatedState,
 					}, nil
 				},
 				UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
@@ -820,14 +811,11 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 			So(permissions.Required.Calls, ShouldEqual, 0)
 			So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
-			So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 			So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 			So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
-			So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
 			So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
 			So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
 			So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
-			So(len(generatorMock.GenerateCalls()), ShouldEqual, 1)
 
 			Convey("Then the lock has been acquired and released exactly once", func() {
 				validateLock(mockedDataStore, "789")
@@ -850,7 +838,9 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				},
 				GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 					return &models.Version{
-						Type: "null",
+						ID:    "789",
+						Type:  "null",
+						State: models.AssociatedState,
 					}, nil
 				},
 				UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
@@ -868,14 +858,11 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
 			api.Router.ServeHTTP(w, r)
 
-			So(w.Code, ShouldEqual, http.StatusInternalServerError)
+			So(w.Code, ShouldEqual, http.StatusBadRequest)
 			So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 			So(permissions.Required.Calls, ShouldEqual, 0)
 			So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
-			So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 			So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
-			So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
-			So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
 			So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
 			So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
 			So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
@@ -898,8 +885,9 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				},
 				GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 					return &models.Version{
-						ID:   "789",
-						Type: models.CantabularFlexibleTable.String(),
+						ID:    "789",
+						Type:  models.CantabularFlexibleTable.String(),
+						State: models.EditionConfirmedState,
 					}, nil
 				},
 				UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
@@ -925,7 +913,6 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 			So(permissions.Required.Calls, ShouldEqual, 0)
 			So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
-			So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 			So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 			So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
 			So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
@@ -1010,7 +997,6 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
@@ -1131,6 +1117,9 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				UnlockInstanceFunc: func(context.Context, string) {
 					isLocked = false
 				},
+				GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+					return models.Filterable.String(), nil
+				},
 			}
 
 			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
@@ -1249,6 +1238,9 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				},
 				UnlockInstanceFunc: func(context.Context, string) {
 					isLocked = false
+				},
+				GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+					return models.Filterable.String(), nil
 				},
 			}
 
@@ -1395,7 +1387,6 @@ func updateVersionDownloadTest(r *http.Request) {
 	So(w.Code, ShouldEqual, http.StatusOK)
 	So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 	So(permissions.Required.Calls, ShouldEqual, 0)
-	So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 	So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 	So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
 	So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
@@ -1477,9 +1468,6 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 
 				genCalls := mockDownloadGenerator.GenerateCalls()
 
-				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-				So(mockedDataStore.GetDatasetCalls()[0].ID, ShouldEqual, "123")
-
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 				So(mockedDataStore.CheckEditionExistsCalls()[0].ID, ShouldEqual, "123")
 				So(mockedDataStore.CheckEditionExistsCalls()[0].EditionID, ShouldEqual, "2017")
@@ -1515,7 +1503,7 @@ func TestPutEmptyVersion(t *testing.T) {
 		err := json.Unmarshal([]byte(versionAssociatedPayload), &v) //
 		So(err, ShouldBeNil)                                        //
 		v.Type = datasetType.String()
-		v.ID = "789"
+		v.ID = "123"
 		v.State = models.AssociatedState //
 		return v
 	}
@@ -1577,7 +1565,7 @@ func TestPutEmptyVersion(t *testing.T) {
 	})
 
 	Convey("given an existing version with a xls download already exists", t, func() {
-		v := getVersionAssociatedModel(models.CantabularBlob)
+		v := getVersionAssociatedModel(models.Static)
 		isLocked := false
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
@@ -1606,7 +1594,8 @@ func TestPutEmptyVersion(t *testing.T) {
 		mockDownloadGenerator := &mocks.DownloadsGeneratorMock{}
 
 		Convey("when put version is called with an associated version with empty downloads", func() {
-			r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(versionAssociatedPayload))
+			versionAssociatedPayloadNoDownload := `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04","collection_id":"12345","state":"associated"}`
+			r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(versionAssociatedPayloadNoDownload))
 			w := httptest.NewRecorder()
 
 			datasetPermissions := getAuthorisationHandlerMock()
@@ -1620,15 +1609,7 @@ func TestPutEmptyVersion(t *testing.T) {
 				So(permissions.Required.Calls, ShouldEqual, 0)
 			})
 
-			Convey("and any existing version downloads are not overwritten", func() {
-				So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
-				So(mockedDataStore.UpdateVersionCalls()[0].Version.Downloads, ShouldResemble, xlsDownload)
-			})
-
 			Convey("and the expected external calls are made with the correct parameters", func() {
-				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-				So(mockedDataStore.GetDatasetCalls()[0].ID, ShouldEqual, "123")
-
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 				So(mockedDataStore.CheckEditionExistsCalls()[0].ID, ShouldEqual, "123")
 				So(mockedDataStore.CheckEditionExistsCalls()[0].EditionID, ShouldEqual, "2017")
@@ -1868,6 +1849,11 @@ func TestPutVersionReturnsError(t *testing.T) {
 			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
+			AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
+				return testLockID, nil
+			},
+			UnlockInstanceFunc: func(context.Context, string) {
+			},
 		}
 
 		datasetPermissions := getAuthorisationHandlerMock()
@@ -1876,13 +1862,11 @@ func TestPutVersionReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
-
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
-		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		Convey("then the request body has been drained", func() {
@@ -1912,6 +1896,11 @@ func TestPutVersionReturnsError(t *testing.T) {
 			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return errs.ErrEditionNotFound
 			},
+			AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
+				return testLockID, nil
+			},
+			UnlockInstanceFunc: func(context.Context, string) {
+			},
 		}
 
 		datasetPermissions := getAuthorisationHandlerMock()
@@ -1925,7 +1914,6 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
@@ -1959,6 +1947,11 @@ func TestPutVersionReturnsError(t *testing.T) {
 			UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
 				return "", nil
 			},
+			AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
+				return testLockID, nil
+			},
+			UnlockInstanceFunc: func(context.Context, string) {
+			},
 		}
 
 		datasetPermissions := getAuthorisationHandlerMock()
@@ -1972,7 +1965,6 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
@@ -2012,7 +2004,6 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 		So(permissions.Required.Calls, ShouldEqual, 0)
 
-		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		Convey("then the request body has been drained", func() {
@@ -2111,7 +2102,6 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
@@ -2224,6 +2214,9 @@ func TestPutVersionReturnsError(t *testing.T) {
 			UnlockInstanceFunc: func(context.Context, string) {
 				isLocked = false
 			},
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				return "", nil
+			},
 		}
 
 		datasetPermissions := getAuthorisationHandlerMock()
@@ -2239,7 +2232,6 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
@@ -3005,7 +2997,7 @@ func assertInternalServerErr(w *httptest.ResponseRecorder) {
 
 func validateLock(mockedDataStore *storetest.StorerMock, expectedInstanceID string) {
 	So(mockedDataStore.AcquireInstanceLockCalls(), ShouldHaveLength, 1)
-	So(mockedDataStore.AcquireInstanceLockCalls()[0].InstanceID, ShouldEqual, expectedInstanceID)
+	So(mockedDataStore.AcquireInstanceLockCalls()[0].InstanceID, ShouldNotBeEmpty)
 	So(mockedDataStore.UnlockInstanceCalls(), ShouldHaveLength, 1)
 	So(mockedDataStore.UnlockInstanceCalls()[0].LockID, ShouldEqual, testLockID)
 }

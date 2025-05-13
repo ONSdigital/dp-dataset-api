@@ -3,7 +3,10 @@ module github.com/ONSdigital/dp-dataset-api
 go 1.24
 
 // to avoid 'sonatype-2021-4899' non-CVE Vulnerability
-exclude github.com/gorilla/sessions v1.2.1
+exclude (
+	github.com/go-jose/go-jose/v4 v4.0.4
+	github.com/gorilla/sessions v1.2.1
+)
 
 require (
 	github.com/ONSdigital/dp-api-clients-go v1.43.0
@@ -54,7 +57,6 @@ require (
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-avro/avro v0.0.0-20171219232920-444163702c11 // indirect
-	github.com/go-jose/go-jose/v4 v4.1.0 // indirect
 	github.com/go-json-experiment/json v0.0.0-20250417205406-170dfdcf87d1 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
