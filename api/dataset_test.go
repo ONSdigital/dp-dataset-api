@@ -41,6 +41,7 @@ var (
 	datasetPayloadWithEmptyKeywords            = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","id": "ageing-population-estimates", "next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","href":"https://www.ons.gov.uk/"},"type":"static"}`
 	datasetPayloadWithEmptyTopicsAndTypeStatic = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","keywords":["keyword"],"links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","id": "ageing-population-estimates", "next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","href":"https://www.ons.gov.uk/"},"type":"static","topics":[]}`
 	datasetPayloadWithEmptyContacts            = `{"contacts":[],"description":"census","keywords":["keyword"],"links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","id": "ageing-population-estimates", "next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","href":"https://www.ons.gov.uk/"},"type":"static","topics":["theme"]}`
+	datasetPayloadWithTypeStatic               = `{"id":"123","contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","href":"https://www.ons.gov.uk/"},"type":"static","keywords":["keyword","keyword 2"],"topics":["topic-0","topic-1"],"license":"Open Government Licence v3.0"}`
 
 	codeListAPIURL     = &neturl.URL{Scheme: "http", Host: "localhost:22400"}
 	datasetAPIURL      = &neturl.URL{Scheme: "http", Host: "localhost:22000"}
@@ -49,7 +50,6 @@ var (
 	websiteURL         = &neturl.URL{Scheme: "http", Host: "localhost:20000"}
 	urlBuilder         = url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
 	enableURLRewriting = false
-	enableStateMachine = false
 	mu                 sync.Mutex
 )
 
@@ -160,7 +160,7 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 		StateMachine:       application.NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore}),
 	}
 
-	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions, enableURLRewriting, &mockStatemachineDatasetAPI, enableStateMachine)
+	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions, enableURLRewriting, &mockStatemachineDatasetAPI)
 }
 
 // GetAPIWithCMDMocks also used in other tests, so exported
@@ -216,7 +216,7 @@ func GetAPIWithCantabularMocks(mockedDataStore store.Storer, mockedGeneratedDown
 		StateMachine:       application.NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore}),
 	}
 
-	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions, enableURLRewriting, &mockStatemachineDatasetAPI, enableStateMachine)
+	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, datasetPermissions, permissions, enableURLRewriting, &mockStatemachineDatasetAPI)
 }
 
 func createRequestWithAuth(method, target string, body io.Reader) *http.Request {
@@ -1356,6 +1356,54 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		})
 	})
 
+	Convey("A successful request to put dataset with static dataset type returns 200 OK response", t, func() {
+		b := datasetPayloadWithTypeStatic
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{Type: "static"}}, nil
+			},
+			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
+				return false, nil
+			},
+			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
+				return nil
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckDatasetTitleExistCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 1)
+
+		Convey("then the request body has been drained", func() {
+			_, err := r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
+
+		Convey("and the response body contains the dataset we sent with the request", func() {
+			var expected, actual models.Dataset
+
+			err := json.Unmarshal([]byte(datasetPayloadWithTypeStatic), &expected)
+			So(err, ShouldBeNil)
+
+			err = json.Unmarshal(w.Body.Bytes(), &actual)
+			So(err, ShouldBeNil)
+
+			So(actual, ShouldResemble, expected)
+		})
+	})
+
 	Convey("When update dataset type has a value of filterable and stored dataset type is nomis return status ok", t, func() {
 		// Dataset type field cannot be updated and hence is ignored in any updates to the dataset
 
@@ -1782,6 +1830,72 @@ func TestPutDatasetReturnsError(t *testing.T) {
 
 		Convey("then the request body has been drained", func() {
 			_, err = r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
+	})
+
+	Convey("When updating the static dataset with a title that already exists returns 403 forbidden", t, func() {
+		b := datasetPayloadWithTypeStatic
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{Type: "static"}}, nil
+			},
+			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
+				return true, nil
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusForbidden)
+		So(w.Body.String(), ShouldResemble, "forbidden - dataset title already exists\n")
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckDatasetTitleExistCalls()), ShouldEqual, 1)
+
+		Convey("then the request body has been drained", func() {
+			_, err := r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
+	})
+
+	Convey("When the CheckDatasetTitleExist call fails return an internal server error", t, func() {
+		b := datasetPayloadWithTypeStatic
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
+
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{Type: "static"}}, nil
+			},
+			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
+				return false, errs.ErrInternalServer
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+
+		api.Router.ServeHTTP(w, r)
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckDatasetTitleExistCalls()), ShouldEqual, 1)
+
+		Convey("then the request body has been drained", func() {
+			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
 	})

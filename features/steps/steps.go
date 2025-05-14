@@ -44,7 +44,6 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I have a real kafka container with topic "([^"]*)"$`, c.iHaveARealKafkaContainerWithTopic)
 	ctx.Step(`^these cantabular generator downloads events are produced:$`, c.theseCantabularGeneratorDownloadsEventsAreProduced)
 	ctx.Step(`^these generate downloads events are produced:$`, c.theseGenerateDownloadsEventsAreProduced)
-	ctx.Step(`^the state machine is enabled$`, c.StateMachineIsEnabled)
 	ctx.Step(`^I have a static dataset with version:$`, c.iHaveStaticDatasetWithVersion)
 }
 
@@ -59,11 +58,6 @@ func (c *DatasetComponent) privateEndpointsAreEnabled() error {
 
 func (c *DatasetComponent) URLRewritingIsEnabled() error {
 	c.Config.EnableURLRewriting = true
-	return nil
-}
-
-func (c *DatasetComponent) StateMachineIsEnabled() error {
-	c.Config.EnableStateMachine = true
 	return nil
 }
 

@@ -45,7 +45,6 @@ type Configuration struct {
 	EnableDetachDataset            bool          `envconfig:"ENABLE_DETACH_DATASET"`
 	EnablePermissionsAuth          bool          `envconfig:"ENABLE_PERMISSIONS_AUTH"`
 	EnableObservationEndpoint      bool          `envconfig:"ENABLE_OBSERVATION_ENDPOINT"`
-	EnableStateMachine             bool          `envconfig:"ENABLE_STATE_MACHINE"`
 	EnableURLRewriting             bool          `envconfig:"ENABLE_URL_REWRITING"`
 	DisableGraphDBDependency       bool          `envconfig:"DISABLE_GRAPH_DB_DEPENDENCY"`
 	KafkaVersion                   string        `envconfig:"KAFKA_VERSION"`
@@ -107,7 +106,6 @@ func Get() (*Configuration, error) {
 		EnableDetachDataset:            false,
 		EnablePermissionsAuth:          false,
 		EnableObservationEndpoint:      true,
-		EnableStateMachine:             false,
 		EnableURLRewriting:             false,
 		DisableGraphDBDependency:       false,
 		KafkaVersion:                   "1.0.2",
