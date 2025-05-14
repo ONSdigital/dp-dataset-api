@@ -18,13 +18,6 @@ import (
 )
 
 var (
-	// errors that should return a 403 status
-	datasetsForbidden = map[error]bool{
-		errs.ErrDeletePublishedDatasetForbidden: true,
-		errs.ErrAddDatasetAlreadyExists:         true,
-		errs.ErrAddDatasetTitleAlreadyExists:    true,
-	}
-
 	// errors that should return a 204 status
 	datasetsNoContent = map[error]bool{
 		errs.ErrDeleteDatasetNotFound: true,
@@ -38,11 +31,22 @@ var (
 		errs.ErrInvalidQueryParameter:      true,
 	}
 
+	// errors that should return a 403 status
+	datasetsForbidden = map[error]bool{
+		errs.ErrDeletePublishedDatasetForbidden: true,
+	}
+
 	// errors that should return a 404 status
 	resourcesNotFound = map[error]bool{
 		errs.ErrDatasetNotFound:  true,
 		errs.ErrEditionsNotFound: true,
 		errs.ErrEditionNotFound:  true,
+	}
+
+	// errors that should return a 409 status
+	datasetsConflict = map[error]bool{
+		errs.ErrAddDatasetAlreadyExists:      true,
+		errs.ErrAddDatasetTitleAlreadyExists: true,
 	}
 )
 
@@ -609,6 +613,8 @@ func handleDatasetAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 		status = http.StatusNoContent
 	case datasetsBadRequest[err], strings.HasPrefix(err.Error(), "invalid fields:"):
 		status = http.StatusBadRequest
+	case datasetsConflict[err]:
+		status = http.StatusConflict
 	case resourcesNotFound[err]:
 		status = http.StatusNotFound
 	default:

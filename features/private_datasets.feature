@@ -48,10 +48,10 @@ Feature: Private Dataset API
                 "title": "Hello"
             }
             """
-        Then the HTTP status code should be "403"
+        Then the HTTP status code should be "409"
         And I should receive the following response:
             """
-            forbidden - dataset already exists
+            dataset already exists
             """
 
     Scenario: Adding survey field to a dataset
@@ -382,10 +382,10 @@ Feature: Private Dataset API
                 "license":"license"
             }
             """
-        Then the HTTP status code should be "403"
+        Then the HTTP status code should be "409"
         And I should receive the following response:
             """
-            forbidden - dataset already exists
+            dataset already exists
             """
 
     Scenario: Missing dataset ID in body when creating a new dataset

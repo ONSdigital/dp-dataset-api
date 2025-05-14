@@ -953,7 +953,7 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 }
 
 func TestPostDatasetsReturnsError(t *testing.T) {
-	Convey("When the request contains duplicate dataset title a forbidden request status is returned", t, func() {
+	Convey("When the request contains duplicate dataset title a conflict request status is returned", t, func() {
 		b := datasetPayloadWithID
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
 
@@ -972,7 +972,7 @@ func TestPostDatasetsReturnsError(t *testing.T) {
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusForbidden)
+		So(w.Code, ShouldEqual, http.StatusConflict)
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrAddDatasetTitleAlreadyExists.Error())
@@ -1113,7 +1113,7 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		})
 	})
 
-	Convey("When the dataset already exists and a request is sent to create the same dataset return status forbidden", t, func() {
+	Convey("When the dataset already exists and a request is sent to create the same dataset return status conflict", t, func() {
 		b := datasetPayload
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
@@ -1136,10 +1136,10 @@ func TestPostDatasetReturnsError(t *testing.T) {
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusForbidden)
+		So(w.Code, ShouldEqual, http.StatusConflict)
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
-		So(w.Body.String(), ShouldResemble, "forbidden - dataset already exists\n")
+		So(w.Body.String(), ShouldResemble, "dataset already exists\n")
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 
@@ -1834,7 +1834,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		})
 	})
 
-	Convey("When updating the static dataset with a title that already exists returns 403 forbidden", t, func() {
+	Convey("When updating the static dataset with a title that already exists returns 409 conflict", t, func() {
 		b := datasetPayloadWithTypeStatic
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
@@ -1854,8 +1854,8 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusForbidden)
-		So(w.Body.String(), ShouldResemble, "forbidden - dataset title already exists\n")
+		So(w.Code, ShouldEqual, http.StatusConflict)
+		So(w.Body.String(), ShouldResemble, "dataset title already exists\n")
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
