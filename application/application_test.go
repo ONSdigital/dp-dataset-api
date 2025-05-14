@@ -157,7 +157,7 @@ func TestAmendVersionInvalidState(t *testing.T) {
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 
-		err := smDS.AmendVersion(testContext, vars, publishVersionUpdate)
+		_, err := smDS.AmendVersion(testContext, vars, publishVersionUpdate)
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldContainSubstring, "state not allowed to transition")
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
@@ -197,7 +197,7 @@ func TestAmendVersionPopulateModelsFails(t *testing.T) {
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 
-		err := smDS.AmendVersion(testContext, vars, publishVersionUpdate)
+		_, err := smDS.AmendVersion(testContext, vars, publishVersionUpdate)
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldContainSubstring, "edition not found")
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -265,7 +265,7 @@ func TestAmendVersionPopulateVersionFails(t *testing.T) {
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 
-		err := smDS.AmendVersion(testContext, vars, versionUpdateInvalid)
+		_, err := smDS.AmendVersion(testContext, vars, versionUpdateInvalid)
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldContainSubstring, "missing mandatory fields: [release_date]")
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
@@ -337,7 +337,7 @@ func TestAmendVersionStaticSuccess(t *testing.T) {
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 
-		err := smDS.AmendVersion(testContext, vars, versionUpdateAssociatedStatic)
+		_, err := smDS.AmendVersion(testContext, vars, versionUpdateAssociatedStatic)
 		So(err, ShouldBeNil)
 		So(len(mockedDataStore.AcquireVersionsLockCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UnlockVersionsCalls()), ShouldEqual, 1)
@@ -409,7 +409,7 @@ func TestAmendVersionSuccess(t *testing.T) {
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 
-		err := smDS.AmendVersion(testContext, vars, versionUpdateAssociated)
+		_, err := smDS.AmendVersion(testContext, vars, versionUpdateAssociated)
 		So(err, ShouldBeNil)
 		So(len(mockedDataStore.AcquireInstanceLockCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UnlockInstanceCalls()), ShouldEqual, 1)
@@ -447,7 +447,7 @@ func TestAmendVersionErrorLockFails(t *testing.T) {
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 
-		err := smDS.AmendVersion(testContext, vars, publishVersionUpdate)
+		_, err := smDS.AmendVersion(testContext, vars, publishVersionUpdate)
 
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldContainSubstring, "Unable to acquire lock")
@@ -466,7 +466,7 @@ func TestAmendVersionErrorLockFails(t *testing.T) {
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
 
-		err := smDS.AmendVersion(testContext, vars, publishVersionUpdateStatic)
+		_, err := smDS.AmendVersion(testContext, vars, publishVersionUpdateStatic)
 
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldContainSubstring, "Unable to acquire lock")

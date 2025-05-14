@@ -326,10 +326,24 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = api.smDatasetAPI.AmendVersion(r.Context(), vars, version)
+	var amendedVersion *models.Version
+
+	amendedVersion, err = api.smDatasetAPI.AmendVersion(r.Context(), vars, version)
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, data)
 		return
+	}
+
+	versionBytes, err := json.Marshal(amendedVersion)
+	if err != nil {
+		log.Error(ctx, "failed to marshal version resource into bytes", err, data)
+		handleVersionAPIErr(ctx, err, w, data)
+	}
+
+	_, err = w.Write(versionBytes)
+	if err != nil {
+		log.Error(ctx, "failed writing bytes to response", err, data)
+		handleVersionAPIErr(ctx, err, w, data)
 	}
 
 	setJSONContentType(w)
@@ -836,7 +850,7 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 		currentVersion.Type = models.Static.String()
 	}
 
-	err = api.smDatasetAPI.AmendVersion(r.Context(), vars, currentVersion)
+	_, err = api.smDatasetAPI.AmendVersion(r.Context(), vars, currentVersion)
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, logData)
 		return
