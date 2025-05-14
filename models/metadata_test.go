@@ -742,7 +742,7 @@ func TestMetadataToString(t *testing.T) {
 				fmt.Sprintf("Next Release: %s\n", m.NextRelease) +
 				fmt.Sprintf("Identifier: %s\n", m.Title) +
 				"Language: English\n" +
-				fmt.Sprintf("Latest Changes: %s\n", m.LatestChanges) +
+				fmt.Sprintf("Latest Changes: %s\n", *m.LatestChanges) +
 				fmt.Sprintf("Periodicity: %s\n", m.ReleaseFrequency) +
 				"Distribution:\n" +
 				fmt.Sprintf("Unit of measure: %s\n", m.UnitOfMeasure) +

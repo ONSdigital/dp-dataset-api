@@ -373,7 +373,7 @@ func (m Metadata) ToString() string {
 	}
 
 	if m.LatestChanges != nil {
-		b.WriteString(fmt.Sprintf("Latest Changes: %s\n", m.LatestChanges))
+		b.WriteString(fmt.Sprintf("Latest Changes: %s\n", *m.LatestChanges))
 	}
 
 	b.WriteString(fmt.Sprintf("Periodicity: %s\n", m.ReleaseFrequency))
