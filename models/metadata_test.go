@@ -582,21 +582,8 @@ func TestMetadataToString(t *testing.T) {
 		nationalStatistic := false
 		m := Metadata{
 			EditableMetadata: EditableMetadata{
-				CanonicalTopic: "canon",
-				Description:    "metadata description",
-				Keywords:       []string{"key1", "key2", "key3"},
-				LatestChanges: &[]LatestChange{
-					{
-						Description: "my 1st change",
-						Name:        "change-1",
-						Type:        "revision",
-					},
-					{
-						Description: "my 2nd change",
-						Name:        "change-2",
-						Type:        "correction",
-					},
-				},
+				CanonicalTopic:    "canon",
+				Description:       "metadata description",
 				License:           "MIT",
 				NationalStatistic: &nationalStatistic,
 				NextRelease:       "2025-06-06T16:06:00.000Z",
@@ -625,6 +612,52 @@ func TestMetadataToString(t *testing.T) {
 
 			So(m.ToString(), ShouldEqual, expectedString)
 		})
+		Convey("Test that the `ToString()` method contains publisher details", func() {
+			// Update the model to include publisher
+			m.Publisher = &Publisher{
+				HRef: "url",
+				Name: "name",
+				Type: "type",
+			}
+			expectedString := fmt.Sprintf("Title: %s\n", m.Title) +
+				fmt.Sprintf("Description: %s\n", m.Description) +
+				fmt.Sprintf("Publisher: %s\n", *m.Publisher) +
+				fmt.Sprintf("Issued: %s\n", m.ReleaseDate) +
+				fmt.Sprintf("Next Release: %s\n", m.NextRelease) +
+				fmt.Sprintf("Identifier: %s\n", m.Title) +
+				"Language: English\n" +
+				fmt.Sprintf("Periodicity: %s\n", m.ReleaseFrequency) +
+				"Distribution:\n" +
+				fmt.Sprintf("Unit of measure: %s\n", m.UnitOfMeasure) +
+				fmt.Sprintf("License: %s\n", m.License) +
+				fmt.Sprintf("National Statistic: %v\n", nationalStatistic) +
+				fmt.Sprintf("Canonical Topic: %s\n", m.CanonicalTopic) +
+				fmt.Sprintf("Survey: %s\n", m.Survey)
+
+			So(m.ToString(), ShouldEqual, expectedString)
+		})
+
+		Convey("Test that the `ToString()` method contains keywords", func() {
+			// Update the model to include keywords
+			m.EditableMetadata.Keywords = []string{"key1", "key2", "key3"}
+			expectedString := fmt.Sprintf("Title: %s\n", m.Title) +
+				fmt.Sprintf("Description: %s\n", m.Description) +
+				fmt.Sprintf("Issued: %s\n", m.ReleaseDate) +
+				fmt.Sprintf("Next Release: %s\n", m.NextRelease) +
+				fmt.Sprintf("Identifier: %s\n", m.Title) +
+				fmt.Sprintf("Keywords: %s\n", m.Keywords) +
+				"Language: English\n" +
+				fmt.Sprintf("Periodicity: %s\n", m.ReleaseFrequency) +
+				"Distribution:\n" +
+				fmt.Sprintf("Unit of measure: %s\n", m.UnitOfMeasure) +
+				fmt.Sprintf("License: %s\n", m.License) +
+				fmt.Sprintf("National Statistic: %v\n", nationalStatistic) +
+				fmt.Sprintf("Canonical Topic: %s\n", m.CanonicalTopic) +
+				fmt.Sprintf("Survey: %s\n", m.Survey)
+
+			So(m.ToString(), ShouldEqual, expectedString)
+		})
+
 		Convey("Test that the `ToString()` method contains contact details", func() {
 			// Update the model to include contacts
 			m.EditableMetadata.Contacts = []ContactDetails{
@@ -679,6 +712,37 @@ func TestMetadataToString(t *testing.T) {
 				fmt.Sprintf("Identifier: %s\n", m.Title) +
 				"Language: English\n" +
 				fmt.Sprintf("Temporal: %s\n", temporal1.Frequency) +
+				fmt.Sprintf("Periodicity: %s\n", m.ReleaseFrequency) +
+				"Distribution:\n" +
+				fmt.Sprintf("Unit of measure: %s\n", m.UnitOfMeasure) +
+				fmt.Sprintf("License: %s\n", m.License) +
+				fmt.Sprintf("National Statistic: %v\n", nationalStatistic) +
+				fmt.Sprintf("Canonical Topic: %s\n", m.CanonicalTopic) +
+				fmt.Sprintf("Survey: %s\n", m.Survey)
+
+			So(m.ToString(), ShouldEqual, expectedString)
+		})
+		Convey("Test that the `ToString()` method contains latest changes", func() {
+			// Update the model to include latest changes
+			m.LatestChanges = &[]LatestChange{
+				{
+					Description: "my 1st change",
+					Name:        "change-1",
+					Type:        "revision",
+				},
+				{
+					Description: "my 2nd change",
+					Name:        "change-2",
+					Type:        "correction",
+				},
+			}
+			expectedString := fmt.Sprintf("Title: %s\n", m.Title) +
+				fmt.Sprintf("Description: %s\n", m.Description) +
+				fmt.Sprintf("Issued: %s\n", m.ReleaseDate) +
+				fmt.Sprintf("Next Release: %s\n", m.NextRelease) +
+				fmt.Sprintf("Identifier: %s\n", m.Title) +
+				"Language: English\n" +
+				fmt.Sprintf("Latest Changes: %s\n", m.LatestChanges) +
 				fmt.Sprintf("Periodicity: %s\n", m.ReleaseFrequency) +
 				"Distribution:\n" +
 				fmt.Sprintf("Unit of measure: %s\n", m.UnitOfMeasure) +
@@ -787,6 +851,32 @@ func TestMetadataToString(t *testing.T) {
 
 			So(m.ToString(), ShouldEqual, expectedString)
 		})
+		Convey("Test that the `ToString()` method contains related dataset information", func() {
+			// Update the model to include related datasets
+			m.EditableMetadata.RelatedDatasets = []GeneralDetails{
+				{
+					Description: "some related datasets description",
+					HRef:        "http://localhost:22000/datasets/href",
+					Title:       "some publication title",
+				},
+			}
+			expectedString := fmt.Sprintf("Title: %s\n", m.Title) +
+				fmt.Sprintf("Description: %s\n", m.Description) +
+				fmt.Sprintf("Issued: %s\n", m.ReleaseDate) +
+				fmt.Sprintf("Next Release: %s\n", m.NextRelease) +
+				fmt.Sprintf("Identifier: %s\n", m.Title) +
+				"Language: English\n" +
+				fmt.Sprintf("Periodicity: %s\n", m.ReleaseFrequency) +
+				"Distribution:\n" +
+				fmt.Sprintf("Unit of measure: %s\n", m.UnitOfMeasure) +
+				fmt.Sprintf("License: %s\n", m.License) +
+				fmt.Sprintf("National Statistic: %v\n", nationalStatistic) +
+				fmt.Sprintf("Related Links: %s\n", m.RelatedDatasets) +
+				fmt.Sprintf("Canonical Topic: %s\n", m.CanonicalTopic) +
+				fmt.Sprintf("Survey: %s\n", m.Survey)
+
+			So(m.ToString(), ShouldEqual, expectedString)
+		})
 		Convey("Test that the `ToString()` method contains subtopic information", func() {
 			// Update the model to include subtopics
 			m.EditableMetadata.Subtopics = []string{"1234", "5678"}
@@ -823,7 +913,7 @@ func TestMetadataToString(t *testing.T) {
 				fmt.Sprintf("National Statistic: %v\n", nationalStatistic) +
 				fmt.Sprintf("Canonical Topic: %s\n", m.CanonicalTopic) +
 				fmt.Sprintf("Survey: %s\n", m.Survey) +
-				fmt.Sprintf("Related content: %s\n", m.RelatedContent)
+				fmt.Sprintf("Related Content: %s\n", m.RelatedContent)
 
 			So(m.ToString(), ShouldEqual, expectedString)
 		})
