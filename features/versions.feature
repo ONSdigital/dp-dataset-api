@@ -792,7 +792,25 @@ Feature: Dataset API
     And these generate downloads events are produced:
       | InstanceID  | DatasetID            | Edition | Version | FilterOutputID |
       | test-item-3 | population-estimates | hellov2 | 3       |                |
-    Then the HTTP status code should be "200"
+    Then I should receive the following JSON response with status "200":
+        """
+            {
+                "collection_id": "bla",
+                "dataset_id": "population-estimates",
+                "id": "test-item-3",
+                "last_updated": "0001-01-01T00:00:00Z",
+                "links": {
+                    "dataset": {
+                    "id": "population-estimates"
+                    },
+                    "self": {
+                    "href": "/datasets/population-estimates/editions/hellov2/versions/3"
+                    }
+                },
+                "release_date": "2017-04-04",
+                "state": "associated"
+            }
+        """
 
 
   Scenario: PUT versions for Cantabular dataset produces Kafka event and returns OK
@@ -813,7 +831,25 @@ Feature: Dataset API
     And these cantabular generator downloads events are produced:
       | InstanceID                | DatasetID                 | Edition | Version |FilterOutputID| Dimensions |
       | test-cantabular-version-1 | test-cantabular-dataset-1 | 2021    | 1       |              | []         |
-    Then the HTTP status code should be "200"
+    Then I should receive the following JSON response with status "200":
+        """
+            {
+                "collection_id": "bla",
+                "dataset_id": "test-cantabular-dataset-1",
+                "id": "test-cantabular-version-1",
+                "last_updated": "0001-01-01T00:00:00Z",
+                "links": {
+                    "dataset": {
+                    "id": "test-cantabular-dataset-1"
+                    },
+                    "self": {
+                    "href": "/datasets/test-cantabular-dataset-1/editions/2021/versions/1"
+                    }
+                },
+                "release_date": "2017-04-04",
+                "state": "associated"
+            }
+        """
 
 
   Scenario: PUT published version for Cantabular dataset produces Kafka event and returns OK
@@ -849,4 +885,27 @@ Feature: Dataset API
     And these cantabular generator downloads events are produced:
       | InstanceID                | DatasetID                 | Edition | Version |FilterOutputID| Dimensions |
       | test-cantabular-version-2 | test-cantabular-dataset-2 | 2021    | 1       |              | []         |
-    Then the HTTP status code should be "200"
+    Then I should receive the following JSON response with status "200":
+        """
+            {
+                "dataset_id": "test-cantabular-dataset-2",
+                "downloads": {
+                    "csv": {
+                    "href": "/downloads/datasets/test-cantabular-dataset-2/editions/2021/versions/1.csv",
+                    "size": "1"
+                    }
+                },
+                "id": "test-cantabular-version-2",
+                "last_updated": "0001-01-01T00:00:00Z",
+                "links": {
+                    "dataset": {
+                    "id": "test-cantabular-dataset-2"
+                    },
+                    "self": {
+                    "href": "/datasets/test-cantabular-dataset-2/editions/2021/versions/1"
+                    }
+                },
+                "release_date": "2017-04-04",
+                "state": "published"
+            }
+        """
