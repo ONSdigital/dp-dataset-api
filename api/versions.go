@@ -340,13 +340,13 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		handleVersionAPIErr(ctx, err, w, data)
 	}
 
+	setJSONContentType(w)
 	_, err = w.Write(versionBytes)
 	if err != nil {
 		log.Error(ctx, "failed writing bytes to response", err, data)
 		handleVersionAPIErr(ctx, err, w, data)
 	}
 
-	setJSONContentType(w)
 	w.WriteHeader(http.StatusOK)
 	log.Info(ctx, "putVersion endpoint: request successful", data)
 }
