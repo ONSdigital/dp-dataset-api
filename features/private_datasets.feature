@@ -48,10 +48,10 @@ Feature: Private Dataset API
                 "title": "Hello"
             }
             """
-        Then the HTTP status code should be "403"
+        Then the HTTP status code should be "409"
         And I should receive the following response:
             """
-            forbidden - dataset already exists
+            dataset already exists
             """
 
     Scenario: Adding survey field to a dataset
@@ -81,6 +81,95 @@ Feature: Private Dataset API
             {
                 "id": "population-estimates",
                 "survey": "mockSurvey"
+            }
+        """
+
+    Scenario: Successfully change title of a static dataset
+        Given I have these datasets:
+            """
+            [
+                {
+                    "id": "static-dataset",
+                    "next": {
+                        "id": "static-dataset",
+                        "contacts": [
+                            {
+                                "name": "abc",
+                                "email": "abc@email.com"
+                            }
+                        ],
+                        "type": "static",
+                        "title": "example 1",
+                        "description": "some description",
+                        "license": "Open Government Licence v3.0",
+                        "topics": [ 
+                            "topic-0", 
+                            "topic-1"
+                        ]
+                    }
+                }
+            ]
+            """
+        When I PUT "/datasets/static-dataset"
+            """
+            {
+                "id": "static-dataset",
+                "contacts": [
+                    {
+                        "name": "abc",
+                        "email": "abc@email.com"
+                    }
+                ],
+                "type": "static",
+                "title": "new title",
+                "description": "some description",
+                "license": "Open Government Licence v3.0",
+                "topics": [ 
+                    "topic-0", 
+                    "topic-1"
+                ]
+            }
+            """
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "contacts": [
+                    {
+                        "name": "abc",
+                        "email": "abc@email.com"
+                    }
+                ],
+                "description": "some description",
+                "license": "Open Government Licence v3.0",
+                "title": "new title",
+                "topics": [ 
+                    "topic-0", 
+                    "topic-1"
+                ],
+                "id": "static-dataset",
+                "last_updated": "0001-01-01T00:00:00Z"
+            }
+            """
+        And the document in the database for id "static-dataset" should be:
+        """
+            {
+                "id": "static-dataset",
+                "contacts": [
+                    {
+                        "name": "abc",
+                        "email": "abc@email.com"
+                    }
+                ],
+                "title": "new title",
+                "description": "some description",
+                "license": "Open Government Licence v3.0",
+                "next": {
+                    "topics": [ 
+                        "topic-0", 
+                        "topic-1"
+                    ],
+                    "type": "static"
+                }
             }
         """
 
@@ -293,10 +382,10 @@ Feature: Private Dataset API
                 "license":"license"
             }
             """
-        Then the HTTP status code should be "403"
+        Then the HTTP status code should be "409"
         And I should receive the following response:
             """
-            forbidden - dataset already exists
+            dataset already exists
             """
 
     Scenario: Missing dataset ID in body when creating a new dataset

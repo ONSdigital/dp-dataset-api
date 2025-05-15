@@ -313,15 +313,10 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		log.Info(ctx, "URL rewriting enabled")
 	}
 
-	enableStateMachine := svc.config.EnableStateMachine
-	if enableStateMachine {
-		log.Info(ctx, "State machine enabled")
-	}
-
 	datasetPermissions, permissions := getAuthorisationHandlers(ctx, svc.config)
 	sm := GetStateMachine(ctx, ds)
 	svc.smDS = application.Setup(ds, smDownloadGenerators, sm)
-	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions, enableURLRewriting, svc.smDS, enableStateMachine)
+	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions, enableURLRewriting, svc.smDS)
 
 	// Set the files API client on the DatasetAPI after initialisation
 	if svc.config.EnablePrivateEndpoints && svc.filesAPIClient != nil {

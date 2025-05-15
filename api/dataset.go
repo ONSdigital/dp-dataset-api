@@ -18,13 +18,6 @@ import (
 )
 
 var (
-	// errors that should return a 403 status
-	datasetsForbidden = map[error]bool{
-		errs.ErrDeletePublishedDatasetForbidden: true,
-		errs.ErrAddDatasetAlreadyExists:         true,
-		errs.ErrAddDatasetTitleAlreadyExists:    true,
-	}
-
 	// errors that should return a 204 status
 	datasetsNoContent = map[error]bool{
 		errs.ErrDeleteDatasetNotFound: true,
@@ -38,11 +31,22 @@ var (
 		errs.ErrInvalidQueryParameter:      true,
 	}
 
+	// errors that should return a 403 status
+	datasetsForbidden = map[error]bool{
+		errs.ErrDeletePublishedDatasetForbidden: true,
+	}
+
 	// errors that should return a 404 status
 	resourcesNotFound = map[error]bool{
 		errs.ErrDatasetNotFound:  true,
 		errs.ErrEditionsNotFound: true,
 		errs.ErrEditionNotFound:  true,
+	}
+
+	// errors that should return a 409 status
+	datasetsConflict = map[error]bool{
+		errs.ErrAddDatasetAlreadyExists:      true,
+		errs.ErrAddDatasetTitleAlreadyExists: true,
 	}
 )
 
@@ -448,6 +452,19 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
+		if dataset.Type == models.Static.String() {
+			datasetTitleExists, err := api.dataStore.Backend.CheckDatasetTitleExist(ctx, dataset.Title)
+			if err != nil {
+				log.Error(ctx, "putDataset endpoint: error checking if dataset title exists", err, data)
+				return nil, err
+			}
+
+			if datasetTitleExists && dataset.Title != currentDataset.Next.Title {
+				log.Error(ctx, "putDataset endpoint: unable to update a dataset with title that already exists", errs.ErrAddDatasetTitleAlreadyExists, data)
+				return nil, errs.ErrAddDatasetTitleAlreadyExists
+			}
+		}
+
 		if dataset.State == models.PublishedState {
 			if err := api.publishDataset(ctx, currentDataset, nil); err != nil {
 				log.Error(ctx, "putDataset endpoint: failed to update dataset document to published", err, data)
@@ -596,6 +613,8 @@ func handleDatasetAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 		status = http.StatusNoContent
 	case datasetsBadRequest[err], strings.HasPrefix(err.Error(), "invalid fields:"):
 		status = http.StatusBadRequest
+	case datasetsConflict[err]:
+		status = http.StatusConflict
 	case resourcesNotFound[err]:
 		status = http.StatusNotFound
 	default:
