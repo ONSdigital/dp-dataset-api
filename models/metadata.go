@@ -345,9 +345,19 @@ func (m Metadata) ToString() string {
 
 	b.WriteString(fmt.Sprintf("Title: %s\n", m.Title))
 	b.WriteString(fmt.Sprintf("Description: %s\n", m.Description))
+
+	if m.Publisher != nil {
+		b.WriteString(fmt.Sprintf("Publisher: %s\n", *m.Publisher))
+	}
+
 	b.WriteString(fmt.Sprintf("Issued: %s\n", m.ReleaseDate))
 	b.WriteString(fmt.Sprintf("Next Release: %s\n", m.NextRelease))
 	b.WriteString(fmt.Sprintf("Identifier: %s\n", m.Title))
+
+	if len(m.Keywords) > 0 {
+		b.WriteString(fmt.Sprintf("Keywords: %s\n", m.Keywords))
+	}
+
 	b.WriteString(fmt.Sprintf("Language: %s\n", "English"))
 
 	if len(m.Contacts) > 0 {
@@ -360,6 +370,10 @@ func (m Metadata) ToString() string {
 		// Write first temporal irrespective of number in list
 		temporalList := *m.Temporal
 		b.WriteString(fmt.Sprintf("Temporal: %s\n", temporalList[0].Frequency))
+	}
+
+	if m.LatestChanges != nil {
+		b.WriteString(fmt.Sprintf("Latest Changes: %s\n", *m.LatestChanges))
 	}
 
 	b.WriteString(fmt.Sprintf("Periodicity: %s\n", m.ReleaseFrequency))
@@ -395,6 +409,10 @@ func (m Metadata) ToString() string {
 		b.WriteString(fmt.Sprintf("Publications: %s\n", m.Publications))
 	}
 
+	if len(m.RelatedDatasets) > 0 {
+		b.WriteString(fmt.Sprintf("Related Links: %s\n", m.RelatedDatasets))
+	}
+
 	b.WriteString(fmt.Sprintf("Canonical Topic: %s\n", m.CanonicalTopic))
 
 	if len(m.Subtopics) > 0 {
@@ -404,7 +422,7 @@ func (m Metadata) ToString() string {
 	b.WriteString(fmt.Sprintf("Survey: %s\n", m.Survey))
 
 	if len(m.RelatedContent) > 0 {
-		b.WriteString(fmt.Sprintf("Related content: %s\n", m.RelatedContent))
+		b.WriteString(fmt.Sprintf("Related Content: %s\n", m.RelatedContent))
 	}
 
 	return b.String()
