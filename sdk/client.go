@@ -98,9 +98,8 @@ func closeResponseBody(ctx context.Context, resp *http.Response) {
 func unmarshalResponseBody(response *http.Response, target interface{}) (err error) {
 	if response.StatusCode != http.StatusOK {
 		var errString string
-		errResponseReadErr := json.NewDecoder(response.Body).Decode(&errString)
+		b, errResponseReadErr := io.ReadAll(response.Body)
 		if errResponseReadErr != nil {
-			b, _ := io.ReadAll(response.Body)
 			errString = fmt.Sprint("Client failed to read DatasetAPI body: status code: %s, response body: %s", response.StatusCode, string(b))
 		}
 		err = errors.New(errString)
