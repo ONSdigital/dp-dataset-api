@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -99,7 +100,7 @@ func unmarshalResponseBody(response *http.Response, target interface{}) (err err
 		var errString string
 		errResponseReadErr := json.NewDecoder(response.Body).Decode(&errString)
 		if errResponseReadErr != nil {
-			errString = "Client failed to read DatasetAPI body"
+			errString = fmt.Sprint("Client failed to read DatasetAPI body: %s", response.Body)
 		}
 		err = errors.New(errString)
 		return err
