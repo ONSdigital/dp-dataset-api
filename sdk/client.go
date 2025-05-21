@@ -100,7 +100,8 @@ func unmarshalResponseBody(response *http.Response, target interface{}) (err err
 		var errString string
 		errResponseReadErr := json.NewDecoder(response.Body).Decode(&errString)
 		if errResponseReadErr != nil {
-			errString = fmt.Sprint("Client failed to read DatasetAPI body: %s", response.Body)
+			b, _ := io.ReadAll(response.Body)
+			errString = fmt.Sprint("Client failed to read DatasetAPI body: status code: %s, response body: %s", response.StatusCode, string(b))
 		}
 		err = errors.New(errString)
 		return err
