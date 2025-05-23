@@ -285,4 +285,18 @@ func TestUnmarshalResponseBody(t *testing.T) {
 			So(err.Error(), ShouldEqual, responseErr.Error())
 		})
 	})
+	Convey("If response status code is not 404 (Unauthorised)", t, func() {
+		responseStr := "unauthorised access to API\n"
+		// Response body is an example of what the api returns when returning an unauthorised response
+		mockResponse := &http.Response{
+			StatusCode: http.StatusNotFound,
+			Body:       io.NopCloser(bytes.NewBuffer([]byte(responseStr))),
+		}
+		target := mockTarget{}
+		Convey("Test error is raised", func() {
+			err := unmarshalResponseBody(mockResponse, &target)
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldEqual, responseStr)
+		})
+	})
 }
