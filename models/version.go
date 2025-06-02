@@ -87,6 +87,17 @@ type DownloadObject struct {
 	Size string `bson:"size,omitempty" json:"size,omitempty"`
 }
 
+// Maps `DownloadObjects` in input `DownloadList` to their corresponding extension strings
+func (dl *DownloadList) ExtensionsMapping() map[*DownloadObject]string {
+	return map[*DownloadObject]string{
+		dl.CSV:  "csv",
+		dl.CSVW: "csvw",
+		dl.TXT:  "txt",
+		dl.XLS:  "xls",
+		dl.XLSX: "xlsx",
+	}
+}
+
 // LatestChange represents an object containing
 // information on a single change between versions
 type LatestChange struct {
@@ -434,7 +445,7 @@ func ValidateVersion(version *Version) error {
 			return ErrPublishedVersionCollectionIDInvalid
 		}
 	case AssociatedState:
-		if version.CollectionID == "" {
+		if version.Type != Static.String() && version.CollectionID == "" {
 			return ErrAssociatedVersionCollectionIDInvalid
 		}
 	default:

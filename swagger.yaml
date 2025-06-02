@@ -281,8 +281,8 @@ paths:
           description: "Invalid request body"
         401:
           description: "Unauthorised to create/overwrite dataset"
-        403:
-          description: "Forbidden to overwrite dataset, dataset already exists"
+        409:
+          description: "dataset already exists"
         500:
           $ref: "#/responses/InternalError"
 
@@ -357,6 +357,8 @@ paths:
           description: "Bad Request due to invalid json in the request body"
         401:
           description: "Unauthorised to update dataset"
+        409:
+          description: "Dataset title already exists"
         404:
           description: "No dataset was found using the id provided"
         500:
@@ -599,6 +601,36 @@ paths:
               * not the most recent unpublished version
         404:
           description: "No version was found for an edition of a dataset using the id, edition and version provided"
+        500:
+          $ref: "#/responses/InternalError"
+  /datasets/{id}/editions/{edition}/versions/{version}/state:
+    put:
+      tags:
+        - "Private"
+      summary: "Update the state of a version"
+      description: "Update the state of a version of a static dataset."
+      parameters:
+        - $ref: "#/parameters/dataset_id"
+        - $ref: "#/parameters/edition"
+        - $ref: "#/parameters/version"
+        - description: "The new state of the version"
+          required: true
+          name: state
+          in: body
+          schema:
+            type: object
+            properties:
+              state:
+                $ref: "#/definitions/State"
+      security:
+        - Authorization: []
+      responses:
+        200:
+          description: "State updated successfully"
+        400:
+          description: "Bad Request due to invalid json in the request body"
+        404:
+          description: "Dataset, edition or version not found"
         500:
           $ref: "#/responses/InternalError"
   /datasets/{id}/editions/{edition}/versions/{version}/dimensions:

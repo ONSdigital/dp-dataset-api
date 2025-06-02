@@ -20,7 +20,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/dp-dataset-api/url"
-	dprequest "github.com/ONSdigital/dp-net/v2/request"
+	dprequest "github.com/ONSdigital/dp-net/v3/request"
 	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -33,7 +33,6 @@ var (
 	websiteURL            = &neturl.URL{Scheme: "http", Host: "localhost:20000"}
 	urlBuilder            = url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
 	enableURLRewriting    = false
-	enableStateMachine    = false
 	mu                    sync.Mutex
 	testContext           = context.Background()
 	testETag              = "testETag"
@@ -1545,7 +1544,7 @@ func getAPIWithCMDMocks(ctx context.Context, mockedDataStore store.Storer, mocke
 	datasetPermissions := getAuthorisationHandlerMock()
 	permissions := getAuthorisationHandlerMock()
 
-	return api.Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, downloadGenerators, datasetPermissions, permissions, enableURLRewriting, &mockStatemachineDatasetAPI, enableStateMachine)
+	return api.Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, downloadGenerators, datasetPermissions, permissions, enableURLRewriting, &mockStatemachineDatasetAPI)
 }
 
 func getAuthorisationHandlerMock() *mocks.AuthHandlerMock {

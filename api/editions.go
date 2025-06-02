@@ -7,7 +7,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/utils"
-	"github.com/ONSdigital/dp-net/v2/links"
+	"github.com/ONSdigital/dp-net/v3/links"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 )
@@ -108,7 +108,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 
 		if authorised {
-			editionsResponse, err := utils.RewriteEditionsWithAuth(ctx, results, datasetLinksBuilder)
+			editionsResponse, err := utils.RewriteEditionsWithAuth(ctx, results, datasetLinksBuilder, api.urlBuilder.GetDownloadServiceURL())
 			if err != nil {
 				log.Error(ctx, "getEditions endpoint: failed to rewrite editions with authorisation", err, logData)
 				return nil, 0, err
@@ -117,7 +117,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 			return editionsResponse, totalCount, nil
 		}
 
-		editionsResponse, err := utils.RewriteEditionsWithoutAuth(ctx, results, datasetLinksBuilder)
+		editionsResponse, err := utils.RewriteEditionsWithoutAuth(ctx, results, datasetLinksBuilder, api.urlBuilder.GetDownloadServiceURL())
 		if err != nil {
 			log.Error(ctx, "getEditions endpoint: failed to rewrite editions without authorisation", err, logData)
 			return nil, 0, err
@@ -198,14 +198,14 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 			datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 
 			if authorised {
-				editionResponse, err = utils.RewriteEditionWithAuth(ctx, edition, datasetLinksBuilder)
+				editionResponse, err = utils.RewriteEditionWithAuth(ctx, edition, datasetLinksBuilder, api.urlBuilder.GetDownloadServiceURL())
 				if err != nil {
 					log.Error(ctx, "getEdition endpoint: failed to rewrite edition with authorisation", err, logData)
 					return nil, err
 				}
 				log.Info(ctx, "getEdition endpoint: get edition with auth", logData)
 			} else {
-				editionResponse, err = utils.RewriteEditionWithoutAuth(ctx, edition, datasetLinksBuilder)
+				editionResponse, err = utils.RewriteEditionWithoutAuth(ctx, edition, datasetLinksBuilder, api.urlBuilder.GetDownloadServiceURL())
 				if err != nil {
 					log.Error(ctx, "getEdition endpoint: failed to rewrite edition without authorisation", err, logData)
 					return nil, err

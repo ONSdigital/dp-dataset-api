@@ -16,7 +16,8 @@ Feature: Dataset API
                 "count":1,
                 "items": [
                     {
-                        "id": "population-estimates"
+                        "id": "population-estimates",
+                        "last_updated":"0001-01-01T00:00:00Z"
                     }
                 ],
                 "limit":20, 
@@ -41,7 +42,8 @@ Feature: Dataset API
         Then I should receive the following JSON response with status "200":
             """
             {
-                "id": "income-by-age"
+                "id": "income-by-age",
+                "last_updated":"0001-01-01T00:00:00Z"
             }
             """
 

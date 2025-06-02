@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/ONSdigital/dp-api-clients-go/v2/files"
 	"github.com/ONSdigital/dp-authorisation/auth"
 	"github.com/ONSdigital/dp-dataset-api/application"
 	"github.com/ONSdigital/dp-dataset-api/config"
@@ -17,8 +18,8 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/pagination"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/url"
-	dphandlers "github.com/ONSdigital/dp-net/v2/handlers"
-	dprequest "github.com/ONSdigital/dp-net/v2/request"
+	dphandlers "github.com/ONSdigital/dp-net/v3/handlers"
+	dprequest "github.com/ONSdigital/dp-net/v3/request"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 )
@@ -72,11 +73,12 @@ type DatasetAPI struct {
 	versionPublishedChecker  *PublishCheck
 	MaxRequestOptions        int
 	smDatasetAPI             *application.StateMachineDatasetAPI
-	EnableStateMachine       bool
+	filesAPIClient           *files.Client
+	authToken                string
 }
 
 // Setup creates a new Dataset API instance and register the API routes based on the application configuration.
-func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerators map[models.DatasetType]DownloadsGenerator, datasetPermissions, permissions AuthHandler, enableURLRewriting bool, smDatasetAPI *application.StateMachineDatasetAPI, enableStateMachine bool) *DatasetAPI {
+func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerators map[models.DatasetType]DownloadsGenerator, datasetPermissions, permissions AuthHandler, enableURLRewriting bool, smDatasetAPI *application.StateMachineDatasetAPI) *DatasetAPI {
 	api := &DatasetAPI{
 		dataStore:                dataStore,
 		host:                     cfg.DatasetAPIURL,
@@ -94,7 +96,6 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		instancePublishedChecker: nil,
 		MaxRequestOptions:        cfg.MaxRequestOptions,
 		smDatasetAPI:             smDatasetAPI,
-		EnableStateMachine:       enableStateMachine,
 	}
 
 	paginator := pagination.NewPaginator(cfg.DefaultLimit, cfg.DefaultOffset, cfg.DefaultMaxLimit)
@@ -134,6 +135,12 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		api.enablePublicEndpoints(paginator)
 	}
 	return api
+}
+
+// SetFilesAPIClient sets the files API client and auth token for the API
+func (api *DatasetAPI) SetFilesAPIClient(client *files.Client, authToken string) {
+	api.filesAPIClient = client
+	api.authToken = authToken
 }
 
 // enablePublicEndpoints register only the public GET endpoints.
@@ -307,6 +314,13 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(paginator *pagination.Pagin
 		api.isAuthenticated(
 			api.isAuthorisedForDatasets(updatePermission,
 				api.putMetadata)),
+	)
+
+	api.put(
+		"/datasets/{dataset_id}/editions/{edition}/versions/{version}/state",
+		api.isAuthenticated(
+			api.isAuthorisedForDatasets(updatePermission,
+				api.putState)),
 	)
 
 	api.post(

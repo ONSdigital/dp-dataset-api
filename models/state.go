@@ -77,3 +77,7 @@ func CheckState(docType, state string) error {
 
 	return errs.ErrResourceState
 }
+
+type StateUpdate struct {
+	State string `json:"state"`
+}

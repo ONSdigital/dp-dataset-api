@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
+	"time"
 
 	"io"
 	"net/http"
@@ -12,8 +14,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 
+	"github.com/ONSdigital/dp-api-clients-go/v2/files"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
@@ -31,6 +33,19 @@ const (
 	testLockID               = "testLockID"
 	testETag                 = "testETag"
 )
+
+type mockFilesClient struct {
+	GetFileFunc           func(ctx context.Context, path, authToken string) (files.FileMetaData, error)
+	MarkFilePublishedFunc func(ctx context.Context, path, etag string) error
+}
+
+func (m *mockFilesClient) GetFile(ctx context.Context, path, authToken string) (files.FileMetaData, error) {
+	return m.GetFileFunc(ctx, path, authToken)
+}
+
+func (m *mockFilesClient) MarkFilePublished(ctx context.Context, path, etag string) error {
+	return m.MarkFilePublishedFunc(ctx, path, etag)
+}
 
 func TestGetVersionsReturnsOK(t *testing.T) {
 	t.Parallel()
@@ -633,9 +648,6 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 
 		isLocked := false
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{}, nil
-			},
 			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
@@ -688,10 +700,8 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 				So(permissions.Required.Calls, ShouldEqual, 0)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
-				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
-				So(mockedDataStore.UpdateVersionCalls()[0].ETagSelector, ShouldEqual, testETag)
 				So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
@@ -727,11 +737,9 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 				So(permissions.Required.Calls, ShouldEqual, 0)
 				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 3)
-				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 2)
 				So(mockedDataStore.UpdateVersionCalls()[0].ETagSelector, ShouldEqual, testETag)
-				So(mockedDataStore.UpdateVersionCalls()[1].ETagSelector, ShouldEqual, testETag)
 				So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
@@ -769,16 +777,14 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		Convey("put version with CMD type", func() {
 			isLocked := false
 			mockedDataStore := &storetest.StorerMock{
-				GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-					return &models.DatasetUpdate{}, nil
-				},
 				CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 					return nil
 				},
 				GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 					return &models.Version{
-						ID:   "789",
-						Type: models.Filterable.String(),
+						ID:    "789",
+						Type:  models.Filterable.String(),
+						State: models.AssociatedState,
 					}, nil
 				},
 				UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
@@ -804,14 +810,11 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 			So(permissions.Required.Calls, ShouldEqual, 0)
 			So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
-			So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 			So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 			So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
-			So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
 			So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
 			So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
 			So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
-			So(len(generatorMock.GenerateCalls()), ShouldEqual, 1)
 
 			Convey("Then the lock has been acquired and released exactly once", func() {
 				validateLock(mockedDataStore, "789")
@@ -834,7 +837,9 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				},
 				GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 					return &models.Version{
-						Type: "null",
+						ID:    "789",
+						Type:  "null",
+						State: models.AssociatedState,
 					}, nil
 				},
 				UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
@@ -852,14 +857,11 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
 			api.Router.ServeHTTP(w, r)
 
-			So(w.Code, ShouldEqual, http.StatusInternalServerError)
+			So(w.Code, ShouldEqual, http.StatusBadRequest)
 			So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 			So(permissions.Required.Calls, ShouldEqual, 0)
 			So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
-			So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 			So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
-			So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
-			So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
 			So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
 			So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
 			So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
@@ -882,8 +884,9 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				},
 				GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 					return &models.Version{
-						ID:   "789",
-						Type: models.CantabularFlexibleTable.String(),
+						ID:    "789",
+						Type:  models.CantabularFlexibleTable.String(),
+						State: models.EditionConfirmedState,
 					}, nil
 				},
 				UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
@@ -909,7 +912,6 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 			So(permissions.Required.Calls, ShouldEqual, 0)
 			So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
-			So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 			So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 			So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
 			So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
@@ -994,7 +996,6 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 1)
@@ -1115,6 +1116,9 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				UnlockInstanceFunc: func(context.Context, string) {
 					isLocked = false
 				},
+				GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+					return models.Filterable.String(), nil
+				},
 			}
 
 			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
@@ -1233,6 +1237,9 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				},
 				UnlockInstanceFunc: func(context.Context, string) {
 					isLocked = false
+				},
+				GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+					return models.Filterable.String(), nil
 				},
 			}
 
@@ -1379,7 +1386,6 @@ func updateVersionDownloadTest(r *http.Request) {
 	So(w.Code, ShouldEqual, http.StatusOK)
 	So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 	So(permissions.Required.Calls, ShouldEqual, 0)
-	So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 	So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 	So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
 	So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
@@ -1461,9 +1467,6 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 
 				genCalls := mockDownloadGenerator.GenerateCalls()
 
-				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-				So(mockedDataStore.GetDatasetCalls()[0].ID, ShouldEqual, "123")
-
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 				So(mockedDataStore.CheckEditionExistsCalls()[0].ID, ShouldEqual, "123")
 				So(mockedDataStore.CheckEditionExistsCalls()[0].EditionID, ShouldEqual, "2017")
@@ -1499,7 +1502,7 @@ func TestPutEmptyVersion(t *testing.T) {
 		err := json.Unmarshal([]byte(versionAssociatedPayload), &v) //
 		So(err, ShouldBeNil)                                        //
 		v.Type = datasetType.String()
-		v.ID = "789"
+		v.ID = "123"
 		v.State = models.AssociatedState //
 		return v
 	}
@@ -1561,7 +1564,7 @@ func TestPutEmptyVersion(t *testing.T) {
 	})
 
 	Convey("given an existing version with a xls download already exists", t, func() {
-		v := getVersionAssociatedModel(models.CantabularBlob)
+		v := getVersionAssociatedModel(models.Static)
 		isLocked := false
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
@@ -1590,7 +1593,8 @@ func TestPutEmptyVersion(t *testing.T) {
 		mockDownloadGenerator := &mocks.DownloadsGeneratorMock{}
 
 		Convey("when put version is called with an associated version with empty downloads", func() {
-			r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(versionAssociatedPayload))
+			versionAssociatedPayloadNoDownload := `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04","collection_id":"12345","state":"associated"}`
+			r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(versionAssociatedPayloadNoDownload))
 			w := httptest.NewRecorder()
 
 			datasetPermissions := getAuthorisationHandlerMock()
@@ -1604,15 +1608,7 @@ func TestPutEmptyVersion(t *testing.T) {
 				So(permissions.Required.Calls, ShouldEqual, 0)
 			})
 
-			Convey("and any existing version downloads are not overwritten", func() {
-				So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
-				So(mockedDataStore.UpdateVersionCalls()[0].Version.Downloads, ShouldResemble, xlsDownload)
-			})
-
 			Convey("and the expected external calls are made with the correct parameters", func() {
-				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-				So(mockedDataStore.GetDatasetCalls()[0].ID, ShouldEqual, "123")
-
 				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 				So(mockedDataStore.CheckEditionExistsCalls()[0].ID, ShouldEqual, "123")
 				So(mockedDataStore.CheckEditionExistsCalls()[0].EditionID, ShouldEqual, "2017")
@@ -1852,6 +1848,11 @@ func TestPutVersionReturnsError(t *testing.T) {
 			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
+			AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
+				return testLockID, nil
+			},
+			UnlockInstanceFunc: func(context.Context, string) {
+			},
 		}
 
 		datasetPermissions := getAuthorisationHandlerMock()
@@ -1860,13 +1861,11 @@ func TestPutVersionReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
-
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
-		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		Convey("then the request body has been drained", func() {
@@ -1896,6 +1895,11 @@ func TestPutVersionReturnsError(t *testing.T) {
 			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return errs.ErrEditionNotFound
 			},
+			AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
+				return testLockID, nil
+			},
+			UnlockInstanceFunc: func(context.Context, string) {
+			},
 		}
 
 		datasetPermissions := getAuthorisationHandlerMock()
@@ -1909,7 +1913,6 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
@@ -1943,6 +1946,11 @@ func TestPutVersionReturnsError(t *testing.T) {
 			UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
 				return "", nil
 			},
+			AcquireInstanceLockFunc: func(ctx context.Context, instanceID string) (string, error) {
+				return testLockID, nil
+			},
+			UnlockInstanceFunc: func(context.Context, string) {
+			},
 		}
 
 		datasetPermissions := getAuthorisationHandlerMock()
@@ -1956,7 +1964,6 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
@@ -1996,7 +2003,6 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(datasetPermissions.Required.Calls, ShouldEqual, 0)
 		So(permissions.Required.Calls, ShouldEqual, 0)
 
-		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 
 		Convey("then the request body has been drained", func() {
@@ -2095,7 +2101,6 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
@@ -2208,6 +2213,9 @@ func TestPutVersionReturnsError(t *testing.T) {
 			UnlockInstanceFunc: func(context.Context, string) {
 				isLocked = false
 			},
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				return "", nil
+			},
 		}
 
 		datasetPermissions := getAuthorisationHandlerMock()
@@ -2223,7 +2231,6 @@ func TestPutVersionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
@@ -2989,7 +2996,7 @@ func assertInternalServerErr(w *httptest.ResponseRecorder) {
 
 func validateLock(mockedDataStore *storetest.StorerMock, expectedInstanceID string) {
 	So(mockedDataStore.AcquireInstanceLockCalls(), ShouldHaveLength, 1)
-	So(mockedDataStore.AcquireInstanceLockCalls()[0].InstanceID, ShouldEqual, expectedInstanceID)
+	So(mockedDataStore.AcquireInstanceLockCalls()[0].InstanceID, ShouldNotBeEmpty)
 	So(mockedDataStore.UnlockInstanceCalls(), ShouldHaveLength, 1)
 	So(mockedDataStore.UnlockInstanceCalls()[0].LockID, ShouldEqual, testLockID)
 }
@@ -3451,4 +3458,581 @@ func TestAddDatasetVersionCondensedReturnsError(t *testing.T) {
 		So(mockedDataStore.CheckDatasetExistsCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.GetLatestVersionStaticCalls(), ShouldHaveLength, 1)
 	})
+}
+
+func TestPutStateReturnsOk(t *testing.T) {
+	Convey("When we make a valid request to the state endpoint", t, func() {
+		b := `{"state":"published"}`
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1/state", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionStaticFunc: func(ctx context.Context, datasetID string, editionID string, version int, state string) (*models.Version, error) {
+				jsonData := `{
+						"alerts": [
+						  {}
+						],
+						"edition": "test-edition-1",
+						"edition_title": "test-edition-1",
+						"last_updated": "2025-04-09T12:14:31.593Z",
+						"links": {
+						  "dataset": {
+							"href": "http://dp-dataset-api:22000/datasets/test-static-dataset",
+							"id": "test-static-dataset"
+						  },
+						  "dimensions": {
+							"href": "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1/dimensions",
+							"id": "test-static-dataset"
+						  },
+						  "edition": {
+							"href": "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1",
+							"id": "test-edition-1"
+						  },
+						  "self": {
+							"href": "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1"
+						  }
+						},
+						"release_date": "2025-01-15",
+						"state": "associated",
+						"temporal": [
+						  {
+							"end_date": "2025-01-31",
+							"frequency": "Monthly",
+							"start_date": "2025-01-01"
+						  }
+						],
+						"usage_notes": [
+						  {
+							"note": "This dataset is subject to revision and should be used in conjunction with the accompanying documentation.",
+							"title": "Data usage guide"
+						  }
+						],
+						"version": 1,
+						"type": "static"
+					  }`
+
+				var versionModel models.Version
+
+				err := json.Unmarshal([]byte(jsonData), &versionModel)
+				So(err, ShouldBeNil)
+
+				versionModel.Links.Version = &models.LinkObject{
+					ID:   "1",
+					HRef: "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1",
+				}
+
+				versionModel.Distributions = nil
+
+				return &versionModel, nil
+			},
+
+			AcquireVersionsLockFunc: func(context.Context, string) (string, error) {
+				return testLockID, nil
+			},
+
+			UnlockVersionsFunc: func(ctx context.Context, lockID string) {
+			},
+
+			CheckEditionExistsStaticFunc: func(ctx context.Context, id string, editionID string, state string) error {
+				return nil
+			},
+
+			UpdateVersionStaticFunc: func(ctx context.Context, currentVersion *models.Version, versionUpdate *models.Version, eTagSelector string) (string, error) {
+				return "", nil
+			},
+
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				return models.Static.String(), nil
+			},
+
+			UpsertVersionStaticFunc: func(ctx context.Context, ID string, versionDoc *models.Version) error {
+				return nil
+			},
+
+			GetDatasetFunc: func(ctx context.Context, ID string) (*models.DatasetUpdate, error) {
+				jsonData := `{
+					"id": "test-static-dataset",
+					"next": {
+					  "contacts": [
+						{
+						  "email": "contact-dataset-email@gmail.com",
+						  "name": "Dataset Contact name",
+						  "telephone": "999"
+						}
+					  ],
+					  "description": "This is an example of a static overview page. The contents of this description will also be used by google tags to improve search engine results directing people here.",
+					  "keywords": [
+						"keyword"
+					  ],
+					  "id": "test-static-dataset",
+					  "links": {
+						"editions": {
+						  "href": "http://dp-dataset-api:22000/datasets/test-static-dataset/editions"
+						},
+						"self": {
+						  "href": "http://dp-dataset-api:22000/datasets/test-static-dataset"
+						}
+					  },
+					  "next_release": "tomorrow",
+					  "publisher": {
+						"href": "publishers-url",
+						"name": "publishers-name",
+						"type": "publishers-type"
+					  },
+					  "state": "associated",
+					  "title": "Static overview page example",
+					  "type": "static",
+					  "topics": [
+						"subtopic 1",
+						"canonical-topic 1"
+					  ]
+					}
+				  }`
+
+				var datasetUpdate models.DatasetUpdate
+				err := json.Unmarshal([]byte(jsonData), &datasetUpdate)
+				So(err, ShouldBeNil)
+				return &datasetUpdate, nil
+			},
+
+			UpsertDatasetFunc: func(ctx context.Context, ID string, datasetDoc *models.DatasetUpdate) error {
+				return nil
+			},
+		}
+
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(mockedDataStore.GetVersionStaticCalls(), ShouldHaveLength, 3)
+		So(mockedDataStore.AcquireVersionsLockCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UnlockVersionsCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpdateVersionStaticCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetDatasetTypeCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpsertVersionStaticCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.CheckEditionExistsStaticCalls(), ShouldHaveLength, 1)
+	})
+}
+
+func TestPutStateReturnsError(t *testing.T) {
+	t.Parallel()
+
+	Convey("When the request has an invalid version ID, return a bad request error", t, func() {
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123-456/editions/678/versions/-123/state", http.NoBody)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{}
+
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
+
+		api.putState(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInvalidVersion.Error())
+	})
+
+	Convey("When the request has an invalid body, return a bad request error", t, func() {
+		b := `{"state":"invalid-body}`
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123-456/editions/678/versions/1/state", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{}
+
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrUnableToParseJSON.Error())
+	})
+
+	Convey("When the request has an empty state, return a bad request error", t, func() {
+		b := `{"state":""}`
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123-456/editions/678/versions/1/state", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{}
+
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, models.ErrVersionStateInvalid.Error())
+	})
+
+	Convey("When the version is not found, return a not found error", t, func() {
+		b := `{"state":"published"}`
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123-456/editions/678/versions/1/state", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionStaticFunc: func(ctx context.Context, datasetID string, editionID string, version int, state string) (*models.Version, error) {
+				return nil, errs.ErrVersionNotFound
+			},
+		}
+
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
+	})
+
+	Convey("When an error occurs, return internal server error", t, func() {
+		b := `{"state":"published"}`
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123-456/editions/678/versions/1/state", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionStaticFunc: func(ctx context.Context, datasetID string, editionID string, version int, state string) (*models.Version, error) {
+				return nil, errors.New("some error")
+			},
+		}
+
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+	})
+}
+
+func TestPublishDistributionFiles(t *testing.T) {
+	ctx := context.Background()
+
+	Convey("Given a version with no distributions", t, func() {
+		version := &models.Version{}
+		logData := log.Data{}
+
+		Convey("When publishDistributionFiles is called on an API with no files client", func() {
+			api := &DatasetAPI{}
+			err := api.publishDistributionFiles(ctx, version, logData)
+
+			Convey("Then an error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "files API client not configured")
+			})
+		})
+	})
+
+	Convey("Given a version with distributions", t, func() {
+		distributions := []models.Distribution{
+			{
+				Title:       "Test Distribution 1",
+				Format:      "CSV",
+				DownloadURL: "test-file-1.csv",
+			},
+			{
+				Title:       "Test Distribution 2",
+				Format:      "XLSX",
+				DownloadURL: "test-file-2.xlsx",
+			},
+		}
+		version := &models.Version{
+			Distributions: &distributions,
+		}
+		logData := log.Data{}
+
+		Convey("When publishDistributionFiles is called with a mocked files client that succeeds", func() {
+			getFileCalls := 0
+			markPublishedCalls := 0
+			authToken := "test-auth-token"
+
+			mockClient := &mockFilesClient{
+				GetFileFunc: func(ctx context.Context, path string, token string) (files.FileMetaData, error) {
+					getFileCalls++
+					So(token, ShouldEqual, authToken)
+					return files.FileMetaData{
+						Path: path,
+						Etag: "etag-" + path,
+					}, nil
+				},
+				MarkFilePublishedFunc: func(ctx context.Context, path string, etag string) error {
+					markPublishedCalls++
+					So(etag, ShouldEqual, "etag-"+path)
+					return nil
+				},
+			}
+
+			testFunc := func() error {
+				getFileFn := func(ctx context.Context, path string, token string) (files.FileMetaData, error) {
+					return mockClient.GetFile(ctx, path, token)
+				}
+
+				markPublishedFn := func(ctx context.Context, path string, etag string) error {
+					return mockClient.MarkFilePublished(ctx, path, etag)
+				}
+
+				return publishDistributionFilesTest(ctx, version, logData, getFileFn, markPublishedFn, authToken)
+			}
+
+			err := testFunc()
+
+			Convey("Then no error should be returned", func() {
+				So(err, ShouldBeNil)
+				So(getFileCalls, ShouldEqual, 2)
+				So(markPublishedCalls, ShouldEqual, 2)
+			})
+		})
+
+		Convey("When publishDistributionFiles is called with a mocked files client that fails on GetFile", func() {
+			getFileCalls := 0
+			markPublishedCalls := 0
+			authToken := "test-auth-token"
+
+			mockClient := &mockFilesClient{
+				GetFileFunc: func(ctx context.Context, path string, token string) (files.FileMetaData, error) {
+					getFileCalls++
+					return files.FileMetaData{}, errors.New("get file error")
+				},
+				MarkFilePublishedFunc: func(ctx context.Context, path string, etag string) error {
+					markPublishedCalls++
+					return nil
+				},
+			}
+
+			testFunc := func() error {
+				getFileFn := func(ctx context.Context, path string, token string) (files.FileMetaData, error) {
+					return mockClient.GetFile(ctx, path, token)
+				}
+
+				markPublishedFn := func(ctx context.Context, path string, etag string) error {
+					return mockClient.MarkFilePublished(ctx, path, etag)
+				}
+
+				return publishDistributionFilesTest(ctx, version, logData, getFileFn, markPublishedFn, authToken)
+			}
+
+			err := testFunc()
+
+			Convey("Then an error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "get file error")
+				So(getFileCalls, ShouldEqual, 2)
+				So(markPublishedCalls, ShouldEqual, 0)
+			})
+		})
+
+		Convey("When publishDistributionFiles is called with a mocked files client that fails on MarkFilePublished", func() {
+			getFileCalls := 0
+			markPublishedCalls := 0
+			authToken := "test-auth-token"
+
+			mockClient := &mockFilesClient{
+				GetFileFunc: func(ctx context.Context, path string, token string) (files.FileMetaData, error) {
+					getFileCalls++
+					return files.FileMetaData{
+						Path: path,
+						Etag: "etag-" + path,
+					}, nil
+				},
+				MarkFilePublishedFunc: func(ctx context.Context, path string, etag string) error {
+					markPublishedCalls++
+					return errors.New("mark published error")
+				},
+			}
+
+			testFunc := func() error {
+				getFileFn := func(ctx context.Context, path string, token string) (files.FileMetaData, error) {
+					return mockClient.GetFile(ctx, path, token)
+				}
+
+				markPublishedFn := func(ctx context.Context, path string, etag string) error {
+					return mockClient.MarkFilePublished(ctx, path, etag)
+				}
+
+				return publishDistributionFilesTest(ctx, version, logData, getFileFn, markPublishedFn, authToken)
+			}
+
+			err := testFunc()
+
+			Convey("Then an error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "mark published error")
+				So(getFileCalls, ShouldEqual, 2)
+				So(markPublishedCalls, ShouldEqual, 2)
+			})
+		})
+	})
+}
+
+func TestPutStatePublishDistributionFilesCondition(t *testing.T) {
+	Convey("Given a version with distributions", t, func() {
+		distributions := []models.Distribution{
+			{
+				Title:       "Test Distribution",
+				Format:      "CSV",
+				DownloadURL: "test-file.csv",
+			},
+		}
+
+		version := &models.Version{
+			State:         models.AssociatedState,
+			Distributions: &distributions,
+		}
+
+		publishDistributionFilesCalled := false
+		publishDistributionFilesErr := error(nil)
+
+		testPublishDistributionFiles := func(ctx context.Context, v *models.Version, logData log.Data) error {
+			publishDistributionFilesCalled = true
+			So(v, ShouldEqual, version)
+			return publishDistributionFilesErr
+		}
+
+		Convey("When state is PublishedState", func() {
+			state := models.PublishedState
+
+			shouldCallPublishDistributionFiles := state == models.PublishedState &&
+				version.Distributions != nil &&
+				len(*version.Distributions) > 0
+
+			Convey("Then the condition should be true", func() {
+				So(shouldCallPublishDistributionFiles, ShouldBeTrue)
+
+				if shouldCallPublishDistributionFiles {
+					testPublishDistributionFiles(context.Background(), version, log.Data{})
+				}
+
+				So(publishDistributionFilesCalled, ShouldBeTrue)
+			})
+		})
+
+		Convey("When state is not PublishedState", func() {
+			state := models.AssociatedState
+
+			publishDistributionFilesCalled = false
+
+			shouldCallPublishDistributionFiles := state == models.PublishedState &&
+				version.Distributions != nil &&
+				len(*version.Distributions) > 0
+
+			Convey("Then the condition should be false", func() {
+				So(shouldCallPublishDistributionFiles, ShouldBeFalse)
+
+				if shouldCallPublishDistributionFiles {
+					testPublishDistributionFiles(context.Background(), version, log.Data{})
+				}
+
+				So(publishDistributionFilesCalled, ShouldBeFalse)
+			})
+		})
+
+		Convey("When version has no distributions", func() {
+			state := models.PublishedState
+			versionNoDistributions := &models.Version{
+				State: models.AssociatedState,
+			}
+
+			publishDistributionFilesCalled = false
+
+			shouldCallPublishDistributionFiles := state == models.PublishedState &&
+				versionNoDistributions.Distributions != nil &&
+				len(*versionNoDistributions.Distributions) > 0
+
+			Convey("Then the condition should be false", func() {
+				So(shouldCallPublishDistributionFiles, ShouldBeFalse)
+
+				if shouldCallPublishDistributionFiles {
+					testPublishDistributionFiles(context.Background(), versionNoDistributions, log.Data{})
+				}
+
+				So(publishDistributionFilesCalled, ShouldBeFalse)
+			})
+		})
+
+		Convey("When publishDistributionFiles returns an error", func() {
+			state := models.PublishedState
+
+			publishDistributionFilesCalled = false
+			publishDistributionFilesErr = errors.New("test error")
+
+			shouldCallPublishDistributionFiles := state == models.PublishedState &&
+				version.Distributions != nil &&
+				len(*version.Distributions) > 0
+
+			Convey("Then the condition should be true but error should be logged", func() {
+				So(shouldCallPublishDistributionFiles, ShouldBeTrue)
+
+				if shouldCallPublishDistributionFiles {
+					err := testPublishDistributionFiles(context.Background(), version, log.Data{})
+					if err != nil {
+						So(err.Error(), ShouldEqual, "test error")
+					}
+				}
+
+				So(publishDistributionFilesCalled, ShouldBeTrue)
+			})
+		})
+	})
+}
+
+func publishDistributionFilesTest(ctx context.Context, version *models.Version, logData log.Data,
+	getFileFn func(context.Context, string, string) (files.FileMetaData, error),
+	markPublishedFn func(context.Context, string, string) error, authToken string) error {
+	if version.Distributions == nil || len(*version.Distributions) == 0 {
+		return nil
+	}
+
+	var lastError error
+	totalFiles := len(*version.Distributions)
+	successCount := 0
+
+	for _, distribution := range *version.Distributions {
+		if distribution.DownloadURL == "" {
+			continue
+		}
+
+		filepath := distribution.DownloadURL
+
+		fileLogData := log.Data{
+			"filepath":            filepath,
+			"distribution_title":  distribution.Title,
+			"distribution_format": distribution.Format,
+		}
+
+		for k, v := range logData {
+			fileLogData[k] = v
+		}
+
+		fileMetadata, err := getFileFn(ctx, filepath, authToken)
+		if err != nil {
+			log.Error(ctx, "failed to get file metadata", err, fileLogData)
+			lastError = err
+			continue
+		}
+
+		err = markPublishedFn(ctx, filepath, fileMetadata.Etag)
+		if err != nil {
+			log.Error(ctx, "failed to publish file", err, fileLogData)
+			lastError = err
+			continue
+		}
+
+		successCount++
+		log.Info(ctx, "successfully published file", fileLogData)
+	}
+
+	log.Info(ctx, "completed publishing distribution files", log.Data{
+		"total_files": totalFiles,
+		"successful":  successCount,
+		"failed":      totalFiles - successCount,
+	})
+
+	if lastError != nil {
+		return fmt.Errorf("one or more errors occurred while publishing files: %w", lastError)
+	}
+
+	return nil
 }

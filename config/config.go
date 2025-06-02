@@ -31,6 +31,7 @@ type Configuration struct {
 	CantabularExportStartTopic     string        `envconfig:"CANTABULAR_EXPORT_START"`
 	CodeListAPIURL                 string        `envconfig:"CODE_LIST_API_URL"`
 	DatasetAPIURL                  string        `envconfig:"DATASET_API_URL"`
+	FilesAPIURL                    string        `envconfig:"FILES_API_URL"`
 	DownloadServiceURL             string        `envconfig:"DOWNLOAD_SERVICE_URL"`
 	ImportAPIURL                   string        `envconfig:"IMPORT_API_URL"`
 	WebsiteURL                     string        `envconfig:"WEBSITE_URL"`
@@ -44,7 +45,6 @@ type Configuration struct {
 	EnableDetachDataset            bool          `envconfig:"ENABLE_DETACH_DATASET"`
 	EnablePermissionsAuth          bool          `envconfig:"ENABLE_PERMISSIONS_AUTH"`
 	EnableObservationEndpoint      bool          `envconfig:"ENABLE_OBSERVATION_ENDPOINT"`
-	EnableStateMachine             bool          `envconfig:"ENABLE_STATE_MACHINE"`
 	EnableURLRewriting             bool          `envconfig:"ENABLE_URL_REWRITING"`
 	DisableGraphDBDependency       bool          `envconfig:"DISABLE_GRAPH_DB_DEPENDENCY"`
 	KafkaVersion                   string        `envconfig:"KAFKA_VERSION"`
@@ -88,6 +88,7 @@ func Get() (*Configuration, error) {
 		CantabularExportStartTopic:     "cantabular-export-start",
 		CodeListAPIURL:                 "http://localhost:22400",
 		DatasetAPIURL:                  "http://localhost:22000",
+		FilesAPIURL:                    "http://localhost:26900",
 		DownloadServiceURL:             "http://localhost:23600",
 		ImportAPIURL:                   "http://localhost:21800",
 		WebsiteURL:                     "http://localhost:20000",
@@ -105,7 +106,6 @@ func Get() (*Configuration, error) {
 		EnableDetachDataset:            false,
 		EnablePermissionsAuth:          false,
 		EnableObservationEndpoint:      true,
-		EnableStateMachine:             false,
 		EnableURLRewriting:             false,
 		DisableGraphDBDependency:       false,
 		KafkaVersion:                   "1.0.2",

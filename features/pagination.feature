@@ -23,10 +23,12 @@ Feature: Dataset Pagination
                 "count": 2,
                 "items": [
                     {
-                        "id": "income"
+                        "id": "income",
+                        "last_updated":"0001-01-01T00:00:00Z"
                     },
                     {
-                        "id": "age"
+                        "id": "age",
+                        "last_updated":"0001-01-01T00:00:00Z"
                     }
                 ],
                 "limit": 20,
@@ -43,7 +45,8 @@ Feature: Dataset Pagination
                 "count": 1,
                 "items": [
                     {
-                        "id": "population-estimates"
+                        "id": "population-estimates",
+                        "last_updated":"0001-01-01T00:00:00Z"
                     }
                 ],
                 "limit": 1,
@@ -59,7 +62,8 @@ Feature: Dataset Pagination
                 "count": 1,
                 "items": [
                     {
-                        "id": "income"
+                        "id": "income",
+                        "last_updated":"0001-01-01T00:00:00Z"
                     }
                 ],
                 "limit": 1,

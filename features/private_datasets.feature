@@ -48,10 +48,10 @@ Feature: Private Dataset API
                 "title": "Hello"
             }
             """
-        Then the HTTP status code should be "403"
+        Then the HTTP status code should be "409"
         And I should receive the following response:
             """
-            forbidden - dataset already exists
+            dataset already exists
             """
 
     Scenario: Adding survey field to a dataset
@@ -69,12 +69,107 @@ Feature: Private Dataset API
                     "survey": "mockSurvey"
             }
             """
-        Then the HTTP status code should be "200"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "survey": "mockSurvey",
+                "last_updated":"0001-01-01T00:00:00Z"
+            }
+            """
         And the document in the database for id "population-estimates" should be:
         """
             {
                 "id": "population-estimates",
                 "survey": "mockSurvey"
+            }
+        """
+
+    Scenario: Successfully change title of a static dataset
+        Given I have these datasets:
+            """
+            [
+                {
+                    "id": "static-dataset",
+                    "next": {
+                        "id": "static-dataset",
+                        "contacts": [
+                            {
+                                "name": "abc",
+                                "email": "abc@email.com"
+                            }
+                        ],
+                        "type": "static",
+                        "title": "example 1",
+                        "description": "some description",
+                        "license": "Open Government Licence v3.0",
+                        "topics": [ 
+                            "topic-0", 
+                            "topic-1"
+                        ]
+                    }
+                }
+            ]
+            """
+        When I PUT "/datasets/static-dataset"
+            """
+            {
+                "id": "static-dataset",
+                "contacts": [
+                    {
+                        "name": "abc",
+                        "email": "abc@email.com"
+                    }
+                ],
+                "type": "static",
+                "title": "new title",
+                "description": "some description",
+                "license": "Open Government Licence v3.0",
+                "topics": [ 
+                    "topic-0", 
+                    "topic-1"
+                ]
+            }
+            """
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "contacts": [
+                    {
+                        "name": "abc",
+                        "email": "abc@email.com"
+                    }
+                ],
+                "description": "some description",
+                "license": "Open Government Licence v3.0",
+                "title": "new title",
+                "topics": [ 
+                    "topic-0", 
+                    "topic-1"
+                ],
+                "id": "static-dataset",
+                "last_updated": "0001-01-01T00:00:00Z"
+            }
+            """
+        And the document in the database for id "static-dataset" should be:
+        """
+            {
+                "id": "static-dataset",
+                "contacts": [
+                    {
+                        "name": "abc",
+                        "email": "abc@email.com"
+                    }
+                ],
+                "title": "new title",
+                "description": "some description",
+                "license": "Open Government Licence v3.0",
+                "next": {
+                    "topics": [ 
+                        "topic-0", 
+                        "topic-1"
+                    ],
+                    "type": "static"
+                }
             }
         """
 
@@ -94,7 +189,14 @@ Feature: Private Dataset API
                     "subtopics": ["subtopic-ID"]
             }
             """
-        Then the HTTP status code should be "200"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                    "canonical_topic": "canonical-topic-ID",
+                    "subtopics": ["subtopic-ID"],
+                    "last_updated":"0001-01-01T00:00:00Z"
+            }
+            """
         And the document in the database for id "population-estimates" should be:
         """
             {
@@ -123,7 +225,17 @@ Feature: Private Dataset API
 	                }]
             }
             """
-        Then the HTTP status code should be "200"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                    "related_content": [{
+		                "description": "Related content description",
+		                "href": "http://localhost:22000/datasets/123/relatedContent",
+		                "title": "Related content"
+	                }],
+                    "last_updated":"0001-01-01T00:00:00Z"
+            }
+            """
         And the document in the database for id "population-estimates" should be:
         """
             {
@@ -154,10 +266,12 @@ Feature: Private Dataset API
                     {
                         "id": "population-estimates",
                         "next": {
-                            "id": "population-estimates"
+                            "id": "population-estimates",
+                            "last_updated":"0001-01-01T00:00:00Z"
                         },
                         "current": {
-                            "id": "population-estimates"
+                            "id": "population-estimates",
+                            "last_updated":"0001-01-01T00:00:00Z"
                         }
                     }
                 ],
@@ -188,12 +302,14 @@ Feature: Private Dataset API
             		"next": {
             			"id": "population-estimates",
             			"canonical_topic": "canonical-topic-ID",
-            			"subtopics": ["subtopic-ID"]
+            			"subtopics": ["subtopic-ID"],
+                        "last_updated":"0001-01-01T00:00:00Z"
             		},
                     "current": {
                         "id": "population-estimates",
             			"canonical_topic": "canonical-topic-ID",
-            			"subtopics": ["subtopic-ID"]
+            			"subtopics": ["subtopic-ID"],
+                        "last_updated":"0001-01-01T00:00:00Z"
                     }
             	}],
             	"limit": 20,
@@ -262,13 +378,14 @@ Feature: Private Dataset API
                 "keywords": ["keyword"],
                 "next_release":"2016-04-04",
                 "topics": ["topic"],
-                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
+                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],
+                "license":"license"
             }
             """
-        Then the HTTP status code should be "403"
+        Then the HTTP status code should be "409"
         And I should receive the following response:
             """
-            forbidden - dataset already exists
+            dataset already exists
             """
 
     Scenario: Missing dataset ID in body when creating a new dataset
@@ -282,13 +399,14 @@ Feature: Private Dataset API
                 "description": "census",
                 "keywords":["keyword"],
                 "topics": ["topic"],
-                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
+                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],
+                "license":"license"
             }
             """
         Then the HTTP status code should be "400"
         And I should receive the following response:
             """
-            invalid fields: missing dataset id in request body
+            invalid fields: [ID]
             """
 
     Scenario: Missing dataset title in body when creating a new dataset
@@ -302,7 +420,8 @@ Feature: Private Dataset API
                 "description": "census",
                 "keywords":["keyword"],
                 "topics": ["topic"],
-                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
+                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],
+                "license":"license"
             }
             """
         Then the HTTP status code should be "400"
@@ -322,7 +441,8 @@ Feature: Private Dataset API
                 "next_release":"2016-04-04",
                 "keywords":["keyword"],
                 "topics": ["topic"],
-                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
+                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],
+                "license":"license"
             }
             """
         Then the HTTP status code should be "400"
@@ -342,7 +462,8 @@ Feature: Private Dataset API
                 "next_release":"2016-04-04",
                 "description": "census",
                 "topics": ["topic"],
-                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
+                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],
+                "license":"license"
             }
             """
         Then the HTTP status code should be "400"
@@ -362,7 +483,8 @@ Feature: Private Dataset API
                 "description": "census",
                 "keywords":["keyword"],
                 "topics": ["topic"],
-                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
+                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],
+                "license":"license"
             }
             """
         Then the HTTP status code should be "400"
@@ -382,7 +504,8 @@ Feature: Private Dataset API
                 "next_release":"2016-04-04",
                 "description": "census",
                 "keywords":["keyword"],
-                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
+                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],
+                "license":"license"
             }
             """
         Then the HTTP status code should be "400"
@@ -402,11 +525,33 @@ Feature: Private Dataset API
                 "next_release":"2016-04-04",
                 "description": "census",
                 "keywords":["keyword"],
-                "topics": ["topic"]
+                "topics": ["topic"],
+                "license":"license"
             }
             """
         Then the HTTP status code should be "400"
         And I should receive the following response:
             """
             invalid fields: [Contacts]
+            """
+
+    Scenario: Missing dataset license in body when creating a new dataset
+        When I POST "/datasets"
+            """
+            {
+                "id": "ageing-population-estimates",
+                "title": "title",
+                "type": "static",
+                "state": "anything",
+                "next_release":"2016-04-04",
+                "description": "census",
+                "keywords":["keyword"],
+                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],
+                "topics": ["topic"]
+            }
+            """
+        Then the HTTP status code should be "400"
+        And I should receive the following response:
+            """
+            invalid fields: [License]
             """

@@ -11,20 +11,13 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/utils"
-	dphttp "github.com/ONSdigital/dp-net/v2/http"
-	"github.com/ONSdigital/dp-net/v2/links"
+	dphttp "github.com/ONSdigital/dp-net/v3/http"
+	"github.com/ONSdigital/dp-net/v3/links"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 )
 
 var (
-	// errors that should return a 403 status
-	datasetsForbidden = map[error]bool{
-		errs.ErrDeletePublishedDatasetForbidden: true,
-		errs.ErrAddDatasetAlreadyExists:         true,
-		errs.ErrAddDatasetTitleAlreadyExists:    true,
-	}
-
 	// errors that should return a 204 status
 	datasetsNoContent = map[error]bool{
 		errs.ErrDeleteDatasetNotFound: true,
@@ -38,11 +31,22 @@ var (
 		errs.ErrInvalidQueryParameter:      true,
 	}
 
+	// errors that should return a 403 status
+	datasetsForbidden = map[error]bool{
+		errs.ErrDeletePublishedDatasetForbidden: true,
+	}
+
 	// errors that should return a 404 status
 	resourcesNotFound = map[error]bool{
 		errs.ErrDatasetNotFound:  true,
 		errs.ErrEditionsNotFound: true,
 		errs.ErrEditionNotFound:  true,
+	}
+
+	// errors that should return a 409 status
+	datasetsConflict = map[error]bool{
+		errs.ErrAddDatasetAlreadyExists:      true,
+		errs.ErrAddDatasetTitleAlreadyExists: true,
 	}
 )
 
@@ -228,7 +232,19 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 
 	// TODO Could just do an insert, if dataset already existed we would get a duplicate key error instead of reading then writing doc
 	b, err := func() ([]byte, error) {
-		_, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
+		dataset, err := models.CreateDataset(r.Body)
+		if err != nil {
+			log.Error(ctx, "addDataset endpoint: failed to model dataset resource based on request", err, logData)
+			return nil, errs.ErrAddUpdateDatasetBadRequest
+		}
+
+		models.CleanDataset(dataset)
+		if err = models.ValidateDataset(dataset); err != nil {
+			log.Error(ctx, "addDataset endpoint: dataset failed validation checks", err)
+			return nil, err
+		}
+
+		_, err = api.dataStore.Backend.GetDataset(ctx, datasetID)
 		if err != nil {
 			if err != errs.ErrDatasetNotFound {
 				log.Error(ctx, "addDataset endpoint: error checking if dataset exists", err, logData)
@@ -239,22 +255,9 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 			return nil, errs.ErrAddDatasetAlreadyExists
 		}
 
-		dataset, err := models.CreateDataset(r.Body)
-		if err != nil {
-			log.Error(ctx, "addDataset endpoint: failed to model dataset resource based on request", err, logData)
-			return nil, errs.ErrAddUpdateDatasetBadRequest
-		}
-
 		dataType, err := models.ValidateDatasetType(ctx, dataset.Type)
 		if err != nil {
 			log.Error(ctx, "addDataset endpoint: error Invalid dataset type", err, logData)
-			return nil, err
-		}
-
-		models.CleanDataset(dataset)
-
-		if err = models.ValidateDataset(dataset); err != nil {
-			log.Error(ctx, "addDataset endpoint: dataset failed validation checks", err)
 			return nil, err
 		}
 
@@ -325,14 +328,20 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 	}
 
 	datasetID := dataset.ID
+	logData := log.Data{"dataset_id": datasetID}
+
+	models.CleanDataset(dataset)
+	if err = models.ValidateDataset(dataset); err != nil {
+		log.Error(ctx, "addDatasetNew endpoint: dataset failed validation checks", err)
+		handleDatasetAPIErr(ctx, err, w, logData)
+		return
+	}
 
 	if datasetID == "" {
 		log.Error(ctx, "addDatasetNew endpoint: dataset ID is empty", nil)
 		handleDatasetAPIErr(ctx, errs.ErrMissingDatasetID, w, nil)
 		return
 	}
-
-	logData := log.Data{"dataset_id": datasetID}
 
 	_, err = api.dataStore.Backend.GetDataset(ctx, datasetID)
 	if err == nil {
@@ -362,13 +371,6 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 	dataType, err := models.ValidateDatasetType(ctx, dataset.Type)
 	if err != nil {
 		log.Error(ctx, "addDatasetNew endpoint: error Invalid dataset type", err, logData)
-		handleDatasetAPIErr(ctx, err, w, logData)
-		return
-	}
-
-	models.CleanDataset(dataset)
-	if err = models.ValidateDataset(dataset); err != nil {
-		log.Error(ctx, "addDatasetNew endpoint: dataset failed validation checks", err)
 		handleDatasetAPIErr(ctx, err, w, logData)
 		return
 	}
@@ -428,17 +430,17 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 	datasetID := vars["dataset_id"]
 	data := log.Data{"dataset_id": datasetID}
 
-	err := func() error {
+	b, err := func() ([]byte, error) {
 		dataset, err := models.CreateDataset(r.Body)
 		if err != nil {
 			log.Error(ctx, "putDataset endpoint: failed to model dataset resource based on request", err, data)
-			return errs.ErrAddUpdateDatasetBadRequest
+			return nil, errs.ErrAddUpdateDatasetBadRequest
 		}
 
 		currentDataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 		if err != nil {
 			log.Error(ctx, "putDataset endpoint: datastore.getDataset returned an error", err, data)
-			return err
+			return nil, err
 		}
 
 		dataset.Type = currentDataset.Next.Type
@@ -447,21 +449,40 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 
 		if err = models.ValidateDataset(dataset); err != nil {
 			log.Error(ctx, "putDataset endpoint: failed validation check to update dataset", err, data)
-			return err
+			return nil, err
+		}
+
+		if dataset.Type == models.Static.String() {
+			datasetTitleExists, err := api.dataStore.Backend.CheckDatasetTitleExist(ctx, dataset.Title)
+			if err != nil {
+				log.Error(ctx, "putDataset endpoint: error checking if dataset title exists", err, data)
+				return nil, err
+			}
+
+			if datasetTitleExists && dataset.Title != currentDataset.Next.Title {
+				log.Error(ctx, "putDataset endpoint: unable to update a dataset with title that already exists", errs.ErrAddDatasetTitleAlreadyExists, data)
+				return nil, errs.ErrAddDatasetTitleAlreadyExists
+			}
 		}
 
 		if dataset.State == models.PublishedState {
 			if err := api.publishDataset(ctx, currentDataset, nil); err != nil {
 				log.Error(ctx, "putDataset endpoint: failed to update dataset document to published", err, data)
-				return err
+				return nil, err
 			}
 		} else {
 			if err := api.dataStore.Backend.UpdateDataset(ctx, datasetID, dataset, currentDataset.Next.State); err != nil {
 				log.Error(ctx, "putDataset endpoint: failed to update dataset resource", err, data)
-				return err
+				return nil, err
 			}
 		}
-		return nil
+
+		b, err := json.Marshal(dataset)
+		if err != nil {
+			log.Error(ctx, "putDataset endpoint: failed to marshal dataset resource into bytes", err, data)
+			return nil, err
+		}
+		return b, nil
 	}()
 
 	if err != nil {
@@ -471,6 +492,10 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusOK)
+	if _, err = w.Write(b); err != nil {
+		log.Error(ctx, "putDataset endpoint: error writing bytes to response", err, data)
+		handleDatasetAPIErr(ctx, err, w, data)
+	}
 	log.Info(ctx, "putDataset endpoint: request successful", data)
 }
 
@@ -588,6 +613,8 @@ func handleDatasetAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 		status = http.StatusNoContent
 	case datasetsBadRequest[err], strings.HasPrefix(err.Error(), "invalid fields:"):
 		status = http.StatusBadRequest
+	case datasetsConflict[err]:
+		status = http.StatusConflict
 	case resourcesNotFound[err]:
 		status = http.StatusNotFound
 	default:

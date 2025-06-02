@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/ONSdigital/dp-dataset-api/store"
-	dprequest "github.com/ONSdigital/dp-net/v2/request"
+	dprequest "github.com/ONSdigital/dp-net/v3/request"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/jinzhu/copier"
 )
@@ -64,7 +64,7 @@ func (v VersionDetails) baseLogData() log.Data {
 	return log.Data{"dataset_id": v.datasetID, "edition": v.edition, "version": v.version}
 }
 
-func (smDS *StateMachineDatasetAPI) AmendVersion(ctx context.Context, vars map[string]string, version *models.Version) error {
+func (smDS *StateMachineDatasetAPI) AmendVersion(ctx context.Context, vars map[string]string, version *models.Version) (*models.Version, error) {
 	versionDetails := VersionDetails{
 		datasetID: vars["dataset_id"],
 		edition:   vars["edition"],
@@ -74,7 +74,7 @@ func (smDS *StateMachineDatasetAPI) AmendVersion(ctx context.Context, vars map[s
 	if version.Type == models.Static.String() {
 		lockID, lockErr := smDS.DataStore.Backend.AcquireVersionsLock(ctx, version.ID)
 		if lockErr != nil {
-			return lockErr
+			return nil, lockErr
 		}
 		defer func() {
 			smDS.DataStore.Backend.UnlockVersions(ctx, lockID)
@@ -82,7 +82,7 @@ func (smDS *StateMachineDatasetAPI) AmendVersion(ctx context.Context, vars map[s
 	} else {
 		lockID, lockErr := smDS.DataStore.Backend.AcquireInstanceLock(ctx, version.ID)
 		if lockErr != nil {
-			return lockErr
+			return nil, lockErr
 		}
 		defer func() {
 			smDS.DataStore.Backend.UnlockInstance(ctx, lockID)
@@ -92,15 +92,15 @@ func (smDS *StateMachineDatasetAPI) AmendVersion(ctx context.Context, vars map[s
 	currentVersion, versionUpdate, err := smDS.PopulateVersionInfo(ctx, version, versionDetails)
 	if err != nil {
 		log.Error(ctx, "amendVersion: creating models failed", err)
-		return err
+		return nil, err
 	}
 
 	if err := smDS.StateMachine.Transition(ctx, smDS, currentVersion, versionUpdate, versionDetails, vars[hasDownloads]); err != nil {
 		log.Error(ctx, "amendVersion: state machine transition failed", err)
-		return err
+		return nil, err
 	}
 
-	return nil
+	return versionUpdate, nil
 }
 
 func (smDS *StateMachineDatasetAPI) PopulateVersionInfo(ctx context.Context, versionUpdate *models.Version, versionDetails VersionDetails) (currentVersion, combinedVersionUpdate *models.Version, err error) {

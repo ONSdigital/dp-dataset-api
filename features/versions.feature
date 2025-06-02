@@ -127,7 +127,16 @@ Feature: Dataset API
                             "href": "/datasets/population-estimates/editions/hello/versions/1"
                         }
                     },
-                    "edition": "hello"
+                    "edition": "hello",
+                    "distributions": [
+                        {
+                            "title": "Distribution 1",
+                            "format": "csv",
+                            "media_type": "text/csv",
+                            "download_url": "/datasets/population-estimates/editions/hello/versions/1.csv",
+                            "byte_size": 100000
+                        }
+                    ]
                 },
                 {
                     "id": "test-item-2",
@@ -141,7 +150,16 @@ Feature: Dataset API
                             "href": "/datasets/population-estimates/editions/hello/versions/2"
                         }
                     },
-                    "edition": "hello"
+                    "edition": "hello",
+                    "distributions": [
+                        {
+                            "title": "Distribution 2",
+                            "format": "csv",
+                            "media_type": "text/csv",
+                            "download_url": "/datasets/population-estimates/editions/hello/versions/2.csv",
+                            "byte_size": 100000
+                        }
+                    ]
                 },
                 {
                     "id": "test-item-3",
@@ -155,7 +173,16 @@ Feature: Dataset API
                             "href": "/datasets/population-estimates/editions/hellov2/versions/3"
                         }
                     },
-                    "edition": "hellov2"
+                    "edition": "hellov2",
+                    "distributions": [
+                        {
+                            "title": "Distribution 3",
+                            "format": "csv",
+                            "media_type": "text/csv",
+                            "download_url": "/datasets/population-estimates/editions/hellov2/versions/3.csv",
+                            "byte_size": 100000
+                        }
+                    ]
                 },
                 {
                     "id": "test-item-4",
@@ -170,7 +197,16 @@ Feature: Dataset API
                         }
                     },
                     "edition": "hello",
-                    "lowest_geography": "ltla"
+                    "lowest_geography": "ltla",
+                    "distributions": [
+                        {
+                            "title": "Distribution 4",
+                            "format": "csv",
+                            "media_type": "text/csv",
+                            "download_url": "/datasets/population-estimates/editions/hello/versions/4.csv",
+                            "byte_size": 100000
+                        }
+                    ]
                 },
                 {
                     "id": "test-cantabular-version-1",
@@ -185,7 +221,16 @@ Feature: Dataset API
                             "href": "/datasets/test-cantabular-dataset-1/editions/2021/versions/1"
                         }
                     },
-                    "edition": "2021"
+                    "edition": "2021",
+                    "distributions": [
+                        {
+                            "title": "Distribution 1",
+                            "format": "csv",
+                            "media_type": "text/csv",
+                            "download_url": "/datasets/test-cantabular-dataset-1/editions/2021/versions/1.csv",
+                            "byte_size": 100000
+                        }
+                    ]
                 },
                 {
                     "id": "test-cantabular-version-2",
@@ -207,7 +252,16 @@ Feature: Dataset API
                         "size": "1",
                         "href": "/downloads/datasets/test-cantabular-dataset-2/editions/2021/versions/1.csv"
                       }
-                    }
+                    },
+                    "distributions": [
+                        {
+                            "title": "Distribution 1",
+                            "format": "csv",
+                            "media_type": "text/csv",
+                            "download_url": "/datasets/test-cantabular-dataset-2/editions/2021/versions/1.csv",
+                            "byte_size": 100000
+                        }
+                    ]
                 },
                 {
                     "id": "test-static-version-1",
@@ -222,7 +276,16 @@ Feature: Dataset API
                             "href": "/datasets/test-static/editions/test-edition-static/versions/1"
                         }
                     },
-                    "edition": "test-edition-static"
+                    "edition": "test-edition-static",
+                    "distributions": [
+                        {
+                            "title": "Distribution 1",
+                            "format": "csv",
+                            "media_type": "text/csv",
+                            "download_url": "/datasets/test-static/editions/test-edition-static/versions/1.csv",
+                            "byte_size": 100000
+                        }
+                    ]
                 }
             ]
             """
@@ -252,7 +315,16 @@ Feature: Dataset API
                                 "href": "https://api.example.com/v1/datasets/population-estimates/editions/hello/versions/4"
                             }
                         },
-                        "lowest_geography": "ltla"
+                        "lowest_geography": "ltla",
+                        "distributions": [
+                            {
+                                "title": "Distribution 4",
+                                "format": "csv",
+                                "media_type": "text/csv",
+                                "download_url": "http://localhost:23600/downloads-new/datasets/population-estimates/editions/hello/versions/4.csv",
+                                "byte_size": 100000
+                            }
+                        ]
                     },
                     {
                         "dataset_id": "population-estimates",
@@ -268,7 +340,16 @@ Feature: Dataset API
                             "self": {
                                 "href": "https://api.example.com/v1/datasets/population-estimates/editions/hello/versions/1"
                             }
-                        }
+                        },
+                        "distributions": [
+                            {
+                                "title": "Distribution 1",
+                                "format": "csv",
+                                "media_type": "text/csv",
+                                "download_url": "http://localhost:23600/downloads-new/datasets/population-estimates/editions/hello/versions/1.csv",
+                                "byte_size": 100000
+                            }
+                        ]
                     }
                 ],
                 "limit": 20,
@@ -299,7 +380,16 @@ Feature: Dataset API
                                 "href": "/datasets/population-estimates/editions/hello/versions/4"
                             }
                         },
-                        "lowest_geography": "ltla"
+                        "lowest_geography": "ltla",
+                        "distributions": [
+                            {
+                                "title": "Distribution 4",
+                                "format": "csv",
+                                "media_type": "text/csv",
+                                "download_url": "/datasets/population-estimates/editions/hello/versions/4.csv",
+                                "byte_size": 100000
+                            }
+                        ]
                     },
                     {
                         "dataset_id": "population-estimates",
@@ -315,7 +405,16 @@ Feature: Dataset API
                             "self": {
                                 "href": "/datasets/population-estimates/editions/hello/versions/1"
                             }
-                        }
+                        },
+                        "distributions": [
+                            {
+                                "title": "Distribution 1",
+                                "format": "csv",
+                                "media_type": "text/csv",
+                                "download_url": "/datasets/population-estimates/editions/hello/versions/1.csv",
+                                "byte_size": 100000
+                            }
+                        ]
                     }
                 ],
                 "limit": 20,
@@ -352,7 +451,16 @@ Feature: Dataset API
                             }
                         },
                         "edition": "hello",
-                        "lowest_geography": "ltla"
+                        "lowest_geography": "ltla",
+                        "distributions": [
+                            {
+                                "title": "Distribution 4",
+                                "format": "csv",
+                                "media_type": "text/csv",
+                                "download_url": "http://localhost:23600/downloads-new/datasets/population-estimates/editions/hello/versions/4.csv",
+                                "byte_size": 100000
+                            }
+                        ]
                     },
                     {
                         "dataset_id": "population-estimates",
@@ -368,7 +476,16 @@ Feature: Dataset API
                                 "href": "https://api.example.com/v1/datasets/population-estimates/editions/hello/versions/2"
                             }
                         },
-                        "edition": "hello"
+                        "edition": "hello",
+                        "distributions": [
+                            {
+                                "title": "Distribution 2",
+                                "format": "csv",
+                                "media_type": "text/csv",
+                                "download_url": "http://localhost:23600/downloads-new/datasets/population-estimates/editions/hello/versions/2.csv",
+                                "byte_size": 100000
+                            }
+                        ]
                     },
                     {
                         "dataset_id": "population-estimates",
@@ -384,7 +501,16 @@ Feature: Dataset API
                                 "href": "https://api.example.com/v1/datasets/population-estimates/editions/hello/versions/1"
                             }
                         },
-                        "edition": "hello"
+                        "edition": "hello",
+                        "distributions": [
+                            {
+                                "title": "Distribution 1",
+                                "format": "csv",
+                                "media_type": "text/csv",
+                                "download_url": "http://localhost:23600/downloads-new/datasets/population-estimates/editions/hello/versions/1.csv",
+                                "byte_size": 100000
+                            }
+                        ]
                     }
                 ],
                 "limit": 20,
@@ -418,7 +544,16 @@ Feature: Dataset API
                             }
                         },
                         "edition": "hello",
-                        "lowest_geography": "ltla"
+                        "lowest_geography": "ltla",
+                        "distributions": [
+                            {
+                                "title": "Distribution 4",
+                                "format": "csv",
+                                "media_type": "text/csv",
+                                "download_url": "/datasets/population-estimates/editions/hello/versions/4.csv",
+                                "byte_size": 100000
+                            }
+                        ]
                     },
                     {
                         "dataset_id": "population-estimates",
@@ -434,7 +569,16 @@ Feature: Dataset API
                                 "href": "/datasets/population-estimates/editions/hello/versions/2"
                             }
                         },
-                        "edition": "hello"
+                        "edition": "hello",
+                        "distributions": [
+                            {
+                                "title": "Distribution 2",
+                                "format": "csv",
+                                "media_type": "text/csv",
+                                "download_url": "/datasets/population-estimates/editions/hello/versions/2.csv",
+                                "byte_size": 100000
+                            }
+                        ]
                     },
                     {
                         "dataset_id": "population-estimates",
@@ -450,7 +594,16 @@ Feature: Dataset API
                                 "href": "/datasets/population-estimates/editions/hello/versions/1"
                             }
                         },
-                        "edition": "hello"
+                        "edition": "hello",
+                        "distributions": [
+                            {
+                                "title": "Distribution 1",
+                                "format": "csv",
+                                "media_type": "text/csv",
+                                "download_url": "/datasets/population-estimates/editions/hello/versions/1.csv",
+                                "byte_size": 100000
+                            }
+                        ]
                     }
                 ],
                 "limit": 20,
@@ -504,7 +657,16 @@ Feature: Dataset API
                 }
             },
             "edition": "hello",
-            "lowest_geography": "ltla"
+            "lowest_geography": "ltla",
+            "distributions": [
+                {
+                    "title": "Distribution 4",
+                    "format": "csv",
+                    "media_type": "text/csv",
+                    "download_url": "http://localhost:23600/downloads-new/datasets/population-estimates/editions/hello/versions/4.csv",
+                    "byte_size": 100000
+                }
+            ]
         }
         """
     And the response header "ETag" should be "etag-test-item-4"
@@ -527,7 +689,16 @@ Feature: Dataset API
                 }
             },
             "edition": "hello",
-            "lowest_geography": "ltla"
+            "lowest_geography": "ltla",
+            "distributions": [
+                {
+                    "title": "Distribution 4",
+                    "format": "csv",
+                    "media_type": "text/csv",
+                    "download_url": "/datasets/population-estimates/editions/hello/versions/4.csv",
+                    "byte_size": 100000
+                }
+            ]
         }
         """
     And the response header "ETag" should be "etag-test-item-4"
@@ -555,7 +726,16 @@ Feature: Dataset API
                     "href": "https://api.example.com/v1/datasets/population-estimates/editions/hello/versions/2"
                 }
             },
-            "edition": "hello"
+            "edition": "hello",
+            "distributions": [
+                {
+                    "title": "Distribution 2",
+                    "format": "csv",
+                    "media_type": "text/csv",
+                    "download_url": "http://localhost:23600/downloads-new/datasets/population-estimates/editions/hello/versions/2.csv",
+                    "byte_size": 100000
+                }
+            ]
         }
         """
     And the response header "ETag" should be "etag-test-item-2"
@@ -580,7 +760,16 @@ Feature: Dataset API
                     "href": "/datasets/population-estimates/editions/hello/versions/2"
                 }
             },
-            "edition": "hello"
+            "edition": "hello",
+            "distributions": [
+                {
+                    "title": "Distribution 2",
+                    "format": "csv",
+                    "media_type": "text/csv",
+                    "download_url": "/datasets/population-estimates/editions/hello/versions/2.csv",
+                    "byte_size": 100000
+                }
+            ]
         }
         """
     And the response header "ETag" should be "etag-test-item-2"
@@ -603,7 +792,25 @@ Feature: Dataset API
     And these generate downloads events are produced:
       | InstanceID  | DatasetID            | Edition | Version | FilterOutputID |
       | test-item-3 | population-estimates | hellov2 | 3       |                |
-    Then the HTTP status code should be "200"
+    Then I should receive the following JSON response with status "200":
+        """
+            {
+                "collection_id": "bla",
+                "dataset_id": "population-estimates",
+                "id": "test-item-3",
+                "last_updated": "0001-01-01T00:00:00Z",
+                "links": {
+                    "dataset": {
+                    "id": "population-estimates"
+                    },
+                    "self": {
+                    "href": "/datasets/population-estimates/editions/hellov2/versions/3"
+                    }
+                },
+                "release_date": "2017-04-04",
+                "state": "associated"
+            }
+        """
 
 
   Scenario: PUT versions for Cantabular dataset produces Kafka event and returns OK
@@ -624,7 +831,25 @@ Feature: Dataset API
     And these cantabular generator downloads events are produced:
       | InstanceID                | DatasetID                 | Edition | Version |FilterOutputID| Dimensions |
       | test-cantabular-version-1 | test-cantabular-dataset-1 | 2021    | 1       |              | []         |
-    Then the HTTP status code should be "200"
+    Then I should receive the following JSON response with status "200":
+        """
+            {
+                "collection_id": "bla",
+                "dataset_id": "test-cantabular-dataset-1",
+                "id": "test-cantabular-version-1",
+                "last_updated": "0001-01-01T00:00:00Z",
+                "links": {
+                    "dataset": {
+                    "id": "test-cantabular-dataset-1"
+                    },
+                    "self": {
+                    "href": "/datasets/test-cantabular-dataset-1/editions/2021/versions/1"
+                    }
+                },
+                "release_date": "2017-04-04",
+                "state": "associated"
+            }
+        """
 
 
   Scenario: PUT published version for Cantabular dataset produces Kafka event and returns OK
@@ -660,95 +885,27 @@ Feature: Dataset API
     And these cantabular generator downloads events are produced:
       | InstanceID                | DatasetID                 | Edition | Version |FilterOutputID| Dimensions |
       | test-cantabular-version-2 | test-cantabular-dataset-2 | 2021    | 1       |              | []         |
-    Then the HTTP status code should be "200"
-
-  Scenario: PUT published version for Cantabular dataset produces Kafka event and returns OK with state machine enabled
-    Given private endpoints are enabled
-    And the state machine is enabled
-    And I am identified as "user@ons.gov.uk"
-    And I am authorised
-    And I have a real kafka container with topic "cantabular-export-start"
-    And these versions need to be published:
-            """
-              [
-               {
-                 "version_id": "test-cantabular-version-2",
-                 "version_number": "1"
-               }
-              ]
-            """
-    When I PUT "/datasets/test-cantabular-dataset-2/editions/2021/versions/1"
-            """
+    Then I should receive the following JSON response with status "200":
+        """
             {
-              "instance_id": "test-cantabular-version-2",
-              "license": "ONS",
-              "release_date": "2017-04-04",
-              "state": "published",
-              "collection_id": "bla",
-              "links": {
-                "version": {
-                  "id": "1",
-                  "href": "/datasets/test-cantabular-dataset-2/editions/2021/versions/1"
-                }
-              }
+                "dataset_id": "test-cantabular-dataset-2",
+                "downloads": {
+                    "csv": {
+                    "href": "/downloads/datasets/test-cantabular-dataset-2/editions/2021/versions/1.csv",
+                    "size": "1"
+                    }
+                },
+                "id": "test-cantabular-version-2",
+                "last_updated": "0001-01-01T00:00:00Z",
+                "links": {
+                    "dataset": {
+                    "id": "test-cantabular-dataset-2"
+                    },
+                    "self": {
+                    "href": "/datasets/test-cantabular-dataset-2/editions/2021/versions/1"
+                    }
+                },
+                "release_date": "2017-04-04",
+                "state": "published"
             }
-            """
-    And these cantabular generator downloads events are produced:
-      | InstanceID                | DatasetID                 | Edition | Version |FilterOutputID| Dimensions |
-      | test-cantabular-version-2 | test-cantabular-dataset-2 | 2021    | 1       |              | []         |
-    Then the HTTP status code should be "200"
-
-  Scenario: PUT versions for CMD dataset produces Kafka event and returns OK when the state machine is enabled
-    Given private endpoints are enabled
-    And the state machine is enabled
-    And I am identified as "user@ons.gov.uk"
-    And I am authorised
-    And I have a real kafka container with topic "filter-job-submitted"
-    When I PUT "/datasets/population-estimates/editions/hellov2/versions/3"
-            """
-            {
-              "instance_id":"test-item-3",
-              "license":"ONS",
-              "release_date":"2017-04-04",
-              "state":"associated",
-              "collection_id":"bla"
-            }
-            """
-    And these generate downloads events are produced:
-      | InstanceID  | DatasetID            | Edition | Version | FilterOutputID |
-      | test-item-3 | population-estimates | hellov2 | 3       |                |
-    Then the HTTP status code should be "200"
-
-  Scenario: PUT versions for static dataset returns OK when the state machine is enabled
-    Given private endpoints are enabled
-    And the state machine is enabled
-    And I am identified as "user@ons.gov.uk"
-    And I am authorised
-    When I PUT "/datasets/test-static/editions/test-edition-static/versions/1"
-            """
-            {
-              "instance_id":"test-static-version-1",
-              "license":"ONS",
-              "release_date":"2017-04-04",
-              "state":"associated",
-              "collection_id":"bla"
-            }
-            """
-    Then the HTTP status code should be "200"
-
-  Scenario: PUT versions for CMD dataset when the state machine is enabled fails due to invalid state
-    Given private endpoints are enabled
-    And the state machine is enabled
-    And I am identified as "user@ons.gov.uk"
-    And I am authorised
-    When I PUT "/datasets/population-estimates/editions/hellov2/versions/3"
-            """
-            {
-              "instance_id":"test-item-3",
-              "license":"ONS",
-              "release_date":"2017-04-04",
-              "state":"created",
-              "collection_id":"bla"
-            }
-            """
-    Then the HTTP status code should be "400"
+        """
