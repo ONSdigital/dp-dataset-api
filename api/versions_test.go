@@ -3382,7 +3382,7 @@ func TestAddDatasetVersionCondensedReturnsError(t *testing.T) {
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 		successResponse, errorResponse := api.addDatasetVersionCondensed(testContext, w, r)
 
-		castErr := errorResponse.Errors[0].(*models.Error)
+		castErr := errorResponse.Errors[0]
 		So(errorResponse.Status, ShouldEqual, http.StatusBadRequest)
 		So(castErr.Code, ShouldEqual, models.ErrVersionAlreadyExists)
 		So(successResponse, ShouldBeNil)

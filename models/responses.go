@@ -1,12 +1,12 @@
 package models
 
 type ErrorResponse struct {
-	Errors  []error           `json:"errors"`
+	Errors  []Error           `json:"errors"`
 	Status  int               `json:"-"`
 	Headers map[string]string `json:"-"`
 }
 
-func NewErrorResponse(statusCode int, headers map[string]string, errors ...error) *ErrorResponse {
+func NewErrorResponse(statusCode int, headers map[string]string, errors ...Error) *ErrorResponse {
 	return &ErrorResponse{
 		Errors:  errors,
 		Status:  statusCode,

@@ -15,7 +15,7 @@ type Error struct {
 }
 
 // Error returns the error message string for the custom Error type.
-func (e *Error) Error() string {
+func (e Error) Error() string {
 	if e.Cause != nil {
 		return e.Cause.Error()
 	}
@@ -23,8 +23,8 @@ func (e *Error) Error() string {
 }
 
 // NewError creates and logs a new Error with the provided context, cause, code, and description.
-func NewError(ctx context.Context, cause error, code, description string) *Error {
-	err := &Error{
+func NewError(ctx context.Context, cause error, code, description string) Error {
+	err := Error{
 		Cause:       cause,
 		Code:        code,
 		Description: description,
@@ -34,8 +34,8 @@ func NewError(ctx context.Context, cause error, code, description string) *Error
 }
 
 // NewValidationError creates a new Error specifically for validation errors with a code and description.
-func NewValidationError(ctx context.Context, code, description string) *Error {
-	err := &Error{
+func NewValidationError(ctx context.Context, code, description string) Error {
+	err := Error{
 		Cause:       errors.New(code),
 		Code:        code,
 		Description: description,
