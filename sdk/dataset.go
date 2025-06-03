@@ -27,7 +27,7 @@ func (c *Client) GetDataset(ctx context.Context, headers Headers, collectionID, 
 	defer closeResponseBody(ctx, resp)
 
 	// Unmarshal the response body to target
-	err = unmarshalResponseBody(resp, &dataset)
+	err = unmarshalResponseBodyExpectingStringError(resp, &dataset)
 
 	return dataset, err
 }
@@ -52,7 +52,7 @@ func (c *Client) GetDatasetByPath(ctx context.Context, headers Headers, path str
 	defer closeResponseBody(ctx, resp)
 
 	// Unmarshal the response body to target
-	err = unmarshalResponseBody(resp, &dataset)
+	err = unmarshalResponseBodyExpectingStringError(resp, &dataset)
 
 	return dataset, err
 }

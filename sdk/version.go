@@ -54,7 +54,7 @@ func (c *Client) GetVersion(ctx context.Context, headers Headers, datasetID, edi
 	defer closeResponseBody(ctx, resp)
 
 	// Unmarshal the response body to target
-	err = unmarshalResponseBody(resp, &version)
+	err = unmarshalResponseBodyExpectingErrorResponse(resp, &version)
 
 	return version, err
 }
@@ -83,7 +83,7 @@ func (c *Client) GetVersionDimensions(ctx context.Context, headers Headers, data
 	defer closeResponseBody(ctx, resp)
 
 	// Unmarshal the response body to target
-	err = unmarshalResponseBody(resp, &versionDimensionsList)
+	err = unmarshalResponseBodyExpectingStringError(resp, &versionDimensionsList)
 
 	return versionDimensionsList, err
 }
@@ -144,7 +144,7 @@ func (c *Client) GetVersionDimensionOptions(ctx context.Context, headers Headers
 	defer closeResponseBody(ctx, resp)
 
 	// Unmarshal the response body to target
-	err = unmarshalResponseBody(resp, &versionDimensionOptionsList)
+	err = unmarshalResponseBodyExpectingStringError(resp, &versionDimensionOptionsList)
 
 	return versionDimensionOptionsList, err
 }
@@ -168,7 +168,7 @@ func (c *Client) GetVersionMetadata(ctx context.Context, headers Headers, datase
 	defer closeResponseBody(ctx, resp)
 
 	// Unmarshal the response body to target
-	err = unmarshalResponseBody(resp, &metadata)
+	err = unmarshalResponseBodyExpectingStringError(resp, &metadata)
 
 	return metadata, err
 }
@@ -214,7 +214,7 @@ func (c *Client) GetVersions(ctx context.Context, headers Headers, datasetID, ed
 	defer closeResponseBody(ctx, resp)
 
 	// Unmarshal the response body to target
-	err = unmarshalResponseBody(resp, &versionsList)
+	err = unmarshalResponseBodyExpectingStringError(resp, &versionsList)
 
 	return versionsList, err
 }

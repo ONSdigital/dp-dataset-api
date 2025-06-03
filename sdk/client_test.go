@@ -10,6 +10,8 @@ import (
 	"testing"
 
 	"github.com/ONSdigital/dp-api-clients-go/v2/health"
+	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
+	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	dphttp "github.com/ONSdigital/dp-net/v3/http"
 	dpNetRequest "github.com/ONSdigital/dp-net/v3/request"
@@ -252,8 +254,8 @@ type mockTarget struct {
 	FieldTwo string
 }
 
-// Tests for the `unmarshalResponseBody` function
-func TestUnmarshalResponseBody(t *testing.T) {
+// Tests for the `unmarshalResponseBodyExpectingStringError` function
+func TestUnmarshalResponseBodyExpectingStringError(t *testing.T) {
 	Convey("If response status code is 200 (StatusOK)", t, func() {
 		requestedData := mockTarget{
 			FieldOne: "hello",
@@ -266,7 +268,7 @@ func TestUnmarshalResponseBody(t *testing.T) {
 		}
 		target := mockTarget{}
 		Convey("Test response body is unmarshaled to target", func() {
-			err := unmarshalResponseBody(mockResponse, &target)
+			err := unmarshalResponseBodyExpectingStringError(mockResponse, &target)
 			So(err, ShouldBeNil)
 			So(target, ShouldResemble, requestedData)
 		})
@@ -280,9 +282,53 @@ func TestUnmarshalResponseBody(t *testing.T) {
 		}
 		target := mockTarget{}
 		Convey("Test error is raised", func() {
-			err := unmarshalResponseBody(mockResponse, &target)
+			err := unmarshalResponseBodyExpectingStringError(mockResponse, &target)
 			So(err, ShouldNotBeNil)
 			So(err.Error(), ShouldEqual, responseErr.Error())
+		})
+	})
+}
+
+// Tests for the `unmarshalResponseBodyExpectingErrorResponse` function
+func TestUnmarshalResponseBodyExpectingErrorResponse(t *testing.T) {
+	Convey("If response status code is 200 (StatusOK)", t, func() {
+		requestedData := mockTarget{
+			FieldOne: "hello",
+			FieldTwo: "test",
+		}
+		responseJSON, _ := json.Marshal(requestedData)
+		mockResponse := &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(bytes.NewBuffer(responseJSON)),
+		}
+		target := mockTarget{}
+		Convey("Test response body is unmarshaled to target", func() {
+			err := unmarshalResponseBodyExpectingErrorResponse(mockResponse, &target)
+			So(err, ShouldBeNil)
+			So(target, ShouldResemble, requestedData)
+		})
+	})
+
+	Convey("If response status code is not 404 (StatusNotFound)", t, func() {
+		responseErr := models.ErrorResponse{
+			Errors: []models.Error{
+				{
+					Cause:       errs.ErrDatasetNotFound,
+					Code:        "dataset_not_found",
+					Description: "Dataset not found",
+				},
+			},
+		}
+		responseJSON, _ := json.Marshal(responseErr)
+		mockResponse := &http.Response{
+			StatusCode: http.StatusNotFound,
+			Body:       io.NopCloser(bytes.NewBuffer(responseJSON)),
+		}
+		target := mockTarget{}
+		Convey("Test error is raised with the correct error message", func() {
+			err := unmarshalResponseBodyExpectingErrorResponse(mockResponse, &target)
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldContainSubstring, "Dataset not found")
 		})
 	})
 }

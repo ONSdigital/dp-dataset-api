@@ -9,6 +9,7 @@ import (
 	"net/url"
 
 	"github.com/ONSdigital/dp-api-clients-go/v2/health"
+	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	dpNetRequest "github.com/ONSdigital/dp-net/v3/request"
 	"github.com/ONSdigital/log.go/v2/log"
@@ -94,7 +95,7 @@ func closeResponseBody(ctx context.Context, resp *http.Response) {
 }
 
 // Takes the input http response and unmarshals the body to the input target
-func unmarshalResponseBody(response *http.Response, target interface{}) (err error) {
+func unmarshalResponseBodyExpectingStringError(response *http.Response, target interface{}) (err error) {
 	if response.StatusCode != http.StatusOK {
 		var errString string
 		errResponseReadErr := json.NewDecoder(response.Body).Decode(&errString)
@@ -103,6 +104,24 @@ func unmarshalResponseBody(response *http.Response, target interface{}) (err err
 		}
 		err = errors.New(errString)
 		return err
+	}
+
+	b, err := io.ReadAll(response.Body)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(b, &target)
+}
+
+func unmarshalResponseBodyExpectingErrorResponse(response *http.Response, target interface{}) (err error) {
+	if response.StatusCode != http.StatusOK {
+		var errResponse models.ErrorResponse
+		errResponseReadErr := json.NewDecoder(response.Body).Decode(&errResponse)
+		if errResponseReadErr != nil {
+			return errors.New("Client failed to read DatasetAPI body")
+		}
+		return errResponse.Errors[0]
 	}
 
 	b, err := io.ReadAll(response.Body)

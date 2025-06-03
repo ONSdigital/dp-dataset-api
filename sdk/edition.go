@@ -27,7 +27,7 @@ func (c *Client) GetEdition(ctx context.Context, headers Headers, datasetID, edi
 	defer closeResponseBody(ctx, resp)
 
 	// Unmarshal the response body to target
-	err = unmarshalResponseBody(resp, &edition)
+	err = unmarshalResponseBodyExpectingStringError(resp, &edition)
 
 	return edition, err
 }
@@ -73,7 +73,7 @@ func (c *Client) GetEditions(ctx context.Context, headers Headers, datasetID str
 	defer closeResponseBody(ctx, resp)
 
 	// Unmarshal the response body to target
-	err = unmarshalResponseBody(resp, &editionList)
+	err = unmarshalResponseBodyExpectingStringError(resp, &editionList)
 
 	return editionList, err
 }

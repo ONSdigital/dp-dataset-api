@@ -100,12 +100,21 @@ func TestGetVersion(t *testing.T) {
 	})
 
 	Convey("If requested version is not valid and get request returns 404", t, func() {
-		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusNotFound, apierrors.ErrVersionNotFound.Error(), map[string]string{}})
+		responseErr := models.ErrorResponse{
+			Errors: []models.Error{
+				{
+					Cause:       apierrors.ErrVersionNotFound,
+					Code:        "version_not_found",
+					Description: "version not found",
+				},
+			},
+		}
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusNotFound, responseErr, map[string]string{}})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
 		_, err := datasetAPIClient.GetVersion(ctx, headers, datasetID, editionID, strconv.Itoa(versionID))
 		Convey("Test that an error is raised and should contain status code", func() {
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldEqual, apierrors.ErrVersionNotFound.Error())
+			So(err.Error(), ShouldContainSubstring, apierrors.ErrVersionNotFound.Error())
 		})
 	})
 }
