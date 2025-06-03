@@ -162,8 +162,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 // TODO: Refactor this to reduce the complexity
 //
 //nolint:gocyclo,gocognit // high cyclomactic & cognitive complexity not in scope for maintenance
-func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+func (api *DatasetAPI) getVersion(ctx context.Context, w http.ResponseWriter, r *http.Request) (*models.SuccessResponse, *models.ErrorResponse) {
 	vars := mux.Vars(r)
 	datasetID := vars["dataset_id"]
 	edition := vars["edition"]
@@ -251,8 +250,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if getVersionErr != nil {
-		handleVersionAPIErr(ctx, getVersionErr, w, logData)
-		return
+		return nil, models.NewErrorResponse(getVersionAPIErrStatusCode(getVersionErr), nil, models.NewError(ctx, getVersionErr, getVersionErr.Error(), "internal error"))
 	}
 
 	if api.enableURLRewriting {
@@ -263,30 +261,26 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 
 		err = utils.RewriteVersionLinks(ctx, v.Links, datasetLinksBuilder)
 		if err != nil {
-			log.Error(ctx, "getVersion endpoint: failed to rewrite version links", err)
-			handleVersionAPIErr(ctx, err, w, logData)
-			return
+			log.Error(ctx, "getVersion endpoint: failed to rewrite version links", err, logData)
+			return nil, models.NewErrorResponse(getVersionAPIErrStatusCode(err), nil, models.NewError(ctx, err, "failed to rewrite version links", "internal error"))
 		}
 
 		v.Dimensions, err = utils.RewriteDimensions(ctx, v.Dimensions, datasetLinksBuilder, codeListLinksBuilder)
 		if err != nil {
-			log.Error(ctx, "getVersion endpoint: failed to rewrite dimensions", err)
-			handleVersionAPIErr(ctx, err, w, logData)
-			return
+			log.Error(ctx, "getVersion endpoint: failed to rewrite dimensions", err, logData)
+			return nil, models.NewErrorResponse(getVersionAPIErrStatusCode(err), nil, models.NewError(ctx, err, "failed to rewrite dimensions", "internal error"))
 		}
 
 		err = utils.RewriteDownloadLinks(ctx, v.Downloads, api.urlBuilder.GetDownloadServiceURL())
 		if err != nil {
-			log.Error(ctx, "getVersion endpoint: failed to rewrite download links", err)
-			handleVersionAPIErr(ctx, err, w, logData)
-			return
+			log.Error(ctx, "getVersion endpoint: failed to rewrite download links", err, logData)
+			return nil, models.NewErrorResponse(getVersionAPIErrStatusCode(err), nil, models.NewError(ctx, err, "failed to rewrite download links", "internal error"))
 		}
 
 		v.Distributions, err = utils.RewriteDistributions(ctx, v.Distributions, api.urlBuilder.GetDownloadServiceURL())
 		if err != nil {
-			log.Error(ctx, "getVersion endpoint: failed to rewrite distributions DownloadURLs", err)
-			handleVersionAPIErr(ctx, err, w, logData)
-			return
+			log.Error(ctx, "getVersion endpoint: failed to rewrite distributions DownloadURLs", err, logData)
+			return nil, models.NewErrorResponse(getVersionAPIErrStatusCode(err), nil, models.NewError(ctx, err, "failed to rewrite distributions DownloadURLs", "internal error"))
 		}
 	}
 
@@ -298,15 +292,14 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) {
 	versionBytes, err := json.Marshal(v)
 	if err != nil {
 		log.Error(ctx, "failed to marshal version resource into bytes", err, logData)
-		handleVersionAPIErr(ctx, err, w, logData)
+		return nil, models.NewErrorResponse(getVersionAPIErrStatusCode(err), nil, models.NewError(ctx, err, "failed to marshal version into bytes", "internal error"))
 	}
 
-	_, err = w.Write(versionBytes)
-	if err != nil {
-		log.Error(ctx, "failed writing bytes to response", err, logData)
-		handleVersionAPIErr(ctx, err, w, logData)
+	headers := map[string]string{
+		"Code": strconv.Itoa(http.StatusOK),
 	}
-	log.Info(ctx, "getVersion endpoint: request successful", logData)
+
+	return models.NewSuccessResponse(versionBytes, http.StatusOK, headers), nil
 }
 
 func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
@@ -590,6 +583,20 @@ func populateNewVersionDoc(currentVersion, originalVersion *models.Version) (*mo
 }
 
 func handleVersionAPIErr(ctx context.Context, err error, w http.ResponseWriter, data log.Data) {
+	if data == nil {
+		data = log.Data{}
+	}
+
+	status := getVersionAPIErrStatusCode(err)
+	if status == http.StatusInternalServerError && !internalServerErrWithMessage[err] {
+		err = fmt.Errorf("%s: %w", errs.ErrInternalServer.Error(), err)
+	}
+
+	log.Error(ctx, "request unsuccessful", err, data)
+	http.Error(w, err.Error(), status)
+}
+
+func getVersionAPIErrStatusCode(err error) int {
 	var status int
 	switch {
 	case notFound[err]:
@@ -607,16 +614,10 @@ func handleVersionAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 	case strings.HasPrefix(err.Error(), "state not allowed to transition"):
 		status = http.StatusBadRequest
 	default:
-		err = fmt.Errorf("%s: %w", errs.ErrInternalServer.Error(), err)
 		status = http.StatusInternalServerError
 	}
 
-	if data == nil {
-		data = log.Data{}
-	}
-
-	log.Error(ctx, "request unsuccessful", err, data)
-	http.Error(w, err.Error(), status)
+	return status
 }
 
 // condensed api call to add new version

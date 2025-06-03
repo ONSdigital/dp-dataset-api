@@ -150,7 +150,7 @@ func (api *DatasetAPI) enablePublicEndpoints(paginator *pagination.Paginator) {
 	api.get("/datasets/{dataset_id}/editions", paginator.Paginate(api.getEditions))
 	api.get("/datasets/{dataset_id}/editions/{edition}", api.getEdition)
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions", paginator.Paginate(api.getVersions))
-	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}", api.getVersion)
+	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}", contextAndErrors(api.getVersion))
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/metadata", api.getMetadata)
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions", paginator.Paginate(api.getDimensions))
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options", paginator.Paginate(api.getDimensionOptions))
@@ -167,11 +167,8 @@ func writeErrorResponse(ctx context.Context, w http.ResponseWriter, errorRespons
 		}
 	}
 	w.WriteHeader(errorResponse.Status)
-	if errorResponse.Status == http.StatusInternalServerError {
-		jsonResponse, err = json.Marshal(models.Error{Code: models.InternalError, Description: models.InternalErrorDescription})
-	} else {
-		jsonResponse, err = json.Marshal(errorResponse)
-	}
+
+	jsonResponse, err = json.Marshal(errorResponse)
 	if err != nil {
 		responseErr := models.NewError(ctx, err, models.JSONMarshalError, models.ErrorMarshalFailedDescription)
 		http.Error(w, responseErr.Description, http.StatusInternalServerError)
@@ -252,7 +249,7 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(paginator *pagination.Pagin
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}",
 		api.isAuthorisedForDatasets(readPermission,
-			api.getVersion),
+			contextAndErrors(api.getVersion)),
 	)
 
 	api.get(
