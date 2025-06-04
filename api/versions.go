@@ -248,9 +248,9 @@ func (api *DatasetAPI) getVersion(ctx context.Context, w http.ResponseWriter, r 
 		}
 		return version, nil
 	}()
-
 	if getVersionErr != nil {
-		return nil, models.NewErrorResponse(getVersionAPIErrStatusCode(getVersionErr), nil, models.NewError(ctx, getVersionErr, getVersionErr.Error(), "internal error"))
+		responseError := models.NewError(ctx, getVersionErr, getVersionErr.Error(), "internal error")
+		return nil, models.NewErrorResponse(getVersionAPIErrStatusCode(getVersionErr), nil, responseError)
 	}
 
 	if api.enableURLRewriting {

@@ -2991,7 +2991,10 @@ func TestDetachVersionReturnsError(t *testing.T) {
 
 func assertInternalServerErr(w *httptest.ResponseRecorder) {
 	So(w.Code, ShouldEqual, http.StatusInternalServerError)
-	So(strings.TrimSpace(w.Body.String()), ShouldContainSubstring, errs.ErrInternalServer.Error())
+
+	body := strings.TrimSpace(w.Body.String())
+	containsSubstring := strings.Contains(body, errs.ErrInternalServer.Error()) || strings.Contains(body, models.InternalErrorDescription)
+	So(containsSubstring, ShouldBeTrue)
 }
 
 func validateLock(mockedDataStore *storetest.StorerMock, expectedInstanceID string) {

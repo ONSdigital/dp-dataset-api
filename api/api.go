@@ -168,6 +168,17 @@ func writeErrorResponse(ctx context.Context, w http.ResponseWriter, errorRespons
 	}
 	w.WriteHeader(errorResponse.Status)
 
+	if errorResponse.Status == http.StatusInternalServerError {
+		var filteredErrors []models.Error
+		for _, err := range errorResponse.Errors {
+			if !internalServerErrWithMessage[err.Cause] {
+				err = models.NewError(ctx, err, models.InternalError, models.InternalErrorDescription)
+			}
+			filteredErrors = append(filteredErrors, err)
+		}
+		errorResponse.Errors = filteredErrors
+	}
+
 	jsonResponse, err = json.Marshal(errorResponse)
 	if err != nil {
 		responseErr := models.NewError(ctx, err, models.JSONMarshalError, models.ErrorMarshalFailedDescription)
