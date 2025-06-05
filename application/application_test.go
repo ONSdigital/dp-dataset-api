@@ -772,6 +772,130 @@ func TestAssociateVersionFailedToGenerateDownloads(t *testing.T) {
 	})
 }
 
+func TestApproveVersionReturnsOK(t *testing.T) {
+	t.Parallel()
+	Convey("When a version is set to approved from associated", t, func() {
+		currentVersion := &models.Version{
+			State:        models.ApprovedState,
+			CollectionID: "3434",
+		}
+
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(context.Context, string, string, string, string) error {
+				return nil
+			},
+		}
+
+		mockedDataStore := &storetest.StorerMock{
+			UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
+				return "", nil
+			},
+		}
+
+		states, transitions := setUpStatesTransitions()
+
+		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
+
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+		err := EditionConfirmVersion(testContext, smDS, currentVersion, versionUpdateEditionConfirmed, versionDetails, "")
+
+		So(err, ShouldEqual, nil)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestApproveVersionFails(t *testing.T) {
+	t.Parallel()
+	Convey("When a version is set to approved from associated but the dataset is not found", t, func() {
+		currentVersion := &models.Version{
+			State:        models.AssociatedState,
+			CollectionID: "3434",
+		}
+
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(context.Context, string, string, string, string) error {
+				return nil
+			},
+		}
+
+		mockedDataStore := &storetest.StorerMock{
+			UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
+				return "", errs.ErrDatasetNotFound
+			},
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					ID: "789",
+					Links: &models.VersionLinks{
+						Dataset: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123",
+							ID:   "123",
+						},
+						Dimensions: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions",
+						},
+						Edition: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/2017",
+							ID:   "456",
+						},
+						Self: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+						},
+					},
+					ReleaseDate: "2017-12-12",
+					State:       models.EditionConfirmedState,
+					ETag:        "12345",
+				}, nil
+			},
+		}
+
+		states, transitions := setUpStatesTransitions()
+
+		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
+
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+		err := EditionConfirmVersion(testContext, smDS, currentVersion, versionUpdateEditionConfirmed, versionDetails, "")
+
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "dataset not found")
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestApproveVersionReturnsInvalidRequest(t *testing.T) {
+	t.Parallel()
+	Convey("When the updated version is supplied without a state", t, func() {
+		currentVersion := &models.Version{
+			State:        models.AssociatedState,
+			CollectionID: "3434",
+		}
+
+		versionUpdate := &models.Version{
+			ReleaseDate:  "2024-12-31",
+			ID:           "789",
+			CollectionID: "3434",
+		}
+
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(context.Context, string, string, string, string) error {
+				return nil
+			},
+		}
+
+		mockedDataStore := &storetest.StorerMock{}
+
+		states, transitions := setUpStatesTransitions()
+
+		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
+
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+		err := EditionConfirmVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
+
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "missing state")
+	})
+}
+
 func TestEditionConfirmVersionReturnsOK(t *testing.T) {
 	t.Parallel()
 	Convey("When a version is set to edition-confirmed from completed", t, func() {

@@ -21,7 +21,8 @@ import (
 var (
 	ErrAssociatedVersionCollectionIDInvalid = errors.New("missing collection_id for association between version and a collection")
 	ErrPublishedVersionCollectionIDInvalid  = errors.New("unexpected collection_id in published version")
-	ErrVersionStateInvalid                  = errors.New("incorrect state, can be one of the following: edition-confirmed, associated or published")
+	ErrVersionStateDatasetTypeInvalid       = errors.New("incorrect state for dataset type")
+	ErrVersionStateInvalid                  = errors.New("incorrect state, can be one of the following: edition-confirmed, associated, approved or published")
 )
 
 // Version represents information related to a single version for an edition of a dataset
@@ -447,6 +448,10 @@ func ValidateVersion(version *Version) error {
 	case AssociatedState:
 		if version.Type != Static.String() && version.CollectionID == "" {
 			return ErrAssociatedVersionCollectionIDInvalid
+		}
+	case ApprovedState:
+		if version.Type != Static.String() {
+			return ErrVersionStateDatasetTypeInvalid
 		}
 	default:
 		return ErrVersionStateInvalid

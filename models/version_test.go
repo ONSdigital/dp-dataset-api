@@ -91,6 +91,11 @@ func TestValidateVersion(t *testing.T) {
 			err := ValidateVersion(&publishedVersion)
 			So(err, ShouldBeNil)
 		})
+
+		Convey("when the version state is approved and type is static", func() {
+			err := ValidateVersion(&approvedVersion)
+			So(err, ShouldBeNil)
+		})
 	})
 
 	Convey("Return with errors", t, func() {
@@ -103,7 +108,7 @@ func TestValidateVersion(t *testing.T) {
 		Convey("when the version state is set to an invalid value", func() {
 			err := ValidateVersion(&Version{State: SubmittedState})
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldResemble, errors.New("incorrect state, can be one of the following: edition-confirmed, associated or published").Error())
+			So(err.Error(), ShouldResemble, ErrVersionStateInvalid.Error())
 		})
 
 		Convey("when mandatory fields are missing from version document when state is set to created", func() {
@@ -189,6 +194,17 @@ func TestValidateVersion(t *testing.T) {
 			err := ValidateVersion(&nonStaticVersion)
 			So(err, ShouldNotBeNil)
 			So(err, ShouldEqual, ErrAssociatedVersionCollectionIDInvalid)
+		})
+
+		Convey("when the version state is approved for a non-static dataset", func() {
+			nonStaticVersion := Version{
+				State: ApprovedState,
+				Type:  "filterable",
+			}
+
+			err := ValidateVersion(&nonStaticVersion)
+			So(err, ShouldNotBeNil)
+			So(err, ShouldEqual, ErrVersionStateDatasetTypeInvalid)
 		})
 	})
 }

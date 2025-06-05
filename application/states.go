@@ -14,3 +14,8 @@ var Associated = State{
 	Name:      "associated",
 	EnterFunc: AssociateVersion,
 }
+
+var Approved = State{
+	Name:      "approved",
+	EnterFunc: ApproveVersion,
+}

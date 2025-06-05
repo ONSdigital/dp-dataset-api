@@ -90,7 +90,7 @@ func GetListStaticTransitions() []application.Transition {
 	publishedTransition := application.Transition{
 		Label:               "published",
 		TargetState:         application.Published,
-		AllowedSourceStates: []string{"created", "associated", "published"},
+		AllowedSourceStates: []string{"approved"},
 		Type:                "static",
 	}
 
@@ -101,8 +101,15 @@ func GetListStaticTransitions() []application.Transition {
 		Type:                "static",
 	}
 
+	approvedTransition := application.Transition{
+		Label:               "approved",
+		TargetState:         application.Approved,
+		AllowedSourceStates: []string{"associated"},
+		Type:                "static",
+	}
+
 	return []application.Transition{publishedTransition,
-		associatedTransition}
+		associatedTransition, approvedTransition}
 }
 
 func GetListCantabularTransitions() []application.Transition {
