@@ -1,6 +1,7 @@
 package sdk
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -57,6 +58,17 @@ func (c *Client) DoAuthenticatedGetRequest(ctx context.Context, headers Headers,
 	// Add auth headers to the request
 	headers.Add(req)
 
+	return c.hcCli.Client.Do(ctx, req)
+}
+
+// Creates new request object, executes a put request using the input `headers`, `uri`, and payload, and returns the response
+func (c *Client) DoAuthenticatedPutRequest(ctx context.Context, headers Headers, uri *url.URL, payload []byte) (*http.Response, error) {
+	req, err := http.NewRequest(http.MethodPut, uri.RequestURI(), bytes.NewBuffer(payload))
+	if err != nil {
+		return nil, err
+	}
+
+	headers.Add(req)
 	return c.hcCli.Client.Do(ctx, req)
 }
 
@@ -130,4 +142,15 @@ func unmarshalResponseBodyExpectingErrorResponse(response *http.Response, target
 	}
 
 	return json.Unmarshal(b, &target)
+}
+
+func getStringResponseBody(resp *http.Response) (*string, error) {
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.New("failed to ready response body")
+	}
+
+	bodyString := string(bodyBytes)
+
+	return &bodyString, nil
 }

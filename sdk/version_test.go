@@ -1,6 +1,7 @@
 package sdk
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -428,6 +429,78 @@ func TestGetVersions(t *testing.T) {
 		Convey("Test that an error is raised and should contain status code", func() {
 			So(err, ShouldNotBeNil)
 			So(err.Error(), ShouldEqual, apierrors.ErrVersionNotFound.Error())
+		})
+	})
+}
+
+func TestPutVersionState(t *testing.T) {
+	Convey("When updating a version state", t, func() {
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, nil, map[string]string{}})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+
+		Convey("With valid parameters", func() {
+			err := datasetAPIClient.PutVersionState(ctx, headers, "dataset-123", "edition-456", "1", "published")
+			So(err, ShouldBeNil)
+
+			call := httpClient.DoCalls()[0]
+			So(call.Req.Method, ShouldEqual, http.MethodPut)
+			expectedURI := "/datasets/dataset-123/editions/edition-456/versions/1/state"
+			So(call.Req.URL.RequestURI(), ShouldResemble, expectedURI)
+			So(call.Req.Header.Get("Authorization"), ShouldResemble, fmt.Sprintf("Bearer %s", headers.ServiceToken))
+			var stateUpdate models.StateUpdate
+			err = json.NewDecoder(call.Req.Body).Decode(&stateUpdate)
+			So(err, ShouldBeNil)
+			So(stateUpdate.State, ShouldEqual, "published")
+		})
+
+		Convey("With invalid dataset ID", func() {
+			err := datasetAPIClient.PutVersionState(ctx, headers, "", "edition-456", "1", "published")
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldContainSubstring, "required args cannot be empty")
+			So(err.Error(), ShouldContainSubstring, "datasetID")
+		})
+
+		Convey("With invalid edition ID", func() {
+			err := datasetAPIClient.PutVersionState(ctx, headers, "dataset-123", "", "1", "published")
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldContainSubstring, "required args cannot be empty")
+			So(err.Error(), ShouldContainSubstring, "editionID")
+		})
+
+		Convey("With invalid version ID", func() {
+			err := datasetAPIClient.PutVersionState(ctx, headers, "dataset-123", "edition-456", "", "published")
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldContainSubstring, "required args cannot be empty")
+			So(err.Error(), ShouldContainSubstring, "versionID")
+		})
+
+		Convey("With invalid state", func() {
+			err := datasetAPIClient.PutVersionState(ctx, headers, "dataset-123", "edition-456", "1", "")
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldContainSubstring, "required args cannot be empty")
+			So(err.Error(), ShouldContainSubstring, "state")
+		})
+
+		Convey("With multiple invalid args", func() {
+			err := datasetAPIClient.PutVersionState(ctx, headers, "", "", "", "")
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldContainSubstring, "required args cannot be empty")
+			So(err.Error(), ShouldContainSubstring, "datasetID")
+			So(err.Error(), ShouldContainSubstring, "editionID")
+			So(err.Error(), ShouldContainSubstring, "versionID")
+			So(err.Error(), ShouldContainSubstring, "state")
+		})
+
+		Convey("When HTTP request fails", func() {
+			mockedErrorResponse := "error response message"
+			httpClient = createHTTPClientMock(MockedHTTPResponse{http.StatusInternalServerError, mockedErrorResponse, map[string]string{}})
+			datasetAPIClient = newDatasetAPIHealthcheckClient(t, httpClient)
+
+			err := datasetAPIClient.PutVersionState(ctx, headers, "dataset-123", "edition-456", "1", "published")
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldContainSubstring, "did not receive sucess response")
+			So(err.Error(), ShouldContainSubstring, strconv.Itoa(http.StatusInternalServerError))
+			So(err.Error(), ShouldContainSubstring, mockedErrorResponse)
 		})
 	})
 }

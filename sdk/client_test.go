@@ -7,6 +7,8 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/ONSdigital/dp-api-clients-go/v2/health"
@@ -116,6 +118,20 @@ func TestHealthCheckerClient(t *testing.T) {
 			So(initialStateCheck.Name(), ShouldEqual, service)
 			So(initialStateCheck.Status(), ShouldEqual, healthcheck.StatusOK)
 		})
+	})
+}
+
+func TestClientDoAuthenticatedPutRequest(t *testing.T) {
+	mockHTTPClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, "", nil})
+	client := newDatasetAPIHealthcheckClient(t, mockHTTPClient)
+
+	Convey("Succeeds with valid values", t, func() {
+		uri, _ := url.Parse("https://not-a-real-domain-this-is-a-test.com/target-path")
+		payload := []byte(`{"testing_key":"testing_value"}`)
+		resp, err := client.DoAuthenticatedPutRequest(context.Background(), headers, uri, payload)
+
+		So(err, ShouldBeNil)
+		So(resp, ShouldNotBeNil)
 	})
 }
 
@@ -329,6 +345,69 @@ func TestUnmarshalResponseBodyExpectingErrorResponse(t *testing.T) {
 			err := unmarshalResponseBodyExpectingErrorResponse(mockResponse, &target)
 			So(err, ShouldNotBeNil)
 			So(err.Error(), ShouldContainSubstring, "Dataset not found")
+		})
+	})
+}
+
+type errorReader struct{}
+
+func (e errorReader) Read(p []byte) (n int, err error) {
+	return 0, errors.New("mock read error")
+}
+
+func TestGetStringResponseBody(t *testing.T) {
+	Convey("It succeeds when", t, func() {
+		Convey("Body exists and is not empty", func() {
+			mockResponseBody := "Test message"
+			mockResponse := &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(mockResponseBody)),
+			}
+
+			result, err := getStringResponseBody(mockResponse)
+
+			So(err, ShouldBeNil)
+			So(result, ShouldEqual, &mockResponseBody)
+		})
+
+		Convey("Body exists and is empty", func() {
+			mockResponseBody := "Test message"
+			mockResponse := &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(mockResponseBody)),
+			}
+
+			result, err := getStringResponseBody(mockResponse)
+
+			So(err, ShouldBeNil)
+			So(result, ShouldEqual, &mockResponseBody)
+		})
+
+		Convey("Body exists and is JSON", func() {
+			mockResponseBody := `{"test_key": "test_value"}`
+			mockResponse := &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(mockResponseBody)),
+			}
+
+			result, err := getStringResponseBody(mockResponse)
+
+			So(err, ShouldBeNil)
+			So(result, ShouldEqual, &mockResponseBody)
+		})
+	})
+
+	Convey("It errors when", t, func() {
+		Convey("Error reading body", func() {
+			mockResponse := &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(errorReader{}),
+			}
+
+			result, err := getStringResponseBody(mockResponse)
+
+			So(result, ShouldBeNil)
+			So(err, ShouldNotBeNil)
 		})
 	})
 }
