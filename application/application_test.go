@@ -1268,6 +1268,92 @@ func TestPopulateNewVersionDocWithDownloads(t *testing.T) {
 	})
 }
 
+func TestPopulateNewVersionDocWithDistributions(t *testing.T) {
+	t.Parallel()
+	Convey("Given versions with distributions", t, func() {
+		currentVersion := &models.Version{
+			Distributions: &[]models.Distribution{
+				{
+					Title:       "Distribution 1",
+					Format:      "CSV",
+					MediaType:   "text/csv",
+					DownloadURL: "/link/to/distribution1.csv",
+					ByteSize:    1234,
+				},
+				{
+					Title:       "Distribution 2",
+					Format:      "CSV",
+					MediaType:   "text/csv",
+					DownloadURL: "/link/to/distribution2.csv",
+					ByteSize:    5678,
+				},
+			},
+		}
+
+		originalVersion := &models.Version{
+			Distributions: &[]models.Distribution{
+				{
+					Title:       "Distribution 3",
+					Format:      "CSV",
+					MediaType:   "text/csv",
+					DownloadURL: "/link/to/distribution3.csv",
+					ByteSize:    4321,
+				},
+				{
+					Title:       "Distribution 4",
+					Format:      "CSV",
+					MediaType:   "text/csv",
+					DownloadURL: "/link/to/distribution4.csv",
+					ByteSize:    8765,
+				},
+			},
+		}
+
+		Convey("When populateNewVersionDoc is called", func() {
+			version, err := populateNewVersionDoc(currentVersion, originalVersion)
+			So(err, ShouldBeNil)
+			So(version, ShouldNotBeNil)
+
+			Convey("Then the distributions are set correctly", func() {
+				So(len(*version.Distributions), ShouldEqual, 2)
+				So((*version.Distributions)[0].Title, ShouldEqual, "Distribution 3")
+				So((*version.Distributions)[0].Format.String(), ShouldEqual, "CSV")
+				So((*version.Distributions)[0].MediaType.String(), ShouldEqual, "text/csv")
+				So((*version.Distributions)[0].DownloadURL, ShouldEqual, "/link/to/distribution3.csv")
+				So((*version.Distributions)[0].ByteSize, ShouldEqual, 4321)
+
+				So((*version.Distributions)[1].Title, ShouldEqual, "Distribution 4")
+				So((*version.Distributions)[1].Format.String(), ShouldEqual, "CSV")
+				So((*version.Distributions)[1].MediaType.String(), ShouldEqual, "text/csv")
+				So((*version.Distributions)[1].DownloadURL, ShouldEqual, "/link/to/distribution4.csv")
+				So((*version.Distributions)[1].ByteSize, ShouldEqual, 8765)
+			})
+		})
+
+		Convey("When the version update has no distributions and populateNewVersionDoc is called", func() {
+			originalVersion.Distributions = nil
+			version, err := populateNewVersionDoc(currentVersion, originalVersion)
+			So(err, ShouldBeNil)
+			So(version, ShouldNotBeNil)
+
+			Convey("Then the distributions are set to what the currentVersion distributions contained", func() {
+				So(len(*version.Distributions), ShouldEqual, 2)
+				So((*version.Distributions)[0].Title, ShouldEqual, "Distribution 1")
+				So((*version.Distributions)[0].Format.String(), ShouldEqual, "CSV")
+				So((*version.Distributions)[0].MediaType.String(), ShouldEqual, "text/csv")
+				So((*version.Distributions)[0].DownloadURL, ShouldEqual, "/link/to/distribution1.csv")
+				So((*version.Distributions)[0].ByteSize, ShouldEqual, 1234)
+
+				So((*version.Distributions)[1].Title, ShouldEqual, "Distribution 2")
+				So((*version.Distributions)[1].Format.String(), ShouldEqual, "CSV")
+				So((*version.Distributions)[1].MediaType.String(), ShouldEqual, "text/csv")
+				So((*version.Distributions)[1].DownloadURL, ShouldEqual, "/link/to/distribution2.csv")
+				So((*version.Distributions)[1].ByteSize, ShouldEqual, 5678)
+			})
+		})
+	})
+}
+
 func TestPublishCMDVersionFailsToPublish(t *testing.T) {
 	t.Parallel()
 	Convey("When a version is set to published from associated and the graph errors", t, func() {

@@ -225,6 +225,10 @@ func populateNewVersionDoc(currentVersion, originalVersion *models.Version) (*mo
 	log.Info(context.Background(), "DEBUG", log.Data{"downloads": version.Downloads, "currentDownloads": currentVersion.Downloads})
 	version.Downloads = populateDownloads(version.Downloads, currentVersion.Downloads)
 
+	if version.Distributions == nil {
+		version.Distributions = currentVersion.Distributions
+	}
+
 	if version.UsageNotes == nil {
 		version.UsageNotes = currentVersion.UsageNotes
 	}
