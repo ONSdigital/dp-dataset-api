@@ -1275,14 +1275,14 @@ func TestPopulateNewVersionDocWithDistributions(t *testing.T) {
 			Distributions: &[]models.Distribution{
 				{
 					Title:       "Distribution 1",
-					Format:      "CSV",
+					Format:      "csv",
 					MediaType:   "text/csv",
 					DownloadURL: "/link/to/distribution1.csv",
 					ByteSize:    1234,
 				},
 				{
 					Title:       "Distribution 2",
-					Format:      "CSV",
+					Format:      "csv",
 					MediaType:   "text/csv",
 					DownloadURL: "/link/to/distribution2.csv",
 					ByteSize:    5678,
@@ -1294,14 +1294,14 @@ func TestPopulateNewVersionDocWithDistributions(t *testing.T) {
 			Distributions: &[]models.Distribution{
 				{
 					Title:       "Distribution 3",
-					Format:      "CSV",
+					Format:      "csv",
 					MediaType:   "text/csv",
 					DownloadURL: "/link/to/distribution3.csv",
 					ByteSize:    4321,
 				},
 				{
 					Title:       "Distribution 4",
-					Format:      "CSV",
+					Format:      "csv",
 					MediaType:   "text/csv",
 					DownloadURL: "/link/to/distribution4.csv",
 					ByteSize:    8765,
@@ -1309,46 +1309,65 @@ func TestPopulateNewVersionDocWithDistributions(t *testing.T) {
 			},
 		}
 
-		Convey("When populateNewVersionDoc is called", func() {
-			version, err := populateNewVersionDoc(currentVersion, originalVersion)
-			So(err, ShouldBeNil)
-			So(version, ShouldNotBeNil)
+		Convey("When the version type is static", func() {
+			currentVersion.Type = models.Static.String()
+			originalVersion.Type = models.Static.String()
 
 			Convey("Then the distributions are set correctly", func() {
+				version, err := populateNewVersionDoc(currentVersion, originalVersion)
+				So(err, ShouldBeNil)
+				So(version, ShouldNotBeNil)
+				So(version.Type, ShouldEqual, models.Static.String())
 				So(len(*version.Distributions), ShouldEqual, 2)
 				So((*version.Distributions)[0].Title, ShouldEqual, "Distribution 3")
-				So((*version.Distributions)[0].Format.String(), ShouldEqual, "CSV")
+				So((*version.Distributions)[0].Format.String(), ShouldEqual, "csv")
 				So((*version.Distributions)[0].MediaType.String(), ShouldEqual, "text/csv")
 				So((*version.Distributions)[0].DownloadURL, ShouldEqual, "/link/to/distribution3.csv")
 				So((*version.Distributions)[0].ByteSize, ShouldEqual, 4321)
 
 				So((*version.Distributions)[1].Title, ShouldEqual, "Distribution 4")
-				So((*version.Distributions)[1].Format.String(), ShouldEqual, "CSV")
+				So((*version.Distributions)[1].Format.String(), ShouldEqual, "csv")
 				So((*version.Distributions)[1].MediaType.String(), ShouldEqual, "text/csv")
 				So((*version.Distributions)[1].DownloadURL, ShouldEqual, "/link/to/distribution4.csv")
 				So((*version.Distributions)[1].ByteSize, ShouldEqual, 8765)
 			})
 		})
 
-		Convey("When the version update has no distributions and populateNewVersionDoc is called", func() {
+		Convey("When the version type is static and the version update has no distributions", func() {
+			currentVersion.Type = models.Static.String()
+			originalVersion.Type = models.Static.String()
 			originalVersion.Distributions = nil
-			version, err := populateNewVersionDoc(currentVersion, originalVersion)
-			So(err, ShouldBeNil)
-			So(version, ShouldNotBeNil)
 
 			Convey("Then the distributions are set to what the currentVersion distributions contained", func() {
+				version, err := populateNewVersionDoc(currentVersion, originalVersion)
+				So(err, ShouldBeNil)
+				So(version, ShouldNotBeNil)
+				So(version.Type, ShouldEqual, models.Static.String())
 				So(len(*version.Distributions), ShouldEqual, 2)
 				So((*version.Distributions)[0].Title, ShouldEqual, "Distribution 1")
-				So((*version.Distributions)[0].Format.String(), ShouldEqual, "CSV")
+				So((*version.Distributions)[0].Format.String(), ShouldEqual, "csv")
 				So((*version.Distributions)[0].MediaType.String(), ShouldEqual, "text/csv")
 				So((*version.Distributions)[0].DownloadURL, ShouldEqual, "/link/to/distribution1.csv")
 				So((*version.Distributions)[0].ByteSize, ShouldEqual, 1234)
 
 				So((*version.Distributions)[1].Title, ShouldEqual, "Distribution 2")
-				So((*version.Distributions)[1].Format.String(), ShouldEqual, "CSV")
+				So((*version.Distributions)[1].Format.String(), ShouldEqual, "csv")
 				So((*version.Distributions)[1].MediaType.String(), ShouldEqual, "text/csv")
 				So((*version.Distributions)[1].DownloadURL, ShouldEqual, "/link/to/distribution2.csv")
 				So((*version.Distributions)[1].ByteSize, ShouldEqual, 5678)
+			})
+		})
+
+		Convey("When the version type is not static", func() {
+			currentVersion.Type = models.Filterable.String()
+			originalVersion.Type = models.Filterable.String()
+
+			Convey("Then the distributions are not set", func() {
+				version, err := populateNewVersionDoc(currentVersion, originalVersion)
+				So(err, ShouldBeNil)
+				So(version, ShouldNotBeNil)
+				So(version.Type, ShouldEqual, models.Filterable.String())
+				So(version.Distributions, ShouldBeNil)
 			})
 		})
 	})
