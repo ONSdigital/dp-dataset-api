@@ -257,10 +257,10 @@ func (c *Client) PutVersionState(ctx context.Context, headers Headers, datasetID
 	if resp.StatusCode > 299 || resp.StatusCode < 200 {
 		responseBody, err := getStringResponseBody(resp)
 		if err != nil {
-			return fmt.Errorf("did not receive sucess response. received status %d", resp.StatusCode)
+			return fmt.Errorf("did not receive success response. received status %d", resp.StatusCode)
 		}
 
-		return fmt.Errorf("did not receive sucess response. received status %d, response body: %s", resp.StatusCode, *responseBody)
+		return fmt.Errorf("did not receive success response. received status %d, response body: %s", resp.StatusCode, *responseBody)
 	}
 
 	return nil

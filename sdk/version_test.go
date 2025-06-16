@@ -498,7 +498,7 @@ func TestPutVersionState(t *testing.T) {
 
 			err := datasetAPIClient.PutVersionState(ctx, headers, "dataset-123", "edition-456", "1", "published")
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldContainSubstring, "did not receive sucess response")
+			So(err.Error(), ShouldContainSubstring, "did not receive success response")
 			So(err.Error(), ShouldContainSubstring, strconv.Itoa(http.StatusInternalServerError))
 			So(err.Error(), ShouldContainSubstring, mockedErrorResponse)
 		})
