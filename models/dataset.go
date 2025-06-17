@@ -186,6 +186,15 @@ type Edition struct {
 	QualityDesignation QualityDesignation  `bson:"quality_designation,omitempty" json:"quality_designation,omitempty"`
 }
 
+type DatasetEdition struct {
+	DatasetID     string     `json:"dataset_id"`
+	Title         string     `json:"title"`
+	Edition       string     `json:"edition"`
+	EditionTitle  string     `json:"edition_title"`
+	LatestVersion LinkObject `json:"latest_version"`
+	ReleaseDate   string     `json:"release_date"`
+}
+
 // Publisher represents an object containing information of the publisher
 type Publisher struct {
 	HRef string `bson:"href,omitempty" json:"href,omitempty"`
