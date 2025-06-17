@@ -95,4 +95,8 @@ issues:
       linters:
         - revive
       source: "github.com/smartystreets/goconvey/convey"
+    # Allow repeated variable names to make tests more readable
+    - path: api/static_versions_test.go
+      linters:
+        - goconst
   new: false
