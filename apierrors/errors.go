@@ -48,6 +48,7 @@ var (
 	ErrUnauthorised                      = errors.New("unauthorised access to API")
 	ErrVersionMissingState               = errors.New("missing state from version")
 	ErrVersionNotFound                   = errors.New("version not found")
+	ErrVersionsNotFound                  = errors.New("no versions were found")
 	ErrInvalidVersion                    = errors.New("invalid version requested")
 	ErrVersionAlreadyExists              = errors.New("an unpublished version of this dataset already exists")
 	ErrNotFound                          = errors.New("not found")
