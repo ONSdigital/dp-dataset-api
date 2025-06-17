@@ -48,7 +48,7 @@ func (c *Client) GetDataset(ctx context.Context, headers Headers, collectionID, 
 	}
 
 	// If authenticated, try to extract "next" field from the JSON body
-	if next, ok := bodyMap["next"]; ok {
+	if next, ok := bodyMap["next"]; ok && (headers.ServiceToken != "" || headers.UserAccessToken != "") {
 		b, err = json.Marshal(next)
 		if err != nil {
 			return dataset, err
