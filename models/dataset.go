@@ -186,6 +186,7 @@ type Edition struct {
 	QualityDesignation QualityDesignation  `bson:"quality_designation,omitempty" json:"quality_designation,omitempty"`
 }
 
+// DatasetEdition represents a dataset edition
 type DatasetEdition struct {
 	DatasetID     string     `json:"dataset_id"`
 	Title         string     `json:"title"`
