@@ -21,6 +21,7 @@ const (
 type QueryParams struct {
 	IDs       []string
 	IsBasedOn string
+	State     string
 	Limit     int
 	Offset    int
 }
