@@ -36,6 +36,9 @@ var _ sdk.Clienter = &ClienterMock{}
 //			GetDatasetByPathFunc: func(ctx context.Context, headers sdk.Headers, path string) (models.Dataset, error) {
 //				panic("mock out the GetDatasetByPath method")
 //			},
+//			GetDatasetEditionsFunc: func(ctx context.Context, headers sdk.Headers, queryParams *sdk.QueryParams) (sdk.DatasetEditionsList, error) {
+//				panic("mock out the GetDatasetEditions method")
+//			},
 //			GetEditionFunc: func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string) (models.Edition, error) {
 //				panic("mock out the GetEdition method")
 //			},
@@ -81,6 +84,9 @@ type ClienterMock struct {
 
 	// GetDatasetByPathFunc mocks the GetDatasetByPath method.
 	GetDatasetByPathFunc func(ctx context.Context, headers sdk.Headers, path string) (models.Dataset, error)
+
+	// GetDatasetEditionsFunc mocks the GetDatasetEditions method.
+	GetDatasetEditionsFunc func(ctx context.Context, headers sdk.Headers, queryParams *sdk.QueryParams) (sdk.DatasetEditionsList, error)
 
 	// GetEditionFunc mocks the GetEdition method.
 	GetEditionFunc func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string) (models.Edition, error)
@@ -146,6 +152,15 @@ type ClienterMock struct {
 			Headers sdk.Headers
 			// Path is the path argument value.
 			Path string
+		}
+		// GetDatasetEditions holds details about calls to the GetDatasetEditions method.
+		GetDatasetEditions []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Headers is the headers argument value.
+			Headers sdk.Headers
+			// QueryParams is the queryParams argument value.
+			QueryParams *sdk.QueryParams
 		}
 		// GetEdition holds details about calls to the GetEdition method.
 		GetEdition []struct {
@@ -249,6 +264,7 @@ type ClienterMock struct {
 	lockDoAuthenticatedGetRequest  sync.RWMutex
 	lockGetDataset                 sync.RWMutex
 	lockGetDatasetByPath           sync.RWMutex
+	lockGetDatasetEditions         sync.RWMutex
 	lockGetEdition                 sync.RWMutex
 	lockGetEditions                sync.RWMutex
 	lockGetVersion                 sync.RWMutex
@@ -417,6 +433,46 @@ func (mock *ClienterMock) GetDatasetByPathCalls() []struct {
 	mock.lockGetDatasetByPath.RLock()
 	calls = mock.calls.GetDatasetByPath
 	mock.lockGetDatasetByPath.RUnlock()
+	return calls
+}
+
+// GetDatasetEditions calls GetDatasetEditionsFunc.
+func (mock *ClienterMock) GetDatasetEditions(ctx context.Context, headers sdk.Headers, queryParams *sdk.QueryParams) (sdk.DatasetEditionsList, error) {
+	if mock.GetDatasetEditionsFunc == nil {
+		panic("ClienterMock.GetDatasetEditionsFunc: method is nil but Clienter.GetDatasetEditions was just called")
+	}
+	callInfo := struct {
+		Ctx         context.Context
+		Headers     sdk.Headers
+		QueryParams *sdk.QueryParams
+	}{
+		Ctx:         ctx,
+		Headers:     headers,
+		QueryParams: queryParams,
+	}
+	mock.lockGetDatasetEditions.Lock()
+	mock.calls.GetDatasetEditions = append(mock.calls.GetDatasetEditions, callInfo)
+	mock.lockGetDatasetEditions.Unlock()
+	return mock.GetDatasetEditionsFunc(ctx, headers, queryParams)
+}
+
+// GetDatasetEditionsCalls gets all the calls that were made to GetDatasetEditions.
+// Check the length with:
+//
+//	len(mockedClienter.GetDatasetEditionsCalls())
+func (mock *ClienterMock) GetDatasetEditionsCalls() []struct {
+	Ctx         context.Context
+	Headers     sdk.Headers
+	QueryParams *sdk.QueryParams
+} {
+	var calls []struct {
+		Ctx         context.Context
+		Headers     sdk.Headers
+		QueryParams *sdk.QueryParams
+	}
+	mock.lockGetDatasetEditions.RLock()
+	calls = mock.calls.GetDatasetEditions
+	mock.lockGetDatasetEditions.RUnlock()
 	return calls
 }
 
