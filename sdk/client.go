@@ -147,7 +147,7 @@ func unmarshalResponseBodyExpectingErrorResponse(response *http.Response, target
 func getStringResponseBody(resp *http.Response) (*string, error) {
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, errors.New("failed to ready response body")
+		return nil, errors.New("failed to read response body")
 	}
 
 	bodyString := string(bodyBytes)
