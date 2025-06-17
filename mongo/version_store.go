@@ -82,6 +82,33 @@ func (m *Mongo) CheckEditionExistsStatic(ctx context.Context, id, editionID, sta
 	return nil
 }
 
+// GetStaticEditionsByState retrieves all editions that match the provided state
+// If state is empty, the search will include any state that is not "published"
+func (m *Mongo) GetStaticEditionsByState(ctx context.Context, state string, offset, limit int) ([]*models.Version, int, error) {
+	filter := bson.M{}
+
+	if state == "" {
+		filter["state"] = bson.M{"$ne": models.PublishedState}
+	} else {
+		filter["state"] = state
+	}
+
+	results := []*models.Version{}
+	totalCount, err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Find(ctx, filter, &results,
+		mongodriver.Sort(bson.M{"last_updated": -1}),
+		mongodriver.Offset(offset),
+		mongodriver.Limit(limit))
+	if err != nil {
+		return results, 0, err
+	}
+
+	if totalCount == 0 {
+		return nil, 0, errs.ErrEditionsNotFound
+	}
+
+	return results, totalCount, nil
+}
+
 // GetVersions retrieves all version documents for a dataset
 func (m *Mongo) GetVersionsStatic(ctx context.Context, datasetID, edition, state string, offset, limit int) ([]models.Version, int, error) {
 	selector := buildVersionsQuery(datasetID, edition, state)
@@ -142,6 +169,32 @@ func (m *Mongo) GetLatestVersionStatic(ctx context.Context, datasetID, editionID
 		return nil, err
 	}
 
+	return &version, nil
+}
+
+// GetLatestStaticVersionByState retrieves the latest version for a dataset by state
+// If state is empty, the search will include any state that is not "published"
+func (m *Mongo) GetLatestStaticVersionByState(ctx context.Context, datasetID, edition, state string) (*models.Version, error) {
+	filter := bson.M{
+		"links.dataset.id": datasetID,
+		"edition":          edition,
+	}
+
+	if state == "" {
+		filter["state"] = bson.M{"$ne": models.PublishedState}
+	} else {
+		filter["state"] = state
+	}
+
+	var version models.Version
+	err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).FindOne(ctx, filter, &version,
+		mongodriver.Sort(bson.M{"version": -1}))
+	if err != nil {
+		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
+			return nil, errs.ErrVersionNotFound
+		}
+		return nil, err
+	}
 	return &version, nil
 }
 

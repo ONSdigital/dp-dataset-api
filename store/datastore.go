@@ -28,6 +28,7 @@ type dataMongoDB interface {
 	CheckEditionExists(ctx context.Context, ID, editionID, state string) error
 	CheckEditionExistsStatic(ctx context.Context, id, editionID, state string) error
 	GetDataset(ctx context.Context, ID string) (*models.DatasetUpdate, error)
+	GetUnpublishedDatasetStatic(ctx context.Context, id string) (*models.Dataset, error)
 	GetDatasets(ctx context.Context, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error)
 	GetDatasetsByQueryParams(ctx context.Context, ID, datasetType string, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error)
 	GetDatasetType(ctx context.Context, datasetID string, authorised bool) (string, error)
@@ -37,6 +38,7 @@ type dataMongoDB interface {
 	GetDimensionOptionsFromIDs(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error)
 	GetEdition(ctx context.Context, ID, editionID, state string) (*models.EditionUpdate, error)
 	GetEditions(ctx context.Context, ID, state string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error)
+	GetStaticEditionsByState(ctx context.Context, state string, offset, limit int) ([]*models.Version, int, error)
 	GetAllStaticVersions(ctx context.Context, ID, state string, offset, limit int) ([]*models.Version, int, error)
 	GetInstances(ctx context.Context, states []string, datasets []string, offset, limit int) ([]*models.Instance, int, error)
 	GetInstance(ctx context.Context, ID, eTagSelector string) (*models.Instance, error)
@@ -44,6 +46,7 @@ type dataMongoDB interface {
 	GetVersion(ctx context.Context, datasetID, editionID string, version int, state string) (*models.Version, error)
 	GetVersionStatic(ctx context.Context, datasetID, editionID string, version int, state string) (*models.Version, error)
 	GetLatestVersionStatic(ctx context.Context, datasetID, editionID string, state string) (*models.Version, error)
+	GetLatestStaticVersionByState(ctx context.Context, datasetID, edition, state string) (*models.Version, error)
 	GetUniqueDimensionAndOptions(ctx context.Context, ID, dimension string) ([]*string, int, error)
 	GetVersions(ctx context.Context, datasetID, editionID, state string, offset, limit int) ([]models.Version, int, error)
 	GetVersionsStatic(ctx context.Context, datasetID, edition, state string, offset, limit int) ([]models.Version, int, error)
