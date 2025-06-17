@@ -58,14 +58,9 @@ func TestGetDataset(t *testing.T) {
 	})
 
 	Convey("If authenticated and dataset response includes a 'next' field", t, func() {
-		// Simulated dataset response nested under "next"
-		responseWithNext := map[string]interface{}{
-			"next": map[string]interface{}{
-				"id":            datasetID,
-				"collection_id": collectionID,
-				"title":         "Test Dataset",
-				"description":   "Dataset for testing",
-			},
+		// dataset response nested under "next"
+		responseWithNext := &models.DatasetUpdate{
+			Next: &mockGetResponse,
 		}
 
 		// Provide service token to simulate authenticated request
