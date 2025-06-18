@@ -406,7 +406,7 @@ paths:
         401:
           description: "Unauthorised to access endpoint"
         404:
-          description: "No editions were found"
+          description: "No versions were found"
         500:
           $ref: "#/responses/InternalError"
 
