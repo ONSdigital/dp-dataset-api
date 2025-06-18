@@ -96,17 +96,14 @@ var _ store.Storer = &StorerMock{}
 //			GetInstancesFunc: func(ctx context.Context, states []string, datasets []string, offset int, limit int) ([]*models.Instance, int, error) {
 //				panic("mock out the GetInstances method")
 //			},
-//			GetLatestStaticVersionByStateFunc: func(ctx context.Context, datasetID string, edition string, state string) (*models.Version, error) {
-//				panic("mock out the GetLatestStaticVersionByState method")
-//			},
 //			GetLatestVersionStaticFunc: func(ctx context.Context, datasetID string, editionID string, state string) (*models.Version, error) {
 //				panic("mock out the GetLatestVersionStatic method")
 //			},
 //			GetNextVersionFunc: func(ctx context.Context, datasetID string, editionID string) (int, error) {
 //				panic("mock out the GetNextVersion method")
 //			},
-//			GetStaticEditionsByStateFunc: func(ctx context.Context, state string, offset int, limit int) ([]*models.Version, int, error) {
-//				panic("mock out the GetStaticEditionsByState method")
+//			GetStaticVersionsByStateFunc: func(ctx context.Context, state string, offset int, limit int) ([]*models.Version, int, error) {
+//				panic("mock out the GetStaticVersionsByState method")
 //			},
 //			GetUniqueDimensionAndOptionsFunc: func(ctx context.Context, ID string, dimension string) ([]*string, int, error) {
 //				panic("mock out the GetUniqueDimensionAndOptions method")
@@ -274,17 +271,14 @@ type StorerMock struct {
 	// GetInstancesFunc mocks the GetInstances method.
 	GetInstancesFunc func(ctx context.Context, states []string, datasets []string, offset int, limit int) ([]*models.Instance, int, error)
 
-	// GetLatestStaticVersionByStateFunc mocks the GetLatestStaticVersionByState method.
-	GetLatestStaticVersionByStateFunc func(ctx context.Context, datasetID string, edition string, state string) (*models.Version, error)
-
 	// GetLatestVersionStaticFunc mocks the GetLatestVersionStatic method.
 	GetLatestVersionStaticFunc func(ctx context.Context, datasetID string, editionID string, state string) (*models.Version, error)
 
 	// GetNextVersionFunc mocks the GetNextVersion method.
 	GetNextVersionFunc func(ctx context.Context, datasetID string, editionID string) (int, error)
 
-	// GetStaticEditionsByStateFunc mocks the GetStaticEditionsByState method.
-	GetStaticEditionsByStateFunc func(ctx context.Context, state string, offset int, limit int) ([]*models.Version, int, error)
+	// GetStaticVersionsByStateFunc mocks the GetStaticVersionsByState method.
+	GetStaticVersionsByStateFunc func(ctx context.Context, state string, offset int, limit int) ([]*models.Version, int, error)
 
 	// GetUniqueDimensionAndOptionsFunc mocks the GetUniqueDimensionAndOptions method.
 	GetUniqueDimensionAndOptionsFunc func(ctx context.Context, ID string, dimension string) ([]*string, int, error)
@@ -621,17 +615,6 @@ type StorerMock struct {
 			// Limit is the limit argument value.
 			Limit int
 		}
-		// GetLatestStaticVersionByState holds details about calls to the GetLatestStaticVersionByState method.
-		GetLatestStaticVersionByState []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// DatasetID is the datasetID argument value.
-			DatasetID string
-			// Edition is the edition argument value.
-			Edition string
-			// State is the state argument value.
-			State string
-		}
 		// GetLatestVersionStatic holds details about calls to the GetLatestVersionStatic method.
 		GetLatestVersionStatic []struct {
 			// Ctx is the ctx argument value.
@@ -652,8 +635,8 @@ type StorerMock struct {
 			// EditionID is the editionID argument value.
 			EditionID string
 		}
-		// GetStaticEditionsByState holds details about calls to the GetStaticEditionsByState method.
-		GetStaticEditionsByState []struct {
+		// GetStaticVersionsByState holds details about calls to the GetStaticVersionsByState method.
+		GetStaticVersionsByState []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// State is the state argument value.
@@ -981,10 +964,9 @@ type StorerMock struct {
 	lockGetEditions                         sync.RWMutex
 	lockGetInstance                         sync.RWMutex
 	lockGetInstances                        sync.RWMutex
-	lockGetLatestStaticVersionByState       sync.RWMutex
 	lockGetLatestVersionStatic              sync.RWMutex
 	lockGetNextVersion                      sync.RWMutex
-	lockGetStaticEditionsByState            sync.RWMutex
+	lockGetStaticVersionsByState            sync.RWMutex
 	lockGetUniqueDimensionAndOptions        sync.RWMutex
 	lockGetUnpublishedDatasetStatic         sync.RWMutex
 	lockGetVersion                          sync.RWMutex
@@ -2063,50 +2045,6 @@ func (mock *StorerMock) GetInstancesCalls() []struct {
 	return calls
 }
 
-// GetLatestStaticVersionByState calls GetLatestStaticVersionByStateFunc.
-func (mock *StorerMock) GetLatestStaticVersionByState(ctx context.Context, datasetID string, edition string, state string) (*models.Version, error) {
-	if mock.GetLatestStaticVersionByStateFunc == nil {
-		panic("StorerMock.GetLatestStaticVersionByStateFunc: method is nil but Storer.GetLatestStaticVersionByState was just called")
-	}
-	callInfo := struct {
-		Ctx       context.Context
-		DatasetID string
-		Edition   string
-		State     string
-	}{
-		Ctx:       ctx,
-		DatasetID: datasetID,
-		Edition:   edition,
-		State:     state,
-	}
-	mock.lockGetLatestStaticVersionByState.Lock()
-	mock.calls.GetLatestStaticVersionByState = append(mock.calls.GetLatestStaticVersionByState, callInfo)
-	mock.lockGetLatestStaticVersionByState.Unlock()
-	return mock.GetLatestStaticVersionByStateFunc(ctx, datasetID, edition, state)
-}
-
-// GetLatestStaticVersionByStateCalls gets all the calls that were made to GetLatestStaticVersionByState.
-// Check the length with:
-//
-//	len(mockedStorer.GetLatestStaticVersionByStateCalls())
-func (mock *StorerMock) GetLatestStaticVersionByStateCalls() []struct {
-	Ctx       context.Context
-	DatasetID string
-	Edition   string
-	State     string
-} {
-	var calls []struct {
-		Ctx       context.Context
-		DatasetID string
-		Edition   string
-		State     string
-	}
-	mock.lockGetLatestStaticVersionByState.RLock()
-	calls = mock.calls.GetLatestStaticVersionByState
-	mock.lockGetLatestStaticVersionByState.RUnlock()
-	return calls
-}
-
 // GetLatestVersionStatic calls GetLatestVersionStaticFunc.
 func (mock *StorerMock) GetLatestVersionStatic(ctx context.Context, datasetID string, editionID string, state string) (*models.Version, error) {
 	if mock.GetLatestVersionStaticFunc == nil {
@@ -2191,10 +2129,10 @@ func (mock *StorerMock) GetNextVersionCalls() []struct {
 	return calls
 }
 
-// GetStaticEditionsByState calls GetStaticEditionsByStateFunc.
-func (mock *StorerMock) GetStaticEditionsByState(ctx context.Context, state string, offset int, limit int) ([]*models.Version, int, error) {
-	if mock.GetStaticEditionsByStateFunc == nil {
-		panic("StorerMock.GetStaticEditionsByStateFunc: method is nil but Storer.GetStaticEditionsByState was just called")
+// GetStaticVersionsByState calls GetStaticVersionsByStateFunc.
+func (mock *StorerMock) GetStaticVersionsByState(ctx context.Context, state string, offset int, limit int) ([]*models.Version, int, error) {
+	if mock.GetStaticVersionsByStateFunc == nil {
+		panic("StorerMock.GetStaticVersionsByStateFunc: method is nil but Storer.GetStaticVersionsByState was just called")
 	}
 	callInfo := struct {
 		Ctx    context.Context
@@ -2207,17 +2145,17 @@ func (mock *StorerMock) GetStaticEditionsByState(ctx context.Context, state stri
 		Offset: offset,
 		Limit:  limit,
 	}
-	mock.lockGetStaticEditionsByState.Lock()
-	mock.calls.GetStaticEditionsByState = append(mock.calls.GetStaticEditionsByState, callInfo)
-	mock.lockGetStaticEditionsByState.Unlock()
-	return mock.GetStaticEditionsByStateFunc(ctx, state, offset, limit)
+	mock.lockGetStaticVersionsByState.Lock()
+	mock.calls.GetStaticVersionsByState = append(mock.calls.GetStaticVersionsByState, callInfo)
+	mock.lockGetStaticVersionsByState.Unlock()
+	return mock.GetStaticVersionsByStateFunc(ctx, state, offset, limit)
 }
 
-// GetStaticEditionsByStateCalls gets all the calls that were made to GetStaticEditionsByState.
+// GetStaticVersionsByStateCalls gets all the calls that were made to GetStaticVersionsByState.
 // Check the length with:
 //
-//	len(mockedStorer.GetStaticEditionsByStateCalls())
-func (mock *StorerMock) GetStaticEditionsByStateCalls() []struct {
+//	len(mockedStorer.GetStaticVersionsByStateCalls())
+func (mock *StorerMock) GetStaticVersionsByStateCalls() []struct {
 	Ctx    context.Context
 	State  string
 	Offset int
@@ -2229,9 +2167,9 @@ func (mock *StorerMock) GetStaticEditionsByStateCalls() []struct {
 		Offset int
 		Limit  int
 	}
-	mock.lockGetStaticEditionsByState.RLock()
-	calls = mock.calls.GetStaticEditionsByState
-	mock.lockGetStaticEditionsByState.RUnlock()
+	mock.lockGetStaticVersionsByState.RLock()
+	calls = mock.calls.GetStaticVersionsByState
+	mock.lockGetStaticVersionsByState.RUnlock()
 	return calls
 }
 
