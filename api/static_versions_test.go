@@ -23,35 +23,23 @@ func TestGetDatasetEditions_WithQueryParam_Success(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetStaticEditionsByStateFunc: func(ctx context.Context, state string, offset, limit int) ([]*models.Version, int, error) {
+			GetStaticVersionsByStateFunc: func(ctx context.Context, state string, offset, limit int) ([]*models.Version, int, error) {
 				return []*models.Version{
 					{
-						Edition: "January",
-						Links:   &models.VersionLinks{Dataset: &models.LinkObject{ID: "Dataset1"}},
-					},
-					{
-						Edition: "February",
-						Links:   &models.VersionLinks{Dataset: &models.LinkObject{ID: "Dataset2"}},
-					},
-				}, 2, nil
-			},
-			GetLatestStaticVersionByStateFunc: func(ctx context.Context, datasetID, edition, state string) (*models.Version, error) {
-				if datasetID == "Dataset1" {
-					return &models.Version{
 						Edition:      "January",
 						EditionTitle: "January Edition Title",
 						Version:      1,
 						ReleaseDate:  "2025-01-01",
-					}, nil
-				} else if datasetID == "Dataset2" {
-					return &models.Version{
+						Links:        &models.VersionLinks{Dataset: &models.LinkObject{ID: "Dataset1"}},
+					},
+					{
 						Edition:      "February",
 						EditionTitle: "February Edition Title",
 						Version:      2,
 						ReleaseDate:  "2025-02-01",
-					}, nil
-				}
-				return nil, errs.ErrVersionNotFound
+						Links:        &models.VersionLinks{Dataset: &models.LinkObject{ID: "Dataset2"}},
+					},
+				}, 2, nil
 			},
 			GetUnpublishedDatasetStaticFunc: func(ctx context.Context, id string) (*models.Dataset, error) {
 				if id == "Dataset1" {
@@ -121,35 +109,23 @@ func TestGetDatasetEditions_WithoutQueryParam_Success(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetStaticEditionsByStateFunc: func(ctx context.Context, state string, offset, limit int) ([]*models.Version, int, error) {
+			GetStaticVersionsByStateFunc: func(ctx context.Context, state string, offset, limit int) ([]*models.Version, int, error) {
 				return []*models.Version{
 					{
-						Edition: "January",
-						Links:   &models.VersionLinks{Dataset: &models.LinkObject{ID: "Dataset1"}},
-					},
-					{
-						Edition: "February",
-						Links:   &models.VersionLinks{Dataset: &models.LinkObject{ID: "Dataset2"}},
-					},
-				}, 2, nil
-			},
-			GetLatestStaticVersionByStateFunc: func(ctx context.Context, datasetID, edition, state string) (*models.Version, error) {
-				if datasetID == "Dataset1" {
-					return &models.Version{
 						Edition:      "January",
 						EditionTitle: "January Edition Title",
 						Version:      1,
 						ReleaseDate:  "2025-01-01",
-					}, nil
-				} else if datasetID == "Dataset2" {
-					return &models.Version{
+						Links:        &models.VersionLinks{Dataset: &models.LinkObject{ID: "Dataset1"}},
+					},
+					{
 						Edition:      "February",
 						EditionTitle: "February Edition Title",
 						Version:      2,
 						ReleaseDate:  "2025-02-01",
-					}, nil
-				}
-				return nil, errs.ErrVersionNotFound
+						Links:        &models.VersionLinks{Dataset: &models.LinkObject{ID: "Dataset2"}},
+					},
+				}, 2, nil
 			},
 			GetUnpublishedDatasetStaticFunc: func(ctx context.Context, id string) (*models.Dataset, error) {
 				if id == "Dataset1" {
@@ -259,13 +235,13 @@ func TestGetDatasetEditions_InvalidQueryParam_Failure(t *testing.T) {
 	})
 }
 
-func TestGetDatasetEditions_GetStaticEditionsByState_Failure(t *testing.T) {
+func TestGetDatasetEditions_GetStaticVersionsByState_Failure(t *testing.T) {
 	t.Parallel()
 	Convey("Given a request to GET /dataset-editions", t, func() {
 		mockedDataStore := &storetest.StorerMock{
-			GetStaticEditionsByStateFunc: func(ctx context.Context, state string, offset, limit int) ([]*models.Version, int, error) {
+			GetStaticVersionsByStateFunc: func(ctx context.Context, state string, offset, limit int) ([]*models.Version, int, error) {
 				if state == "associated" {
-					return nil, 0, errs.ErrEditionsNotFound
+					return nil, 0, errs.ErrVersionsNotFound
 				}
 				return nil, 0, errs.ErrInternalServer
 			},
@@ -275,13 +251,13 @@ func TestGetDatasetEditions_GetStaticEditionsByState_Failure(t *testing.T) {
 		permissions := getAuthorisationHandlerMock()
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 
-		Convey("When getDatasetEditions is called and no editions are found", func() {
+		Convey("When getDatasetEditions is called and no versions are found", func() {
 			r := createRequestWithAuth("GET", "http://localhost:22000/dataset-editions?state=associated", http.NoBody)
 			w := httptest.NewRecorder()
 			results, totalCount, err := api.getDatasetEditions(w, r, 20, 0)
 
-			Convey("Then it should return a 404 status code with an EditionsNotFound error", func() {
-				So(err, ShouldEqual, errs.ErrEditionsNotFound)
+			Convey("Then it should return a 404 status code with an VersionsNotFound error", func() {
+				So(err, ShouldEqual, errs.ErrVersionsNotFound)
 				So(w.Code, ShouldEqual, http.StatusNotFound)
 				So(totalCount, ShouldEqual, 0)
 				So(results, ShouldBeNil)
@@ -303,61 +279,17 @@ func TestGetDatasetEditions_GetStaticEditionsByState_Failure(t *testing.T) {
 	})
 }
 
-func TestGetDatasetEditions_GetLatestStaticVersionByState_Failure(t *testing.T) {
-	t.Parallel()
-	Convey("Given a request to GET /dataset-editions", t, func() {
-		mockedDataStore := &storetest.StorerMock{
-			GetStaticEditionsByStateFunc: func(ctx context.Context, state string, offset, limit int) ([]*models.Version, int, error) {
-				return []*models.Version{
-					{
-						Edition: "January",
-						Links:   &models.VersionLinks{Dataset: &models.LinkObject{ID: "Dataset1"}},
-					},
-				}, 1, nil
-			},
-			GetLatestStaticVersionByStateFunc: func(ctx context.Context, datasetID, edition, state string) (*models.Version, error) {
-				return nil, errs.ErrInternalServer
-			},
-		}
-
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-
-		Convey("When getDatasetEditions is called and the datastore fails", func() {
-			r := createRequestWithAuth("GET", "http://localhost:22000/dataset-editions", http.NoBody)
-			w := httptest.NewRecorder()
-			results, totalCount, err := api.getDatasetEditions(w, r, 20, 0)
-
-			Convey("Then it should return a 500 status code with an InternalServer error", func() {
-				So(err, ShouldEqual, errs.ErrInternalServer)
-				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(totalCount, ShouldEqual, 0)
-				So(results, ShouldBeNil)
-			})
-		})
-	})
-}
-
 func TestGetDatasetEditions_GetUnpublishedDatasetStatic_Failure(t *testing.T) {
 	t.Parallel()
 	Convey("Given a request to GET /dataset-editions", t, func() {
 		mockedDataStore := &storetest.StorerMock{
-			GetStaticEditionsByStateFunc: func(ctx context.Context, state string, offset, limit int) ([]*models.Version, int, error) {
+			GetStaticVersionsByStateFunc: func(ctx context.Context, state string, offset, limit int) ([]*models.Version, int, error) {
 				return []*models.Version{
 					{
 						Edition: "January",
 						Links:   &models.VersionLinks{Dataset: &models.LinkObject{ID: "Dataset1"}},
 					},
 				}, 1, nil
-			},
-			GetLatestStaticVersionByStateFunc: func(ctx context.Context, datasetID, edition, state string) (*models.Version, error) {
-				return &models.Version{
-					Edition:      "January",
-					EditionTitle: "January Edition Title",
-					Version:      1,
-					ReleaseDate:  "2025-01-01",
-				}, nil
 			},
 			GetUnpublishedDatasetStaticFunc: func(ctx context.Context, id string) (*models.Dataset, error) {
 				return nil, errs.ErrDatasetNotFound
@@ -384,21 +316,13 @@ func TestGetDatasetEditions_GetUnpublishedDatasetStatic_Failure(t *testing.T) {
 
 	Convey("Given a request to GET /dataset-editions", t, func() {
 		mockedDataStore := &storetest.StorerMock{
-			GetStaticEditionsByStateFunc: func(ctx context.Context, state string, offset, limit int) ([]*models.Version, int, error) {
+			GetStaticVersionsByStateFunc: func(ctx context.Context, state string, offset, limit int) ([]*models.Version, int, error) {
 				return []*models.Version{
 					{
 						Edition: "January",
 						Links:   &models.VersionLinks{Dataset: &models.LinkObject{ID: "Dataset1"}},
 					},
 				}, 1, nil
-			},
-			GetLatestStaticVersionByStateFunc: func(ctx context.Context, datasetID, edition, state string) (*models.Version, error) {
-				return &models.Version{
-					Edition:      "January",
-					EditionTitle: "January Edition Title",
-					Version:      1,
-					ReleaseDate:  "2025-01-01",
-				}, nil
 			},
 			GetUnpublishedDatasetStaticFunc: func(ctx context.Context, id string) (*models.Dataset, error) {
 				return nil, errs.ErrInternalServer
@@ -417,42 +341,6 @@ func TestGetDatasetEditions_GetUnpublishedDatasetStatic_Failure(t *testing.T) {
 			Convey("Then it should return a 500 status code with an InternalServer error", func() {
 				So(err, ShouldEqual, errs.ErrInternalServer)
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(totalCount, ShouldEqual, 0)
-				So(results, ShouldBeNil)
-			})
-		})
-	})
-}
-
-func TestGetDatasetEditions_NoVersionsFoundForDatasets_Failure(t *testing.T) {
-	t.Parallel()
-	Convey("Given a request to GET /dataset-editions", t, func() {
-		mockedDataStore := &storetest.StorerMock{
-			GetStaticEditionsByStateFunc: func(ctx context.Context, state string, offset, limit int) ([]*models.Version, int, error) {
-				return []*models.Version{
-					{
-						Edition: "January",
-						Links:   &models.VersionLinks{Dataset: &models.LinkObject{ID: "Dataset1"}},
-					},
-				}, 1, nil
-			},
-			GetLatestStaticVersionByStateFunc: func(ctx context.Context, datasetID, edition, state string) (*models.Version, error) {
-				return nil, errs.ErrVersionNotFound
-			},
-		}
-
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-
-		Convey("When getDatasetEditions is called and the datastore fails", func() {
-			r := createRequestWithAuth("GET", "http://localhost:22000/dataset-editions", http.NoBody)
-			w := httptest.NewRecorder()
-			results, totalCount, err := api.getDatasetEditions(w, r, 20, 0)
-
-			Convey("Then it should return a 404 status code with a VersionsNotFound error", func() {
-				So(err, ShouldEqual, errs.ErrVersionsNotFound)
-				So(w.Code, ShouldEqual, http.StatusNotFound)
 				So(totalCount, ShouldEqual, 0)
 				So(results, ShouldBeNil)
 			})

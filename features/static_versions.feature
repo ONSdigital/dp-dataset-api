@@ -245,7 +245,7 @@ Feature: Dataset API
         Then the HTTP status code should be "404"
         And I should receive the following response:
             """
-            no editions were found
+            no versions were found
             """
     
     Scenario: GET /dataset-editions?state=associated returns 404 when there are no editions of static datasets that match the given state
@@ -276,7 +276,7 @@ Feature: Dataset API
         Then the HTTP status code should be "404"
         And I should receive the following response:
             """
-            no editions were found
+            no versions were found
             """
     
     Scenario: GET /dataset-editions returns 401 when user is not authorized

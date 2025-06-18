@@ -185,14 +185,14 @@ func TestGetDatasetEditions(t *testing.T) {
 		})
 
 		Convey("When the API returns a 404 error", func() {
-			httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusNotFound, apierrors.ErrEditionsNotFound.Error(), map[string]string{}})
+			httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusNotFound, apierrors.ErrVersionsNotFound.Error(), map[string]string{}})
 			datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
 
 			_, err := datasetAPIClient.GetDatasetEditions(ctx, headers, queryParams)
 
 			Convey("Then an editions not found error should be returned", func() {
 				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldEqual, apierrors.ErrEditionsNotFound.Error())
+				So(err.Error(), ShouldEqual, apierrors.ErrVersionsNotFound.Error())
 			})
 
 			Convey("And the request URI should be constructed correctly", func() {

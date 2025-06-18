@@ -37,38 +37,27 @@ func (api *DatasetAPI) getDatasetEditions(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	editions, _, err := api.dataStore.Backend.GetStaticEditionsByState(ctx, stateParam, offset, limit)
+	versions, totalCount, err := api.dataStore.Backend.GetStaticVersionsByState(ctx, stateParam, offset, limit)
 	if err != nil {
-		if errors.Is(err, errs.ErrEditionsNotFound) {
-			log.Error(ctx, "getDatasetEditions endpoint: no editions found", err, logData)
-			handleVersionAPIErr(ctx, errs.ErrEditionsNotFound, w, logData)
-			return nil, 0, errs.ErrEditionsNotFound
+		if errors.Is(err, errs.ErrVersionsNotFound) {
+			log.Error(ctx, "getDatasetEditions endpoint: no versions found", err, logData)
+			handleVersionAPIErr(ctx, errs.ErrVersionsNotFound, w, logData)
+			return nil, 0, errs.ErrVersionsNotFound
 		} else {
-			log.Error(ctx, "getDatasetEditions endpoint: failed to get editions", err, logData)
+			log.Error(ctx, "getDatasetEditions endpoint: failed to get versions", err, logData)
 			handleVersionAPIErr(ctx, errs.ErrInternalServer, w, logData)
 			return nil, 0, errs.ErrInternalServer
 		}
 	}
 
-	results := make([]*models.DatasetEdition, 0, len(editions))
+	results := make([]*models.DatasetEdition, 0, len(versions))
 
-	for _, edition := range editions {
-		logData["dataset_id"] = edition.Links.Dataset.ID
-		logData["edition"] = edition.Edition
+	for _, version := range versions {
+		logData["dataset_id"] = version.Links.Dataset.ID
+		logData["edition"] = version.Edition
+		logData["version"] = version.Version
 
-		latestUnpublishedVersion, err := api.dataStore.Backend.GetLatestStaticVersionByState(ctx, edition.Links.Dataset.ID, edition.Edition, stateParam)
-		if err != nil {
-			if errors.Is(err, errs.ErrVersionNotFound) {
-				log.Warn(ctx, "getDatasetEditions endpoint: no unpublished version found for edition", logData)
-				continue
-			} else {
-				log.Error(ctx, "getDatasetEditions endpoint: failed to get latest unpublished version", err, logData)
-				handleVersionAPIErr(ctx, errs.ErrInternalServer, w, logData)
-				return nil, 0, errs.ErrInternalServer
-			}
-		}
-
-		dataset, err := api.dataStore.Backend.GetUnpublishedDatasetStatic(ctx, edition.Links.Dataset.ID)
+		dataset, err := api.dataStore.Backend.GetUnpublishedDatasetStatic(ctx, version.Links.Dataset.ID)
 		if err != nil {
 			if errors.Is(err, errs.ErrDatasetNotFound) {
 				log.Error(ctx, "getDatasetEditions endpoint: dataset not found", err, logData)
@@ -84,21 +73,14 @@ func (api *DatasetAPI) getDatasetEditions(w http.ResponseWriter, r *http.Request
 		results = append(results, &models.DatasetEdition{
 			DatasetID:    dataset.ID,
 			Title:        dataset.Title,
-			Edition:      latestUnpublishedVersion.Edition,
-			EditionTitle: latestUnpublishedVersion.EditionTitle,
+			Edition:      version.Edition,
+			EditionTitle: version.EditionTitle,
 			LatestVersion: models.LinkObject{
-				HRef: fmt.Sprintf("/datasets/%s/editions/%s/versions/%d", dataset.ID, latestUnpublishedVersion.Edition, latestUnpublishedVersion.Version),
-				ID:   strconv.Itoa(latestUnpublishedVersion.Version),
+				HRef: fmt.Sprintf("/datasets/%s/editions/%s/versions/%d", dataset.ID, version.Edition, version.Version),
+				ID:   strconv.Itoa(version.Version),
 			},
-			ReleaseDate: latestUnpublishedVersion.ReleaseDate,
+			ReleaseDate: version.ReleaseDate,
 		})
-	}
-
-	totalCount := len(results)
-	if totalCount == 0 {
-		log.Error(ctx, "getDatasetEditions endpoint: no versions found for datasets", errs.ErrVersionsNotFound, log.Data{"state": stateParam})
-		handleVersionAPIErr(ctx, errs.ErrVersionsNotFound, w, log.Data{"state": stateParam})
-		return nil, 0, errs.ErrVersionsNotFound
 	}
 
 	return results, totalCount, nil
