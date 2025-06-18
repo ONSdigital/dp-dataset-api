@@ -27,4 +27,5 @@ type Clienter interface {
 	GetVersionDimensionOptions(ctx context.Context, headers Headers, datasetID, editionID, versionID, dimensionID string, queryParams *QueryParams) (versionDimensionOptionsList VersionDimensionOptionsList, err error)
 	GetVersionMetadata(ctx context.Context, headers Headers, datasetID, editionID, versionID string) (metadata models.Metadata, err error)
 	GetVersions(ctx context.Context, headers Headers, datasetID, editionID string, queryParams *QueryParams) (versionsList VersionsList, err error)
+	PutVersionState(ctx context.Context, headers Headers, datasetID, editionID, versionID, state string) (err error)
 }
