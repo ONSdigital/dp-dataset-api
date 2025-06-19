@@ -36,6 +36,9 @@ var _ sdk.Clienter = &ClienterMock{}
 //			GetDatasetByPathFunc: func(ctx context.Context, headers sdk.Headers, path string) (models.Dataset, error) {
 //				panic("mock out the GetDatasetByPath method")
 //			},
+//			GetDatasetEditionsFunc: func(ctx context.Context, headers sdk.Headers, queryParams *sdk.QueryParams) (sdk.DatasetEditionsList, error) {
+//				panic("mock out the GetDatasetEditions method")
+//			},
 //			GetEditionFunc: func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string) (models.Edition, error) {
 //				panic("mock out the GetEdition method")
 //			},
@@ -60,6 +63,9 @@ var _ sdk.Clienter = &ClienterMock{}
 //			HealthFunc: func() *health.Client {
 //				panic("mock out the Health method")
 //			},
+//			PutVersionStateFunc: func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, versionID string, state string) error {
+//				panic("mock out the PutVersionState method")
+//			},
 //			URLFunc: func() string {
 //				panic("mock out the URL method")
 //			},
@@ -81,6 +87,9 @@ type ClienterMock struct {
 
 	// GetDatasetByPathFunc mocks the GetDatasetByPath method.
 	GetDatasetByPathFunc func(ctx context.Context, headers sdk.Headers, path string) (models.Dataset, error)
+
+	// GetDatasetEditionsFunc mocks the GetDatasetEditions method.
+	GetDatasetEditionsFunc func(ctx context.Context, headers sdk.Headers, queryParams *sdk.QueryParams) (sdk.DatasetEditionsList, error)
 
 	// GetEditionFunc mocks the GetEdition method.
 	GetEditionFunc func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string) (models.Edition, error)
@@ -105,6 +114,9 @@ type ClienterMock struct {
 
 	// HealthFunc mocks the Health method.
 	HealthFunc func() *health.Client
+
+	// PutVersionStateFunc mocks the PutVersionState method.
+	PutVersionStateFunc func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, versionID string, state string) error
 
 	// URLFunc mocks the URL method.
 	URLFunc func() string
@@ -146,6 +158,15 @@ type ClienterMock struct {
 			Headers sdk.Headers
 			// Path is the path argument value.
 			Path string
+		}
+		// GetDatasetEditions holds details about calls to the GetDatasetEditions method.
+		GetDatasetEditions []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Headers is the headers argument value.
+			Headers sdk.Headers
+			// QueryParams is the queryParams argument value.
+			QueryParams *sdk.QueryParams
 		}
 		// GetEdition holds details about calls to the GetEdition method.
 		GetEdition []struct {
@@ -241,6 +262,21 @@ type ClienterMock struct {
 		// Health holds details about calls to the Health method.
 		Health []struct {
 		}
+		// PutVersionState holds details about calls to the PutVersionState method.
+		PutVersionState []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Headers is the headers argument value.
+			Headers sdk.Headers
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// EditionID is the editionID argument value.
+			EditionID string
+			// VersionID is the versionID argument value.
+			VersionID string
+			// State is the state argument value.
+			State string
+		}
 		// URL holds details about calls to the URL method.
 		URL []struct {
 		}
@@ -249,6 +285,7 @@ type ClienterMock struct {
 	lockDoAuthenticatedGetRequest  sync.RWMutex
 	lockGetDataset                 sync.RWMutex
 	lockGetDatasetByPath           sync.RWMutex
+	lockGetDatasetEditions         sync.RWMutex
 	lockGetEdition                 sync.RWMutex
 	lockGetEditions                sync.RWMutex
 	lockGetVersion                 sync.RWMutex
@@ -257,6 +294,7 @@ type ClienterMock struct {
 	lockGetVersionMetadata         sync.RWMutex
 	lockGetVersions                sync.RWMutex
 	lockHealth                     sync.RWMutex
+	lockPutVersionState            sync.RWMutex
 	lockURL                        sync.RWMutex
 }
 
@@ -417,6 +455,46 @@ func (mock *ClienterMock) GetDatasetByPathCalls() []struct {
 	mock.lockGetDatasetByPath.RLock()
 	calls = mock.calls.GetDatasetByPath
 	mock.lockGetDatasetByPath.RUnlock()
+	return calls
+}
+
+// GetDatasetEditions calls GetDatasetEditionsFunc.
+func (mock *ClienterMock) GetDatasetEditions(ctx context.Context, headers sdk.Headers, queryParams *sdk.QueryParams) (sdk.DatasetEditionsList, error) {
+	if mock.GetDatasetEditionsFunc == nil {
+		panic("ClienterMock.GetDatasetEditionsFunc: method is nil but Clienter.GetDatasetEditions was just called")
+	}
+	callInfo := struct {
+		Ctx         context.Context
+		Headers     sdk.Headers
+		QueryParams *sdk.QueryParams
+	}{
+		Ctx:         ctx,
+		Headers:     headers,
+		QueryParams: queryParams,
+	}
+	mock.lockGetDatasetEditions.Lock()
+	mock.calls.GetDatasetEditions = append(mock.calls.GetDatasetEditions, callInfo)
+	mock.lockGetDatasetEditions.Unlock()
+	return mock.GetDatasetEditionsFunc(ctx, headers, queryParams)
+}
+
+// GetDatasetEditionsCalls gets all the calls that were made to GetDatasetEditions.
+// Check the length with:
+//
+//	len(mockedClienter.GetDatasetEditionsCalls())
+func (mock *ClienterMock) GetDatasetEditionsCalls() []struct {
+	Ctx         context.Context
+	Headers     sdk.Headers
+	QueryParams *sdk.QueryParams
+} {
+	var calls []struct {
+		Ctx         context.Context
+		Headers     sdk.Headers
+		QueryParams *sdk.QueryParams
+	}
+	mock.lockGetDatasetEditions.RLock()
+	calls = mock.calls.GetDatasetEditions
+	mock.lockGetDatasetEditions.RUnlock()
 	return calls
 }
 
@@ -780,6 +858,58 @@ func (mock *ClienterMock) HealthCalls() []struct {
 	mock.lockHealth.RLock()
 	calls = mock.calls.Health
 	mock.lockHealth.RUnlock()
+	return calls
+}
+
+// PutVersionState calls PutVersionStateFunc.
+func (mock *ClienterMock) PutVersionState(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, versionID string, state string) error {
+	if mock.PutVersionStateFunc == nil {
+		panic("ClienterMock.PutVersionStateFunc: method is nil but Clienter.PutVersionState was just called")
+	}
+	callInfo := struct {
+		Ctx       context.Context
+		Headers   sdk.Headers
+		DatasetID string
+		EditionID string
+		VersionID string
+		State     string
+	}{
+		Ctx:       ctx,
+		Headers:   headers,
+		DatasetID: datasetID,
+		EditionID: editionID,
+		VersionID: versionID,
+		State:     state,
+	}
+	mock.lockPutVersionState.Lock()
+	mock.calls.PutVersionState = append(mock.calls.PutVersionState, callInfo)
+	mock.lockPutVersionState.Unlock()
+	return mock.PutVersionStateFunc(ctx, headers, datasetID, editionID, versionID, state)
+}
+
+// PutVersionStateCalls gets all the calls that were made to PutVersionState.
+// Check the length with:
+//
+//	len(mockedClienter.PutVersionStateCalls())
+func (mock *ClienterMock) PutVersionStateCalls() []struct {
+	Ctx       context.Context
+	Headers   sdk.Headers
+	DatasetID string
+	EditionID string
+	VersionID string
+	State     string
+} {
+	var calls []struct {
+		Ctx       context.Context
+		Headers   sdk.Headers
+		DatasetID string
+		EditionID string
+		VersionID string
+		State     string
+	}
+	mock.lockPutVersionState.RLock()
+	calls = mock.calls.PutVersionState
+	mock.lockPutVersionState.RUnlock()
 	return calls
 }
 

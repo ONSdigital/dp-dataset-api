@@ -225,6 +225,14 @@ func populateNewVersionDoc(currentVersion, originalVersion *models.Version) (*mo
 	log.Info(context.Background(), "DEBUG", log.Data{"downloads": version.Downloads, "currentDownloads": currentVersion.Downloads})
 	version.Downloads = populateDownloads(version.Downloads, currentVersion.Downloads)
 
+	if version.Type == models.Static.String() {
+		if version.Distributions == nil {
+			version.Distributions = currentVersion.Distributions
+		}
+	} else {
+		version.Distributions = nil
+	}
+
 	if version.UsageNotes == nil {
 		version.UsageNotes = currentVersion.UsageNotes
 	}
@@ -371,6 +379,29 @@ func AssociateVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 				log.Info(ctx, "putVersion endpoint (associateVersion): generated full dataset version downloads", data)
 			}
 		}
+	}
+
+	return nil
+}
+
+func ApproveVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
+	currentVersion *models.Version, // Called Instances in Mongo
+	versionUpdate *models.Version, // Next version, that is the new version
+	versionDetails VersionDetails,
+	hasDownloads string) error {
+	data := versionDetails.baseLogData()
+	log.Info(ctx, "putVersion endpoint (associateVersion): beginning associate version", data)
+
+	errModel := models.ValidateVersion(versionUpdate)
+	if errModel != nil {
+		log.Error(ctx, "State machine - Approving: ValidateVersion : failed to validate version", errModel, data)
+		return errModel
+	}
+
+	_, err := UpdateVersionInfo(ctx, smDS, currentVersion, versionUpdate, versionDetails)
+	if err != nil {
+		log.Error(ctx, "State machine - Approving: UpdateVersionInfo : failed to update the version", err, data)
+		return err
 	}
 
 	return nil

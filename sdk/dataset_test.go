@@ -149,3 +149,101 @@ func TestGetDatasetByPath(t *testing.T) {
 		})
 	})
 }
+
+func TestGetDatasetEditions(t *testing.T) {
+	mockedDatasetEditions := []models.DatasetEdition{
+		{
+			DatasetID:    "test-1",
+			Title:        "Test Title 1",
+			Edition:      "January",
+			EditionTitle: "January Edition Title",
+			LatestVersion: models.LinkObject{
+				HRef: "/datasets/test-1/editions/January/versions/1",
+				ID:   "1",
+			},
+			ReleaseDate: "2025-01-01",
+		},
+		{
+			DatasetID:    "test-2",
+			Title:        "Test Title 2",
+			Edition:      "February",
+			EditionTitle: "February Edition Title",
+			LatestVersion: models.LinkObject{
+				HRef: "/datasets/test-2/editions/February/versions/1",
+				ID:   "1",
+			},
+			ReleaseDate: "2025-02-01",
+		},
+	}
+
+	mockedGetResponse := DatasetEditionsList{
+		Items:      mockedDatasetEditions,
+		Count:      len(mockedDatasetEditions),
+		Offset:     0,
+		Limit:      20,
+		TotalCount: len(mockedDatasetEditions),
+	}
+
+	Convey("Given valid query parameters", t, func() {
+		queryParams := &QueryParams{
+			Limit:  20,
+			Offset: 0,
+			State:  "associated",
+		}
+
+		Convey("When the API returns a successful response", func() {
+			httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, mockedGetResponse, map[string]string{}})
+			datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+
+			results, err := datasetAPIClient.GetDatasetEditions(ctx, headers, queryParams)
+			So(err, ShouldBeNil)
+
+			Convey("Then the response should match the expected dataset editions", func() {
+				So(results, ShouldResemble, mockedGetResponse)
+			})
+
+			Convey("And the request URI should be constructed correctly", func() {
+				expectedURI := "/dataset-editions?limit=20&offset=0&state=associated"
+				So(httpClient.DoCalls()[0].Req.Method, ShouldEqual, http.MethodGet)
+				So(httpClient.DoCalls()[0].Req.URL.RequestURI(), ShouldResemble, expectedURI)
+			})
+		})
+
+		Convey("When the API returns a 404 error", func() {
+			httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusNotFound, apierrors.ErrVersionsNotFound.Error(), map[string]string{}})
+			datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+
+			_, err := datasetAPIClient.GetDatasetEditions(ctx, headers, queryParams)
+
+			Convey("Then an editions not found error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldEqual, apierrors.ErrVersionsNotFound.Error())
+			})
+
+			Convey("And the request URI should be constructed correctly", func() {
+				expectedURI := "/dataset-editions?limit=20&offset=0&state=associated"
+				So(httpClient.DoCalls()[0].Req.Method, ShouldEqual, http.MethodGet)
+				So(httpClient.DoCalls()[0].Req.URL.RequestURI(), ShouldResemble, expectedURI)
+			})
+		})
+	})
+
+	Convey("Given invalid query parameters", t, func() {
+		queryParams := &QueryParams{
+			Limit:  -1,
+			Offset: -1,
+		}
+
+		Convey("When the API is called", func() {
+			httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusBadRequest, nil, map[string]string{}})
+			datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+
+			_, err := datasetAPIClient.GetDatasetEditions(ctx, headers, queryParams)
+
+			Convey("Then an error should be returned indicating the error", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldEqual, "negative offsets or limits are not allowed")
+			})
+		})
+	})
+}

@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -15,7 +16,8 @@ import (
 // Get returns dataset level information for a given dataset id
 func (c *Client) GetDataset(ctx context.Context, headers Headers, collectionID, datasetID string) (dataset models.Dataset, err error) {
 	dataset = models.Dataset{}
-	// Build uri
+
+	// Build URI
 	uri := &url.URL{}
 	uri.Path, err = url.JoinPath(c.hcCli.URL, "datasets", datasetID)
 	if err != nil {
@@ -27,7 +29,6 @@ func (c *Client) GetDataset(ctx context.Context, headers Headers, collectionID, 
 	if err != nil {
 		return dataset, err
 	}
-
 	defer closeResponseBody(ctx, resp)
 
 	// If response got errors
@@ -83,4 +84,55 @@ func (c *Client) GetDatasetByPath(ctx context.Context, headers Headers, path str
 	err = unmarshalResponseBodyExpectingStringError(resp, &dataset)
 
 	return dataset, err
+}
+
+// DatasetEditionsList represents an object containing a list of paginated dataset editions. This struct is based
+// on the `pagination.page` struct which is returned when we call the `api.getDatasetEditions` endpoint
+type DatasetEditionsList struct {
+	Items      []models.DatasetEdition `json:"items"`
+	Count      int                     `json:"count"`
+	Offset     int                     `json:"offset"`
+	Limit      int                     `json:"limit"`
+	TotalCount int                     `json:"total_count"`
+}
+
+// GetDatasetEditions returns a list of dataset series that have unpublished versions or match the given state
+func (c *Client) GetDatasetEditions(ctx context.Context, headers Headers, queryParams *QueryParams) (datasetEditionsList DatasetEditionsList, err error) {
+	datasetEditionsList = DatasetEditionsList{}
+
+	// Build URI
+	uri := &url.URL{}
+	uri.Path, err = url.JoinPath(c.hcCli.URL, "dataset-editions")
+	if err != nil {
+		return datasetEditionsList, err
+	}
+
+	// Add query parameters to request if valid
+	if queryParams != nil {
+		if err := queryParams.Validate(); err != nil {
+			return datasetEditionsList, err
+		}
+
+		// Add query parameters
+		query := url.Values{}
+		query.Add("limit", strconv.Itoa(queryParams.Limit))
+		query.Add("offset", strconv.Itoa(queryParams.Offset))
+		if queryParams.State != "" {
+			query.Add("state", queryParams.State)
+		}
+		uri.RawQuery = query.Encode()
+	}
+
+	// Make request
+	resp, err := c.DoAuthenticatedGetRequest(ctx, headers, uri)
+	if err != nil {
+		return datasetEditionsList, err
+	}
+
+	defer closeResponseBody(ctx, resp)
+
+	// Unmarshal the response body to target
+	err = unmarshalResponseBodyExpectingStringError(resp, &datasetEditionsList)
+
+	return datasetEditionsList, err
 }

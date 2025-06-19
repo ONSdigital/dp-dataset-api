@@ -19,6 +19,7 @@ type Clienter interface {
 	DoAuthenticatedGetRequest(ctx context.Context, headers Headers, uri *url.URL) (resp *http.Response, err error)
 	GetDataset(ctx context.Context, headers Headers, collectionID, datasetID string) (dataset models.Dataset, err error)
 	GetDatasetByPath(ctx context.Context, headers Headers, path string) (dataset models.Dataset, err error)
+	GetDatasetEditions(ctx context.Context, headers Headers, queryParams *QueryParams) (datasetEditionsList DatasetEditionsList, err error)
 	GetEdition(ctx context.Context, headers Headers, datasetID, editionID string) (edition models.Edition, err error)
 	GetEditions(ctx context.Context, headers Headers, datasetID string, queryParams *QueryParams) (editionList EditionsList, err error)
 	GetVersion(ctx context.Context, headers Headers, datasetID, editionID, versionID string) (version models.Version, err error)
@@ -26,4 +27,5 @@ type Clienter interface {
 	GetVersionDimensionOptions(ctx context.Context, headers Headers, datasetID, editionID, versionID, dimensionID string, queryParams *QueryParams) (versionDimensionOptionsList VersionDimensionOptionsList, err error)
 	GetVersionMetadata(ctx context.Context, headers Headers, datasetID, editionID, versionID string) (metadata models.Metadata, err error)
 	GetVersions(ctx context.Context, headers Headers, datasetID, editionID string, queryParams *QueryParams) (versionsList VersionsList, err error)
+	PutVersionState(ctx context.Context, headers Headers, datasetID, editionID, versionID, state string) (err error)
 }

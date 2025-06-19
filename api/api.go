@@ -281,6 +281,12 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(paginator *pagination.Pagin
 			paginator.Paginate(api.getDimensionOptions)),
 	)
 
+	api.get(
+		"/dataset-editions",
+		api.isAuthorisedForDatasets(readPermission,
+			paginator.Paginate(api.getDatasetEditions)),
+	)
+
 	api.post(
 		"/datasets/{dataset_id}",
 		api.isAuthenticated(
@@ -471,7 +477,7 @@ func (api *DatasetAPI) isAuthorised(required auth.Permissions, handler http.Hand
 }
 
 // isAuthorised wraps a http.HandlerFunc another http.HandlerFunc that checks the caller is authorised to perform the
-// requested datasets action. This authorisation check is specific to datastes. required is the permissions required to
+// requested datasets action. This authorisation check is specific to datasets. required is the permissions required to
 // perform the action, handler is the http.HandlerFunc to apply the check to. The wrapped handler is only called if the
 // caller has the required dataset permissions.
 func (api *DatasetAPI) isAuthorisedForDatasets(required auth.Permissions, handler http.HandlerFunc) http.HandlerFunc {

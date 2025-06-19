@@ -13,6 +13,7 @@ const (
 	CompletedState        = "completed"
 	EditionConfirmedState = "edition-confirmed"
 	AssociatedState       = "associated"
+	ApprovedState         = "approved"
 	PublishedState        = "published"
 	DetachedState         = "detached"
 	FailedState           = "failed"
@@ -21,6 +22,7 @@ const (
 var validVersionStates = map[string]int{
 	EditionConfirmedState: 1,
 	AssociatedState:       1,
+	ApprovedState:         1,
 	PublishedState:        1,
 }
 
@@ -29,6 +31,7 @@ var validStates = map[string]int{
 	SubmittedState:        1,
 	CompletedState:        1,
 	EditionConfirmedState: 1,
+	ApprovedState:         1,
 	AssociatedState:       1,
 	PublishedState:        1,
 	FailedState:           1,

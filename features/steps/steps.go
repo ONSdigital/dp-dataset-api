@@ -38,6 +38,7 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I have these "([^"]*)" datasets:$`, c.iHaveTheseConditionalDatasets)
 	ctx.Step(`^I have these editions:$`, c.iHaveTheseEditions)
 	ctx.Step(`^I have these versions:$`, c.iHaveTheseVersions)
+	ctx.Step(`^I have these static versions:$`, c.iHaveTheseStaticVersions)
 	ctx.Step(`^these versions need to be published:$`, c.theseVersionsNeedToBePublished)
 	ctx.Step(`^I have these dimensions:$`, c.iHaveTheseDimensions)
 	ctx.Step(`^I have these instances:$`, c.iHaveTheseInstances)
@@ -307,7 +308,7 @@ func (c *DatasetComponent) iHaveTheseDatasets(datasetsJSON *godog.DocString) err
 	return nil
 }
 
-// Done for GET /datastes?is_based_on so that we can condition a dataset on whether it is published or not.
+// Done for GET /datasets?is_based_on so that we can condition a dataset on whether it is published or not.
 func (c *DatasetComponent) iHaveTheseConditionalDatasets(status string, datasetsJSON *godog.DocString) error {
 	datasets := []models.Dataset{}
 
@@ -361,6 +362,26 @@ func (c *DatasetComponent) iHaveTheseVersions(versionsJSON *godog.DocString) err
 		instanceCollection := c.MongoClient.ActualCollectionName(config.InstanceCollection)
 		if err := c.putDocumentInDatabase(version, versionID, instanceCollection, timeOffset); err != nil {
 			return err
+		}
+	}
+
+	return nil
+}
+
+func (c *DatasetComponent) iHaveTheseStaticVersions(versionsJSON *godog.DocString) error {
+	versions := []models.Version{}
+
+	err := json.Unmarshal([]byte(versionsJSON.Content), &versions)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal versionsJSON: %w", err)
+	}
+
+	versionsCollection := c.MongoClient.ActualCollectionName(config.VersionsCollection)
+
+	for timeOffset := range versions {
+		version := &versions[timeOffset]
+		if err := c.putDocumentInDatabase(version, version.ID, versionsCollection, timeOffset); err != nil {
+			return fmt.Errorf("failed to insert static version: %w", err)
 		}
 	}
 
