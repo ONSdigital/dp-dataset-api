@@ -56,6 +56,31 @@ func TestGetDataset(t *testing.T) {
 			So(err.Error(), ShouldEqual, "Internal server error")
 		})
 	})
+
+	Convey("If authenticated and dataset response includes a 'next' field", t, func() {
+		// dataset response nested under "next"
+		responseWithNext := &models.DatasetUpdate{
+			Next: &mockGetResponse,
+		}
+
+		// Provide service token to simulate authenticated request
+		authHeaders := Headers{
+			ServiceToken:    "valid-token",
+			UserAccessToken: "",
+		}
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, responseWithNext, map[string]string{}})
+
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+		returnedDataset, err := datasetAPIClient.GetDataset(ctx, authHeaders, collectionID, datasetID)
+
+		Convey("Test that the dataset is extracted from the 'next' object", func() {
+			So(err, ShouldBeNil)
+			So(returnedDataset.ID, ShouldEqual, datasetID)
+			So(returnedDataset.CollectionID, ShouldEqual, collectionID)
+			So(returnedDataset.Title, ShouldEqual, "Test Dataset")
+			So(returnedDataset.Description, ShouldEqual, "Dataset for testing")
+		})
+	})
 }
 
 func TestGetDatasetByPath(t *testing.T) {

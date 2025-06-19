@@ -1,7 +1,11 @@
 package sdk
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"io"
+	"net/http"
 	"net/url"
 	"strings"
 
@@ -26,9 +30,33 @@ func (c *Client) GetDataset(ctx context.Context, headers Headers, collectionID, 
 
 	defer closeResponseBody(ctx, resp)
 
-	// Unmarshal the response body to target
-	err = unmarshalResponseBodyExpectingStringError(resp, &dataset)
+	// If response got errors
+	if resp.StatusCode != http.StatusOK {
+		err = unmarshalResponseBodyExpectingStringError(resp, &dataset)
+		return dataset, err
+	}
 
+	// Read the response body (only if status is OK)
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return dataset, err
+	}
+
+	var bodyMap map[string]interface{}
+	if err := json.Unmarshal(b, &bodyMap); err != nil {
+		return dataset, err
+	}
+
+	// If authenticated, try to extract "next" field from the JSON body
+	if next, ok := bodyMap["next"]; ok && (headers.ServiceToken != "" || headers.UserAccessToken != "") {
+		b, err = json.Marshal(next)
+		if err != nil {
+			return dataset, err
+		}
+	}
+
+	resp.Body = io.NopCloser(bytes.NewReader(b))
+	err = json.Unmarshal(b, &dataset)
 	return dataset, err
 }
 
