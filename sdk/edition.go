@@ -100,7 +100,7 @@ func (c *Client) GetEditions(ctx context.Context, headers Headers, datasetID str
 			parentItems["items"] = items
 			b, err = json.Marshal(parentItems)
 			if err != nil {
-				return
+				return editionList, err
 			}
 		}
 	}
