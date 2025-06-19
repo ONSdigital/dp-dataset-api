@@ -2,6 +2,9 @@ package sdk
 
 import (
 	"context"
+	"encoding/json"
+	"io"
+	"net/http"
 	"net/url"
 	"strconv"
 
@@ -72,8 +75,41 @@ func (c *Client) GetEditions(ctx context.Context, headers Headers, datasetID str
 
 	defer closeResponseBody(ctx, resp)
 
-	// Unmarshal the response body to target
-	err = unmarshalResponseBodyExpectingStringError(resp, &editionList)
+	if resp.StatusCode != http.StatusOK {
+		err = unmarshalResponseBodyExpectingStringError(resp, &editionList)
+		return editionList, err
+	}
+
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return editionList, err
+	}
+
+	var body map[string]interface{}
+	if err = json.Unmarshal(b, &body); err != nil {
+		return editionList, nil
+	}
+
+	if body["items"] != nil {
+		if _, ok := body["items"].([]interface{})[0].(map[string]interface{})["next"]; ok && headers.UserAccessToken != "" || headers.ServiceToken != "" {
+			var items []map[string]interface{}
+			for _, item := range body["items"].([]interface{}) {
+				items = append(items, item.(map[string]interface{})["next"].(map[string]interface{}))
+			}
+			parentItems := make(map[string]interface{})
+			parentItems["items"] = items
+			b, err = json.Marshal(parentItems)
+			if err != nil {
+				return editionList, err
+			}
+		}
+	}
+
+	editions := struct {
+		Items []models.Edition `json:"items"`
+	}{}
+	err = json.Unmarshal(b, &editions)
+	editionList.Items = editions.Items
 
 	return editionList, err
 }
