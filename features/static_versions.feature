@@ -44,7 +44,8 @@ Feature: Dataset API
                     },
                     "version": 1,
                     "release_date": "2025-01-01T07:00:00.000Z",
-                    "state": "associated"
+                    "state": "associated",
+                    "type": "static"
                 },
                 {
                     "id": "test-version-id-2",
@@ -57,7 +58,8 @@ Feature: Dataset API
                     },
                     "version": 2,
                     "release_date": "2025-02-01T07:00:00.000Z",
-                    "state": "edition-confirmed"
+                    "state": "edition-confirmed",
+                    "type": "static"
                 },
                 {
                     "id": "test-version-id-3",
@@ -70,7 +72,8 @@ Feature: Dataset API
                     },
                     "version": 1,
                     "release_date": "2025-03-01T07:00:00.000Z",
-                    "state": "approved"
+                    "state": "approved",
+                    "type": "static"
                 },
                 {
                     "id": "test-version-id-4",
@@ -83,7 +86,8 @@ Feature: Dataset API
                     },
                     "version": 1,
                     "release_date": "2025-04-01T07:00:00.000Z",
-                    "state": "approved"
+                    "state": "approved",
+                    "type": "static"
                 },
                 {
                     "id": "test-version-id-5",
@@ -96,7 +100,8 @@ Feature: Dataset API
                     },
                     "version": 1,
                     "release_date": "2025-05-01T07:00:00.000Z",
-                    "state": "associated"
+                    "state": "associated",
+                    "type": "static"
                 },
                 {
                     "id": "test-version-id-6",
@@ -109,7 +114,8 @@ Feature: Dataset API
                     },
                     "version": 1,
                     "release_date": "2025-02-01T06:00:00.000Z",
-                    "state": "published"
+                    "state": "published",
+                    "type": "static"
                 }
             ]
             """
