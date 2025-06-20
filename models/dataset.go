@@ -194,6 +194,7 @@ type DatasetEdition struct {
 	EditionTitle  string     `json:"edition_title"`
 	LatestVersion LinkObject `json:"latest_version"`
 	ReleaseDate   string     `json:"release_date"`
+	State         string     `json:"state"`
 }
 
 // Publisher represents an object containing information of the publisher

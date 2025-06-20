@@ -31,6 +31,7 @@ func TestGetDatasetEditions_WithQueryParam_Success(t *testing.T) {
 						Version:      1,
 						ReleaseDate:  "2025-01-01",
 						Links:        &models.VersionLinks{Dataset: &models.LinkObject{ID: "Dataset1"}},
+						State:        models.AssociatedState,
 					},
 					{
 						Edition:      "February",
@@ -38,6 +39,7 @@ func TestGetDatasetEditions_WithQueryParam_Success(t *testing.T) {
 						Version:      2,
 						ReleaseDate:  "2025-02-01",
 						Links:        &models.VersionLinks{Dataset: &models.LinkObject{ID: "Dataset2"}},
+						State:        models.AssociatedState,
 					},
 				}, 2, nil
 			},
@@ -83,6 +85,7 @@ func TestGetDatasetEditions_WithQueryParam_Success(t *testing.T) {
 							ID:   "1",
 						},
 						ReleaseDate: "2025-01-01",
+						State:       models.AssociatedState,
 					},
 					{
 						DatasetID:    "Dataset2",
@@ -94,6 +97,7 @@ func TestGetDatasetEditions_WithQueryParam_Success(t *testing.T) {
 							ID:   "2",
 						},
 						ReleaseDate: "2025-02-01",
+						State:       models.AssociatedState,
 					},
 				}
 				So(results, ShouldResemble, expectedResponse)
@@ -117,6 +121,7 @@ func TestGetDatasetEditions_WithoutQueryParam_Success(t *testing.T) {
 						Version:      1,
 						ReleaseDate:  "2025-01-01",
 						Links:        &models.VersionLinks{Dataset: &models.LinkObject{ID: "Dataset1"}},
+						State:        models.AssociatedState,
 					},
 					{
 						Edition:      "February",
@@ -124,6 +129,7 @@ func TestGetDatasetEditions_WithoutQueryParam_Success(t *testing.T) {
 						Version:      2,
 						ReleaseDate:  "2025-02-01",
 						Links:        &models.VersionLinks{Dataset: &models.LinkObject{ID: "Dataset2"}},
+						State:        models.EditionConfirmedState,
 					},
 				}, 2, nil
 			},
@@ -169,6 +175,7 @@ func TestGetDatasetEditions_WithoutQueryParam_Success(t *testing.T) {
 							ID:   "1",
 						},
 						ReleaseDate: "2025-01-01",
+						State:       models.AssociatedState,
 					},
 					{
 						DatasetID:    "Dataset2",
@@ -180,6 +187,7 @@ func TestGetDatasetEditions_WithoutQueryParam_Success(t *testing.T) {
 							ID:   "2",
 						},
 						ReleaseDate: "2025-02-01",
+						State:       models.EditionConfirmedState,
 					},
 				}
 				So(results, ShouldResemble, expectedResponse)
