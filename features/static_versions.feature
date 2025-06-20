@@ -176,7 +176,7 @@ Feature: Dataset API
                             "id": "2"
                         },
                         "release_date": "2025-02-01T07:00:00.000Z",
-                        "state": "associated"
+                        "state": "edition-confirmed"
                     },
                     {
                         "dataset_id": "static-dataset-1",
