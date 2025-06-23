@@ -16,10 +16,16 @@ import (
 	bsonprim "go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func (m *Mongo) GetDatasetsByQueryParams(ctx context.Context, id, datasetType string, offset, limit int, authorised bool) (values []*models.DatasetUpdate, totalCount int, err error) {
+func (m *Mongo) GetDatasetsByQueryParams(ctx context.Context, id, datasetType, sortOrder string, offset, limit int, authorised bool) (values []*models.DatasetUpdate, totalCount int, err error) {
 	filter, err := buildDatasetsQueryWithIsBasedOnAndType(id, datasetType, authorised)
 	if err != nil {
 		return nil, 0, err
+	}
+
+	// Determine sort direction: 1 for ASC, -1 for DESC or default
+	sortDir := -1
+	if sortOrder == "ASC" {
+		sortDir = 1
 	}
 
 	// Query MongoDB
@@ -30,7 +36,7 @@ func (m *Mongo) GetDatasetsByQueryParams(ctx context.Context, id, datasetType st
 			ctx,
 			filter,
 			&values,
-			mongodriver.Sort(bson.M{"_id": -1}),
+			mongodriver.Sort(bson.M{"_id": sortDir}),
 			mongodriver.Offset(offset), mongodriver.Limit(limit),
 		)
 	if err != nil {

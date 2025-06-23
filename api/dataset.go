@@ -52,6 +52,7 @@ var (
 
 const IsBasedOn = "is_based_on"
 const DatasetType = "type"
+const SortOrder = "sort_order"
 
 // getDatasets returns a list of datasets, the total count of datasets and an error
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit, offset int) (mappedDatasets interface{}, totalCount int, err error) {
@@ -64,6 +65,9 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 
 	isDatasetTypeExists := r.URL.Query().Has(DatasetType)
 	datasetType := r.URL.Query().Get(DatasetType)
+
+	isSortOrderExists := r.URL.Query().Has(SortOrder)
+	sortOrder := r.URL.Query().Get(SortOrder)
 
 	if isBasedOnExists && isBasedOn == "" {
 		err := errs.ErrInvalidQueryParameter
@@ -79,10 +83,17 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 		return nil, 0, err
 	}
 
+	if isSortOrderExists && sortOrder != "ASC" && sortOrder != "DESC" {
+		err := errs.ErrInvalidQueryParameter
+		log.Error(ctx, "malformed sort_order parameter", err)
+		handleDatasetAPIErr(ctx, err, w, logData)
+		return nil, 0, err
+	}
+
 	var datasets []*models.DatasetUpdate
 
-	if isBasedOnExists || isDatasetTypeExists {
-		datasets, totalCount, err = api.dataStore.Backend.GetDatasetsByQueryParams(ctx, isBasedOn, datasetType, offset, limit, authorised)
+	if isBasedOnExists || isDatasetTypeExists || isSortOrderExists {
+		datasets, totalCount, err = api.dataStore.Backend.GetDatasetsByQueryParams(ctx, isBasedOn, datasetType, sortOrder, offset, limit, authorised)
 	} else {
 		datasets, totalCount, err = api.dataStore.Backend.GetDatasets(
 			ctx,
