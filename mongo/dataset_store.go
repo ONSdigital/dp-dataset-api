@@ -27,7 +27,7 @@ func (m *Mongo) GetDatasetsByQueryParams(ctx context.Context, id, datasetType, s
 
 	// Determine sort direction: 1 for ASC, -1 for DESC or default
 	sortDir := -1
-	if sortOrder == DESCOrder {
+	if sortOrder == ASCOrder {
 		sortDir = 1
 	}
 
