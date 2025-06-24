@@ -40,6 +40,10 @@ Feature: Dataset API
                     "links": {
                         "dataset": {
                             "id": "static-dataset-1"
+                        },
+                        "edition": {
+                            "href": "/datasets/static-dataset-1/editions/January",
+                            "id": "January"
                         }
                     },
                     "version": 1,
@@ -54,6 +58,10 @@ Feature: Dataset API
                     "links": {
                         "dataset": {
                             "id": "static-dataset-2"
+                        },
+                        "edition": {
+                            "href": "/datasets/static-dataset-2/editions/February",
+                            "id": "February"
                         }
                     },
                     "version": 2,
@@ -68,6 +76,10 @@ Feature: Dataset API
                     "links": {
                         "dataset": {
                             "id": "static-dataset-3"
+                        },
+                        "edition": {
+                            "href": "/datasets/static-dataset-3/editions/March",
+                            "id": "March"
                         }
                     },
                     "version": 1,
@@ -82,6 +94,10 @@ Feature: Dataset API
                     "links": {
                         "dataset": {
                             "id": "static-dataset-3"
+                        },
+                        "edition": {
+                            "href": "/datasets/static-dataset-3/editions/April",
+                            "id": "April"
                         }
                     },
                     "version": 1,
@@ -96,6 +112,10 @@ Feature: Dataset API
                     "links": {
                         "dataset": {
                             "id": "static-dataset-4"
+                        },
+                        "edition": {
+                            "href": "/datasets/static-dataset-4/editions/May",
+                            "id": "May"
                         }
                     },
                     "version": 1,
@@ -110,6 +130,10 @@ Feature: Dataset API
                     "links": {
                         "dataset": {
                             "id": "static-dataset-2"
+                        },
+                        "edition": {
+                            "href": "/datasets/static-dataset-2/editions/February",
+                            "id": "February"
                         }
                     },
                     "version": 1,
@@ -276,6 +300,10 @@ Feature: Dataset API
                     "links": {
                         "dataset": {
                             "id": "static-dataset-1"
+                        },
+                        "edition": {
+                            "href": "/datasets/static-dataset-1/editions/January",
+                            "id": "January"
                         }
                     },
                     "version": 1,
