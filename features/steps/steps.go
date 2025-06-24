@@ -380,6 +380,12 @@ func (c *DatasetComponent) iHaveTheseStaticVersions(versionsJSON *godog.DocStrin
 
 	for timeOffset := range versions {
 		version := &versions[timeOffset]
+		if version.Links.Version == nil {
+			version.Links.Version = &models.LinkObject{
+				HRef: version.Links.Edition.HRef + "/versions/" + version.ID,
+				ID:   version.ID,
+			}
+		}
 		if err := c.putDocumentInDatabase(version, version.ID, versionsCollection, timeOffset); err != nil {
 			return fmt.Errorf("failed to insert static version: %w", err)
 		}
