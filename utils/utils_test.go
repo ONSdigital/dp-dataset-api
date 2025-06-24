@@ -40,6 +40,7 @@ func TestMapVersionToEdition(t *testing.T) {
 					ID:   "2023",
 				},
 			},
+			State:              models.AssociatedState,
 			Version:            1,
 			LastUpdated:        time.Date(2023, 9, 30, 12, 0, 0, 0, time.UTC),
 			Alerts:             &[]models.Alert{{Description: "Test alert"}},
@@ -62,6 +63,7 @@ func TestMapVersionToEdition(t *testing.T) {
 				So(edition.Links.Self.HRef, ShouldEqual, version.Links.Edition.HRef)
 				So(edition.Links.Self.ID, ShouldEqual, version.Links.Edition.ID)
 				So(edition.Links.Versions.HRef, ShouldEqual, version.Links.Edition.HRef+"/versions")
+				So(edition.State, ShouldEqual, version.State)
 				So(edition.Version, ShouldEqual, version.Version)
 				So(edition.LastUpdated, ShouldEqual, version.LastUpdated)
 				So(edition.Alerts, ShouldResemble, version.Alerts)
@@ -150,6 +152,7 @@ func TestMapVersionsToEditions(t *testing.T) {
 				So(edition.Current.UsageNotes, ShouldResemble, publishedVersion.UsageNotes)
 				So(edition.Current.Distributions, ShouldResemble, publishedVersion.Distributions)
 				So(edition.Current.QualityDesignation, ShouldEqual, publishedVersion.QualityDesignation)
+				So(edition.Current.State, ShouldEqual, publishedVersion.State)
 			})
 
 			Convey("And the unpublished version should be mapped to the 'Next' field", func() {
@@ -169,6 +172,7 @@ func TestMapVersionsToEditions(t *testing.T) {
 				So(edition.Next.UsageNotes, ShouldResemble, unpublishedVersion.UsageNotes)
 				So(edition.Next.Distributions, ShouldResemble, unpublishedVersion.Distributions)
 				So(edition.Next.QualityDesignation, ShouldEqual, unpublishedVersion.QualityDesignation)
+				So(edition.Next.State, ShouldEqual, unpublishedVersion.State)
 			})
 		})
 
@@ -193,6 +197,7 @@ func TestMapVersionsToEditions(t *testing.T) {
 				So(edition.Current.UsageNotes, ShouldResemble, publishedVersion.UsageNotes)
 				So(edition.Current.Distributions, ShouldResemble, publishedVersion.Distributions)
 				So(edition.Current.QualityDesignation, ShouldEqual, publishedVersion.QualityDesignation)
+				So(edition.Current.State, ShouldEqual, publishedVersion.State)
 
 				So(edition.Next.DatasetID, ShouldEqual, publishedVersion.DatasetID)
 				So(edition.Next.Edition, ShouldEqual, publishedVersion.Edition)
@@ -210,6 +215,7 @@ func TestMapVersionsToEditions(t *testing.T) {
 				So(edition.Next.UsageNotes, ShouldResemble, publishedVersion.UsageNotes)
 				So(edition.Next.Distributions, ShouldResemble, publishedVersion.Distributions)
 				So(edition.Next.QualityDesignation, ShouldEqual, publishedVersion.QualityDesignation)
+				So(edition.Next.State, ShouldEqual, publishedVersion.State)
 			})
 		})
 
@@ -235,6 +241,7 @@ func TestMapVersionsToEditions(t *testing.T) {
 				So(edition.Next.UsageNotes, ShouldResemble, unpublishedVersion.UsageNotes)
 				So(edition.Next.Distributions, ShouldResemble, unpublishedVersion.Distributions)
 				So(edition.Next.QualityDesignation, ShouldEqual, unpublishedVersion.QualityDesignation)
+				So(edition.Next.State, ShouldEqual, unpublishedVersion.State)
 			})
 		})
 

@@ -40,6 +40,10 @@ Feature: Dataset API
                     "links": {
                         "dataset": {
                             "id": "static-dataset-1"
+                        },
+                        "edition": {
+                            "href": "/datasets/static-dataset-1/editions/January",
+                            "id": "January"
                         }
                     },
                     "version": 1,
@@ -54,6 +58,10 @@ Feature: Dataset API
                     "links": {
                         "dataset": {
                             "id": "static-dataset-2"
+                        },
+                        "edition": {
+                            "href": "/datasets/static-dataset-2/editions/February",
+                            "id": "February"
                         }
                     },
                     "version": 2,
@@ -68,6 +76,10 @@ Feature: Dataset API
                     "links": {
                         "dataset": {
                             "id": "static-dataset-3"
+                        },
+                        "edition": {
+                            "href": "/datasets/static-dataset-3/editions/March",
+                            "id": "March"
                         }
                     },
                     "version": 1,
@@ -82,6 +94,10 @@ Feature: Dataset API
                     "links": {
                         "dataset": {
                             "id": "static-dataset-3"
+                        },
+                        "edition": {
+                            "href": "/datasets/static-dataset-3/editions/April",
+                            "id": "April"
                         }
                     },
                     "version": 1,
@@ -96,6 +112,10 @@ Feature: Dataset API
                     "links": {
                         "dataset": {
                             "id": "static-dataset-4"
+                        },
+                        "edition": {
+                            "href": "/datasets/static-dataset-4/editions/May",
+                            "id": "May"
                         }
                     },
                     "version": 1,
@@ -110,6 +130,10 @@ Feature: Dataset API
                     "links": {
                         "dataset": {
                             "id": "static-dataset-2"
+                        },
+                        "edition": {
+                            "href": "/datasets/static-dataset-2/editions/February",
+                            "id": "February"
                         }
                     },
                     "version": 1,
@@ -132,6 +156,7 @@ Feature: Dataset API
                 "items": [
                     {
                         "dataset_id": "static-dataset-4",
+                        "title": "Static Dataset 4",
                         "edition": "May",
                         "edition_title": "May Edition Title",
                         "latest_version": {
@@ -139,10 +164,11 @@ Feature: Dataset API
                             "id": "1"
                         },
                         "release_date": "2025-05-01T07:00:00.000Z",
-                        "title": "Static Dataset 4"
+                        "state": "associated"
                     },
                     {
                         "dataset_id": "static-dataset-3",
+                        "title": "Static Dataset 3",
                         "edition": "April",
                         "edition_title": "April Edition Title",
                         "latest_version": {
@@ -150,10 +176,11 @@ Feature: Dataset API
                             "id": "1"
                         },
                         "release_date": "2025-04-01T07:00:00.000Z",
-                        "title": "Static Dataset 3"
+                        "state": "approved"
                     },
                     {
                         "dataset_id": "static-dataset-3",
+                        "title": "Static Dataset 3",
                         "edition": "March",
                         "edition_title": "March Edition Title",
                         "latest_version": {
@@ -161,10 +188,11 @@ Feature: Dataset API
                             "id": "1"
                         },
                         "release_date": "2025-03-01T07:00:00.000Z",
-                        "title": "Static Dataset 3"
+                        "state": "approved"
                     },
                     {
                         "dataset_id": "static-dataset-2",
+                        "title": "Static Dataset 2",
                         "edition": "February",
                         "edition_title": "February Edition Title",
                         "latest_version": {
@@ -172,10 +200,11 @@ Feature: Dataset API
                             "id": "2"
                         },
                         "release_date": "2025-02-01T07:00:00.000Z",
-                        "title": "Static Dataset 2"
+                        "state": "edition-confirmed"
                     },
                     {
                         "dataset_id": "static-dataset-1",
+                        "title": "Static Dataset 1",
                         "edition": "January",
                         "edition_title": "January Edition Title",
                         "latest_version": {
@@ -183,7 +212,7 @@ Feature: Dataset API
                             "id": "1"
                         },
                         "release_date": "2025-01-01T07:00:00.000Z",
-                        "title": "Static Dataset 1"
+                        "state": "associated"
                     }
                 ],
                 "limit": 20,
@@ -204,6 +233,7 @@ Feature: Dataset API
                 "items": [
                     {
                         "dataset_id": "static-dataset-4",
+                        "title": "Static Dataset 4",
                         "edition": "May",
                         "edition_title": "May Edition Title",
                         "latest_version": {
@@ -211,10 +241,11 @@ Feature: Dataset API
                             "id": "1"
                         },
                         "release_date": "2025-05-01T07:00:00.000Z",
-                        "title": "Static Dataset 4"
+                        "state": "associated"
                     },
                     {
                         "dataset_id": "static-dataset-1",
+                        "title": "Static Dataset 1",
                         "edition": "January",
                         "edition_title": "January Edition Title",
                         "latest_version": {
@@ -222,7 +253,7 @@ Feature: Dataset API
                             "id": "1"
                         },
                         "release_date": "2025-01-01T07:00:00.000Z",
-                        "title": "Static Dataset 1"
+                        "state": "associated"
                     }
                 ],
                 "limit": 20,
@@ -269,6 +300,10 @@ Feature: Dataset API
                     "links": {
                         "dataset": {
                             "id": "static-dataset-1"
+                        },
+                        "edition": {
+                            "href": "/datasets/static-dataset-1/editions/January",
+                            "id": "January"
                         }
                     },
                     "version": 1,

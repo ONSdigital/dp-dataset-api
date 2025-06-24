@@ -1560,6 +1560,7 @@ definitions:
       - edition_title
       - latest_version
       - release_date
+      - state
     properties:
       dataset_id:
         $ref: "#/definitions/DatasetID"
@@ -1580,6 +1581,8 @@ definitions:
         description: "The release date of the this version of the dataset edition"
         type: string
         format: date-time
+      state:
+        $ref: "#/definitions/State"
   Dimension:
     description: "A single dimension within a dataset"
     type: object

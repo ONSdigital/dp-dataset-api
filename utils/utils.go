@@ -108,6 +108,7 @@ func MapVersionToEdition(version *models.Version) *models.Edition {
 				HRef: version.Links.Edition.HRef + "/versions",
 			},
 		},
+		State:              version.State,
 		Version:            version.Version,
 		LastUpdated:        version.LastUpdated,
 		Alerts:             version.Alerts,

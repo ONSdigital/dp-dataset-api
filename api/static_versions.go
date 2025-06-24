@@ -80,6 +80,7 @@ func (api *DatasetAPI) getDatasetEditions(w http.ResponseWriter, r *http.Request
 				ID:   strconv.Itoa(version.Version),
 			},
 			ReleaseDate: version.ReleaseDate,
+			State:       version.State,
 		})
 	}
 
