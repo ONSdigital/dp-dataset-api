@@ -16,6 +16,9 @@ import (
 	bsonprim "go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+const ASCOrder = "ASC"
+const DESCOrder = "DESC"
+
 func (m *Mongo) GetDatasetsByQueryParams(ctx context.Context, id, datasetType, sortOrder string, offset, limit int, authorised bool) (values []*models.DatasetUpdate, totalCount int, err error) {
 	filter, err := buildDatasetsQueryWithIsBasedOnAndType(id, datasetType, authorised)
 	if err != nil {
@@ -24,7 +27,7 @@ func (m *Mongo) GetDatasetsByQueryParams(ctx context.Context, id, datasetType, s
 
 	// Determine sort direction: 1 for ASC, -1 for DESC or default
 	sortDir := -1
-	if sortOrder == "ASC" {
+	if sortOrder == DESCOrder {
 		sortDir = 1
 	}
 

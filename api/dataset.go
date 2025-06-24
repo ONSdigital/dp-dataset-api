@@ -10,6 +10,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/utils"
 	dphttp "github.com/ONSdigital/dp-net/v3/http"
 	"github.com/ONSdigital/dp-net/v3/links"
@@ -83,7 +84,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 		return nil, 0, err
 	}
 
-	if isSortOrderExists && sortOrder != "ASC" && sortOrder != "DESC" {
+	if isSortOrderExists && sortOrder != mongo.ASCOrder && sortOrder != mongo.DESCOrder {
 		err := errs.ErrInvalidQueryParameter
 		log.Error(ctx, "malformed sort_order parameter", err)
 		handleDatasetAPIErr(ctx, err, w, logData)
