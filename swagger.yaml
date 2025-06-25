@@ -185,6 +185,13 @@ parameters:
     type: integer
     default: 0
     minimum: 0
+  sort_order:
+    name: sort_order
+    description: "Value for the sort order of the array that will be returned. default value is DESC (z-a) for the descending order, for the ascending oder ASC can be used."
+    in: query
+    required: false
+    type: string
+    default: DESC
   ids:
     name: id
     description: "List of ids, as comma separated values and/or as multiple query parameters with the same key (e.g. 'id=op1,op2&id=op3'). It defines the IDs that we want to retrieve. If provided, it takes precedence over offset and limit."
@@ -238,6 +245,7 @@ paths:
         - $ref: "#/parameters/type"
         - $ref: "#/parameters/limit"
         - $ref: "#/parameters/offset"
+        - $ref: "#/parameters/sort_order"
       security:
         - {}
         - Authorization: []
