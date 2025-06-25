@@ -187,7 +187,7 @@ parameters:
     minimum: 0
   sort_order:
     name: sort_order
-    description: "Value for the sort order of the array that will be returned. default value is DESC (z-a) for the descending order, for the ascending oder ASC can be used."
+    description: "Value for the sort order of the array that will be returned. Default value is DESC (z-a) for descending order, for the ascending order ASC can be used."
     in: query
     required: false
     type: string
