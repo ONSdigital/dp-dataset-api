@@ -111,6 +111,12 @@ func (api *DatasetAPI) addDatasetVersionCondensed(ctx context.Context, w http.Re
 		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewValidationError(ctx, models.ErrMissingParameters, models.ErrMissingParametersDescription+" "+strings.Join(missingFields, " ")))
 	}
 
+	// validate versiontype
+	if versionRequest.Type != "" && versionRequest.Type != models.Static.String() {
+		log.Error(ctx, "addDatasetVersionCondensed endpoint: only allowed to create static type versions", errs.ErrInvalidQueryParameter, logData)
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewValidationError(ctx, models.ErrInvalidQueryParameter, models.ErrInvalidType))
+	}
+
 	// Validate dataset existence
 	if err := api.dataStore.Backend.CheckDatasetExists(ctx, datasetID, ""); err != nil {
 		log.Error(ctx, "failed to find dataset", err, logData)
@@ -145,6 +151,7 @@ func (api *DatasetAPI) addDatasetVersionCondensed(ctx context.Context, w http.Re
 	versionRequest.Version = nextVersion
 	versionRequest.DatasetID = datasetID
 	versionRequest.Links = api.generateVersionLinks(datasetID, edition, nextVersion, versionRequest.Links)
+	versionRequest.Type = models.Static.String()
 
 	// Store version in 'versions' collection
 	newVersion, err := api.dataStore.Backend.AddVersionStatic(ctx, versionRequest)
