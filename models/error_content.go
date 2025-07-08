@@ -1,20 +1,20 @@
 package models
 
 const (
-	BodyReadError            = "RequestBodyReadError"
-	JSONMarshalError         = "JSONMarshalError"
-	JSONUnmarshalError       = "JSONUnmarshalError"
-	WriteResponseError       = "WriteResponseError"
-	ErrDatasetNotFound       = "ErrDatasetNotFound"
-	ErrMissingParameters     = "ErrMissingParameters"
-	ErrVersionAlreadyExists  = "ErrVersionAlreadyExists"
-	InternalError            = "InternalServerError"
-	NotFoundError            = "NotFound"
-	MissingConfigError       = "MissingConfig"
-	UnknownRequestTypeError  = "UnknownRequestType"
-	NotImplementedError      = "NotImplemented"
-	BodyCloseError           = "BodyCloseError"
-	ErrInvalidQueryParameter = "invalid query parameter"
+	BodyReadError           = "RequestBodyReadError"
+	JSONMarshalError        = "JSONMarshalError"
+	JSONUnmarshalError      = "JSONUnmarshalError"
+	WriteResponseError      = "WriteResponseError"
+	ErrDatasetNotFound      = "ErrDatasetNotFound"
+	ErrMissingParameters    = "ErrMissingParameters"
+	ErrVersionAlreadyExists = "ErrVersionAlreadyExists"
+	InternalError           = "InternalServerError"
+	NotFoundError           = "NotFound"
+	MissingConfigError      = "MissingConfig"
+	UnknownRequestTypeError = "UnknownRequestType"
+	NotImplementedError     = "NotImplemented"
+	BodyCloseError          = "BodyCloseError"
+	ErrInvalidTypeError     = "InvalidType"
 )
 
 // API error descriptions

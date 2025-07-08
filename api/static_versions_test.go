@@ -879,7 +879,7 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 
 		So(errorResponse.Status, ShouldEqual, http.StatusBadRequest)
 		err := errorResponse.Errors[0]
-		So(err.Code, ShouldEqual, models.ErrInvalidQueryParameter)
+		So(err.Code, ShouldEqual, models.ErrInvalidTypeError)
 		So(err.Description, ShouldEqual, models.ErrInvalidType)
 		So(successResponse, ShouldBeNil)
 	})
