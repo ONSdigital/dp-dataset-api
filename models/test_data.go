@@ -226,6 +226,22 @@ var associatedVersion = Version{
 	Distributions:      &[]Distribution{distribution},
 }
 
+var approvedVersion = Version{
+	CollectionID:       collectionID,
+	Dimensions:         []Dimension{dimension},
+	Downloads:          &downloads,
+	Edition:            "2017",
+	LatestChanges:      &[]LatestChange{latestChange},
+	Links:              &links,
+	ReleaseDate:        "2017-10-12",
+	State:              ApprovedState,
+	Temporal:           &[]TemporalFrequency{temporal},
+	Version:            1,
+	QualityDesignation: QualityDesignationOfficial,
+	Distributions:      &[]Distribution{distribution},
+	Type:               Static.String(),
+}
+
 var publishedVersion = Version{
 	Alerts:        &[]Alert{alert},
 	Dimensions:    []Dimension{dimension},

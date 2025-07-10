@@ -287,12 +287,30 @@ func TestVersionUpdateQuery(t *testing.T) {
 			StartDate: "2014-09-09",
 		}
 
+		distributions := &[]models.Distribution{
+			{
+				Title:       "Distribution 1",
+				Format:      "CSV",
+				MediaType:   "text/csv",
+				DownloadURL: "/link/to/distribution1.csv",
+				ByteSize:    1234,
+			},
+			{
+				Title:       "Distribution 2",
+				Format:      "CSV",
+				MediaType:   "text/csv",
+				DownloadURL: "/link/to/distribution2.csv",
+				ByteSize:    5678,
+			},
+		}
+
 		expectedUpdate := bson.M{
 			"collection_id":      "12345678",
 			"release_date":       "2017-09-09",
 			"links.spatial.href": "http://ons.gov.uk/geographylist",
 			"state":              models.PublishedState,
 			"temporal":           &[]models.TemporalFrequency{temporal},
+			"distributions":      distributions,
 			"e_tag":              "newETag",
 		}
 
@@ -304,8 +322,9 @@ func TestVersionUpdateQuery(t *testing.T) {
 					HRef: "http://ons.gov.uk/geographylist",
 				},
 			},
-			State:    models.PublishedState,
-			Temporal: &[]models.TemporalFrequency{temporal},
+			State:         models.PublishedState,
+			Temporal:      &[]models.TemporalFrequency{temporal},
+			Distributions: distributions,
 		}
 
 		selector := createVersionUpdateQuery(version, "newETag")

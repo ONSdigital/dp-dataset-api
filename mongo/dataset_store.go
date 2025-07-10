@@ -16,10 +16,19 @@ import (
 	bsonprim "go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func (m *Mongo) GetDatasetsByQueryParams(ctx context.Context, id, datasetType string, offset, limit int, authorised bool) (values []*models.DatasetUpdate, totalCount int, err error) {
+const ASCOrder = "ASC"
+const DESCOrder = "DESC"
+
+func (m *Mongo) GetDatasetsByQueryParams(ctx context.Context, id, datasetType, sortOrder string, offset, limit int, authorised bool) (values []*models.DatasetUpdate, totalCount int, err error) {
 	filter, err := buildDatasetsQueryWithIsBasedOnAndType(id, datasetType, authorised)
 	if err != nil {
 		return nil, 0, err
+	}
+
+	// Determine sort direction: 1 for ASC, -1 for DESC or default
+	sortDir := -1
+	if sortOrder == ASCOrder {
+		sortDir = 1
 	}
 
 	// Query MongoDB
@@ -30,7 +39,7 @@ func (m *Mongo) GetDatasetsByQueryParams(ctx context.Context, id, datasetType st
 			ctx,
 			filter,
 			&values,
-			mongodriver.Sort(bson.M{"_id": -1}),
+			mongodriver.Sort(bson.M{"_id": sortDir}),
 			mongodriver.Offset(offset), mongodriver.Limit(limit),
 		)
 	if err != nil {
@@ -120,6 +129,25 @@ func (m *Mongo) GetDataset(ctx context.Context, id string) (*models.DatasetUpdat
 	}
 
 	return &dataset, nil
+}
+
+// GetUnpublishedDataset retrieves an unpublished dataset document that is type "static"
+func (m *Mongo) GetUnpublishedDatasetStatic(ctx context.Context, id string) (*models.Dataset, error) {
+	filter := bson.M{
+		"_id":       id,
+		"next.type": models.Static.String(),
+	}
+
+	var dataset models.DatasetUpdate
+	err := m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).FindOne(ctx, filter, &dataset)
+	if err != nil {
+		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
+			return nil, errs.ErrDatasetNotFound
+		}
+		return nil, err
+	}
+
+	return dataset.Next, nil
 }
 
 func (m *Mongo) CheckDatasetTitleExist(ctx context.Context, title string) (bool, error) {
@@ -566,6 +594,10 @@ func createVersionUpdateQuery(version *models.Version, newETag string) bson.M {
 
 	if version.UsageNotes != nil {
 		setUpdates["usage_notes"] = version.UsageNotes
+	}
+
+	if version.Distributions != nil {
+		setUpdates["distributions"] = version.Distributions
 	}
 
 	if newETag != "" {

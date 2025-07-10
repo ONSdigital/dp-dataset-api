@@ -1,12 +1,15 @@
 package sdk
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/ONSdigital/dp-api-clients-go/v2/health"
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -60,6 +63,17 @@ func (c *Client) DoAuthenticatedGetRequest(ctx context.Context, headers Headers,
 	return c.hcCli.Client.Do(ctx, req)
 }
 
+// Creates new request object, executes a put request using the input `headers`, `uri`, and payload, and returns the response
+func (c *Client) DoAuthenticatedPutRequest(ctx context.Context, headers Headers, uri *url.URL, payload []byte) (*http.Response, error) {
+	req, err := http.NewRequest(http.MethodPut, uri.RequestURI(), bytes.NewBuffer(payload))
+	if err != nil {
+		return nil, err
+	}
+
+	headers.Add(req)
+	return c.hcCli.Client.Do(ctx, req)
+}
+
 // Health returns the underlying Healthcheck Client for this API client
 func (c *Client) Health() *health.Client {
 	return c.hcCli
@@ -96,19 +110,34 @@ func closeResponseBody(ctx context.Context, resp *http.Response) {
 
 // Takes the input http response and unmarshals the body to the input target
 func unmarshalResponseBodyExpectingStringError(response *http.Response, target interface{}) (err error) {
+	// Read the entire response body first, regardless of status code.
+	b, readErr := io.ReadAll(response.Body)
+	if readErr != nil {
+		return fmt.Errorf("failed to read response body: %w", readErr)
+	}
+	// Restore the body for subsequent reads if needed
+	response.Body = io.NopCloser(bytes.NewReader(b))
+
 	if response.StatusCode != http.StatusOK {
 		var errString string
-		errResponseReadErr := json.NewDecoder(response.Body).Decode(&errString)
-		if errResponseReadErr != nil {
-			errString = "Client failed to read DatasetAPI body"
+		// Attempt to unmarshal as a JSON string first
+		if jsonErr := json.Unmarshal(b, &errString); jsonErr == nil {
+			// Successfully unmarshaled as a JSON string
+			return errors.New(errString)
 		}
-		err = errors.New(errString)
-		return err
+
+		// If it's not a JSON string, treat it as a plain text string
+		plainTextErr := strings.TrimSpace(string(b))
+
+		if plainTextErr == "" {
+			return fmt.Errorf("API returned status %d with an empty error message", response.StatusCode)
+		}
+		return errors.New(plainTextErr)
 	}
 
-	b, err := io.ReadAll(response.Body)
-	if err != nil {
-		return err
+	// If status is OK, unmarshal the body into the target.
+	if len(b) == 0 {
+		return errors.New("received 200 OK but response body is empty")
 	}
 
 	return json.Unmarshal(b, &target)
@@ -130,4 +159,15 @@ func unmarshalResponseBodyExpectingErrorResponse(response *http.Response, target
 	}
 
 	return json.Unmarshal(b, &target)
+}
+
+func getStringResponseBody(resp *http.Response) (*string, error) {
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.New("failed to read response body")
+	}
+
+	bodyString := string(bodyBytes)
+
+	return &bodyString, nil
 }

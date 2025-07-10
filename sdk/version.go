@@ -3,10 +3,12 @@ package sdk
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
 )
@@ -19,6 +21,7 @@ const (
 type QueryParams struct {
 	IDs       []string
 	IsBasedOn string
+	State     string
 	Limit     int
 	Offset    int
 }
@@ -217,4 +220,65 @@ func (c *Client) GetVersions(ctx context.Context, headers Headers, datasetID, ed
 	err = unmarshalResponseBodyExpectingStringError(resp, &versionsList)
 
 	return versionsList, err
+}
+
+func (c *Client) PutVersionState(ctx context.Context, headers Headers, datasetID, editionID, versionID, state string) (err error) {
+	if err := validateRequiredParams(map[string]string{
+		"datasetID": datasetID,
+		"editionID": editionID,
+		"versionID": versionID,
+		"state":     state,
+	}); err != nil {
+		return err
+	}
+
+	uri := &url.URL{}
+	uri.Path, err = url.JoinPath(c.hcCli.URL, "datasets", datasetID, "editions", editionID, "versions", versionID, "state")
+	if err != nil {
+		return err
+	}
+
+	stateUpdate := models.StateUpdate{
+		State: state,
+	}
+
+	requestBody, err := json.Marshal(stateUpdate)
+
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.DoAuthenticatedPutRequest(ctx, headers, uri, requestBody)
+	defer closeResponseBody(ctx, resp)
+
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode > 299 || resp.StatusCode < 200 {
+		responseBody, err := getStringResponseBody(resp)
+		if err != nil {
+			return fmt.Errorf("did not receive success response. received status %d", resp.StatusCode)
+		}
+
+		return fmt.Errorf("did not receive success response. received status %d, response body: %s", resp.StatusCode, *responseBody)
+	}
+
+	return nil
+}
+
+// Validate that all the specified params are not empty, and return an error message describing which ones are empty (if any)
+func validateRequiredParams(params map[string]string) error {
+	var missing []string
+	for name, value := range params {
+		if value == "" {
+			missing = append(missing, name)
+		}
+	}
+
+	if len(missing) > 0 {
+		return fmt.Errorf("required args cannot be empty: %s", strings.Join(missing, ", "))
+	}
+
+	return nil
 }

@@ -39,6 +39,7 @@ var exampleStaticVersion = &models.Version{
 		},
 	},
 	LastUpdated: time.Date(2025, 3, 11, 0, 0, 0, 0, time.UTC),
+	State:       models.AssociatedState,
 }
 
 func TestGetEditionsReturnsOK(t *testing.T) {
@@ -92,6 +93,7 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 						Self:          &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2023", ID: "2023"},
 						Versions:      &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2023/versions", ID: ""},
 					},
+					State: models.PublishedState,
 					Alerts: &[]models.Alert{
 						{
 							Date:        "",
@@ -129,6 +131,7 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 						Self:          &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2023", ID: "2023"},
 						Versions:      &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2023/versions", ID: ""},
 					},
+					State: models.PublishedState,
 					Alerts: &[]models.Alert{
 						{
 							Date:        "",
@@ -284,6 +287,7 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 						Self:          &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2023", ID: "2023"},
 						Versions:      &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2023/versions", ID: ""},
 					},
+					State: models.PublishedState,
 					Alerts: &[]models.Alert{
 						{
 							Date:        "",
@@ -321,6 +325,7 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 						Self:          &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2023", ID: "2023"},
 						Versions:      &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2023/versions", ID: ""},
 					},
+					State: models.AssociatedState,
 					Alerts: &[]models.Alert{
 						{
 							Date:        "",
@@ -452,7 +457,7 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			UsageNotes:         &[]models.UsageNote{{Note: "Test usage note"}},
 			Distributions:      &[]models.Distribution{{Title: "Test distribution"}},
 			QualityDesignation: "Test quality designation",
-			State:              "assosiated",
+			State:              "associated",
 		}
 		mockedDataStore := &storetest.StorerMock{
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {

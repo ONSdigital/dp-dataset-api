@@ -185,6 +185,13 @@ parameters:
     type: integer
     default: 0
     minimum: 0
+  sort_order:
+    name: sort_order
+    description: "Value for the sort order of the array that will be returned. Default value is DESC (z-a) for descending order, for the ascending order ASC can be used."
+    in: query
+    required: false
+    type: string
+    default: DESC
   ids:
     name: id
     description: "List of ids, as comma separated values and/or as multiple query parameters with the same key (e.g. 'id=op1,op2&id=op3'). It defines the IDs that we want to retrieve. If provided, it takes precedence over offset and limit."
@@ -238,6 +245,7 @@ paths:
         - $ref: "#/parameters/type"
         - $ref: "#/parameters/limit"
         - $ref: "#/parameters/offset"
+        - $ref: "#/parameters/sort_order"
       security:
         - {}
         - Authorization: []
@@ -381,6 +389,35 @@ paths:
           description: "Forbidden to delete dataset, already published"
         500:
           $ref: "#/responses/InternalError"
+
+  /dataset-editions:
+    get:
+      tags:
+        - "Private"
+      summary: "Get a list of dataset series that have unpublished versions"
+      description: "Get a list of dataset series that have unpublished versions. This is used to easily determine versions/editions of series that are awaiting publication."
+      parameters:
+        - $ref: "#/parameters/state"
+        - $ref: "#/parameters/limit"
+        - $ref: "#/parameters/offset"
+      security:
+        - Authorization: []
+      responses:
+        200:
+          description: "A json list containing all dataset editions that have unpublished versions"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/DatasetEdition"
+        400:
+          description: "Invalid query parameter"
+        401:
+          description: "Unauthorised to access endpoint"
+        404:
+          description: "No versions were found"
+        500:
+          $ref: "#/responses/InternalError"
+
   /datasets/{id}/editions:
     get:
       tags:
@@ -1521,6 +1558,39 @@ definitions:
         description: "The type of the dataset"
         type: string
         example: "cantabular_table"
+  DatasetEdition:
+    description: "A single dataset edition"
+    type: object
+    required:
+      - dataset_id
+      - title
+      - edition
+      - edition_title
+      - latest_version
+      - release_date
+      - state
+    properties:
+      dataset_id:
+        $ref: "#/definitions/DatasetID"
+      title:
+        description: "The title of the dataset"
+        type: string
+        example: "Consumer Prices Index"
+        minLength: 1
+      edition:
+        $ref: "#/definitions/EditionID"
+      edition_title:
+        description: "The human readable title of the edition"
+        type: string
+        example: "January 2025"
+      latest_version:
+        $ref: "#/definitions/LatestVersionLink"
+      release_date:
+        description: "The release date of the this version of the dataset edition"
+        type: string
+        format: date-time
+      state:
+        $ref: "#/definitions/State"
   Dimension:
     description: "A single dimension within a dataset"
     type: object
@@ -1698,8 +1768,7 @@ definitions:
   EditionID:
     description: |
       The unique identifier for an edition of a dataset.
-
-      The edition ID cannot be changed once first published. Ifa subsequent version of the edition attempts to change the edition ID, they will be treated as the first version of a new edition instead.
+      The edition ID cannot be changed once first published. If a subsequent version of the edition attempts to change the edition ID, they will be treated as the first version of a new edition instead.
     example: july-september-2017
     type: string
     minLength: 1

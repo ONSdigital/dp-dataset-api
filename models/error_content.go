@@ -1,19 +1,20 @@
 package models
 
 const (
-	BodyReadError           = "RequestBodyReadError"
-	JSONMarshalError        = "JSONMarshalError"
-	JSONUnmarshalError      = "JSONUnmarshalError"
-	WriteResponseError      = "WriteResponseError"
-	ErrDatasetNotFound      = "ErrDatasetNotFound"
-	ErrMissingParameters    = "ErrMissingParameters"
-	ErrVersionAlreadyExists = "ErrVersionAlreadyExists"
-	InternalError           = "InternalServerError"
-	NotFoundError           = "NotFound"
-	MissingConfigError      = "MissingConfig"
-	UnknownRequestTypeError = "UnknownRequestType"
-	NotImplementedError     = "NotImplemented"
-	BodyCloseError          = "BodyCloseError"
+	BodyReadError            = "RequestBodyReadError"
+	JSONMarshalError         = "JSONMarshalError"
+	JSONUnmarshalError       = "JSONUnmarshalError"
+	WriteResponseError       = "WriteResponseError"
+	ErrDatasetNotFound       = "ErrDatasetNotFound"
+	ErrMissingParameters     = "ErrMissingParameters"
+	ErrVersionAlreadyExists  = "ErrVersionAlreadyExists"
+	InternalError            = "InternalServerError"
+	NotFoundError            = "NotFound"
+	MissingConfigError       = "MissingConfig"
+	UnknownRequestTypeError  = "UnknownRequestType"
+	NotImplementedError      = "NotImplemented"
+	BodyCloseError           = "BodyCloseError"
+	ErrInvalidQueryParameter = "invalid query parameter"
 )
 
 // API error descriptions
@@ -29,4 +30,5 @@ const (
 	ErrDatasetNotFoundDescription      = "dataset not found"
 	ErrMissingParametersDescription    = "missing properties in JSON"
 	ErrVersionAlreadyExistsDescription = "an unpublished version of this dataset already exists"
+	ErrInvalidType                     = "version type should be static"
 )

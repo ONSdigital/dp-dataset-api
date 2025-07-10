@@ -772,6 +772,130 @@ func TestAssociateVersionFailedToGenerateDownloads(t *testing.T) {
 	})
 }
 
+func TestApproveVersionReturnsOK(t *testing.T) {
+	t.Parallel()
+	Convey("When a version is set to approved from associated", t, func() {
+		currentVersion := &models.Version{
+			State:        models.ApprovedState,
+			CollectionID: "3434",
+		}
+
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(context.Context, string, string, string, string) error {
+				return nil
+			},
+		}
+
+		mockedDataStore := &storetest.StorerMock{
+			UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
+				return "", nil
+			},
+		}
+
+		states, transitions := setUpStatesTransitions()
+
+		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
+
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+		err := EditionConfirmVersion(testContext, smDS, currentVersion, versionUpdateEditionConfirmed, versionDetails, "")
+
+		So(err, ShouldEqual, nil)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestApproveVersionFails(t *testing.T) {
+	t.Parallel()
+	Convey("When a version is set to approved from associated but the dataset is not found", t, func() {
+		currentVersion := &models.Version{
+			State:        models.AssociatedState,
+			CollectionID: "3434",
+		}
+
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(context.Context, string, string, string, string) error {
+				return nil
+			},
+		}
+
+		mockedDataStore := &storetest.StorerMock{
+			UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
+				return "", errs.ErrDatasetNotFound
+			},
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					ID: "789",
+					Links: &models.VersionLinks{
+						Dataset: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123",
+							ID:   "123",
+						},
+						Dimensions: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions",
+						},
+						Edition: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/2017",
+							ID:   "456",
+						},
+						Self: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
+						},
+					},
+					ReleaseDate: "2017-12-12",
+					State:       models.EditionConfirmedState,
+					ETag:        "12345",
+				}, nil
+			},
+		}
+
+		states, transitions := setUpStatesTransitions()
+
+		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
+
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+		err := EditionConfirmVersion(testContext, smDS, currentVersion, versionUpdateEditionConfirmed, versionDetails, "")
+
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "dataset not found")
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestApproveVersionReturnsInvalidRequest(t *testing.T) {
+	t.Parallel()
+	Convey("When the updated version is supplied without a state", t, func() {
+		currentVersion := &models.Version{
+			State:        models.AssociatedState,
+			CollectionID: "3434",
+		}
+
+		versionUpdate := &models.Version{
+			ReleaseDate:  "2024-12-31",
+			ID:           "789",
+			CollectionID: "3434",
+		}
+
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(context.Context, string, string, string, string) error {
+				return nil
+			},
+		}
+
+		mockedDataStore := &storetest.StorerMock{}
+
+		states, transitions := setUpStatesTransitions()
+
+		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
+
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+		err := EditionConfirmVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
+
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "missing state")
+	})
+}
+
 func TestEditionConfirmVersionReturnsOK(t *testing.T) {
 	t.Parallel()
 	Convey("When a version is set to edition-confirmed from completed", t, func() {
@@ -1141,6 +1265,111 @@ func TestPopulateNewVersionDocWithDownloads(t *testing.T) {
 		So(version.State, ShouldEqual, currentVersion.State)
 		So(version.Downloads.XLS, ShouldEqual, currentVersion.Downloads.XLS)
 		So(len(*version.LatestChanges), ShouldEqual, len(*currentVersion.LatestChanges)+len(*originalVersion.LatestChanges))
+	})
+}
+
+func TestPopulateNewVersionDocWithDistributions(t *testing.T) {
+	t.Parallel()
+	Convey("Given versions with distributions", t, func() {
+		currentVersion := &models.Version{
+			Distributions: &[]models.Distribution{
+				{
+					Title:       "Distribution 1",
+					Format:      "csv",
+					MediaType:   "text/csv",
+					DownloadURL: "/link/to/distribution1.csv",
+					ByteSize:    1234,
+				},
+				{
+					Title:       "Distribution 2",
+					Format:      "csv",
+					MediaType:   "text/csv",
+					DownloadURL: "/link/to/distribution2.csv",
+					ByteSize:    5678,
+				},
+			},
+		}
+
+		originalVersion := &models.Version{
+			Distributions: &[]models.Distribution{
+				{
+					Title:       "Distribution 3",
+					Format:      "csv",
+					MediaType:   "text/csv",
+					DownloadURL: "/link/to/distribution3.csv",
+					ByteSize:    4321,
+				},
+				{
+					Title:       "Distribution 4",
+					Format:      "csv",
+					MediaType:   "text/csv",
+					DownloadURL: "/link/to/distribution4.csv",
+					ByteSize:    8765,
+				},
+			},
+		}
+
+		Convey("When the version type is static", func() {
+			currentVersion.Type = models.Static.String()
+			originalVersion.Type = models.Static.String()
+
+			Convey("Then the distributions are set correctly", func() {
+				version, err := populateNewVersionDoc(currentVersion, originalVersion)
+				So(err, ShouldBeNil)
+				So(version, ShouldNotBeNil)
+				So(version.Type, ShouldEqual, models.Static.String())
+				So(len(*version.Distributions), ShouldEqual, 2)
+				So((*version.Distributions)[0].Title, ShouldEqual, "Distribution 3")
+				So((*version.Distributions)[0].Format.String(), ShouldEqual, "csv")
+				So((*version.Distributions)[0].MediaType.String(), ShouldEqual, "text/csv")
+				So((*version.Distributions)[0].DownloadURL, ShouldEqual, "/link/to/distribution3.csv")
+				So((*version.Distributions)[0].ByteSize, ShouldEqual, 4321)
+
+				So((*version.Distributions)[1].Title, ShouldEqual, "Distribution 4")
+				So((*version.Distributions)[1].Format.String(), ShouldEqual, "csv")
+				So((*version.Distributions)[1].MediaType.String(), ShouldEqual, "text/csv")
+				So((*version.Distributions)[1].DownloadURL, ShouldEqual, "/link/to/distribution4.csv")
+				So((*version.Distributions)[1].ByteSize, ShouldEqual, 8765)
+			})
+		})
+
+		Convey("When the version type is static and the version update has no distributions", func() {
+			currentVersion.Type = models.Static.String()
+			originalVersion.Type = models.Static.String()
+			originalVersion.Distributions = nil
+
+			Convey("Then the distributions are set to what the currentVersion distributions contained", func() {
+				version, err := populateNewVersionDoc(currentVersion, originalVersion)
+				So(err, ShouldBeNil)
+				So(version, ShouldNotBeNil)
+				So(version.Type, ShouldEqual, models.Static.String())
+				So(len(*version.Distributions), ShouldEqual, 2)
+				So((*version.Distributions)[0].Title, ShouldEqual, "Distribution 1")
+				So((*version.Distributions)[0].Format.String(), ShouldEqual, "csv")
+				So((*version.Distributions)[0].MediaType.String(), ShouldEqual, "text/csv")
+				So((*version.Distributions)[0].DownloadURL, ShouldEqual, "/link/to/distribution1.csv")
+				So((*version.Distributions)[0].ByteSize, ShouldEqual, 1234)
+
+				So((*version.Distributions)[1].Title, ShouldEqual, "Distribution 2")
+				So((*version.Distributions)[1].Format.String(), ShouldEqual, "csv")
+				So((*version.Distributions)[1].MediaType.String(), ShouldEqual, "text/csv")
+				So((*version.Distributions)[1].DownloadURL, ShouldEqual, "/link/to/distribution2.csv")
+				So((*version.Distributions)[1].ByteSize, ShouldEqual, 5678)
+			})
+		})
+
+		Convey("When the version type is not static", func() {
+			currentVersion.Type = models.Filterable.String()
+			originalVersion.Type = models.Filterable.String()
+
+			Convey("Then the distributions are not set", func() {
+				version, err := populateNewVersionDoc(currentVersion, originalVersion)
+				So(err, ShouldBeNil)
+				So(version, ShouldNotBeNil)
+				So(version.Type, ShouldEqual, models.Filterable.String())
+				So(version.Distributions, ShouldBeNil)
+			})
+		})
 	})
 }
 
