@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ONSdigital/dp-api-clients-go/headers"
@@ -220,7 +221,15 @@ func populateNewVersionDoc(currentVersion, originalVersion *models.Version) (*mo
 
 	version.ID = currentVersion.ID
 
-	version.Links = populateVersionLinks(version.Links, currentVersion.Links)
+	if version.Edition == "" {
+		version.Edition = currentVersion.Edition
+	}
+
+	if version.Edition != "" && version.Edition != currentVersion.Edition {
+		version.Links = updateEditionLinks(currentVersion, version.Edition)
+	} else {
+		version.Links = populateVersionLinks(version.Links, currentVersion.Links)
+	}
 
 	log.Info(context.Background(), "DEBUG", log.Data{"downloads": version.Downloads, "currentDownloads": currentVersion.Downloads})
 	version.Downloads = populateDownloads(version.Downloads, currentVersion.Downloads)
@@ -238,6 +247,39 @@ func populateNewVersionDoc(currentVersion, originalVersion *models.Version) (*mo
 	}
 
 	return &version, nil
+}
+
+func updateEditionLinks(currentVersion *models.Version, newEdition string) *models.VersionLinks {
+	if currentVersion.Links == nil {
+		return nil
+	}
+
+	links := currentVersion.Links.DeepCopy()
+
+	if links.Dataset == nil || links.Dataset.HRef == "" {
+		return links
+	}
+
+	datasetHref := links.Dataset.HRef
+	datasetID := links.Dataset.ID
+	versionNum := currentVersion.Version
+
+	host := strings.TrimSuffix(datasetHref, fmt.Sprintf("/datasets/%s", datasetID))
+
+	if links.Edition != nil {
+		links.Edition.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s", host, datasetID, newEdition)
+		links.Edition.ID = newEdition
+	}
+
+	if links.Version != nil {
+		links.Version.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%d", host, datasetID, newEdition, versionNum)
+	}
+
+	if links.Self != nil {
+		links.Self.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%d", host, datasetID, newEdition, versionNum)
+	}
+
+	return links
 }
 
 func populateVersionLinks(versionLinks, currentVersionLinks *models.VersionLinks) *models.VersionLinks {

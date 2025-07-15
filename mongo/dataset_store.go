@@ -544,11 +544,6 @@ func (m *Mongo) UpdateVersion(ctx context.Context, currentVersion, versionUpdate
 func createVersionUpdateQuery(version *models.Version, newETag string) bson.M {
 	setUpdates := make(bson.M)
 
-	/*
-		Where updating a version to detached state:
-		1.) explicitly set version number to nil
-		2.) remove collectionID
-	*/
 	if version.State == models.DetachedState {
 		setUpdates["collection_id"] = nil
 		setUpdates["version"] = nil
@@ -568,13 +563,8 @@ func createVersionUpdateQuery(version *models.Version, newETag string) bson.M {
 		setUpdates["latest_changes"] = version.LatestChanges
 	}
 
-	if version.Links != nil {
-		if version.Links.Spatial != nil {
-			if version.Links.Spatial.HRef != "" {
-				setUpdates["links.spatial.href"] = version.Links.Spatial.HRef
-			}
-		}
-	}
+	// Extract the nested links logic
+	updateLinksFields(version, setUpdates)
 
 	if version.ReleaseDate != "" {
 		setUpdates["release_date"] = version.ReleaseDate
@@ -582,6 +572,11 @@ func createVersionUpdateQuery(version *models.Version, newETag string) bson.M {
 
 	if version.EditionTitle != "" {
 		setUpdates["edition_title"] = version.EditionTitle
+	}
+
+	if version.Edition != "" {
+		setUpdates["edition"] = version.Edition
+		setUpdates["links.edition.id"] = version.Edition
 	}
 
 	if version.State != "" {
@@ -605,6 +600,28 @@ func createVersionUpdateQuery(version *models.Version, newETag string) bson.M {
 	}
 
 	return setUpdates
+}
+
+func updateLinksFields(version *models.Version, setUpdates bson.M) {
+	if version.Links == nil {
+		return
+	}
+
+	if version.Links.Spatial != nil && version.Links.Spatial.HRef != "" {
+		setUpdates["links.spatial.href"] = version.Links.Spatial.HRef
+	}
+
+	if version.Links.Edition != nil && version.Links.Edition.HRef != "" {
+		setUpdates["links.edition.href"] = version.Links.Edition.HRef
+	}
+
+	if version.Links.Version != nil && version.Links.Version.HRef != "" {
+		setUpdates["links.version.href"] = version.Links.Version.HRef
+	}
+
+	if version.Links.Self != nil && version.Links.Self.HRef != "" {
+		setUpdates["links.self.href"] = version.Links.Self.HRef
+	}
 }
 
 func (m *Mongo) UpdateMetadata(ctx context.Context, datasetID, versionID, versionEtag string, updatedDataset *models.Dataset, updatedVersion *models.Version) error {

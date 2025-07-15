@@ -808,6 +808,7 @@ Feature: Dataset API
                     }
                 },
                 "release_date": "2017-04-04",
+                "edition": "hellov2",
                 "state": "associated"
             }
         """
@@ -847,6 +848,7 @@ Feature: Dataset API
                     }
                 },
                 "release_date": "2017-04-04",
+                "edition": "2021",
                 "state": "associated"
             }
         """
@@ -906,6 +908,7 @@ Feature: Dataset API
                     }
                 },
                 "release_date": "2017-04-04",
+                "edition": "2021",
                 "state": "published"
             }
         """
