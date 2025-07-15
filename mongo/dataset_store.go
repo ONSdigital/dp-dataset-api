@@ -544,6 +544,12 @@ func (m *Mongo) UpdateVersion(ctx context.Context, currentVersion, versionUpdate
 func createVersionUpdateQuery(version *models.Version, newETag string) bson.M {
 	setUpdates := make(bson.M)
 
+	/*
+		Where updating a version to detached state:
+		1.) explicitly set version number to nil
+		2.) remove collectionID
+	*/
+
 	if version.State == models.DetachedState {
 		setUpdates["collection_id"] = nil
 		setUpdates["version"] = nil
@@ -563,7 +569,6 @@ func createVersionUpdateQuery(version *models.Version, newETag string) bson.M {
 		setUpdates["latest_changes"] = version.LatestChanges
 	}
 
-	// Extract the nested links logic
 	updateLinksFields(version, setUpdates)
 
 	if version.ReleaseDate != "" {
