@@ -308,6 +308,11 @@ func TestVersionUpdateQuery(t *testing.T) {
 			"collection_id":      "12345678",
 			"release_date":       "2017-09-09",
 			"links.spatial.href": "http://ons.gov.uk/geographylist",
+			"links.edition.href": "http://ons.gov.uk/datasets/123/editions/2017",
+			"links.version.href": "http://ons.gov.uk/datasets/123/editions/2017/versions/1",
+			"links.self.href":    "http://ons.gov.uk/datasets/123/editions/2017/versions/1",
+			"edition":            "2017",
+			"links.edition.id":   "2017",
 			"state":              models.PublishedState,
 			"temporal":           &[]models.TemporalFrequency{temporal},
 			"distributions":      distributions,
@@ -317,9 +322,19 @@ func TestVersionUpdateQuery(t *testing.T) {
 		version := &models.Version{
 			CollectionID: "12345678",
 			ReleaseDate:  "2017-09-09",
+			Edition:      "2017",
 			Links: &models.VersionLinks{
 				Spatial: &models.LinkObject{
 					HRef: "http://ons.gov.uk/geographylist",
+				},
+				Edition: &models.LinkObject{
+					HRef: "http://ons.gov.uk/datasets/123/editions/2017",
+				},
+				Version: &models.LinkObject{
+					HRef: "http://ons.gov.uk/datasets/123/editions/2017/versions/1",
+				},
+				Self: &models.LinkObject{
+					HRef: "http://ons.gov.uk/datasets/123/editions/2017/versions/1",
 				},
 			},
 			State:         models.PublishedState,

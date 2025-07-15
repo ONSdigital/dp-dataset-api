@@ -2746,3 +2746,105 @@ func GetStateMachineAPIWithCMDMocks(mockedDataStore store.Storer, mockedGenerate
 
 	return Setup(store.DataStore{Backend: mockedDataStore}, mockedMapSMGeneratedDownloads, statemachine)
 }
+
+func TestPopulateNewVersionDocWithEditionChange(t *testing.T) {
+	t.Parallel()
+	Convey("When the edition is being changed", t, func() {
+		currentVersion := &models.Version{
+			Edition: "time-series",
+			Version: 1,
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/static-test-dataset-1",
+					ID:   "static-test-dataset-1",
+				},
+				Edition: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/static-test-dataset-1/editions/time-series",
+					ID:   "time-series",
+				},
+				Version: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/static-test-dataset-1/editions/time-series/versions/1",
+					ID:   "1",
+				},
+				Self: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/static-test-dataset-1/editions/time-series/versions/1",
+				},
+				Spatial: &models.LinkObject{
+					HRef: "http://spatial.link",
+				},
+			},
+		}
+
+		originalVersion := &models.Version{
+			Edition: "edition-test-2",
+			Type:    models.Static.String(),
+		}
+
+		version, err := populateNewVersionDoc(currentVersion, originalVersion)
+
+		So(err, ShouldBeNil)
+		So(version, ShouldNotBeNil)
+		So(version.Edition, ShouldEqual, "edition-test-2")
+
+		So(version.Links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/static-test-dataset-1/editions/edition-test-2")
+		So(version.Links.Edition.ID, ShouldEqual, "edition-test-2")
+		So(version.Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/static-test-dataset-1/editions/edition-test-2/versions/1")
+		So(version.Links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/static-test-dataset-1/editions/edition-test-2/versions/1")
+
+		So(version.Links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/static-test-dataset-1")
+		So(version.Links.Dataset.ID, ShouldEqual, "static-test-dataset-1")
+
+		So(version.Links.Spatial.HRef, ShouldEqual, "http://spatial.link")
+	})
+
+	Convey("When the edition is NOT being changed", t, func() {
+		currentVersion := &models.Version{
+			Edition: "time-series",
+			Links: &models.VersionLinks{
+				Edition: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/static-test-dataset-1/editions/time-series",
+					ID:   "time-series",
+				},
+			},
+		}
+
+		originalVersion := &models.Version{
+			Type: models.Static.String(),
+		}
+
+		version, err := populateNewVersionDoc(currentVersion, originalVersion)
+
+		So(err, ShouldBeNil)
+		So(version, ShouldNotBeNil)
+		So(version.Edition, ShouldEqual, "time-series")
+
+		So(version.Links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/static-test-dataset-1/editions/time-series")
+		So(version.Links.Edition.ID, ShouldEqual, "time-series")
+	})
+
+	Convey("When the edition field is provided but with the same value", t, func() {
+		currentVersion := &models.Version{
+			Edition: "time-series",
+			Links: &models.VersionLinks{
+				Edition: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/static-test-dataset-1/editions/time-series",
+					ID:   "time-series",
+				},
+			},
+		}
+
+		originalVersion := &models.Version{
+			Edition: "time-series",
+			Type:    models.Static.String(),
+		}
+
+		version, err := populateNewVersionDoc(currentVersion, originalVersion)
+
+		So(err, ShouldBeNil)
+		So(version, ShouldNotBeNil)
+		So(version.Edition, ShouldEqual, "time-series")
+
+		So(version.Links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/static-test-dataset-1/editions/time-series")
+		So(version.Links.Edition.ID, ShouldEqual, "time-series")
+	})
+}
