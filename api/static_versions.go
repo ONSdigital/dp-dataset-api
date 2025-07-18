@@ -114,7 +114,7 @@ func (api *DatasetAPI) addDatasetVersionCondensed(ctx context.Context, w http.Re
 	// validate versiontype
 	if versionRequest.Type != "" && versionRequest.Type != models.Static.String() {
 		log.Error(ctx, "addDatasetVersionCondensed endpoint: only allowed to create static type versions", errs.ErrInvalidQueryParameter, logData)
-		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewValidationError(ctx, models.ErrInvalidQueryParameter, models.ErrInvalidType))
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewValidationError(ctx, models.ErrInvalidTypeError, models.ErrInvalidType))
 	}
 
 	// Validate dataset existence
