@@ -24,7 +24,6 @@ func (m *Mongo) GetDatasetsByQueryParams(ctx context.Context, id, datasetType, s
 	if err != nil {
 		return nil, 0, err
 	}
-	fmt.Print("filter inside the function :", filter)
 
 	// Determine sort direction: 1 for ASC, -1 for DESC or default
 	sortDir := -1
@@ -43,9 +42,6 @@ func (m *Mongo) GetDatasetsByQueryParams(ctx context.Context, id, datasetType, s
 			mongodriver.Sort(bson.M{"_id": sortDir}),
 			mongodriver.Offset(offset), mongodriver.Limit(limit),
 		)
-	fmt.Print("totalCount :", totalCount)
-
-	fmt.Print("values :", values)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to retrieve datasets: %w", err)
 	}
@@ -86,7 +82,7 @@ func buildDatasetsQueryUsingParameters(based_on_id, datasetType, dataset_id stri
 			},
 		}
 
-		// Merge ID filter with datasetType filter (if any)
+		// Merge isBasedOn filter with datasetType filter (if any)
 		if len(filter) > 0 {
 			filter = bson.M{"$and": bson.A{filter, idFilter}}
 		} else {
@@ -94,34 +90,24 @@ func buildDatasetsQueryUsingParameters(based_on_id, datasetType, dataset_id stri
 		}
 	}
 
-	// Apply dataset ID filter
+	// Apply dataset ID filter if provided
 	if dataset_id != "" {
-		fmt.Print("dataset_id: ", dataset_id)
-
-		// Create the filter for the dataset ID using the converted ObjectID
 		datasetIdFilter := bson.M{
-			"_id": bson.M{
-				"$regex":   dataset_id,
-				"$options": "i", // Case-insensitive (optional)
-			},
+			"_id": bson.M{"$eq": dataset_id},
 		}
 
+		// Merge dataset ID filter with existing filters (if any)
 		if len(filter) > 0 {
 			filter = bson.M{"$and": bson.A{filter, datasetIdFilter}}
-			fmt.Print("filter1: ", filter)
-
 		} else {
 			filter = datasetIdFilter
-			fmt.Print("filter2: ", filter)
 		}
 	}
 
 	// Restrict access for unauthorized users
 	if !authorised {
-
 		filter["current"] = bson.M{"$exists": true}
 	}
-	fmt.Print("authorised : ", authorised)
 
 	return filter, nil
 }
