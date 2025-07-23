@@ -333,12 +333,12 @@ func TestVersionUpdateQuery(t *testing.T) {
 	})
 }
 
-func TestBuildDatasetsQueryWithIsBasedOnAndType(t *testing.T) {
+func TestBuildDatasetsQueryUsingParameters(t *testing.T) {
 	t.Parallel()
 
 	Convey("When no datasetType and id are provided", t, func() {
 		expectedFilter := bson.M{}
-		filter, err := buildDatasetsQueryWithIsBasedOnAndType("", "", true)
+		filter, err := buildDatasetsQueryUsingParameters("", "", "", true)
 
 		So(err, ShouldBeNil)
 		So(filter, ShouldResemble, expectedFilter)
@@ -352,7 +352,7 @@ func TestBuildDatasetsQueryWithIsBasedOnAndType(t *testing.T) {
 				bson.M{"next.type": mockDatasetType.String()},
 			},
 		}
-		filter, err := buildDatasetsQueryWithIsBasedOnAndType("", mockDatasetType.String(), true)
+		filter, err := buildDatasetsQueryUsingParameters("", mockDatasetType.String(), "", true)
 
 		So(err, ShouldBeNil)
 		So(filter, ShouldResemble, expectedFilter)
@@ -367,7 +367,7 @@ func TestBuildDatasetsQueryWithIsBasedOnAndType(t *testing.T) {
 			},
 		}
 
-		filter, err := buildDatasetsQueryWithIsBasedOnAndType(mockID, "", true)
+		filter, err := buildDatasetsQueryUsingParameters(mockID, "", "", true)
 
 		So(err, ShouldBeNil)
 		So(filter, ShouldResemble, expectedFilter)
@@ -393,7 +393,7 @@ func TestBuildDatasetsQueryWithIsBasedOnAndType(t *testing.T) {
 			},
 		}
 
-		filter, err := buildDatasetsQueryWithIsBasedOnAndType(mockID, mockDatasetType.String(), true)
+		filter, err := buildDatasetsQueryUsingParameters(mockID, mockDatasetType.String(), "", true)
 
 		So(err, ShouldBeNil)
 		So(filter, ShouldResemble, expectedFilter)
@@ -404,7 +404,7 @@ func TestBuildDatasetsQueryWithIsBasedOnAndType(t *testing.T) {
 			"current": bson.M{"$exists": true},
 		}
 
-		filter, err := buildDatasetsQueryWithIsBasedOnAndType("", "", false)
+		filter, err := buildDatasetsQueryUsingParameters("", "", "", false)
 
 		So(err, ShouldBeNil)
 		So(filter, ShouldResemble, expectedFilter)
@@ -431,7 +431,7 @@ func TestBuildDatasetsQueryWithIsBasedOnAndType(t *testing.T) {
 			"current": bson.M{"$exists": true},
 		}
 
-		filter, err := buildDatasetsQueryWithIsBasedOnAndType(mockID, mockDatasetType.String(), false)
+		filter, err := buildDatasetsQueryUsingParameters(mockID, mockDatasetType.String(), "", false)
 
 		So(err, ShouldBeNil)
 		So(filter, ShouldResemble, expectedFilter)
@@ -440,7 +440,7 @@ func TestBuildDatasetsQueryWithIsBasedOnAndType(t *testing.T) {
 	Convey("When an invalid datasetType is provided", t, func() {
 		invalidType := "invalid_type"
 
-		filter, err := buildDatasetsQueryWithIsBasedOnAndType("", invalidType, true)
+		filter, err := buildDatasetsQueryUsingParameters("", invalidType, "", true)
 
 		So(err, ShouldNotBeNil)
 		So(filter, ShouldBeNil)

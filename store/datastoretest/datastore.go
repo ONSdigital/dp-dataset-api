@@ -69,7 +69,7 @@ var _ store.Storer = &StorerMock{}
 //			GetDatasetsFunc: func(ctx context.Context, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
 //				panic("mock out the GetDatasets method")
 //			},
-//			GetDatasetsByQueryParamsFunc: func(ctx context.Context, ID string, datasetType string, sortOrder string, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
+//			GetDatasetsByQueryParamsFunc: func(ctx context.Context, ID string, datasetType string, sortOrder string, datasetID string, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
 //				panic("mock out the GetDatasetsByQueryParams method")
 //			},
 //			GetDimensionOptionsFunc: func(ctx context.Context, version *models.Version, dimension string, offset int, limit int) ([]*models.PublicDimensionOption, int, error) {
@@ -245,7 +245,7 @@ type StorerMock struct {
 	GetDatasetsFunc func(ctx context.Context, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error)
 
 	// GetDatasetsByQueryParamsFunc mocks the GetDatasetsByQueryParams method.
-	GetDatasetsByQueryParamsFunc func(ctx context.Context, ID string, datasetType string, sortOrder string, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error)
+	GetDatasetsByQueryParamsFunc func(ctx context.Context, ID string, datasetType string, sortOrder string, datasetID string, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error)
 
 	// GetDimensionOptionsFunc mocks the GetDimensionOptions method.
 	GetDimensionOptionsFunc func(ctx context.Context, version *models.Version, dimension string, offset int, limit int) ([]*models.PublicDimensionOption, int, error)
@@ -520,6 +520,8 @@ type StorerMock struct {
 			DatasetType string
 			// SortOrder is the sortOrder argument value.
 			SortOrder string
+			// DatasetID is the datasetID argument value.
+			DatasetID string
 			// Offset is the offset argument value.
 			Offset int
 			// Limit is the limit argument value.
@@ -1640,7 +1642,7 @@ func (mock *StorerMock) GetDatasetsCalls() []struct {
 }
 
 // GetDatasetsByQueryParams calls GetDatasetsByQueryParamsFunc.
-func (mock *StorerMock) GetDatasetsByQueryParams(ctx context.Context, ID string, datasetType string, sortOrder string, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
+func (mock *StorerMock) GetDatasetsByQueryParams(ctx context.Context, ID string, datasetType string, sortOrder string, datasetID string, offset int, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
 	if mock.GetDatasetsByQueryParamsFunc == nil {
 		panic("StorerMock.GetDatasetsByQueryParamsFunc: method is nil but Storer.GetDatasetsByQueryParams was just called")
 	}
@@ -1649,6 +1651,7 @@ func (mock *StorerMock) GetDatasetsByQueryParams(ctx context.Context, ID string,
 		ID          string
 		DatasetType string
 		SortOrder   string
+		DatasetID   string
 		Offset      int
 		Limit       int
 		Authorised  bool
@@ -1657,6 +1660,7 @@ func (mock *StorerMock) GetDatasetsByQueryParams(ctx context.Context, ID string,
 		ID:          ID,
 		DatasetType: datasetType,
 		SortOrder:   sortOrder,
+		DatasetID:   datasetID,
 		Offset:      offset,
 		Limit:       limit,
 		Authorised:  authorised,
@@ -1664,7 +1668,7 @@ func (mock *StorerMock) GetDatasetsByQueryParams(ctx context.Context, ID string,
 	mock.lockGetDatasetsByQueryParams.Lock()
 	mock.calls.GetDatasetsByQueryParams = append(mock.calls.GetDatasetsByQueryParams, callInfo)
 	mock.lockGetDatasetsByQueryParams.Unlock()
-	return mock.GetDatasetsByQueryParamsFunc(ctx, ID, datasetType, sortOrder, offset, limit, authorised)
+	return mock.GetDatasetsByQueryParamsFunc(ctx, ID, datasetType, sortOrder, datasetID, offset, limit, authorised)
 }
 
 // GetDatasetsByQueryParamsCalls gets all the calls that were made to GetDatasetsByQueryParams.
@@ -1676,6 +1680,7 @@ func (mock *StorerMock) GetDatasetsByQueryParamsCalls() []struct {
 	ID          string
 	DatasetType string
 	SortOrder   string
+	DatasetID   string
 	Offset      int
 	Limit       int
 	Authorised  bool
@@ -1685,6 +1690,7 @@ func (mock *StorerMock) GetDatasetsByQueryParamsCalls() []struct {
 		ID          string
 		DatasetType string
 		SortOrder   string
+		DatasetID   string
 		Offset      int
 		Limit       int
 		Authorised  bool

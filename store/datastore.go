@@ -30,7 +30,7 @@ type dataMongoDB interface {
 	GetDataset(ctx context.Context, ID string) (*models.DatasetUpdate, error)
 	GetUnpublishedDatasetStatic(ctx context.Context, id string) (*models.Dataset, error)
 	GetDatasets(ctx context.Context, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error)
-	GetDatasetsByQueryParams(ctx context.Context, ID, datasetType, sortOrder string, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error)
+	GetDatasetsByQueryParams(ctx context.Context, ID, datasetType, sortOrder, datasetID string, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error)
 	GetDatasetType(ctx context.Context, datasetID string, authorised bool) (string, error)
 	GetDimensionsFromInstance(ctx context.Context, ID string, offset, limit int) ([]*models.DimensionOption, int, error)
 	GetDimensions(ctx context.Context, versionID string) ([]bson.M, error)

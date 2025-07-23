@@ -262,7 +262,7 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 		So(err, ShouldBeNil)
 		r.URL = address
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetsByQueryParamsFunc: func(ctx context.Context, ID, datasetType, sortOrder string, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
+			GetDatasetsByQueryParamsFunc: func(ctx context.Context, ID, datasetType, sortOrder, datasetID string, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
 				return []*models.DatasetUpdate{{ID: "123-456", Current: &models.Dataset{ID: "123-456", Type: "static"}, Next: &models.Dataset{ID: "123-456", Type: "static"}}}, 1, nil
 			},
 		}
@@ -287,7 +287,7 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 		So(err, ShouldBeNil)
 		r.URL = address
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetsByQueryParamsFunc: func(ctx context.Context, ID, datasetType, sortOrder string, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
+			GetDatasetsByQueryParamsFunc: func(ctx context.Context, ID, datasetType, sortOrder, datasetID string, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
 				return []*models.DatasetUpdate{{ID: "123-456", Current: &models.Dataset{ID: "123-456", Type: "static", IsBasedOn: &models.IsBasedOn{ID: "Example"}}, Next: &models.Dataset{ID: "123-456", Type: "static", IsBasedOn: &models.IsBasedOn{ID: "Example"}}}}, 1, nil
 			},
 		}
@@ -312,7 +312,7 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 		r.URL = address
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetsByQueryParamsFunc: func(ctx context.Context, ID, datasetType, sortOrder string, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
+			GetDatasetsByQueryParamsFunc: func(ctx context.Context, ID, datasetType, sortOrder, datasetID string, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
 				So(sortOrder, ShouldEqual, "ASC")
 				return []*models.DatasetUpdate{
 					{ID: "a-dataset", Current: &models.Dataset{ID: "a-dataset"}},
@@ -430,7 +430,7 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 		So(err, ShouldBeNil)
 		r.URL = address
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetsByQueryParamsFunc: func(ctx context.Context, ID, datasetType, sortOrder string, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
+			GetDatasetsByQueryParamsFunc: func(ctx context.Context, ID, datasetType, sortOrder, datasetID string, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error) {
 				return nil, 0, errs.ErrDatasetTypeInvalid
 			},
 		}

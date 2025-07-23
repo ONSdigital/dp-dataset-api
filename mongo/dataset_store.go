@@ -19,11 +19,12 @@ import (
 const ASCOrder = "ASC"
 const DESCOrder = "DESC"
 
-func (m *Mongo) GetDatasetsByQueryParams(ctx context.Context, id, datasetType, sortOrder string, offset, limit int, authorised bool) (values []*models.DatasetUpdate, totalCount int, err error) {
-	filter, err := buildDatasetsQueryWithIsBasedOnAndType(id, datasetType, authorised)
+func (m *Mongo) GetDatasetsByQueryParams(ctx context.Context, id, datasetType, sortOrder, datasetID string, offset, limit int, authorised bool) (values []*models.DatasetUpdate, totalCount int, err error) {
+	filter, err := buildDatasetsQueryUsingParameters(id, datasetType, datasetID, authorised)
 	if err != nil {
 		return nil, 0, err
 	}
+	fmt.Print("filter inside the function :", filter)
 
 	// Determine sort direction: 1 for ASC, -1 for DESC or default
 	sortDir := -1
@@ -42,6 +43,9 @@ func (m *Mongo) GetDatasetsByQueryParams(ctx context.Context, id, datasetType, s
 			mongodriver.Sort(bson.M{"_id": sortDir}),
 			mongodriver.Offset(offset), mongodriver.Limit(limit),
 		)
+	fmt.Print("totalCount :", totalCount)
+
+	fmt.Print("values :", values)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to retrieve datasets: %w", err)
 	}
@@ -53,7 +57,7 @@ func (m *Mongo) GetDatasetsByQueryParams(ctx context.Context, id, datasetType, s
 }
 
 // buildDatasetsQuery constructs the MongoDB query for datasets
-func buildDatasetsQueryWithIsBasedOnAndType(id, datasetType string, authorised bool) (bson.M, error) {
+func buildDatasetsQueryUsingParameters(based_on_id, datasetType, dataset_id string, authorised bool) (bson.M, error) {
 	filter := bson.M{}
 
 	// Apply datasetType filter if provided
@@ -74,11 +78,11 @@ func buildDatasetsQueryWithIsBasedOnAndType(id, datasetType string, authorised b
 	}
 
 	// Apply isBasedOn filter if provided
-	if id != "" {
+	if based_on_id != "" {
 		idFilter := bson.M{
 			"$or": bson.A{
-				bson.M{"current.is_based_on.id": id},
-				bson.M{"next.is_based_on.id": id},
+				bson.M{"current.is_based_on.id": based_on_id},
+				bson.M{"next.is_based_on.id": based_on_id},
 			},
 		}
 
@@ -90,10 +94,31 @@ func buildDatasetsQueryWithIsBasedOnAndType(id, datasetType string, authorised b
 		}
 	}
 
+	// Apply dataset ID filter
+	if dataset_id != "" {
+		fmt.Print("dataset_id: ", dataset_id)
+
+		// Create the filter for the dataset ID using the converted ObjectID
+		datasetIdFilter := bson.M{
+			"_id": bson.M{"$eq": dataset_id},
+		}
+
+		if len(filter) > 0 {
+			filter = bson.M{"$and": bson.A{filter, datasetIdFilter}}
+			fmt.Print("filter1: ", filter)
+
+		} else {
+			filter = datasetIdFilter
+			fmt.Print("filter2: ", filter)
+		}
+	}
+
 	// Restrict access for unauthorized users
 	if !authorised {
+
 		filter["current"] = bson.M{"$exists": true}
 	}
+	fmt.Print("authorised : ", authorised)
 
 	return filter, nil
 }
