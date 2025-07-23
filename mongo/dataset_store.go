@@ -100,7 +100,10 @@ func buildDatasetsQueryUsingParameters(based_on_id, datasetType, dataset_id stri
 
 		// Create the filter for the dataset ID using the converted ObjectID
 		datasetIdFilter := bson.M{
-			"_id": bson.M{"$eq": dataset_id},
+			"_id": bson.M{
+				"$regex":   dataset_id,
+				"$options": "i", // Case-insensitive (optional)
+			},
 		}
 
 		if len(filter) > 0 {
