@@ -336,7 +336,7 @@ func TestVersionUpdateQuery(t *testing.T) {
 func TestBuildDatasetsQueryUsingParameters(t *testing.T) {
 	t.Parallel()
 
-	Convey("When no datasetType and id are provided", t, func() {
+	Convey("When no datasetType and is_based_on are provided", t, func() {
 		expectedFilter := bson.M{}
 		filter, err := buildDatasetsQueryUsingParameters("", "", "", true)
 
@@ -358,7 +358,7 @@ func TestBuildDatasetsQueryUsingParameters(t *testing.T) {
 		So(filter, ShouldResemble, expectedFilter)
 	})
 
-	Convey("When an id is provided", t, func() {
+	Convey("When an is_based_on is provided", t, func() {
 		mockID := "12345"
 		expectedFilter := bson.M{
 			"$or": bson.A{
@@ -373,7 +373,7 @@ func TestBuildDatasetsQueryUsingParameters(t *testing.T) {
 		So(filter, ShouldResemble, expectedFilter)
 	})
 
-	Convey("When both datasetType and id are provided", t, func() {
+	Convey("When both datasetType and is_based_on are provided", t, func() {
 		mockID := "12345"
 		mockDatasetType := models.Static
 		expectedFilter := bson.M{
@@ -394,6 +394,38 @@ func TestBuildDatasetsQueryUsingParameters(t *testing.T) {
 		}
 
 		filter, err := buildDatasetsQueryUsingParameters(mockID, mockDatasetType.String(), "", true)
+
+		So(err, ShouldBeNil)
+		So(filter, ShouldResemble, expectedFilter)
+	})
+
+	Convey("When both dataset_id is provided", t, func() {
+		mockID := "12345"
+		expectedFilter := bson.M{"_id": bson.M{"$eq": mockID}}
+
+		filter, err := buildDatasetsQueryUsingParameters("", "", mockID, true)
+
+		So(err, ShouldBeNil)
+		So(filter, ShouldResemble, expectedFilter)
+	})
+
+	Convey("When dataset_type is 'static' and dataset_id is provided", t, func() {
+		mockID := "12345"
+		mockType := models.Static
+
+		expectedFilter := bson.M{
+			"$and": bson.A{
+				bson.M{
+					"$or": bson.A{
+						bson.M{"current.type": mockType.String()},
+						bson.M{"next.type": mockType.String()},
+					},
+				},
+				bson.M{"_id": bson.M{"$eq": mockID}},
+			},
+		}
+
+		filter, err := buildDatasetsQueryUsingParameters("", mockType.String(), mockID, true)
 
 		So(err, ShouldBeNil)
 		So(filter, ShouldResemble, expectedFilter)
