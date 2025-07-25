@@ -401,7 +401,7 @@ func TestBuildDatasetsQueryUsingParameters(t *testing.T) {
 
 	Convey("When both dataset_id is provided", t, func() {
 		mockID := "12345"
-		expectedFilter := bson.M{"_id": bson.M{"$eq": mockID}}
+		expectedFilter := bson.M{"_id": bson.M{"$regex": mockID}}
 
 		filter, err := buildDatasetsQueryUsingParameters("", "", mockID, true)
 
@@ -421,7 +421,7 @@ func TestBuildDatasetsQueryUsingParameters(t *testing.T) {
 						bson.M{"next.type": mockType.String()},
 					},
 				},
-				bson.M{"_id": bson.M{"$eq": mockID}},
+				bson.M{"_id": bson.M{"$regex": mockID}},
 			},
 		}
 

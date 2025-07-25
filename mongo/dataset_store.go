@@ -53,7 +53,7 @@ func (m *Mongo) GetDatasetsByQueryParams(ctx context.Context, id, datasetType, s
 }
 
 // buildDatasetsQuery constructs the MongoDB query for datasets
-func buildDatasetsQueryUsingParameters(based_on_id, datasetType, dataset_id string, authorised bool) (bson.M, error) {
+func buildDatasetsQueryUsingParameters(basedOnID, datasetType, datasetID string, authorised bool) (bson.M, error) {
 	filter := bson.M{}
 
 	// Apply datasetType filter if provided
@@ -74,11 +74,11 @@ func buildDatasetsQueryUsingParameters(based_on_id, datasetType, dataset_id stri
 	}
 
 	// Apply isBasedOn filter if provided
-	if based_on_id != "" {
+	if basedOnID != "" {
 		idFilter := bson.M{
 			"$or": bson.A{
-				bson.M{"current.is_based_on.id": based_on_id},
-				bson.M{"next.is_based_on.id": based_on_id},
+				bson.M{"current.is_based_on.id": basedOnID},
+				bson.M{"next.is_based_on.id": basedOnID},
 			},
 		}
 
@@ -91,16 +91,16 @@ func buildDatasetsQueryUsingParameters(based_on_id, datasetType, dataset_id stri
 	}
 
 	// Apply dataset ID filter if provided
-	if dataset_id != "" {
-		datasetIdFilter := bson.M{
-			"_id": bson.M{"$eq": dataset_id},
+	if datasetID != "" {
+		datasetIDFilter := bson.M{
+			"_id": bson.M{"$regex": datasetID},
 		}
 
 		// Merge dataset ID filter with existing filters (if any)
 		if len(filter) > 0 {
-			filter = bson.M{"$and": bson.A{filter, datasetIdFilter}}
+			filter = bson.M{"$and": bson.A{filter, datasetIDFilter}}
 		} else {
-			filter = datasetIdFilter
+			filter = datasetIDFilter
 		}
 	}
 
@@ -382,7 +382,7 @@ func (m *Mongo) UpdateDataset(ctx context.Context, id string, dataset *models.Da
 func createDatasetUpdateQuery(ctx context.Context, id string, dataset *models.Dataset, currentState string) bson.M {
 	updates := make(bson.M)
 
-	log.Info(ctx, "building update query for dataset resource", log.Data{"dataset_id": id, "dataset": dataset, "updates": updates})
+	log.Info(ctx, "building update query for dataset resource", log.Data{"datasetID": id, "dataset": dataset, "updates": updates})
 
 	if dataset.CollectionID != "" {
 		updates["next.collection_id"] = dataset.CollectionID
@@ -508,7 +508,7 @@ func createDatasetUpdateQuery(ctx context.Context, id string, dataset *models.Da
 		updates["next.topics"] = dataset.Topics
 	}
 
-	log.Info(ctx, "built update query for dataset resource", log.Data{"dataset_id": id, "dataset": dataset, "updates": updates})
+	log.Info(ctx, "built update query for dataset resource", log.Data{"datasetID": id, "dataset": dataset, "updates": updates})
 	return updates
 }
 
