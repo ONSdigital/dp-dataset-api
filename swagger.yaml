@@ -192,6 +192,12 @@ parameters:
     required: false
     type: string
     default: DESC
+  dataset_id_query:
+    name: dataset_id
+    description: "ID that represents a dataset"
+    in: query
+    required: false
+    type: string
   ids:
     name: id
     description: "List of ids, as comma separated values and/or as multiple query parameters with the same key (e.g. 'id=op1,op2&id=op3'). It defines the IDs that we want to retrieve. If provided, it takes precedence over offset and limit."
@@ -246,6 +252,7 @@ paths:
         - $ref: "#/parameters/limit"
         - $ref: "#/parameters/offset"
         - $ref: "#/parameters/sort_order"
+        - $ref: "#/parameters/dataset_id_query"
       security:
         - {}
         - Authorization: []
