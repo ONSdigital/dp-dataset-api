@@ -54,7 +54,7 @@ var (
 const IsBasedOn = "is_based_on"
 const DatasetType = "type"
 const SortOrder = "sort_order"
-const DatasetID = "dataset_id"
+const DatasetID = "id"
 
 // getDatasets returns a list of datasets, the total count of datasets and an error
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit, offset int) (mappedDatasets interface{}, totalCount int, err error) {

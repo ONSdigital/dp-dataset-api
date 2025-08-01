@@ -1,4 +1,4 @@
-Feature: Dataset search by dataset_id
+Feature: Dataset search by dataset id
 
     Background:
         Given I have these datasets:
@@ -43,8 +43,8 @@ Feature: Dataset search by dataset_id
             ]
             """
 
-    Scenario: Using an existing dataset_id as the param
-        When I GET "/datasets?dataset_id=static-dataset-4"
+    Scenario: Using an existing id as the param
+        When I GET "/datasets?id=static-dataset-4"
         Then I should receive the following JSON response with status "200":
             """
             {
@@ -64,8 +64,8 @@ Feature: Dataset search by dataset_id
             }
             """
 
-    Scenario: Using a partial string as dataset_id as the param
-        When I GET "/datasets?dataset_id=static"
+    Scenario: Using a partial string as id as the param
+        When I GET "/datasets?id=static"
         Then I should receive the following JSON response with status "200":
             """
             {
@@ -106,8 +106,8 @@ Feature: Dataset search by dataset_id
             }
             """
 
-    Scenario: Using multiple query parameters and a partial string as dataset_id as the param
-        When I GET "/datasets?dataset_id=static-dataset&type=static"
+    Scenario: Using multiple query parameters and a partial string as id as the param
+        When I GET "/datasets?id=static-dataset&type=static"
         Then I should receive the following JSON response with status "200":
             """
             {
@@ -148,16 +148,16 @@ Feature: Dataset search by dataset_id
             }
             """
 
-    Scenario: dataset_id is invalid
-        When I GET "/datasets?dataset_id=invalid-dataset-id"
+    Scenario: id is invalid
+        When I GET "/datasets?id=invalid-dataset-id"
         Then the HTTP status code should be "404"
         And I should receive the following response:
             """
             dataset not found
             """
 
-    Scenario: dataset_id is empty
-        When I GET "/datasets?dataset_id="
+    Scenario: id is empty
+        When I GET "/datasets?id="
         Then the HTTP status code should be "400"
         And I should receive the following response:
             """
