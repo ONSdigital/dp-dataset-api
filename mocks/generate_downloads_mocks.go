@@ -4,15 +4,14 @@
 package mocks
 
 import (
-	//"github.com/ONSdigital/dp-dataset-api/download"
-	"sync"
-
+	"github.com/ONSdigital/dp-dataset-api/download"
 	kafka "github.com/ONSdigital/dp-kafka/v4"
+	"sync"
 )
 
 // Ensure, that KafkaProducerMock does implement download.KafkaProducer.
 // If this is not the case, regenerate this file with moq.
-//var _ download.KafkaProducer = &KafkaProducerMock{}
+var _ download.KafkaProducer = &KafkaProducerMock{}
 
 // KafkaProducerMock is a mock implementation of download.KafkaProducer.
 //
@@ -71,7 +70,7 @@ func (mock *KafkaProducerMock) OutputCalls() []struct {
 
 // Ensure, that GenerateDownloadsEventMock does implement download.GenerateDownloadsEvent.
 // If this is not the case, regenerate this file with moq.
-//var _ download.GenerateDownloadsEvent = &GenerateDownloadsEventMock{}
+var _ download.GenerateDownloadsEvent = &GenerateDownloadsEventMock{}
 
 // GenerateDownloadsEventMock is a mock implementation of download.GenerateDownloadsEvent.
 //

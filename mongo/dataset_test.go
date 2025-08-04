@@ -348,12 +348,12 @@ func TestVersionUpdateQuery(t *testing.T) {
 	})
 }
 
-func TestBuildDatasetsQueryWithIsBasedOnAndType(t *testing.T) {
+func TestBuildDatasetsQueryUsingParameters(t *testing.T) {
 	t.Parallel()
 
-	Convey("When no datasetType and id are provided", t, func() {
+	Convey("When no datasetType and is_based_on are provided", t, func() {
 		expectedFilter := bson.M{}
-		filter, err := buildDatasetsQueryWithIsBasedOnAndType("", "", true)
+		filter, err := buildDatasetsQueryUsingParameters("", "", "", true)
 
 		So(err, ShouldBeNil)
 		So(filter, ShouldResemble, expectedFilter)
@@ -367,13 +367,13 @@ func TestBuildDatasetsQueryWithIsBasedOnAndType(t *testing.T) {
 				bson.M{"next.type": mockDatasetType.String()},
 			},
 		}
-		filter, err := buildDatasetsQueryWithIsBasedOnAndType("", mockDatasetType.String(), true)
+		filter, err := buildDatasetsQueryUsingParameters("", mockDatasetType.String(), "", true)
 
 		So(err, ShouldBeNil)
 		So(filter, ShouldResemble, expectedFilter)
 	})
 
-	Convey("When an id is provided", t, func() {
+	Convey("When an is_based_on is provided", t, func() {
 		mockID := "12345"
 		expectedFilter := bson.M{
 			"$or": bson.A{
@@ -382,13 +382,13 @@ func TestBuildDatasetsQueryWithIsBasedOnAndType(t *testing.T) {
 			},
 		}
 
-		filter, err := buildDatasetsQueryWithIsBasedOnAndType(mockID, "", true)
+		filter, err := buildDatasetsQueryUsingParameters(mockID, "", "", true)
 
 		So(err, ShouldBeNil)
 		So(filter, ShouldResemble, expectedFilter)
 	})
 
-	Convey("When both datasetType and id are provided", t, func() {
+	Convey("When both datasetType and is_based_on are provided", t, func() {
 		mockID := "12345"
 		mockDatasetType := models.Static
 		expectedFilter := bson.M{
@@ -408,7 +408,39 @@ func TestBuildDatasetsQueryWithIsBasedOnAndType(t *testing.T) {
 			},
 		}
 
-		filter, err := buildDatasetsQueryWithIsBasedOnAndType(mockID, mockDatasetType.String(), true)
+		filter, err := buildDatasetsQueryUsingParameters(mockID, mockDatasetType.String(), "", true)
+
+		So(err, ShouldBeNil)
+		So(filter, ShouldResemble, expectedFilter)
+	})
+
+	Convey("When both dataset_id is provided", t, func() {
+		mockID := "12345"
+		expectedFilter := bson.M{"_id": bson.M{"$regex": mockID}}
+
+		filter, err := buildDatasetsQueryUsingParameters("", "", mockID, true)
+
+		So(err, ShouldBeNil)
+		So(filter, ShouldResemble, expectedFilter)
+	})
+
+	Convey("When dataset_type is 'static' and dataset_id is provided", t, func() {
+		mockID := "12345"
+		mockType := models.Static
+
+		expectedFilter := bson.M{
+			"$and": bson.A{
+				bson.M{
+					"$or": bson.A{
+						bson.M{"current.type": mockType.String()},
+						bson.M{"next.type": mockType.String()},
+					},
+				},
+				bson.M{"_id": bson.M{"$regex": mockID}},
+			},
+		}
+
+		filter, err := buildDatasetsQueryUsingParameters("", mockType.String(), mockID, true)
 
 		So(err, ShouldBeNil)
 		So(filter, ShouldResemble, expectedFilter)
@@ -419,7 +451,7 @@ func TestBuildDatasetsQueryWithIsBasedOnAndType(t *testing.T) {
 			"current": bson.M{"$exists": true},
 		}
 
-		filter, err := buildDatasetsQueryWithIsBasedOnAndType("", "", false)
+		filter, err := buildDatasetsQueryUsingParameters("", "", "", false)
 
 		So(err, ShouldBeNil)
 		So(filter, ShouldResemble, expectedFilter)
@@ -446,7 +478,7 @@ func TestBuildDatasetsQueryWithIsBasedOnAndType(t *testing.T) {
 			"current": bson.M{"$exists": true},
 		}
 
-		filter, err := buildDatasetsQueryWithIsBasedOnAndType(mockID, mockDatasetType.String(), false)
+		filter, err := buildDatasetsQueryUsingParameters(mockID, mockDatasetType.String(), "", false)
 
 		So(err, ShouldBeNil)
 		So(filter, ShouldResemble, expectedFilter)
@@ -455,7 +487,7 @@ func TestBuildDatasetsQueryWithIsBasedOnAndType(t *testing.T) {
 	Convey("When an invalid datasetType is provided", t, func() {
 		invalidType := "invalid_type"
 
-		filter, err := buildDatasetsQueryWithIsBasedOnAndType("", invalidType, true)
+		filter, err := buildDatasetsQueryUsingParameters("", invalidType, "", true)
 
 		So(err, ShouldNotBeNil)
 		So(filter, ShouldBeNil)
