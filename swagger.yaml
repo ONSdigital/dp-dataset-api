@@ -193,7 +193,7 @@ parameters:
     type: string
     default: DESC
   dataset_id_query:
-    name: dataset_id
+    name: id
     description: "ID that represents a dataset"
     in: query
     required: false
