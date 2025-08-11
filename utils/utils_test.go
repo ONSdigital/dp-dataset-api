@@ -6145,6 +6145,20 @@ func TestRewriteDistributions_Success(t *testing.T) {
 					DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.xls",
 					ByteSize:    30000,
 				},
+				{
+					Title:       "Distribution 4",
+					Format:      "XLS",
+					MediaType:   "text/xls",
+					DownloadURL: "dataset-uploads/somefile.xls",
+					ByteSize:    40000,
+				},
+				{
+					Title:       "Distribution 5",
+					Format:      "XLSX",
+					MediaType:   "text/xlsx",
+					DownloadURL: "/dataset-uploads/somefile.xlsx",
+					ByteSize:    50000,
+				},
 			}
 
 			distributions, err := RewriteDistributions(ctx, distributions, downloadServiceURL)
@@ -6154,6 +6168,8 @@ func TestRewriteDistributions_Success(t *testing.T) {
 				So((*distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv")
 				So((*distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx")
 				So((*distributions)[2].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xls")
+				So((*distributions)[3].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/dataset-uploads/somefile.xls")
+				So((*distributions)[4].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/dataset-uploads/somefile.xlsx")
 			})
 		})
 
