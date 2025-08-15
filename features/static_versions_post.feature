@@ -176,7 +176,7 @@ Feature: Static Dataset Versions POST API
                 "type": "static",
                 "distributions": [
                     {
-                        "title": "New Dataset CSV",
+                        "title": "csv",
                         "format": "csv",
                         "media_type": "text/csv",
                         "download_url": "/downloads/datasets/static-dataset-test/editions/2024/versions/2.csv",
