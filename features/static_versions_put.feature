@@ -270,6 +270,18 @@ Feature: Static Dataset Versions PUT API
             }
             """
         Then the HTTP status code should be "200"
+    
+    Scenario: PUT state fails with invalid state transition from associated to published
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I PUT "/datasets/static-dataset-update/editions/2025/versions/1/state"
+            """
+            {
+                "state": "published"
+            }
+            """
+        Then the HTTP status code should be "400"
 
     Scenario: PUT state fails with invalid state
         Given private endpoints are enabled

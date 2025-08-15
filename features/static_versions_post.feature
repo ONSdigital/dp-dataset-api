@@ -132,6 +132,61 @@ Feature: Static Dataset Versions POST API
             """
         Then the HTTP status code should be "404"
 
+    Scenario: POST fails when unpublished version already exists
+        Given I have these static versions:
+            """
+            [
+                {
+                    "id": "static-version-unpublished",
+                    "edition": "2024",
+                    "edition_title": "2024 Edition",
+                    "links": {
+                        "dataset": {
+                            "id": "static-dataset-test"
+                        },
+                        "edition": {
+                            "href": "/datasets/static-dataset-test/editions/2024",
+                            "id": "2024"
+                        }
+                    },
+                    "version": 1,
+                    "release_date": "2024-01-01T09:00:00.000Z",
+                    "state": "associated",
+                    "type": "static",
+                    "distributions": [
+                        {
+                            "title": "csv",
+                            "format": "csv",
+                            "media_type": "text/csv",
+                            "download_url": "/downloads/datasets/static-dataset-test/editions/2024/versions/1.csv",
+                            "byte_size": 100000
+                        }
+                    ]
+                }
+            ]
+            """
+        And private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I POST "/datasets/static-dataset-test/editions/2024/versions"
+            """
+            {
+                "release_date": "2024-12-01T09:00:00.000Z",
+                "edition_title": "2024 Updated",
+                "type": "static",
+                "distributions": [
+                    {
+                        "title": "New Dataset CSV",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "download_url": "/downloads/datasets/static-dataset-test/editions/2024/versions/2.csv",
+                        "byte_size": 120000
+                    }
+                ]
+            }
+            """
+        Then the HTTP status code should be "400"
+
     Scenario: POST fails when not authorised
         Given private endpoints are enabled
         When I POST "/datasets/static-dataset-test/editions/2024/versions"
