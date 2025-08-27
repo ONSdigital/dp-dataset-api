@@ -4,7 +4,7 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: taylorsilva/dcind
+    repository: onsdigital/dcind
     tag: latest
 
 inputs:
