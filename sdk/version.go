@@ -62,6 +62,30 @@ func (c *Client) GetVersion(ctx context.Context, headers Headers, datasetID, edi
 	return version, err
 }
 
+// GetVersionV2 does the same as GetVersion but uses unmarshalResponseBodyExpectingErrorResponseV2
+func (c *Client) GetVersionV2(ctx context.Context, headers Headers, datasetID, editionID, versionID string) (version models.Version, err error) {
+	version = models.Version{}
+	// Build uri
+	uri := &url.URL{}
+	uri.Path, err = url.JoinPath(c.hcCli.URL, "datasets", datasetID, "editions", editionID, "versions", versionID)
+	if err != nil {
+		return version, err
+	}
+
+	// Make request
+	resp, err := c.DoAuthenticatedGetRequest(ctx, headers, uri)
+	if err != nil {
+		return version, err
+	}
+
+	defer closeResponseBody(ctx, resp)
+
+	// Unmarshal the response body to target
+	err = unmarshalResponseBodyExpectingErrorResponseV2(resp, &version)
+
+	return version, err
+}
+
 // VersionDimensionsList represent a list of Dimension
 type VersionDimensionsList struct {
 	Items []models.Dimension
