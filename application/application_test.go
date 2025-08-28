@@ -2848,3 +2848,168 @@ func TestPopulateNewVersionDocWithEditionChange(t *testing.T) {
 		So(version.Links.Edition.ID, ShouldEqual, "time-series")
 	})
 }
+
+func TestPopulateVersionInfoEditionValidationNonStatic(t *testing.T) {
+	t.Parallel()
+
+	generatorMock := &mocks.DownloadsGeneratorMock{
+		GenerateFunc: func(context.Context, string, string, string, string) error {
+			return nil
+		},
+	}
+
+	Convey("When trying to update edition for non-static dataset type", t, func() {
+		versionUpdateWithEdition := &models.Version{
+			State:        models.AssociatedState,
+			ReleaseDate:  "2024-12-31",
+			Version:      1,
+			ID:           "789",
+			CollectionID: "3434",
+			Type:         "cantabular_flexible_table",
+			Edition:      "new-edition-name",
+		}
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					ID:          "789",
+					Edition:     "original-edition",
+					Type:        "cantabular_flexible_table",
+					ReleaseDate: "2017-12-12",
+					State:       models.EditionConfirmedState,
+					ETag:        "12345",
+				}, nil
+			},
+		}
+
+		states, transitions := setUpStatesTransitions()
+		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+
+		currentVersion, combinedVersionUpdate, err := smDS.PopulateVersionInfo(testContext, versionUpdateWithEdition, versionDetails)
+
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "unable to update edition-id, invalid dataset type")
+		So(currentVersion, ShouldBeNil)
+		So(combinedVersionUpdate, ShouldBeNil)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestPopulateVersionInfoEditionValidationStaticExists(t *testing.T) {
+	t.Parallel()
+
+	generatorMock := &mocks.DownloadsGeneratorMock{
+		GenerateFunc: func(context.Context, string, string, string, string) error {
+			return nil
+		},
+	}
+
+	Convey("When trying to update edition for static dataset type but edition already exists", t, func() {
+		versionUpdateWithEdition := &models.Version{
+			State:        models.AssociatedState,
+			ReleaseDate:  "2024-12-31",
+			Version:      1,
+			ID:           "789",
+			CollectionID: "3434",
+			Type:         models.Static.String(),
+			Edition:      "existing-edition",
+		}
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID, editionID, state string) error {
+				if editionID == "existing-edition" {
+					return nil
+				}
+				return nil
+			},
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					ID:          "789",
+					Edition:     "original-edition",
+					Type:        models.Static.String(),
+					ReleaseDate: "2017-12-12",
+					State:       models.EditionConfirmedState,
+					ETag:        "12345",
+				}, nil
+			},
+		}
+
+		states, transitions := setUpStatesTransitions()
+		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+
+		currentVersion, combinedVersionUpdate, err := smDS.PopulateVersionInfo(testContext, versionUpdateWithEdition, versionDetails)
+
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "the edition-id already exists")
+		So(currentVersion, ShouldBeNil)
+		So(combinedVersionUpdate, ShouldBeNil)
+		So(len(mockedDataStore.CheckEditionExistsStaticCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.GetVersionStaticCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestPopulateVersionInfoEditionValidationStaticSuccess(t *testing.T) {
+	t.Parallel()
+
+	generatorMock := &mocks.DownloadsGeneratorMock{
+		GenerateFunc: func(context.Context, string, string, string, string) error {
+			return nil
+		},
+	}
+
+	Convey("When updating edition for static dataset type and new edition does not exist", t, func() {
+		versionUpdateWithEdition := &models.Version{
+			State:        models.AssociatedState,
+			ReleaseDate:  "2024-12-31",
+			Version:      1,
+			ID:           "789",
+			CollectionID: "3434",
+			Type:         models.Static.String(),
+			Edition:      "new-edition",
+		}
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID, editionID, state string) error {
+				if editionID == "new-edition" {
+					return errs.ErrEditionNotFound
+				}
+				return nil
+			},
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					ID:          "789",
+					Edition:     "original-edition",
+					Type:        models.Static.String(),
+					ReleaseDate: "2017-12-12",
+					State:       models.EditionConfirmedState,
+					ETag:        "12345",
+					Links: &models.VersionLinks{
+						Dataset: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123",
+							ID:   "123",
+						},
+					},
+				}, nil
+			},
+		}
+
+		states, transitions := setUpStatesTransitions()
+		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+
+		currentVersion, combinedVersionUpdate, err := smDS.PopulateVersionInfo(testContext, versionUpdateWithEdition, versionDetails)
+
+		So(err, ShouldBeNil)
+		So(currentVersion, ShouldNotBeNil)
+		So(combinedVersionUpdate, ShouldNotBeNil)
+		So(combinedVersionUpdate.Edition, ShouldEqual, "new-edition")
+		So(len(mockedDataStore.CheckEditionExistsStaticCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.GetVersionStaticCalls()), ShouldEqual, 1)
+	})
+}

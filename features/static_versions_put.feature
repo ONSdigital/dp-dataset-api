@@ -304,3 +304,106 @@ Feature: Static Dataset Versions PUT API
             }
             """
         Then the HTTP status code should be "401"
+        
+Scenario: PUT fails when updating edition-id to existing edition for static dataset
+        Given I have a static dataset with version:
+            """
+            {
+                "dataset": {
+                    "id": "static-dataset-conflict",
+                    "title": "Static Dataset Conflict Test",
+                    "state": "associated",
+                    "type": "static"
+                },
+                "edition": {
+                    "edition": "2025",
+                    "edition_title": "2025 Edition"
+                },
+                "version": {
+                    "id": "static-version-conflict",
+                    "edition": "2025",
+                    "edition_title": "2025 Edition",
+                    "links": {
+                        "dataset": {
+                            "id": "static-dataset-conflict"
+                        },
+                        "edition": {
+                            "href": "/datasets/static-dataset-conflict/editions/2025",
+                            "id": "2025"
+                        },
+                        "self": {
+                            "href": "/datasets/static-dataset-conflict/editions/2025/versions/1"
+                        }
+                    },
+                    "version": 1,
+                    "release_date": "2025-01-01T09:00:00.000Z",
+                    "state": "associated",
+                    "type": "static"
+                }
+            }
+            """
+        And I have a static dataset with version:
+            """
+            {
+                "dataset": {
+                    "id": "static-dataset-conflict",
+                    "title": "Static Dataset Conflict Test",
+                    "state": "associated",
+                    "type": "static"
+                },
+                "edition": {
+                    "edition": "existing-edition",
+                    "edition_title": "Existing Edition"
+                },
+                "version": {
+                    "id": "static-version-existing",
+                    "edition": "existing-edition",
+                    "edition_title": "Existing Edition",
+                    "links": {
+                        "dataset": {
+                            "id": "static-dataset-conflict"
+                        },
+                        "edition": {
+                            "href": "/datasets/static-dataset-conflict/editions/existing-edition",
+                            "id": "existing-edition"
+                        },
+                        "self": {
+                            "href": "/datasets/static-dataset-conflict/editions/existing-edition/versions/1"
+                        }
+                    },
+                    "version": 1,
+                    "release_date": "2025-01-01T09:00:00.000Z",
+                    "state": "associated",
+                    "type": "static"
+                }
+            }
+            """
+        And private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I PUT "/datasets/static-dataset-conflict/editions/2025/versions/1"
+            """
+            {
+                "edition": "existing-edition",
+                "type": "static"
+            }
+            """
+        Then the HTTP status code should be "409"
+        And I should receive the following response:
+            """
+            the edition-id already exists
+            """
+
+    Scenario: PUT succeeds when updating edition-id to new edition for static dataset
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
+            """
+            {
+                "edition": "2025-new-edition",
+                "edition_title": "2025 New Edition",
+                "type": "static"
+            }
+            """
+        Then the HTTP status code should be "200"

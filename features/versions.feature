@@ -912,3 +912,37 @@ Feature: Dataset API
                 "state": "published"
             }
         """
+    Scenario: PUT version fails when trying to update edition-id on cantabular dataset
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I PUT "/datasets/test-cantabular-dataset-1/editions/2021/versions/1"
+            """
+            {
+                "edition": "2021-updated",
+                "state": "edition-confirmed",
+                "type": "cantabular_flexible_table"
+            }
+            """
+        Then the HTTP status code should be "400"
+        And I should receive the following response:
+            """
+            unable to update edition-id, invalid dataset type
+            """
+
+    Scenario: PUT version fails when trying to update edition-id on filterable dataset
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I PUT "/datasets/population-estimates/editions/hello/versions/2"
+            """
+            {
+                "edition": "hello-updated",
+                "state": "associated"
+            }
+            """
+        Then the HTTP status code should be "400"
+        And I should receive the following response:
+            """
+            unable to update edition-id, invalid dataset type
+            """
