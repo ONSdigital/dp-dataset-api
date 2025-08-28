@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/ONSdigital/dp-api-clients-go/v2/health"
@@ -169,11 +170,11 @@ func unmarshalResponseBodyExpectingErrorResponseV2(response *http.Response, targ
 		if errResponseReadErr != nil {
 			return errors.New("Client failed to read DatasetAPI body")
 		}
-		if response.StatusCode == 404 {
+		if response.StatusCode == http.StatusNotFound {
 			errResponse.Errors[0].Cause = apierrors.ErrVersionNotFound
-			errResponse.Errors[0].Code = "404"
+			errResponse.Errors[0].Code = strconv.Itoa(http.StatusNotFound)
+			return errResponse.Errors[0]
 		}
-		return errResponse.Errors[0]
 	}
 
 	b, err := io.ReadAll(response.Body)
