@@ -9,9 +9,11 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/ONSdigital/dp-api-clients-go/v2/health"
+	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	dpNetRequest "github.com/ONSdigital/dp-net/v3/request"
@@ -151,6 +153,28 @@ func unmarshalResponseBodyExpectingErrorResponse(response *http.Response, target
 			return errors.New("Client failed to read DatasetAPI body")
 		}
 		return errResponse.Errors[0]
+	}
+
+	b, err := io.ReadAll(response.Body)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(b, &target)
+}
+
+func unmarshalResponseBodyExpectingErrorResponseV2(response *http.Response, target interface{}) (err error) {
+	if response.StatusCode != http.StatusOK {
+		var errResponse models.ErrorResponse
+		errResponseReadErr := json.NewDecoder(response.Body).Decode(&errResponse)
+		if errResponseReadErr != nil {
+			return errors.New("Client failed to read DatasetAPI body")
+		}
+		if response.StatusCode == http.StatusNotFound {
+			errResponse.Errors[0].Cause = apierrors.ErrVersionNotFound
+			errResponse.Errors[0].Code = strconv.Itoa(http.StatusNotFound)
+			return errResponse.Errors[0]
+		}
 	}
 
 	b, err := io.ReadAll(response.Body)

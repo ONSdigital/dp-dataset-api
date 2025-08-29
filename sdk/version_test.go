@@ -120,6 +120,55 @@ func TestGetVersion(t *testing.T) {
 	})
 }
 
+func TestGetVersionV2(t *testing.T) {
+	versionID := 1
+
+	mockGetResponse := models.Version{
+		CollectionID: collectionID,
+		DatasetID:    datasetID,
+		Edition:      editionID,
+		Version:      versionID,
+	}
+
+	Convey("If requested version is valid and get request returns 200", t, func() {
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, mockGetResponse, map[string]string{}})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+		returnedVersion, err := datasetAPIClient.GetVersionV2(ctx, headers, datasetID, editionID, strconv.Itoa(versionID))
+		Convey("Test that the request URI is constructed correctly and the correct method is used", func() {
+			expectedURI := fmt.Sprintf("/datasets/%s/editions/%s/versions/%d", datasetID, editionID, versionID)
+			So(httpClient.DoCalls()[0].Req.Method, ShouldEqual, http.MethodGet)
+			So(httpClient.DoCalls()[0].Req.URL.RequestURI(), ShouldResemble, expectedURI)
+		})
+		Convey("Test that the requested version is returned without error", func() {
+			So(err, ShouldBeNil)
+			So(returnedVersion, ShouldResemble, mockGetResponse)
+		})
+	})
+
+	Convey("If requested version is not valid and get request returns 404", t, func() {
+		responseErr := models.ErrorResponse{
+			Errors: []models.Error{
+				{
+					Cause:       apierrors.ErrVersionNotFound,
+					Code:        "version_not_found",
+					Description: "internal error",
+				},
+			},
+		}
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusNotFound, responseErr, map[string]string{}})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+		_, err := datasetAPIClient.GetVersionV2(ctx, headers, datasetID, editionID, strconv.Itoa(versionID))
+		if err, ok := err.(models.Error); ok {
+			Convey("Test that an error is raised and should contain status code", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Cause.Error(), ShouldContainSubstring, apierrors.ErrVersionNotFound.Error())
+				So(err.Code, ShouldContainSubstring, "404")
+				So(err.Description, ShouldContainSubstring, "internal error")
+			})
+		}
+	})
+}
+
 // Tests for the `GetVersionDimensions` client method
 func TestGetVersionDimensions(t *testing.T) {
 	versionID := 1
