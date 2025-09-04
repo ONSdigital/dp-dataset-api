@@ -653,7 +653,8 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			},
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return &models.Version{
-					ID: "789",
+					ID:      "789",
+					Edition: "2017",
 					Links: &models.VersionLinks{
 						Dataset: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/123",
@@ -782,9 +783,10 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				},
 				GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 					return &models.Version{
-						ID:    "789",
-						Type:  models.Filterable.String(),
-						State: models.AssociatedState,
+						ID:      "789",
+						Edition: "2017",
+						Type:    models.Filterable.String(),
+						State:   models.AssociatedState,
 					}, nil
 				},
 				UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
@@ -884,9 +886,10 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				},
 				GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 					return &models.Version{
-						ID:    "789",
-						Type:  models.CantabularFlexibleTable.String(),
-						State: models.EditionConfirmedState,
+						ID:      "789",
+						Edition: "2017",
+						Type:    models.CantabularFlexibleTable.String(),
+						State:   models.EditionConfirmedState,
 					}, nil
 				},
 				UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
@@ -957,8 +960,9 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			},
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return &models.Version{
-					ID:    "789",
-					State: models.EditionConfirmedState,
+					ID:      "789",
+					Edition: "2017",
+					State:   models.EditionConfirmedState,
 				}, nil
 			},
 			UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
@@ -1038,7 +1042,8 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				},
 				GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 					return &models.Version{
-						ID: "789",
+						ID:      "789",
+						Edition: "2017",
 						Links: &models.VersionLinks{
 							Dataset: &models.LinkObject{
 								HRef: "http://localhost:22000/datasets/123",
@@ -1160,7 +1165,8 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				},
 				GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 					return &models.Version{
-						ID: "789",
+						ID:      "789",
+						Edition: "2017",
 						Links: &models.VersionLinks{
 							Dataset: &models.LinkObject{
 								HRef: "http://localhost:22000/datasets/123",
@@ -1408,6 +1414,7 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 		err := json.Unmarshal([]byte(versionAssociatedPayload), &v)
 		So(err, ShouldBeNil)
 		v.ID = "789"
+		v.Edition = "2017"
 		v.State = models.EditionConfirmedState
 
 		isLocked := false
@@ -2067,8 +2074,9 @@ func TestPutVersionReturnsError(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return &models.Version{
-					ID:    "789",
-					State: "associated",
+					ID:      "789",
+					Edition: "2017",
+					State:   "associated",
 				}, nil
 			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
@@ -2135,7 +2143,8 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return &models.Version{
-					ID: "789",
+					ID:      "789",
+					Edition: "2017",
 					Links: &models.VersionLinks{
 						Dataset: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/123",
@@ -3579,4 +3588,75 @@ func publishDistributionFilesTest(ctx context.Context, version *models.Version, 
 	}
 
 	return nil
+}
+
+func TestPutVersionEditionValidationNonStatic(t *testing.T) {
+	t.Parallel()
+	Convey("When trying to update edition for non-static dataset type", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(context.Context, string, string, string, string) error {
+				return nil
+			},
+		}
+
+		b := `{"instance_id":"a1b2c3","edition":"new-edition-name","license":"ONS","release_date":"2017-04-04"}`
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/original-edition/versions/1", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		isLocked := false
+		mockedDataStore := &storetest.StorerMock{
+			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					ID:          "789",
+					Edition:     "original-edition",
+					Type:        models.CantabularFlexibleTable.String(),
+					State:       models.EditionConfirmedState,
+					ETag:        testETag,
+					ReleaseDate: "2017-12-12",
+					Links: &models.VersionLinks{
+						Dataset: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123",
+							ID:   "123",
+						},
+					},
+				}, nil
+			},
+			UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
+				return "", nil
+			},
+			AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
+				isLocked = true
+				return testLockID, nil
+			},
+			UnlockInstanceFunc: func(context.Context, string) {
+				isLocked = false
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, "unable to update edition-id, invalid dataset type")
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
+
+		Convey("Then the lock has been acquired and released", func() {
+			validateLock(mockedDataStore, "789")
+			So(isLocked, ShouldBeFalse)
+		})
+
+		Convey("then the request body has been drained", func() {
+			_, err := r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
+	})
 }

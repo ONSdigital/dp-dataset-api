@@ -145,6 +145,26 @@ func (smDS *StateMachineDatasetAPI) PopulateVersionInfo(ctx context.Context, ver
 		}
 	}
 
+	if versionUpdate != nil && versionUpdate.Edition != "" && versionUpdate.Edition != currentVersion.Edition {
+		if currentVersion.Type == models.Static.String() {
+			err = smDS.DataStore.Backend.CheckEditionExistsStatic(ctx, versionDetails.datasetID, versionUpdate.Edition, "")
+			if err == nil {
+				log.Error(ctx, "UpdateVersion: edition-id already exists", errs.ErrEditionAlreadyExists, log.Data{
+					"dataset_id":       versionDetails.datasetID,
+					"existing_edition": currentVersion.Edition,
+					"new_edition":      versionUpdate.Edition,
+				})
+				return nil, nil, errs.ErrEditionAlreadyExists
+			} else if err != errs.ErrEditionNotFound {
+				log.Error(ctx, "UpdateVersion: error checking if edition exists", err, data)
+				return nil, nil, err
+			}
+		} else {
+			log.Error(ctx, "UpdateVersion: attempted to update edition-id for non-static dataset type", errs.ErrInvalidDatasetTypeForEditionUpdate, data)
+			return nil, nil, errs.ErrInvalidDatasetTypeForEditionUpdate
+		}
+	}
+
 	// doUpdate is an aux function that combines the existing version document with the update received in the body request,
 	// then it validates the new model, and performs the update in MongoDB, passing the existing model ETag (if it exists) to be used in the query selector
 	// Note that the combined version update does not mutate versionUpdate because multiple retries might generate a different value depending on the currentVersion at that point.

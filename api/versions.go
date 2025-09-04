@@ -601,10 +601,12 @@ func handleVersionAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 func getVersionAPIErrStatusCode(err error) int {
 	var status int
 	switch {
-	case notFound[err]:
+	case notFound[err] || errs.NotFoundMap[err]:
 		status = http.StatusNotFound
-	case badRequest[err]:
+	case badRequest[err] || errs.BadRequestMap[err]:
 		status = http.StatusBadRequest
+	case errs.ConflictRequestMap[err]:
+		status = http.StatusConflict
 	case internalServerErrWithMessage[err]:
 		status = http.StatusInternalServerError
 	case strings.HasPrefix(err.Error(), "missing mandatory fields:"):
