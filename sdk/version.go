@@ -246,6 +246,49 @@ func (c *Client) GetVersions(ctx context.Context, headers Headers, datasetID, ed
 	return versionsList, err
 }
 
+func (c *Client) PutVersion(ctx context.Context, headers Headers, datasetID, editionID, versionID string, version models.Version) (updatedVersion models.Version, err error) {
+	if err := validateRequiredParams(map[string]string{
+		"datasetID": datasetID,
+		"editionID": editionID,
+		"versionID": versionID,
+	}); err != nil {
+		return updatedVersion, err
+	}
+
+	uri := &url.URL{}
+	uri.Path, err = url.JoinPath(c.hcCli.URL, "datasets", datasetID, "editions", editionID, "versions", versionID)
+	if err != nil {
+		return updatedVersion, err
+	}
+
+	requestBody, err := json.Marshal(version)
+	if err != nil {
+		return updatedVersion, err
+	}
+
+	resp, err := c.DoAuthenticatedPutRequest(ctx, headers, uri, requestBody)
+	defer closeResponseBody(ctx, resp)
+
+	if err != nil {
+		return updatedVersion, err
+	}
+
+	if resp.StatusCode > 299 || resp.StatusCode < 200 {
+		responseBody, err := getStringResponseBody(resp)
+		if err != nil {
+			return updatedVersion, fmt.Errorf("did not receive success response. received status %d", resp.StatusCode)
+		}
+		return updatedVersion, fmt.Errorf("did not receive success response. received status %d, response body: %s", resp.StatusCode, *responseBody)
+	}
+
+	err = json.NewDecoder(resp.Body).Decode(&updatedVersion)
+	if err != nil {
+		return updatedVersion, err
+	}
+
+	return updatedVersion, nil
+}
+
 func (c *Client) PutVersionState(ctx context.Context, headers Headers, datasetID, editionID, versionID, state string) (err error) {
 	if err := validateRequiredParams(map[string]string{
 		"datasetID": datasetID,
