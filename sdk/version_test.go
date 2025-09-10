@@ -482,6 +482,86 @@ func TestGetVersions(t *testing.T) {
 	})
 }
 
+func TestPutVersion(t *testing.T) {
+	Convey("Given a request to update a version", t, func() {
+		exampleVersion := models.Version{
+			DatasetID: datasetID,
+			Edition:   editionID,
+			Version:   1,
+		}
+
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, exampleVersion, map[string]string{}})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+
+		Convey("When the parameters are valid", func() {
+			updatedVersion, err := datasetAPIClient.PutVersion(ctx, headers, datasetID, editionID, versionID, exampleVersion)
+
+			Convey("Then the request is successful", func() {
+				So(err, ShouldBeNil)
+				So(updatedVersion, ShouldResemble, exampleVersion)
+			})
+
+			Convey("And the request is sent to the correct endpoint with the correct body", func() {
+				So(len(httpClient.DoCalls()), ShouldEqual, 1)
+				call := httpClient.DoCalls()[0]
+				So(call.Req.Method, ShouldEqual, http.MethodPut)
+				So(call.Req.URL.RequestURI(), ShouldEqual, fmt.Sprintf("/datasets/%s/editions/%s/versions/%s", datasetID, editionID, versionID))
+				So(call.Req.Header.Get("Authorization"), ShouldEqual, fmt.Sprintf("Bearer %s", headers.ServiceToken))
+
+				var sentVersion models.Version
+				err := json.NewDecoder(call.Req.Body).Decode(&sentVersion)
+				So(err, ShouldBeNil)
+				So(sentVersion, ShouldResemble, exampleVersion)
+			})
+		})
+
+		Convey("When the dataset ID is missing", func() {
+			_, err := datasetAPIClient.PutVersion(ctx, headers, "", editionID, versionID, exampleVersion)
+
+			Convey("Then an error is returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "required args cannot be empty")
+				So(err.Error(), ShouldContainSubstring, "datasetID")
+			})
+		})
+
+		Convey("When the edition ID is missing", func() {
+			_, err := datasetAPIClient.PutVersion(ctx, headers, datasetID, "", versionID, exampleVersion)
+
+			Convey("Then an error is returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "required args cannot be empty")
+				So(err.Error(), ShouldContainSubstring, "editionID")
+			})
+		})
+
+		Convey("When the version ID is missing", func() {
+			_, err := datasetAPIClient.PutVersion(ctx, headers, datasetID, editionID, "", exampleVersion)
+
+			Convey("Then an error is returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "required args cannot be empty")
+				So(err.Error(), ShouldContainSubstring, "versionID")
+			})
+		})
+
+		Convey("When the HTTP request fails", func() {
+			mockedErrorResponse := "error response message"
+			httpClient = createHTTPClientMock(MockedHTTPResponse{http.StatusInternalServerError, mockedErrorResponse, map[string]string{}})
+			datasetAPIClient = newDatasetAPIHealthcheckClient(t, httpClient)
+
+			_, err := datasetAPIClient.PutVersion(ctx, headers, datasetID, editionID, versionID, exampleVersion)
+
+			Convey("Then an error is returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "did not receive success response")
+				So(err.Error(), ShouldContainSubstring, strconv.Itoa(http.StatusInternalServerError))
+				So(err.Error(), ShouldContainSubstring, mockedErrorResponse)
+			})
+		})
+	})
+}
+
 func TestPutVersionState(t *testing.T) {
 	Convey("When updating a version state", t, func() {
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, nil, map[string]string{}})

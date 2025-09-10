@@ -28,6 +28,7 @@ const (
 	downloadServiceToken = "mydownloadservicetoken"
 	collectionID         = "collection"
 	editionID            = "my-edition"
+	versionID            = "1"
 	serviceToken         = "myservicetoken"
 	userAccessToken      = "myuseraccesstoken"
 )

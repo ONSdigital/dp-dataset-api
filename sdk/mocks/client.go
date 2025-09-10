@@ -63,6 +63,9 @@ var _ sdk.Clienter = &ClienterMock{}
 //			HealthFunc: func() *health.Client {
 //				panic("mock out the Health method")
 //			},
+//			PutVersionFunc: func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, versionID string, version models.Version) (models.Version, error) {
+//				panic("mock out the PutVersion method")
+//			},
 //			PutVersionStateFunc: func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, versionID string, state string) error {
 //				panic("mock out the PutVersionState method")
 //			},
@@ -114,6 +117,9 @@ type ClienterMock struct {
 
 	// HealthFunc mocks the Health method.
 	HealthFunc func() *health.Client
+
+	// PutVersionFunc mocks the PutVersion method.
+	PutVersionFunc func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, versionID string, version models.Version) (models.Version, error)
 
 	// PutVersionStateFunc mocks the PutVersionState method.
 	PutVersionStateFunc func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, versionID string, state string) error
@@ -262,6 +268,21 @@ type ClienterMock struct {
 		// Health holds details about calls to the Health method.
 		Health []struct {
 		}
+		// PutVersion holds details about calls to the PutVersion method.
+		PutVersion []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Headers is the headers argument value.
+			Headers sdk.Headers
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// EditionID is the editionID argument value.
+			EditionID string
+			// VersionID is the versionID argument value.
+			VersionID string
+			// Version is the version argument value.
+			Version models.Version
+		}
 		// PutVersionState holds details about calls to the PutVersionState method.
 		PutVersionState []struct {
 			// Ctx is the ctx argument value.
@@ -294,6 +315,7 @@ type ClienterMock struct {
 	lockGetVersionMetadata         sync.RWMutex
 	lockGetVersions                sync.RWMutex
 	lockHealth                     sync.RWMutex
+	lockPutVersion                 sync.RWMutex
 	lockPutVersionState            sync.RWMutex
 	lockURL                        sync.RWMutex
 }
@@ -858,6 +880,58 @@ func (mock *ClienterMock) HealthCalls() []struct {
 	mock.lockHealth.RLock()
 	calls = mock.calls.Health
 	mock.lockHealth.RUnlock()
+	return calls
+}
+
+// PutVersion calls PutVersionFunc.
+func (mock *ClienterMock) PutVersion(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, versionID string, version models.Version) (models.Version, error) {
+	if mock.PutVersionFunc == nil {
+		panic("ClienterMock.PutVersionFunc: method is nil but Clienter.PutVersion was just called")
+	}
+	callInfo := struct {
+		Ctx       context.Context
+		Headers   sdk.Headers
+		DatasetID string
+		EditionID string
+		VersionID string
+		Version   models.Version
+	}{
+		Ctx:       ctx,
+		Headers:   headers,
+		DatasetID: datasetID,
+		EditionID: editionID,
+		VersionID: versionID,
+		Version:   version,
+	}
+	mock.lockPutVersion.Lock()
+	mock.calls.PutVersion = append(mock.calls.PutVersion, callInfo)
+	mock.lockPutVersion.Unlock()
+	return mock.PutVersionFunc(ctx, headers, datasetID, editionID, versionID, version)
+}
+
+// PutVersionCalls gets all the calls that were made to PutVersion.
+// Check the length with:
+//
+//	len(mockedClienter.PutVersionCalls())
+func (mock *ClienterMock) PutVersionCalls() []struct {
+	Ctx       context.Context
+	Headers   sdk.Headers
+	DatasetID string
+	EditionID string
+	VersionID string
+	Version   models.Version
+} {
+	var calls []struct {
+		Ctx       context.Context
+		Headers   sdk.Headers
+		DatasetID string
+		EditionID string
+		VersionID string
+		Version   models.Version
+	}
+	mock.lockPutVersion.RLock()
+	calls = mock.calls.PutVersion
+	mock.lockPutVersion.RUnlock()
 	return calls
 }
 
