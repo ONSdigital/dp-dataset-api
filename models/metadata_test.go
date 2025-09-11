@@ -639,7 +639,7 @@ func TestMetadataToString(t *testing.T) {
 
 		Convey("Test that the `ToString()` method contains keywords", func() {
 			// Update the model to include keywords
-			m.EditableMetadata.Keywords = []string{"key1", "key2", "key3"}
+			m.Keywords = []string{"key1", "key2", "key3"}
 			expectedString := fmt.Sprintf("Title: %s\n", m.Title) +
 				fmt.Sprintf("Description: %s\n", m.Description) +
 				fmt.Sprintf("Issued: %s\n", m.ReleaseDate) +
@@ -660,7 +660,7 @@ func TestMetadataToString(t *testing.T) {
 
 		Convey("Test that the `ToString()` method contains contact details", func() {
 			// Update the model to include contacts
-			m.EditableMetadata.Contacts = []ContactDetails{
+			m.Contacts = []ContactDetails{
 				{
 					Email:     "test.user@ons.gov.uk",
 					Name:      "Test User",
@@ -791,7 +791,7 @@ func TestMetadataToString(t *testing.T) {
 		})
 		Convey("Test that the `ToString()` method contains methodology information", func() {
 			// Update the model to include methodology
-			m.EditableMetadata.Methodologies = []GeneralDetails{
+			m.Methodologies = []GeneralDetails{
 				{
 					Description: "some methodologies description",
 					HRef:        "http://localhost:22000/datasets/href",
@@ -822,7 +822,7 @@ func TestMetadataToString(t *testing.T) {
 		})
 		Convey("Test that the `ToString()` method contains publication information", func() {
 			// Update the model to include publication
-			m.EditableMetadata.Publications = []GeneralDetails{
+			m.Publications = []GeneralDetails{
 				{
 					Description: "some publication description",
 					HRef:        "http://localhost:22000/datasets/href",
@@ -853,7 +853,7 @@ func TestMetadataToString(t *testing.T) {
 		})
 		Convey("Test that the `ToString()` method contains related dataset information", func() {
 			// Update the model to include related datasets
-			m.EditableMetadata.RelatedDatasets = []GeneralDetails{
+			m.RelatedDatasets = []GeneralDetails{
 				{
 					Description: "some related datasets description",
 					HRef:        "http://localhost:22000/datasets/href",
@@ -879,7 +879,7 @@ func TestMetadataToString(t *testing.T) {
 		})
 		Convey("Test that the `ToString()` method contains subtopic information", func() {
 			// Update the model to include subtopics
-			m.EditableMetadata.Subtopics = []string{"1234", "5678"}
+			m.Subtopics = []string{"1234", "5678"}
 			expectedString := fmt.Sprintf("Title: %s\n", m.Title) +
 				fmt.Sprintf("Description: %s\n", m.Description) +
 				fmt.Sprintf("Issued: %s\n", m.ReleaseDate) +
@@ -899,7 +899,7 @@ func TestMetadataToString(t *testing.T) {
 		})
 		Convey("Test that the `ToString()` method contains related content information", func() {
 			// Update the model to include related content
-			m.EditableMetadata.RelatedContent = []GeneralDetails{relatedDatasets}
+			m.RelatedContent = []GeneralDetails{relatedDatasets}
 			expectedString := fmt.Sprintf("Title: %s\n", m.Title) +
 				fmt.Sprintf("Description: %s\n", m.Description) +
 				fmt.Sprintf("Issued: %s\n", m.ReleaseDate) +

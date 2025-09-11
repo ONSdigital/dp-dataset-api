@@ -44,18 +44,20 @@ func TestGetDatasetEditions_WithQueryParam_Success(t *testing.T) {
 				}, 2, nil
 			},
 			GetUnpublishedDatasetStaticFunc: func(ctx context.Context, id string) (*models.Dataset, error) {
-				if id == "Dataset1" {
+				switch id {
+				case "Dataset1":
 					return &models.Dataset{
 						ID:    "Dataset1",
 						Title: "Test Dataset 1",
 					}, nil
-				} else if id == "Dataset2" {
+				case "Dataset2":
 					return &models.Dataset{
 						ID:    "Dataset2",
 						Title: "Test Dataset 2",
 					}, nil
+				default:
+					return nil, errs.ErrDatasetNotFound
 				}
-				return nil, errs.ErrDatasetNotFound
 			},
 		}
 
@@ -134,18 +136,20 @@ func TestGetDatasetEditions_WithoutQueryParam_Success(t *testing.T) {
 				}, 2, nil
 			},
 			GetUnpublishedDatasetStaticFunc: func(ctx context.Context, id string) (*models.Dataset, error) {
-				if id == "Dataset1" {
+				switch id {
+				case "Dataset1":
 					return &models.Dataset{
 						ID:    "Dataset1",
 						Title: "Test Dataset 1",
 					}, nil
-				} else if id == "Dataset2" {
+				case "Dataset2":
 					return &models.Dataset{
 						ID:    "Dataset2",
 						Title: "Test Dataset 2",
 					}, nil
+				default:
+					return nil, errs.ErrDatasetNotFound
 				}
-				return nil, errs.ErrDatasetNotFound
 			},
 		}
 

@@ -244,11 +244,12 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if err != nil {
-		if err == errs.ErrDatasetNotFound || err == errs.ErrEditionNotFound {
+		switch err {
+		case errs.ErrDatasetNotFound, errs.ErrEditionNotFound:
 			http.Error(w, err.Error(), http.StatusNotFound)
-		} else if err == errs.ErrVersionNotFound {
+		case errs.ErrVersionNotFound:
 			http.Error(w, errs.ErrEditionNotFound.Error(), http.StatusNotFound)
-		} else {
+		default:
 			http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
 		}
 		return
