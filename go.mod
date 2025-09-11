@@ -1,6 +1,6 @@
 module github.com/ONSdigital/dp-dataset-api
 
-go 1.24
+go 1.25
 
 // to avoid 'sonatype-2021-4899' non-CVE Vulnerability
 exclude (
