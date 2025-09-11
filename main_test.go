@@ -14,7 +14,7 @@ import (
 	"github.com/cucumber/godog/colors"
 )
 
-const mongoVersion = "4.4.8"
+const mongoVersion = "8.0.13"
 const databaseName = "testing"
 const replicaSetName = "rs0"
 
