@@ -384,7 +384,7 @@ func CleanDataset(dataset *Dataset) {
 func ValidateDataset(dataset *Dataset) error {
 	var invalidFields []string
 
-	if dataset.Type == "static" {
+	if dataset.Type == Static.String() {
 		mandatoryStringFields := map[string]string{
 			"ID":          dataset.ID,
 			"Title":       dataset.Title,
