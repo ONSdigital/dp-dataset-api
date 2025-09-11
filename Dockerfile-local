@@ -1,8 +1,0 @@
-FROM golang:1.24.2-bullseye as build
-
-RUN apt-get update && apt-get upgrade -y
-
-WORKDIR /service
-CMD tail -f /dev/null
-
-FROM build as test
