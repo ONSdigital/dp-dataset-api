@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
@@ -267,13 +268,12 @@ func (c *Client) PutVersion(ctx context.Context, headers Headers, datasetID, edi
 	}
 
 	resp, err := c.DoAuthenticatedPutRequest(ctx, headers, uri, requestBody)
-	defer closeResponseBody(ctx, resp)
-
 	if err != nil {
 		return updatedVersion, err
 	}
+	defer closeResponseBody(ctx, resp)
 
-	if resp.StatusCode > 299 || resp.StatusCode < 200 {
+	if resp.StatusCode < http.StatusOK || resp.StatusCode > http.StatusMultipleChoices {
 		responseBody, err := getStringResponseBody(resp)
 		if err != nil {
 			return updatedVersion, fmt.Errorf("did not receive success response. received status %d", resp.StatusCode)
@@ -316,13 +316,12 @@ func (c *Client) PutVersionState(ctx context.Context, headers Headers, datasetID
 	}
 
 	resp, err := c.DoAuthenticatedPutRequest(ctx, headers, uri, requestBody)
-	defer closeResponseBody(ctx, resp)
-
 	if err != nil {
 		return err
 	}
+	defer closeResponseBody(ctx, resp)
 
-	if resp.StatusCode > 299 || resp.StatusCode < 200 {
+	if resp.StatusCode < http.StatusOK || resp.StatusCode > http.StatusMultipleChoices {
 		responseBody, err := getStringResponseBody(resp)
 		if err != nil {
 			return fmt.Errorf("did not receive success response. received status %d", resp.StatusCode)
