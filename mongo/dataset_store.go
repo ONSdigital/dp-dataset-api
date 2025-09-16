@@ -545,7 +545,7 @@ func (m *Mongo) UpdateVersion(ctx context.Context, currentVersion, versionUpdate
 	sel := selector(currentVersion.ID, bsonprim.Timestamp{}, eTagSelector)
 	updates := createVersionUpdateQuery(versionUpdate, newETag)
 
-	if _, err := m.Connection.Collection(m.ActualCollectionName(config.InstanceCollection)).Must().Update(ctx, sel, bson.M{"$set": updates, "$setOnInsert": bson.M{"last_updated": time.Now()}}); err != nil {
+	if _, err := m.Connection.Collection(m.ActualCollectionName(config.InstanceCollection)).Must().Update(ctx, sel, bson.M{"$set": updates}); err != nil {
 		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
 			return "", errs.ErrDatasetNotFound
 		}
@@ -617,6 +617,8 @@ func createVersionUpdateQuery(version *models.Version, newETag string) bson.M {
 	if newETag != "" {
 		setUpdates["e_tag"] = newETag
 	}
+
+	setUpdates["last_updated"] = time.Now()
 
 	return setUpdates
 }
