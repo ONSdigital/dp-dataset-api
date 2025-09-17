@@ -21,6 +21,20 @@ host: api.beta.ons.gov.uk
 schemes:
   - "https"
 parameters:
+  after_filter:
+    name: after
+    type: string
+    format: date-time
+    description: "The date from which to query bundle events"
+    in: query
+    required: false
+  before_filter:
+    name: before
+    type: string
+    format: date-time
+    description: "The date to which to query bundle events"
+    in: query
+    required: false
   dataset:
     name: dataset
     description: "A unique id for a dataset to filter on"
@@ -195,6 +209,12 @@ parameters:
   dataset_id_query:
     name: id
     description: "ID that represents a dataset"
+    in: query
+    required: false
+    type: string
+  edition_query:
+    name: edition
+    description: "An edition of a dataset to search on"
     in: query
     required: false
     type: string
@@ -424,7 +444,43 @@ paths:
           description: "No versions were found"
         500:
           $ref: "#/responses/InternalError"
-
+  /dataset-events:
+    get:
+      tags:
+        - "Private"
+      summary: "List all events relating to a dataset or edition"
+      description: "Returns a list of events for a dataset or edition"
+      parameters:
+         - $ref: "#/parameters/dataset_id_query"
+         - $ref: "#/parameters/edition_query"
+         - $ref: "#/parameters/after_filter"
+         - $ref: "#/parameters/before_filter"
+         - $ref: "#/parameters/limit"
+         - $ref: "#/parameters/offset"
+      security:
+        - {}
+        - Authorization: []
+      produces:
+        - "application/json"
+      responses:
+        200:
+          description: The list of change audit events for a dataset or edition.
+          headers:
+            ETag:
+              description: The RFC9110 ETag header field. Defines the unique entity tag for the current state of the resource. This is used for setting the `If-Match` and `If-None-Match` headers on subsequent requests.
+              type: string
+              pattern: ^(?:W/)?"(?:[!#-~])+"$
+            Cache-Control:
+              description: The RFC9111 Cache-Control header field for the response which instructs how to handle caching the resource.
+              type: string
+          schema:
+            $ref: "#/definitions/EventsList"
+        400:
+          description: "Parameter is_based_on or type was sent but no value was provided"
+        404:
+          description: "No dataset was found with the population-type provided"
+        500:
+          $ref: "#/responses/InternalError"
   /datasets/{id}/editions:
     get:
       tags:
@@ -1718,6 +1774,87 @@ definitions:
       option:
         description: "An option for a dimension"
         type: string
+  AuditEvent:
+    description: Details of a specific change event forming part of the change and audit log for a dataset or edition.
+    type: object
+    readOnly: true
+    required:
+      - user_id
+      - action
+      - resource
+    properties:
+      created_at:
+        description: The date and time the event occurred.
+        type: string
+        format: date-time
+      requested_by:
+        description: The user who made the request.
+        type: object
+        required:
+          - id
+        properties:
+          id:
+            description: The ID of the user.
+            type: string
+            example: 0889d599-3f0e-4564-9d6e-9455a6b73da7
+          email:
+            description: The email of the user. This is only populated if the user is a human user.
+            type: string
+            format: email
+            example: publisher@ons.gov.uk
+      action:
+        description: The action taken by the user.
+        type: string
+        enum:
+          - CREATE
+          - READ
+          - UPDATE
+          - DELETE
+      resource:
+        description: The path of the API resource that was called.
+        type: string
+        example: /datasets/cpi/editions/march/version/1
+      data:
+        description: |
+          The state of the resource following a change action, or the state of the record when the user viewed it.
+
+          This will be either a `Dataset` or `Version` object, but as OpenAPI 2.0 does not support `oneOf`, no schema is shown.
+        type: object
+        example:
+          edition: march
+          edition_title: March 2025
+          release_date: 2025-01-27T07:00:00.000Z
+          state: published
+          last_updated: 2025-01-26T07:00:00.000Z
+          version: 1
+          type: static
+          e_tag: ae798cd1893778920d74e1bb185b215fce309708
+          quality_designation: accredited-official
+          links:
+            dataset: 
+              href: /datasets/cpi
+              id: cpi
+            edition: 
+              href: /datasets/cpi/editions/march
+              id: march
+            self:
+              href: /datasets/cpi/editions/march/versions/1
+            version: 
+              href: /datasets/cpi/editions/march/versions/1,
+              id: 1
+          distributions: [{"title" : "Full Dataset (CSV)", "format" : "csv", "media_type" : "text/csv", "download_url" : "/datasets/RM086/editions/march/theodwnloadfile.csv", "byte_size" : 4300000}]
+  EventsList:
+    description: "The list of change events which form the change and audit log for a dataset or edition."
+    type: object
+    readOnly: true
+    allOf:
+      - $ref: "#/definitions/PaginationFields"
+      - type: object
+        properties:
+          items:
+            type: array
+            items:
+              $ref: "#/definitions/AuditEvent"
   PatchOptions:
     description: "A list of operations to patch a dimension option. Can only handle adding values for /node_id and /order. Each element in the array is processed in sequential order."
     type: array
