@@ -448,8 +448,8 @@ paths:
     get:
       tags:
         - "Private"
-      summary: "List all events relating to a dataset or edition"
-      description: "Returns a list of events for a dataset or edition"
+      summary: "List all events relating to a dataset, edition, or version for static datasets only."
+      description: "Returns a list of events for a dataset, edition, or version for static datasets only."
       parameters:
          - $ref: "#/parameters/dataset_id_query"
          - $ref: "#/parameters/edition_query"
@@ -1775,7 +1775,7 @@ definitions:
         description: "An option for a dimension"
         type: string
   AuditEvent:
-    description: Details of a specific change event forming part of the change and audit log for a dataset or edition.
+    description: Details of a specific change event forming part of the change and audit log for a dataset, edition, or version.
     type: object
     readOnly: true
     required:
