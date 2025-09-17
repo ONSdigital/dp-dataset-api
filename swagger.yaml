@@ -25,14 +25,14 @@ parameters:
     name: after
     type: string
     format: date-time
-    description: "The date from which to query bundle events"
+    description: "The date from which to query dataset events"
     in: query
     required: false
   before_filter:
     name: before
     type: string
     format: date-time
-    description: "The date to which to query bundle events"
+    description: "The date to which to query dataset events"
     in: query
     required: false
   dataset:
@@ -476,9 +476,11 @@ paths:
           schema:
             $ref: "#/definitions/EventsList"
         400:
-          description: "Parameter is_based_on or type was sent but no value was provided"
+          description: "Invalid query parameter"
+        401:
+          description: "Unauthorised to access endpoint"
         404:
-          description: "No dataset was found with the population-type provided"
+          description: "No dataset or editions were found"
         500:
           $ref: "#/responses/InternalError"
   /datasets/{id}/editions:
