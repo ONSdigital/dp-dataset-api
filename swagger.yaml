@@ -1845,7 +1845,7 @@ definitions:
             version: 
               href: /datasets/cpi/editions/march/versions/1,
               id: 1
-          distributions: [{"title" : "Full Dataset (CSV)", "format" : "csv", "media_type" : "text/csv", "download_url" : "/datasets/RM086/editions/march/theodwnloadfile.csv", "byte_size" : 4300000}]
+          distributions: [{"title" : "Full Dataset (CSV)", "format" : "csv", "media_type" : "text/csv", "download_url" : "/datasets/RM086/editions/march/thedownloadfile.csv", "byte_size" : 4300000}]
   AuditEventsList:
     description: "The list of change events which form the change and audit log for a dataset or edition."
     type: object
