@@ -55,6 +55,8 @@ var (
 	ErrMissingDatasetID                   = errors.New("invalid fields: missing dataset id in request body")
 	ErrEditionAlreadyExists               = errors.New("the edition-id already exists")
 	ErrInvalidDatasetTypeForEditionUpdate = errors.New("unable to update edition-id, invalid dataset type")
+	ErrFileMetadataNotFound               = errors.New("file metadata not found")
+	ErrFileNotInCorrectState              = errors.New("file not in correct state")
 
 	ErrExpectedResourceStateOfCreated          = errors.New("unable to update resource, expected resource to have a state of created")
 	ErrExpectedResourceStateOfSubmitted        = errors.New("unable to update resource, expected resource to have a state of submitted")
@@ -71,6 +73,7 @@ var (
 		ErrEditionNotFound:         true,
 		ErrInstanceNotFound:        true,
 		ErrVersionNotFound:         true,
+		ErrFileMetadataNotFound:    true,
 	}
 
 	BadRequestMap = map[error]bool{
@@ -92,6 +95,7 @@ var (
 		ErrConflictUpdatingInstance: true,
 		ErrInstanceConflict:         true,
 		ErrEditionAlreadyExists:     true,
+		ErrFileNotInCorrectState:    true,
 	}
 
 	ForbiddenMap = map[error]bool{

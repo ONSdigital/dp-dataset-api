@@ -6,6 +6,7 @@ import (
 
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/log.go/v2/log"
 )
 
 type State struct {
@@ -84,6 +85,10 @@ func (sm *StateMachine) Transition(ctx context.Context, smDS *StateMachineDatase
 	}
 
 	if !match {
+		if currentVersion.State == versionUpdate.State && versionUpdate.State == "published" {
+			log.Info(ctx, "state machine: version already published, treating as successful")
+			return nil
+		}
 		return errors.New("state not allowed to transition")
 	}
 

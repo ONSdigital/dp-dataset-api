@@ -3660,3 +3660,108 @@ func TestPutVersionEditionValidationNonStatic(t *testing.T) {
 		})
 	})
 }
+
+func TestPublishDistributionFilesErrorMapping(t *testing.T) {
+	t.Parallel()
+
+	Convey("When testing error mapping logic in publishDistributionFiles", t, func() {
+		Convey("Given files.ErrFileNotFound", func() {
+			err := files.ErrFileNotFound
+			var filesAPIError error
+
+			if errors.Is(err, files.ErrFileNotFound) ||
+				strings.Contains(err.Error(), "FileNotRegistered") ||
+				strings.Contains(err.Error(), "file not registered") ||
+				strings.Contains(err.Error(), "not found") {
+				filesAPIError = errs.ErrFileMetadataNotFound
+			}
+
+			Convey("Then it should be mapped to ErrFileMetadataNotFound", func() {
+				So(filesAPIError, ShouldEqual, errs.ErrFileMetadataNotFound)
+			})
+		})
+
+		Convey("Given files.ErrInvalidState", func() {
+			err := files.ErrInvalidState
+			var filesAPIError error
+
+			if errors.Is(err, files.ErrInvalidState) {
+				filesAPIError = errs.ErrFileNotInCorrectState
+			}
+
+			Convey("Then it should be mapped to ErrFileNotInCorrectState", func() {
+				So(filesAPIError, ShouldEqual, errs.ErrFileNotInCorrectState)
+			})
+		})
+
+		Convey("Given error with 'FileNotRegistered' in message", func() {
+			err := errors.New("FileNotRegistered: file not found")
+			var filesAPIError error
+
+			if errors.Is(err, files.ErrFileNotFound) ||
+				strings.Contains(err.Error(), "FileNotRegistered") ||
+				strings.Contains(err.Error(), "file not registered") ||
+				strings.Contains(err.Error(), "not found") {
+				filesAPIError = errs.ErrFileMetadataNotFound
+			}
+
+			Convey("Then it should be mapped to ErrFileMetadataNotFound", func() {
+				So(filesAPIError, ShouldEqual, errs.ErrFileMetadataNotFound)
+			})
+		})
+
+		Convey("Given error with 'file not registered' in message", func() {
+			err := errors.New("file not registered")
+			var filesAPIError error
+
+			if errors.Is(err, files.ErrFileNotFound) ||
+				strings.Contains(err.Error(), "FileNotRegistered") ||
+				strings.Contains(err.Error(), "file not registered") ||
+				strings.Contains(err.Error(), "not found") {
+				filesAPIError = errs.ErrFileMetadataNotFound
+			}
+
+			Convey("Then it should be mapped to ErrFileMetadataNotFound", func() {
+				So(filesAPIError, ShouldEqual, errs.ErrFileMetadataNotFound)
+			})
+		})
+
+		Convey("Given error with 'not found' in message", func() {
+			err := errors.New("resource not found")
+			var filesAPIError error
+
+			if errors.Is(err, files.ErrFileNotFound) ||
+				strings.Contains(err.Error(), "FileNotRegistered") ||
+				strings.Contains(err.Error(), "file not registered") ||
+				strings.Contains(err.Error(), "not found") {
+				filesAPIError = errs.ErrFileMetadataNotFound
+			}
+
+			Convey("Then it should be mapped to ErrFileMetadataNotFound", func() {
+				So(filesAPIError, ShouldEqual, errs.ErrFileMetadataNotFound)
+			})
+		})
+	})
+}
+
+func TestErrorStatusCodeMapping(t *testing.T) {
+	t.Parallel()
+
+	Convey("When getVersionAPIErrStatusCode is called with file-related errors", t, func() {
+		Convey("Given ErrFileMetadataNotFound", func() {
+			statusCode := getVersionAPIErrStatusCode(errs.ErrFileMetadataNotFound)
+
+			Convey("Then it should return 404", func() {
+				So(statusCode, ShouldEqual, http.StatusNotFound)
+			})
+		})
+
+		Convey("Given ErrFileNotInCorrectState", func() {
+			statusCode := getVersionAPIErrStatusCode(errs.ErrFileNotInCorrectState)
+
+			Convey("Then it should return 409", func() {
+				So(statusCode, ShouldEqual, http.StatusConflict)
+			})
+		})
+	})
+}

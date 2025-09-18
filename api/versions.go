@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ONSdigital/dp-api-clients-go/v2/files"
 	"github.com/ONSdigital/dp-api-clients-go/v2/headers"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -19,6 +20,7 @@ import (
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -741,6 +743,7 @@ func (api *DatasetAPI) publishDistributionFiles(ctx context.Context, version *mo
 	}
 
 	var lastError error
+	var filesAPIError error
 	totalFiles := len(*version.Distributions)
 	successCount := 0
 
@@ -756,12 +759,18 @@ func (api *DatasetAPI) publishDistributionFiles(ctx context.Context, version *mo
 			"distribution_title":  distribution.Title,
 			"distribution_format": distribution.Format,
 		}
-
 		maps.Copy(fileLogData, logData)
 
 		fileMetadata, err := api.filesAPIClient.GetFile(ctx, filepath, api.authToken)
 		if err != nil {
 			log.Error(ctx, "failed to get file metadata", err, fileLogData)
+
+			if errors.Is(err, files.ErrFileNotFound) ||
+				strings.Contains(err.Error(), "FileNotRegistered") ||
+				strings.Contains(err.Error(), "file not registered") ||
+				strings.Contains(err.Error(), "not found") {
+				filesAPIError = errs.ErrFileMetadataNotFound
+			}
 			lastError = err
 			continue
 		}
@@ -769,6 +778,10 @@ func (api *DatasetAPI) publishDistributionFiles(ctx context.Context, version *mo
 		err = api.filesAPIClient.MarkFilePublished(ctx, filepath, fileMetadata.Etag)
 		if err != nil {
 			log.Error(ctx, "failed to publish file", err, fileLogData)
+
+			if errors.Is(err, files.ErrInvalidState) {
+				filesAPIError = errs.ErrFileNotInCorrectState
+			}
 			lastError = err
 			continue
 		}
@@ -782,6 +795,10 @@ func (api *DatasetAPI) publishDistributionFiles(ctx context.Context, version *mo
 		"successful":  successCount,
 		"failed":      totalFiles - successCount,
 	})
+
+	if filesAPIError != nil {
+		return filesAPIError
+	}
 
 	if lastError != nil {
 		return fmt.Errorf("one or more errors occurred while publishing files: %w", lastError)

@@ -79,4 +79,25 @@ func TestTransition(t *testing.T) {
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldContainSubstring, "state not allowed to transition")
 	})
+
+	Convey("The transition handles idempotent state changes correctly", t, func() {
+		currentVersionApproved := &models.Version{
+			State:       "published",
+			ReleaseDate: "2024-12-31",
+			Version:     1,
+			ID:          "789",
+		}
+
+		versionUpdateApproved := &models.Version{
+			State:       "published",
+			ReleaseDate: "2024-12-31",
+			Version:     1,
+			ID:          "789",
+		}
+
+		err := smDS.StateMachine.Transition(testContext, smDS, currentVersionApproved, versionUpdateApproved, versionDetails, "true")
+
+		So(err, ShouldBeNil)
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 2)
+	})
 }
