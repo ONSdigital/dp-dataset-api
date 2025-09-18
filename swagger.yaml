@@ -474,7 +474,7 @@ paths:
               description: The RFC9111 Cache-Control header field for the response which instructs how to handle caching the resource.
               type: string
           schema:
-            $ref: "#/definitions/EventsList"
+            $ref: "#/definitions/AuditEventsList"
         400:
           description: "Invalid query parameter"
         401:
@@ -1781,9 +1781,10 @@ definitions:
     type: object
     readOnly: true
     required:
-      - user_id
+      - requested_by
       - action
       - resource
+      - data
     properties:
       created_at:
         description: The date and time the event occurred.
@@ -1845,7 +1846,7 @@ definitions:
               href: /datasets/cpi/editions/march/versions/1,
               id: 1
           distributions: [{"title" : "Full Dataset (CSV)", "format" : "csv", "media_type" : "text/csv", "download_url" : "/datasets/RM086/editions/march/theodwnloadfile.csv", "byte_size" : 4300000}]
-  EventsList:
+  AuditEventsList:
     description: "The list of change events which form the change and audit log for a dataset or edition."
     type: object
     readOnly: true
