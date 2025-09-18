@@ -304,21 +304,6 @@ func TestVersionUpdateQuery(t *testing.T) {
 			},
 		}
 
-		expectedUpdate := bson.M{
-			"collection_id":      "12345678",
-			"release_date":       "2017-09-09",
-			"links.spatial.href": "http://ons.gov.uk/geographylist",
-			"links.edition.href": "http://ons.gov.uk/datasets/123/editions/2017",
-			"links.version.href": "http://ons.gov.uk/datasets/123/editions/2017/versions/1",
-			"links.self.href":    "http://ons.gov.uk/datasets/123/editions/2017/versions/1",
-			"edition":            "2017",
-			"links.edition.id":   "2017",
-			"state":              models.PublishedState,
-			"temporal":           &[]models.TemporalFrequency{temporal},
-			"distributions":      distributions,
-			"e_tag":              "newETag",
-		}
-
 		version := &models.Version{
 			CollectionID: "12345678",
 			ReleaseDate:  "2017-09-09",
@@ -344,7 +329,20 @@ func TestVersionUpdateQuery(t *testing.T) {
 
 		selector := createVersionUpdateQuery(version, "newETag")
 		So(selector, ShouldNotBeNil)
-		So(selector, ShouldResemble, expectedUpdate)
+		So(selector, ShouldNotBeNil)
+		So(selector["collection_id"], ShouldEqual, "12345678")
+		So(selector["release_date"], ShouldEqual, "2017-09-09")
+		So(selector["links.spatial.href"], ShouldEqual, "http://ons.gov.uk/geographylist")
+		So(selector["links.edition.href"], ShouldEqual, "http://ons.gov.uk/datasets/123/editions/2017")
+		So(selector["links.version.href"], ShouldEqual, "http://ons.gov.uk/datasets/123/editions/2017/versions/1")
+		So(selector["links.self.href"], ShouldEqual, "http://ons.gov.uk/datasets/123/editions/2017/versions/1")
+		So(selector["edition"], ShouldEqual, "2017")
+		So(selector["links.edition.id"], ShouldEqual, "2017")
+		So(selector["state"], ShouldEqual, models.PublishedState)
+		So(selector["temporal"], ShouldResemble, &[]models.TemporalFrequency{temporal})
+		So(selector["distributions"], ShouldResemble, distributions)
+		So(selector["e_tag"], ShouldEqual, "newETag")
+		So(selector["last_updated"], ShouldNotBeEmpty)
 	})
 }
 

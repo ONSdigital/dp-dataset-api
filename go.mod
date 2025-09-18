@@ -2,12 +2,6 @@ module github.com/ONSdigital/dp-dataset-api
 
 go 1.24
 
-// to avoid 'sonatype-2021-4899' non-CVE Vulnerability
-exclude (
-	github.com/go-jose/go-jose/v4 v4.0.4
-	github.com/gorilla/sessions v1.2.1
-)
-
 require (
 	github.com/ONSdigital/dp-api-clients-go v1.43.0
 	github.com/ONSdigital/dp-api-clients-go/v2 v2.267.0
@@ -17,6 +11,7 @@ require (
 	github.com/ONSdigital/dp-graph/v2 v2.18.0
 	github.com/ONSdigital/dp-healthcheck v1.6.4
 	github.com/ONSdigital/dp-kafka/v4 v4.2.0
+	github.com/ONSdigital/dp-mongodb-in-memory v1.8.1
 	github.com/ONSdigital/dp-mongodb/v3 v3.8.0
 	github.com/ONSdigital/dp-net/v3 v3.4.0
 	github.com/ONSdigital/dp-otel-go v0.0.8
@@ -40,7 +35,6 @@ require (
 require (
 	github.com/ONSdigital/dis-redis v0.3.0 // indirect
 	github.com/ONSdigital/dp-authorisation/v2 v2.32.2 // indirect
-	github.com/ONSdigital/dp-mongodb-in-memory v1.8.1 // indirect
 	github.com/ONSdigital/dp-net/v2 v2.22.0 // indirect
 	github.com/ONSdigital/dp-permissions-api v1.0.0 // indirect
 	github.com/ONSdigital/golang-neo4j-bolt-driver v0.0.0-20241121114036-9f4b82bb9d37 // indirect
