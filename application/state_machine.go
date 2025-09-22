@@ -85,7 +85,7 @@ func (sm *StateMachine) Transition(ctx context.Context, smDS *StateMachineDatase
 	}
 
 	if !match {
-		if currentVersion.State == versionUpdate.State && versionUpdate.State == "published" {
+		if currentVersion.State == versionUpdate.State && versionUpdate.State == models.PublishedState {
 			log.Info(ctx, "state machine: version already published, treating as successful")
 			return nil
 		}
