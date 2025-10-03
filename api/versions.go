@@ -708,19 +708,21 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if currentVersion != nil {
-		currentVersion.State = stateUpdate.State
-		currentVersion.Type = models.Static.String()
+	// Create a version update with the target state
+	versionUpdate := &models.Version{
+		ID:    currentVersion.ID,
+		State: stateUpdate.State,
+		Type:  models.Static.String(),
 	}
 
-	_, err = api.smDatasetAPI.AmendVersion(r.Context(), vars, currentVersion)
+	updatedVersion, err := api.smDatasetAPI.AmendVersion(r.Context(), vars, versionUpdate)
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, logData)
 		return
 	}
 
-	if stateUpdate.State == models.PublishedState && currentVersion.Distributions != nil && len(*currentVersion.Distributions) > 0 {
-		err = api.publishDistributionFiles(ctx, currentVersion, logData)
+	if stateUpdate.State == models.PublishedState && updatedVersion.Distributions != nil && len(*updatedVersion.Distributions) > 0 {
+		err = api.publishDistributionFiles(ctx, updatedVersion, logData)
 		if err != nil {
 			log.Error(ctx, "putState endpoint: failed to publish distribution files", err, logData)
 			handleVersionAPIErr(ctx, err, w, logData)
