@@ -575,21 +575,37 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 			return errs.ErrDeletePublishedDatasetForbidden
 		}
 
-		// Find any editions associated with this dataset
-		editionDocs, _, err := api.dataStore.Backend.GetEditions(ctx, currentDataset.ID, "", 0, 0, true)
-		if err != nil && err != errs.ErrEditionNotFound {
-			return fmt.Errorf("failed to get editions: %w", err)
-		}
+		// Find any editions/versions associated with the dataset based on the type
+		if currentDataset.Next.Type == models.Static.String() {
+			versionDocs, _, err := api.dataStore.Backend.GetStaticDatasetVersions(ctx, currentDataset.ID, 0, 0)
+			if err != nil && err != errs.ErrVersionsNotFound {
+				return fmt.Errorf("failed to get versions: %w", err)
+			}
+			if len(versionDocs) == 0 {
+				log.Info(ctx, "no versions found for dataset", logData)
+			}
 
-		if len(editionDocs) == 0 {
-			log.Info(ctx, "no editions found for dataset", logData)
-		}
+			for i := range versionDocs {
+				if err := api.dataStore.Backend.DeleteStaticDatasetVersion(ctx, versionDocs[i].Links.Dataset.ID); err != nil {
+					log.Error(ctx, "failed to delete edition", err, logData)
+					return err
+				}
+			}
+		} else {
+			editionDocs, _, err := api.dataStore.Backend.GetEditions(ctx, currentDataset.ID, "", 0, 0, true)
+			if err != nil && err != errs.ErrEditionNotFound {
+				return fmt.Errorf("failed to get editions: %w", err)
+			}
 
-		// Then delete them
-		for i := range editionDocs {
-			if err := api.dataStore.Backend.DeleteEdition(ctx, editionDocs[i].ID); err != nil {
-				log.Error(ctx, "failed to delete edition", err, logData)
-				return err
+			if len(editionDocs) == 0 {
+				log.Info(ctx, "no editions found for dataset", logData)
+			}
+
+			for i := range editionDocs {
+				if err := api.dataStore.Backend.DeleteEdition(ctx, editionDocs[i].ID); err != nil {
+					log.Error(ctx, "failed to delete edition", err, logData)
+					return err
+				}
 			}
 		}
 
