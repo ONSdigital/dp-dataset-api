@@ -46,6 +46,10 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^these cantabular generator downloads events are produced:$`, c.theseCantabularGeneratorDownloadsEventsAreProduced)
 	ctx.Step(`^these generate downloads events are produced:$`, c.theseGenerateDownloadsEventsAreProduced)
 	ctx.Step(`^I have a static dataset with version:$`, c.iHaveStaticDatasetWithVersion)
+	ctx.Step(`^the dataset "([^"]*)" should exist$`, c.datasetShouldExist)
+	ctx.Step(`^the dataset "([^"]*)" should not exist$`, c.datasetShouldNotExist)
+	ctx.Step(`^the static version "([^"]*)" should exist$`, c.staticVersionShouldExist)
+	ctx.Step(`^the static version "([^"]*)" should not exist$`, c.staticVersionShouldNotExist)
 }
 
 func (c *DatasetComponent) thereAreNoDatasets() error {
@@ -528,4 +532,52 @@ func (c *DatasetComponent) iHaveStaticDatasetWithVersion(jsonData *godog.DocStri
 	}
 
 	return nil
+}
+
+// checkDocumentExistence checks for the existence of a document by ID in a given collection.
+func (c *DatasetComponent) checkDocumentExistence(collectionName, id string, shouldExist bool) error {
+	collection := c.MongoClient.ActualCollectionName(collectionName)
+	var result map[string]interface{}
+
+	err := c.MongoClient.Connection.Collection(collection).FindOne(context.Background(), bson.M{"_id": id}, &result)
+
+	if shouldExist {
+		if err != nil {
+			if strings.Contains(err.Error(), "no documents in result") {
+				return fmt.Errorf("expected document with ID '%s' in collection '%s' but it was not found: %w", id, collection, err)
+			}
+			return fmt.Errorf("failed to check for existence of document with ID '%s' in collection '%s': %w", id, collection, err)
+		}
+		return nil
+	}
+
+	if err == nil {
+		return fmt.Errorf("did not expect document with ID '%s' in collection '%s' but it was found", id, collection)
+	}
+
+	if strings.Contains(err.Error(), "no documents in result") {
+		return nil
+	}
+
+	return fmt.Errorf("unexpected error when checking non-existence of document with ID '%s' in collection '%s': %w", id, collection, err)
+}
+
+// datasetShouldExist checks for the existence of a dataset document in the datasets collection
+func (c *DatasetComponent) datasetShouldExist(datasetID string) error {
+	return c.checkDocumentExistence(config.DatasetsCollection, datasetID, true)
+}
+
+// datasetShouldNotExist checks for the non-existence of a dataset document in the datasets collection
+func (c *DatasetComponent) datasetShouldNotExist(datasetID string) error {
+	return c.checkDocumentExistence(config.DatasetsCollection, datasetID, false)
+}
+
+// staticVersionShouldExist checks for the existence of a version document in the versions collection
+func (c *DatasetComponent) staticVersionShouldExist(versionID string) error {
+	return c.checkDocumentExistence(config.VersionsCollection, versionID, true)
+}
+
+// staticVersionShouldNotExist checks for the non-existence of a version document in the versions collection
+func (c *DatasetComponent) staticVersionShouldNotExist(versionID string) error {
+	return c.checkDocumentExistence(config.VersionsCollection, versionID, false)
 }
