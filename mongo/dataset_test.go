@@ -5,17 +5,20 @@ import (
 	"testing"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
+	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	. "github.com/smartystreets/goconvey/convey"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
 var (
-	id          = "123"
-	editionID   = "2017"
-	state       = models.PublishedState
-	versionID   = 2
-	testContext = context.Background()
+	id                   = "123"
+	editionID            = "2017"
+	state                = models.PublishedState
+	versionID            = 2
+	testContext          = context.Background()
+	staticDatasetID      = "staticDatasetID123"
+	nonExistentDatasetID = "nonExistentDatasetID"
 )
 
 func TestBuildEditionsQuery(t *testing.T) {
@@ -490,5 +493,46 @@ func TestBuildDatasetsQueryUsingParameters(t *testing.T) {
 		So(err, ShouldNotBeNil)
 		So(filter, ShouldBeNil)
 		So(err, ShouldEqual, errs.ErrDatasetTypeInvalid)
+	})
+}
+
+func TestDeleteStaticDatasetVersion(t *testing.T) {
+	Convey("Given an in-memory MongoDB is running", t, func() {
+		ctx := context.Background()
+
+		Convey("When DeleteStaticDatasetVersions is called with a matching datasetID", func() {
+			mongoStore, server, err := getTestMongoDB(ctx)
+			So(err, ShouldBeNil)
+			defer func() {
+				server.Stop(ctx)
+			}()
+
+			versions, err := setupStaticVersionsTestData(ctx, mongoStore)
+			So(err, ShouldBeNil)
+			So(versions, ShouldHaveLength, 1)
+
+			datasetIDToDelete := staticDatasetID
+
+			err = mongoStore.DeleteStaticDatasetVersion(ctx, datasetIDToDelete)
+			So(err, ShouldBeNil)
+
+			// Version linked to that datasetID are deleted
+			selector := bson.M{"links.dataset.id": datasetIDToDelete}
+			totalCount, err := mongoStore.Connection.Collection(mongoStore.ActualCollectionName(config.VersionsCollection)).Count(ctx, selector)
+			So(err, ShouldBeNil)
+			So(totalCount, ShouldEqual, 0)
+		})
+
+		Convey("When DeleteStaticDatasetVersions is called for a dataset with no versions", func() {
+			mongoStore, server, err := getTestMongoDB(ctx)
+			if err != nil {
+				t.Fatalf("Failed to get MongoDB: %v", err)
+			}
+
+			defer func() { server.Stop(ctx) }()
+
+			err = mongoStore.DeleteStaticDatasetVersion(ctx, nonExistentDatasetID)
+			So(err, ShouldEqual, errs.ErrVersionsNotFound)
+		})
 	})
 }

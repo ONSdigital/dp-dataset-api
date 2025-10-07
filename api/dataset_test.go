@@ -2017,7 +2017,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 					},
 				}, nil
 			},
-			GetStaticDatasetVersionsFunc: func(context.Context, string, int, int) ([]*models.Version, int, error) {
+			GetAllStaticVersionsFunc: func(context.Context, string, string, int, int) ([]*models.Version, int, error) {
 				versions := []*models.Version{
 					{
 						ID: "V1",
@@ -2056,8 +2056,48 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetStaticDatasetVersionsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetAllStaticVersionsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteStaticDatasetVersionCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
+	})
+
+	Convey("A successful request to delete a static dataset with no versions returns 204 No Content", t, func() {
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/456", nil)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					ID: "456",
+					Next: &models.Dataset{
+						State: models.CreatedState,
+						Type:  models.Static.String(),
+					},
+				}, nil
+			},
+			GetAllStaticVersionsFunc: func(context.Context, string, string, int, int) ([]*models.Version, int, error) {
+				return nil, 0, errs.ErrVersionsNotFound
+			},
+			DeleteStaticDatasetVersionFunc: func(context.Context, string) error {
+				return nil
+			},
+			DeleteDatasetFunc: func(context.Context, string) error {
+				return nil
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusNoContent)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetAllStaticVersionsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.DeleteStaticDatasetVersionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
 	})
 }
@@ -2221,7 +2261,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 					},
 				}, nil
 			},
-			GetStaticDatasetVersionsFunc: func(context.Context, string, int, int) ([]*models.Version, int, error) {
+			GetAllStaticVersionsFunc: func(context.Context, string, string, int, int) ([]*models.Version, int, error) {
 				versions := []*models.Version{
 					{
 						ID: "V1",
@@ -2258,7 +2298,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		assertInternalServerErr(w)
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetStaticDatasetVersionsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetAllStaticVersionsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteStaticDatasetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
 	})

@@ -577,12 +577,9 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 
 		// Find any editions/versions associated with the dataset based on the type
 		if currentDataset.Next.Type == models.Static.String() {
-			versionDocs, _, err := api.dataStore.Backend.GetStaticDatasetVersions(ctx, currentDataset.ID, 0, 0)
+			versionDocs, _, err := api.dataStore.Backend.GetAllStaticVersions(ctx, currentDataset.ID, "", 0, 0)
 			if err != nil && err != errs.ErrVersionsNotFound {
-				return fmt.Errorf("failed to get versions: %w", err)
-			}
-			if len(versionDocs) == 0 {
-				log.Info(ctx, "no versions found for dataset", logData)
+				log.Info(ctx, "failed to get versions", logData)
 			}
 
 			for i := range versionDocs {

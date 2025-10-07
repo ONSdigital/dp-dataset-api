@@ -839,41 +839,17 @@ func (m *Mongo) DeleteEdition(ctx context.Context, id string) (err error) {
 	return nil
 }
 
-// Retrieve versions for static datasets
-func (m *Mongo) GetStaticDatasetVersions(ctx context.Context, id string, offset, limit int) ([]*models.Version, int, error) {
-	selector := bson.M{
-		"links.dataset.id": id,
-	}
-
-	results := []*models.Version{}
-
-	totalCount, err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).
-		Find(ctx, selector, &results)
-	if err != nil {
-		return results, 0, err
-	}
-
-	if totalCount < 1 {
-		return nil, 0, errs.ErrVersionsNotFound
-	}
-
-	return results, totalCount, nil
-}
-
 // DeleteEdition deletes an existing edition document
-func (m *Mongo) DeleteStaticDatasetVersion(ctx context.Context, datasetID string) error {
-	filter := bson.D{{Key: "links.dataset.id", Value: datasetID}}
+func (m *Mongo) DeleteStaticDatasetVersion(ctx context.Context, datasetID string) (err error) {
+	filter := bson.M{"links.dataset.id": datasetID}
 
-	if _, err := m.Connection.
-		Collection(m.ActualCollectionName(config.VersionsCollection)).
-		Must().
-		Delete(ctx, filter); err != nil {
+	if _, err = m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Must().Delete(ctx, filter); err != nil {
 		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
-			return errs.ErrEditionNotFound
+			return errs.ErrVersionsNotFound
 		}
 		return err
 	}
 
-	log.Info(ctx, "version deleted", log.Data{"dataset_id": datasetID})
+	log.Info(context.TODO(), "version deleted", log.Data{"dataset_id": datasetID})
 	return nil
 }

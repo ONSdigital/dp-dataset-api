@@ -73,7 +73,6 @@ type dataMongoDB interface {
 	AcquireVersionsLock(ctx context.Context, versionID string) (lockID string, err error)
 	UnlockVersions(ctx context.Context, lockID string)
 	RemoveDatasetVersionAndEditionLinks(ctx context.Context, id string) error
-	GetStaticDatasetVersions(ctx context.Context, ID string, offset, limit int) ([]*models.Version, int, error)
 	DeleteStaticDatasetVersion(ctx context.Context, ID string) error
 }
 
