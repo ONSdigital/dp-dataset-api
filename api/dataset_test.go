@@ -1939,7 +1939,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 
 func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 	t.Parallel()
-	Convey("A successful request to delete dataset returns 200 OK response ", t, func() {
+	Convey("A successful request to delete dataset returns 200 OK response", t, func() {
 		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
 
 		w := httptest.NewRecorder()
