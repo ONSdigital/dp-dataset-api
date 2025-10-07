@@ -11,28 +11,29 @@ import (
 
 // Metadata represents information (metadata) relevant to a version
 type Metadata struct {
-	EditableMetadata
-	Distribution    []string             `json:"distribution,omitempty"`
-	Downloads       *DownloadList        `json:"downloads,omitempty"`
-	Links           *MetadataLinks       `json:"links,omitempty"`
-	TableID         string               `json:"table_id,omitempty"`
-	CSVHeader       []string             `json:"headers,omitempty"`
-	Edition         string               `json:"edition,omitempty"`
-	EditionTitle    string               `json:"edition_title,omitempty"`
-	DatasetLinks    *DatasetLinks        `json:"dataset_links,omitempty"`
-	ID              string               `json:"id,omitempty"`
-	Publisher       *Publisher           `json:"publisher,omitempty"`
-	Temporal        *[]TemporalFrequency `json:"temporal,omitempty"`
-	Theme           string               `json:"theme,omitempty"`
-	URI             string               `json:"uri,omitempty"`
-	Coverage        string               `json:"coverage,omitempty"`
-	TablePopulation string               `json:"table_population,omitempty"`
 	AreaType        string               `json:"area_type,omitempty"`
 	Classifications string               `json:"classifications,omitempty"`
-	Source          string               `json:"source,omitempty"`
+	Coverage        string               `json:"coverage,omitempty"`
+	CSVHeader       []string             `json:"headers,omitempty"`
+	DatasetLinks    *DatasetLinks        `json:"dataset_links,omitempty"`
+	Distribution    []string             `json:"distribution,omitempty"`
+	Downloads       *DownloadList        `json:"downloads,omitempty"`
+	Edition         string               `json:"edition,omitempty"`
+	EditionTitle    string               `json:"edition_title,omitempty"`
+	ID              string               `json:"id,omitempty"`
 	IsBasedOn       *IsBasedOn           `json:"is_based_on,omitempty"`
+	Links           *MetadataLinks       `json:"links,omitempty"`
+	Publisher       *Publisher           `json:"publisher,omitempty"`
+	State           string               `json:"state,omitempty"`
+	Source          string               `json:"source,omitempty"`
+	TableID         string               `json:"table_id,omitempty"`
+	TablePopulation string               `json:"table_population,omitempty"`
+	Temporal        *[]TemporalFrequency `json:"temporal,omitempty"`
+	Theme           string               `json:"theme,omitempty"`
 	Type            string               `json:"type,omitempty"`
+	URI             string               `json:"uri,omitempty"`
 	Version         int                  `json:"version,omitempty"`
+	EditableMetadata
 }
 
 // EditableMetadata represents the metadata fields that can be edited
@@ -119,14 +120,15 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 		IsBasedOn:    datasetDoc.IsBasedOn,
 		Version:      versionDoc.Version,
 		Type:         datasetDoc.Type,
+		State:        versionDoc.State,
 	}
 
-	// Add relevant metdata links from dataset document
+	// Add relevant metadata links from dataset document
 	if datasetDoc.Links != nil {
 		metaDataDoc.Links.AccessRights = datasetDoc.Links.AccessRights
 	}
 
-	// Add relevant metdata links from version document
+	// Add relevant metadata links from version document
 	if versionDoc.Links != nil {
 		if versionDoc.Links.Version != nil && versionDoc.Links.Version.HRef != "" {
 			metaDataDoc.Links.Self = &LinkObject{
@@ -223,6 +225,7 @@ func CreateCantabularMetaDataDoc(d *Dataset, v *Version) *Metadata {
 		Version:      v.Version,
 		URI:          d.URI,
 		IsBasedOn:    d.IsBasedOn,
+		State:        v.State,
 	}
 
 	m.Distribution = getDistribution(v.Downloads)
