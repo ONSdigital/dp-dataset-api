@@ -2261,6 +2261,8 @@ definitions:
         type: array
         items:
           $ref: "#/definitions/Publisher"
+      state:
+        $ref: "#/definitions/State"
       qmi:
         $ref: "#/definitions/QMILink"
       quality_designation:
