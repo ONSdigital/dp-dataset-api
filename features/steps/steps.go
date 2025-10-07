@@ -491,7 +491,6 @@ func (c *DatasetComponent) putDocumentInDatabase(document interface{}, id, colle
 func (c *DatasetComponent) iHaveStaticDatasetWithVersion(jsonData *godog.DocString) error {
 	var data struct {
 		Dataset models.Dataset `json:"dataset"`
-		Edition models.Edition `json:"edition"`
 		Version models.Version `json:"version"`
 	}
 

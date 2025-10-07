@@ -10,10 +10,6 @@ Feature: Static Dataset Versions PUT API
                     "state": "associated",
                     "type": "static"
                 },
-                "edition": {
-                    "edition": "2025",
-                    "edition_title": "2025 Edition"
-                },
                 "version": {
                     "id": "static-version-update",
                     "edition": "2025",
@@ -229,10 +225,6 @@ Feature: Static Dataset Versions PUT API
                         }
                     }
                 },
-                "edition": {
-                    "edition": "2025",
-                    "edition_title": "2025 Edition"
-                },
                 "version": {
                     "id": "static-version-approved",
                     "edition": "2025",
@@ -315,10 +307,6 @@ Scenario: PUT fails when updating edition-id to existing edition for static data
                     "state": "associated",
                     "type": "static"
                 },
-                "edition": {
-                    "edition": "2025",
-                    "edition_title": "2025 Edition"
-                },
                 "version": {
                     "id": "static-version-conflict",
                     "edition": "2025",
@@ -350,10 +338,6 @@ Scenario: PUT fails when updating edition-id to existing edition for static data
                     "title": "Static Dataset Conflict Test",
                     "state": "associated",
                     "type": "static"
-                },
-                "edition": {
-                    "edition": "existing-edition",
-                    "edition_title": "Existing Edition"
                 },
                 "version": {
                     "id": "static-version-existing",
@@ -417,10 +401,6 @@ Scenario: PUT state handles idempotent transitions correctly
                 "title": "Static Dataset Published Test",
                 "state": "published",
                 "type": "static"
-            },
-            "edition": {
-                "edition": "2025",
-                "edition_title": "2025 Edition"
             },
             "version": {
                 "id": "static-version-published",
