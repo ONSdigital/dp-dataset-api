@@ -567,7 +567,7 @@ func (c *DatasetComponent) datasetShouldExist(datasetID string) error {
 	return c.checkDocumentExistence(config.DatasetsCollection, datasetID, true)
 }
 
-// datasetShouldNotExist checks for the non-existence of a dataset document in the datasets collection
+// datasetShouldNotExist checks the dataset does not exist in the datasets collection
 func (c *DatasetComponent) datasetShouldNotExist(datasetID string) error {
 	return c.checkDocumentExistence(config.DatasetsCollection, datasetID, false)
 }
@@ -577,7 +577,7 @@ func (c *DatasetComponent) staticVersionShouldExist(versionID string) error {
 	return c.checkDocumentExistence(config.VersionsCollection, versionID, true)
 }
 
-// staticVersionShouldNotExist checks for the non-existence of a version document in the versions collection
+// staticVersionShouldNotExist checks the version document does not exist in the versions collection
 func (c *DatasetComponent) staticVersionShouldNotExist(versionID string) error {
 	return c.checkDocumentExistence(config.VersionsCollection, versionID, false)
 }

@@ -84,7 +84,7 @@ Feature: Static Dataset Versions DELETE API
             ]
             """
     
-     Scenario: DELETE deletes static dataset with unpublished versions successfully
+     Scenario: DELETE static dataset with unpublished versions successfully
         Given private endpoints are enabled
         And I am identified as "user@ons.gov.uk"
         And I am authorised
@@ -93,7 +93,7 @@ Feature: Static Dataset Versions DELETE API
         And the dataset "static-dataset-test" should not exist
         And the static version "static-version-approved" should not exist 
 
-    Scenario: DELETE rejects published static dataset from deleting
+    Scenario: DELETE rejects published static dataset from deletion
         Given private endpoints are enabled
         And I am identified as "user@ons.gov.uk"
         And I am authorised
@@ -102,7 +102,7 @@ Feature: Static Dataset Versions DELETE API
         And the dataset "static-dataset-published" should exist
         And the static version "static-version-published" should exist
 
-    Scenario: DELETE deletes unpublished static dataset with no versions successfully
+    Scenario: DELETE unpublished static dataset with no versions successfully
         Given private endpoints are enabled
         And I am identified as "user@ons.gov.uk"
         And I am authorised

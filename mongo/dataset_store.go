@@ -839,7 +839,7 @@ func (m *Mongo) DeleteEdition(ctx context.Context, id string) (err error) {
 	return nil
 }
 
-// DeleteEdition deletes an existing edition document
+// DeleteStaticDatasetVersion deletes an existing edition document
 func (m *Mongo) DeleteStaticDatasetVersion(ctx context.Context, datasetID string) (err error) {
 	filter := bson.M{"links.dataset.id": datasetID}
 
