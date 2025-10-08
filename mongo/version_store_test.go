@@ -26,9 +26,22 @@ func setupStaticVersionsTestData(ctx context.Context, mongoStore *Mongo) ([]*mod
 			EditionTitle: "First Edition A",
 			LastUpdated:  now,
 			Version:      1,
-			State:        "edition-confirmed",
+			State:        "published",
 			Type:         "static",
 			ETag:         "version1ETag",
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{ID: staticDatasetID},
+			},
+		},
+		{
+			ID:           "version2",
+			Edition:      "editionB",
+			EditionTitle: "Second Edition B",
+			LastUpdated:  now.Add(time.Hour),
+			Version:      2,
+			State:        "edition-confirmed",
+			Type:         "static",
+			ETag:         "version2ETag",
 			Links: &models.VersionLinks{
 				Dataset: &models.LinkObject{ID: staticDatasetID},
 			},
@@ -80,6 +93,59 @@ func TestUpdateVersionStatic(t *testing.T) {
 			Convey("Then a VersionNotFound error is returned", func() {
 				So(err, ShouldEqual, errs.ErrVersionNotFound)
 			})
+		})
+	})
+}
+
+func TestGetAllStaticVersions(t *testing.T) {
+	Convey("Given an in-memory MongoDB is running and populated with static versions", t, func() {
+		ctx := context.Background()
+		mongoStore, server, err := getTestMongoDB(ctx)
+		So(err, ShouldBeNil)
+
+		defer func() {
+			server.Stop(ctx)
+		}()
+
+		versions, err := setupStaticVersionsTestData(ctx, mongoStore)
+		So(err, ShouldBeNil)
+		So(versions, ShouldNotBeEmpty)
+
+		Convey("When GetAllStaticVersions is called with offset=0 and limit=0", func() {
+			retrievedVersions, count, err := mongoStore.GetAllStaticVersions(ctx, staticDatasetID, "", 0, 0)
+
+			So(err, ShouldBeNil)
+			So(count, ShouldEqual, 2)
+			So(retrievedVersions, ShouldHaveLength, 2)
+			So(retrievedVersions[0].ID, ShouldEqual, "version2")
+			So(retrievedVersions[1].ID, ShouldEqual, "version1")
+		})
+
+		Convey("When GetAllStaticVersions is called with pagination (offset=1, limit=1)", func() {
+			retrievedVersions, count, err := mongoStore.GetAllStaticVersions(ctx, staticDatasetID, "", 1, 1)
+
+			So(err, ShouldBeNil)
+			So(count, ShouldEqual, 2)
+			So(retrievedVersions, ShouldHaveLength, 1)
+			So(retrievedVersions[0].ID, ShouldEqual, "version1")
+		})
+
+		Convey("When GetAllStaticVersions is called with a limit only (limit=1)", func() {
+			retrievedVersions, count, err := mongoStore.GetAllStaticVersions(ctx, staticDatasetID, "", 0, 1)
+
+			So(err, ShouldBeNil)
+			So(count, ShouldEqual, 2)
+			So(retrievedVersions, ShouldHaveLength, 1)
+
+			So(retrievedVersions[0].ID, ShouldEqual, "version2")
+		})
+
+		Convey("When GetAllStaticVersions is called with a non-matching datasetID", func() {
+			retrievedVersions, count, err := mongoStore.GetAllStaticVersions(ctx, nonExistentDatasetID, "", 0, 0)
+
+			So(err, ShouldEqual, errs.ErrVersionNotFound)
+			So(count, ShouldEqual, 0)
+			So(retrievedVersions, ShouldBeNil)
 		})
 	})
 }

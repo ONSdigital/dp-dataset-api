@@ -234,9 +234,7 @@ func (m *Mongo) GetAllStaticVersions(ctx context.Context, datasetID, state strin
 		selector["state"] = state
 	}
 
-	results := []*models.Version{}
-
-	// Build options dynamically to avoid "limit=0" meaning "no results"
+	// get total count and paginated values according to provided offset and limit
 	options := []mongodriver.FindOption{
 		mongodriver.Sort(bson.M{"last_updated": -1}),
 	}
@@ -247,12 +245,13 @@ func (m *Mongo) GetAllStaticVersions(ctx context.Context, datasetID, state strin
 		options = append(options, mongodriver.Limit(limit))
 	}
 
+	results := []*models.Version{}
 	totalCount, err := m.Connection.
 		Collection(m.ActualCollectionName(config.VersionsCollection)).
 		Find(ctx, selector, &results, options...)
 
 	if err != nil {
-		return nil, 0, err
+		return results, 0, err
 	}
 
 	if totalCount < 1 {

@@ -2076,10 +2076,8 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 				}, nil
 			},
 			GetAllStaticVersionsFunc: func(context.Context, string, string, int, int) ([]*models.Version, int, error) {
-				return nil, 0, errs.ErrVersionsNotFound
-			},
-			DeleteStaticDatasetVersionFunc: func(context.Context, string) error {
-				return nil
+				version := []*models.Version{}
+				return version, 0, errs.ErrVersionNotFound
 			},
 			DeleteDatasetFunc: func(context.Context, string) error {
 				return nil

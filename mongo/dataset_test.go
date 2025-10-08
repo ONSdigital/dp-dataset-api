@@ -509,12 +509,14 @@ func TestDeleteStaticDatasetVersion(t *testing.T) {
 
 			versions, err := setupStaticVersionsTestData(ctx, mongoStore)
 			So(err, ShouldBeNil)
-			So(versions, ShouldHaveLength, 1)
+			So(versions, ShouldHaveLength, 2)
 
 			datasetIDToDelete := staticDatasetID
 
-			err = mongoStore.DeleteStaticDatasetVersion(ctx, datasetIDToDelete)
-			So(err, ShouldBeNil)
+			for count := 0; count < len(versions); count++ {
+				err = mongoStore.DeleteStaticDatasetVersion(ctx, datasetIDToDelete)
+				So(err, ShouldBeNil)
+			}
 
 			// Version linked to that datasetID are deleted
 			selector := bson.M{"links.dataset.id": datasetIDToDelete}
