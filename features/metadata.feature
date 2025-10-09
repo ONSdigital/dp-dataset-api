@@ -537,7 +537,8 @@ Feature: Dataset API - metadata
             "title": "title",
             "unit_of_measure": "people",
             "uri": "http://example.com/population-estimates",
-            "version": 1
+            "version": 1,
+            "state": "published"
             }
             """
 
@@ -636,7 +637,8 @@ Feature: Dataset API - metadata
             "next_release": "2022",
             "release_date": "2023-01-01T00:00:00.000Z",
             "title": "title",
-            "version": 1
+            "version": 1,
+            "state": "associated"
             }
             """
 
@@ -817,7 +819,8 @@ Feature: Dataset API - metadata
             "release_date": "2023-01-01T00:00:00.000Z",
             "title": "title",
             "uri": "http://example.com/cantabular-flexible-table",
-            "version": 1
+            "version": 1,
+            "state": "published"
             }
             """
             
@@ -842,16 +845,6 @@ Scenario: GET metadata for a static dataset
                     }
                 ],
                 "topics": ["economy", "demographics"]
-            },
-            "edition": {
-                "id": "time-series",
-                "edition": "time-series",
-                "state": "published",
-                "links": {
-                    "dataset": {
-                        "id": "static-dataset"
-                    }
-                }
             },
             "version": {
                 "version": 1,
@@ -934,6 +927,7 @@ Scenario: GET metadata for a static dataset
             ],
             "type": "static",
             "version": 1,
+            "state": "published",
             "distributions": [
                 {
                     "title": "Distribution 1",
@@ -967,16 +961,6 @@ Scenario: GET metadata for a static dataset with URL rewriting enabled
                     }
                 ],
                 "topics": ["economy", "demographics"]
-            },
-            "edition": {
-                "id": "time-series",
-                "edition": "time-series",
-                "state": "published",
-                "links": {
-                    "dataset": {
-                        "id": "static-dataset"
-                    }
-                }
             },
             "version": {
                 "version": 1,
@@ -1062,12 +1046,129 @@ Scenario: GET metadata for a static dataset with URL rewriting enabled
             ],
             "type": "static",
             "version": 1,
+            "state": "published",
             "distributions": [
                 {
                     "title": "Distribution 1",
                     "format": "csv",
                     "media_type": "text/csv",
                     "download_url": "http://localhost:23600/downloads-new/datasets/static-dataset/editions/time-series/versions/1.csv",
+                    "byte_size": 100000
+                }
+            ]
+        }
+        """
+
+Scenario: GET metadata for an unpublished static dataset
+    Given I have a static dataset with version:
+        """
+        {
+            "dataset": {
+                "id": "static-dataset",
+                "title": "static title",
+                "description": "static description",
+                "state": "created",
+                "type": "static",
+                "next_release": "2023-12-01",
+                "license": "license",
+                "keywords": ["statistics", "population"],
+                "contacts": [
+                    {
+                        "name": "name",
+                        "email": "name@example.com",
+                        "telephone": "01234 567890"
+                    }
+                ],
+                "topics": ["economy", "demographics"]
+            },
+            "version": {
+                "version": 1,
+                "state": "edition-confirmed",
+                "release_date": "2023-01-15",
+                "temporal": [
+                    {
+                        "frequency": "Monthly",
+                        "start_date": "2023-01-01",
+                        "end_date": "2023-01-31"
+                    }
+                ],
+                "links": {
+                    "dataset": {
+                        "id": "static-dataset"
+                    },
+                    "edition": {
+                        "id": "time-series"
+                    },
+                    "self": {
+                        "href": "/datasets/static-dataset/editions/time-series/versions/1"
+                    },
+                    "version": {
+                        "href": "/datasets/static-dataset/editions/time-series/versions/1",
+                        "id": "1"
+                    }
+                },
+                "edition": "time-series",
+                "distributions": [
+                    {
+                        "title": "Distribution 1",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "download_url": "/datasets/static-dataset/editions/time-series/versions/1.csv",
+                        "byte_size": 100000
+                    }
+                ]
+            }
+        }
+        """
+    When I GET "/datasets/static-dataset/editions/time-series/versions/1/metadata"
+    Then I should receive the following JSON response with status "200":
+        """
+        {
+            "contacts": [
+                {
+                    "name": "name",
+                    "email": "name@example.com",
+                    "telephone": "01234 567890"
+                }
+            ],
+            "description": "static description",
+            "keywords": ["statistics", "population"],
+            "last_updated": "0001-01-01T00:00:00Z",
+            "license": "license",
+            "next_release": "2023-12-01",
+            "release_date": "2023-01-15",
+            "title": "static title",
+            "topics": ["economy", "demographics"],
+            "links": {
+                "self": {
+                    "href": "/datasets/static-dataset/editions/time-series/versions/1/metadata"
+                },
+                "version": {
+                    "href": "/datasets/static-dataset/editions/time-series/versions/1",
+                    "id": "1"
+                },
+                "website_version": {
+                    "href": "http://localhost:20000/datasets/static-dataset/editions/time-series/versions/1"
+                }
+            },
+            "edition": "time-series",
+            "id": "static-dataset",
+            "temporal": [
+                {
+                    "frequency": "Monthly",
+                    "start_date": "2023-01-01",
+                    "end_date": "2023-01-31"
+                }
+            ],
+            "type": "static",
+            "version": 1,
+            "state": "edition-confirmed",
+            "distributions": [
+                {
+                    "title": "Distribution 1",
+                    "format": "csv",
+                    "media_type": "text/csv",
+                    "download_url": "/datasets/static-dataset/editions/time-series/versions/1.csv",
                     "byte_size": 100000
                 }
             ]

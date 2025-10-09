@@ -333,6 +333,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		}
 		So(metaData.Temporal, ShouldResemble, &[]models.TemporalFrequency{temporal})
 		So(metaData.UnitOfMeasure, ShouldEqual, "Pounds Sterling")
+		So(metaData.State, ShouldEqual, versionDoc.State)
 	})
 
 	// Subtle difference between the test above and below, keywords is Not nil
@@ -392,6 +393,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		}
 		So(metaData.Temporal, ShouldResemble, &[]models.TemporalFrequency{temporal})
 		So(metaData.UnitOfMeasure, ShouldEqual, "Pounds Sterling")
+		So(metaData.State, ShouldEqual, versionDoc.State)
 	})
 
 	Convey("Successfully return metadata resource for a static dataset type", t, func() {
@@ -456,6 +458,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		}
 		So(metaData.Temporal, ShouldResemble, &[]models.TemporalFrequency{temporal})
 		So(metaData.UnitOfMeasure, ShouldEqual, "Pounds Sterling")
+		So(metaData.State, ShouldEqual, versionDoc.State)
 	})
 }
 

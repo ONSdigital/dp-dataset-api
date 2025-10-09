@@ -142,6 +142,7 @@ func TestCreateMetadata(t *testing.T) {
 				So(metaDataDoc.Dimensions, ShouldResemble, version.Dimensions)
 				So(metaDataDoc.ReleaseDate, ShouldEqual, version.ReleaseDate)
 				So(metaDataDoc.Version, ShouldEqual, version.Version)
+				So(metaDataDoc.State, ShouldEqual, version.State)
 
 				So(metaDataDoc.Downloads.CSV.HRef, ShouldEqual, csvDownload.HRef)
 				So(metaDataDoc.Downloads.CSV.Size, ShouldEqual, csvDownload.Size)
@@ -205,6 +206,10 @@ func TestCreateMetadata(t *testing.T) {
 				So(metaDataDoc.Subtopics, ShouldResemble, dataset.Subtopics)
 				So(metaDataDoc.Topics, ShouldBeNil)
 			})
+
+			Convey("And the state is set from the version", func() {
+				So(metaDataDoc.State, ShouldEqual, version.State)
+			})
 		})
 
 		Convey("When we call CreateMetaDataDoc with a static dataset", func() {
@@ -223,6 +228,10 @@ func TestCreateMetadata(t *testing.T) {
 
 			Convey("Then it returns a metadata object with topics populated", func() {
 				So(metaDataDoc.Topics, ShouldResemble, staticDataset.Topics)
+			})
+
+			Convey("And the state is set from the version", func() {
+				So(metaDataDoc.State, ShouldEqual, version.State)
 			})
 		})
 	})
