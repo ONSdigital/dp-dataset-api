@@ -233,7 +233,7 @@ func (m *Mongo) GetAllStaticVersions(ctx context.Context, datasetID, state strin
 	if state != "" {
 		selector["state"] = state
 	}
-
+	// get total count and paginated values according to provided offset and limit
 	results := []*models.Version{}
 	totalCount, err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Find(ctx, selector, &results,
 		mongodriver.Sort(bson.M{"last_updated": -1}),
