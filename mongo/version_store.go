@@ -239,7 +239,6 @@ func (m *Mongo) GetAllStaticVersions(ctx context.Context, datasetID, state strin
 		mongodriver.Sort(bson.M{"last_updated": -1}),
 		mongodriver.Offset(offset),
 		mongodriver.Limit(limit))
-
 	if err != nil {
 		return results, 0, err
 	}
