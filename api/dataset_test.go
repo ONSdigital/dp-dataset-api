@@ -1974,7 +1974,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState, Type: models.Filterable.String()}}, nil
+				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
 			},
 			GetEditionsFunc: func(context.Context, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
 				var items []*models.EditionUpdate
