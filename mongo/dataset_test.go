@@ -494,11 +494,11 @@ func TestBuildDatasetsQueryUsingParameters(t *testing.T) {
 	})
 }
 
-func TestDeleteStaticDatasetVersion(t *testing.T) {
+func TestDeleteStaticVersionsByDatasetID(t *testing.T) {
 	Convey("Given an in-memory MongoDB is running", t, func() {
 		ctx := context.Background()
 
-		Convey("When DeleteStaticDatasetVersions is called with a matching datasetID", func() {
+		Convey("When DeleteStaticVersionsByDatasetID is called with a matching datasetID", func() {
 			mongoStore, server, err := getTestMongoDB(ctx)
 			So(err, ShouldBeNil)
 			defer func() {
@@ -511,10 +511,8 @@ func TestDeleteStaticDatasetVersion(t *testing.T) {
 
 			datasetIDToDelete := staticDatasetID
 
-			for count := 0; count < len(versions); count++ {
-				err = mongoStore.DeleteStaticDatasetVersion(ctx, datasetIDToDelete)
-				So(err, ShouldBeNil)
-			}
+			err = mongoStore.DeleteStaticVersionsByDatasetID(ctx, datasetIDToDelete)
+			So(err, ShouldBeNil)
 
 			// Version linked to that datasetID are deleted
 			selector := bson.M{"links.dataset.id": datasetIDToDelete}
@@ -523,7 +521,7 @@ func TestDeleteStaticDatasetVersion(t *testing.T) {
 			So(totalCount, ShouldEqual, 0)
 		})
 
-		Convey("When DeleteStaticDatasetVersions is called for a dataset with no versions", func() {
+		Convey("When DeleteStaticVersionsByDatasetID is called for a dataset with no versions", func() {
 			mongoStore, server, err := getTestMongoDB(ctx)
 			if err != nil {
 				t.Fatalf("Failed to get MongoDB: %v", err)
@@ -532,7 +530,7 @@ func TestDeleteStaticDatasetVersion(t *testing.T) {
 
 			defer func() { server.Stop(ctx) }()
 
-			err = mongoStore.DeleteStaticDatasetVersion(ctx, nonExistentDatasetID)
+			err = mongoStore.DeleteStaticVersionsByDatasetID(ctx, nonExistentDatasetID)
 			So(err, ShouldEqual, errs.ErrVersionsNotFound)
 		})
 	})

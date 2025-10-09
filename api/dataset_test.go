@@ -2038,7 +2038,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 				}
 				return versions, 1, nil
 			},
-			DeleteStaticDatasetVersionFunc: func(context.Context, string) error {
+			DeleteStaticVersionsByDatasetIDFunc: func(ctx context.Context, ID string) error {
 				return nil
 			},
 			DeleteDatasetFunc: func(context.Context, string) error {
@@ -2057,7 +2057,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetAllStaticVersionsCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.DeleteStaticDatasetVersionCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.DeleteStaticVersionsByDatasetIDCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
 	})
 
@@ -2095,7 +2095,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetAllStaticVersionsCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.DeleteStaticDatasetVersionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.DeleteStaticVersionsByDatasetIDCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
 	})
 }
@@ -2280,7 +2280,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 				}
 				return versions, 1, nil
 			},
-			DeleteStaticDatasetVersionFunc: func(context.Context, string) error {
+			DeleteStaticVersionsByDatasetIDFunc: func(ctx context.Context, ID string) error {
 				return errs.ErrInternalServer
 			},
 			DeleteDatasetFunc: func(context.Context, string) error {
@@ -2297,7 +2297,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetAllStaticVersionsCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.DeleteStaticDatasetVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.DeleteStaticVersionsByDatasetIDCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
 	})
 }

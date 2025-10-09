@@ -73,7 +73,7 @@ type dataMongoDB interface {
 	AcquireVersionsLock(ctx context.Context, versionID string) (lockID string, err error)
 	UnlockVersions(ctx context.Context, lockID string)
 	RemoveDatasetVersionAndEditionLinks(ctx context.Context, id string) error
-	DeleteStaticDatasetVersion(ctx context.Context, ID string) error
+	DeleteStaticVersionsByDatasetID(ctx context.Context, ID string) error
 }
 
 // MongoDB represents all the required methods from mongo DB

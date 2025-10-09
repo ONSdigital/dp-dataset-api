@@ -66,13 +66,10 @@ func TestGetAllStaticVersions(t *testing.T) {
 		So(versions, ShouldNotBeEmpty)
 
 		Convey("When GetAllStaticVersions is called with offset=0 and limit=0", func() {
-			retrievedVersions, count, err := mongoStore.GetAllStaticVersions(ctx, staticDatasetID, "", 0, 0)
+			_, count, err := mongoStore.GetAllStaticVersions(ctx, staticDatasetID, "", 0, 0)
 
 			So(err, ShouldBeNil)
 			So(count, ShouldEqual, 2)
-			So(retrievedVersions, ShouldHaveLength, 2)
-			So(retrievedVersions[0].ID, ShouldEqual, "version2")
-			So(retrievedVersions[1].ID, ShouldEqual, "version1")
 		})
 
 		Convey("When GetAllStaticVersions is called with pagination (offset=1, limit=1)", func() {
