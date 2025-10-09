@@ -850,6 +850,6 @@ func (m *Mongo) DeleteStaticDatasetVersion(ctx context.Context, datasetID string
 		return err
 	}
 
-	log.Info(context.TODO(), "version deleted", log.Data{"dataset_id": datasetID})
+	log.Info(ctx, "version deleted", log.Data{"dataset_id": datasetID})
 	return nil
 }

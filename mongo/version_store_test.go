@@ -3,58 +3,12 @@ package mongo
 import (
 	"context"
 	"testing"
-	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	. "github.com/smartystreets/goconvey/convey"
 )
-
-// setupStaticVersionsTestData populates the in-memory database with static version documents
-func setupStaticVersionsTestData(ctx context.Context, mongoStore *Mongo) ([]*models.Version, error) {
-	// Drop the database to ensure a clean slate
-	if err := mongoStore.Connection.DropDatabase(ctx); err != nil {
-		return nil, err
-	}
-
-	now := time.Now()
-	versions := []*models.Version{
-		{
-			ID:           "version1",
-			Edition:      "editionA",
-			EditionTitle: "First Edition A",
-			LastUpdated:  now,
-			Version:      1,
-			State:        "published",
-			Type:         "static",
-			ETag:         "version1ETag",
-			Links: &models.VersionLinks{
-				Dataset: &models.LinkObject{ID: staticDatasetID},
-			},
-		},
-		{
-			ID:           "version2",
-			Edition:      "editionB",
-			EditionTitle: "Second Edition B",
-			LastUpdated:  now.Add(time.Hour),
-			Version:      2,
-			State:        "edition-confirmed",
-			Type:         "static",
-			ETag:         "version2ETag",
-			Links: &models.VersionLinks{
-				Dataset: &models.LinkObject{ID: staticDatasetID},
-			},
-		},
-	}
-
-	for _, v := range versions {
-		if _, err := mongoStore.Connection.Collection(mongoStore.ActualCollectionName(config.VersionsCollection)).InsertOne(ctx, v); err != nil {
-			return nil, err
-		}
-	}
-	return versions, nil
-}
 
 func TestUpdateVersionStatic(t *testing.T) {
 	Convey("Given a current version, version update and etag", t, func() {
@@ -107,7 +61,7 @@ func TestGetAllStaticVersions(t *testing.T) {
 			server.Stop(ctx)
 		}()
 
-		versions, err := setupStaticVersionsTestData(ctx, mongoStore)
+		versions, err := setupVersionsTestData(ctx, mongoStore)
 		So(err, ShouldBeNil)
 		So(versions, ShouldNotBeEmpty)
 

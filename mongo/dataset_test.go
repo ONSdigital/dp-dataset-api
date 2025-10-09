@@ -12,13 +12,11 @@ import (
 )
 
 var (
-	id                   = "123"
-	editionID            = "2017"
-	state                = models.PublishedState
-	versionID            = 2
-	testContext          = context.Background()
-	staticDatasetID      = "staticDatasetID123"
-	nonExistentDatasetID = "nonExistentDatasetID"
+	id          = "123"
+	editionID   = "2017"
+	state       = models.PublishedState
+	versionID   = 2
+	testContext = context.Background()
 )
 
 func TestBuildEditionsQuery(t *testing.T) {
@@ -507,7 +505,7 @@ func TestDeleteStaticDatasetVersion(t *testing.T) {
 				server.Stop(ctx)
 			}()
 
-			versions, err := setupStaticVersionsTestData(ctx, mongoStore)
+			versions, err := setupVersionsTestData(ctx, mongoStore)
 			So(err, ShouldBeNil)
 			So(versions, ShouldHaveLength, 2)
 
@@ -530,6 +528,7 @@ func TestDeleteStaticDatasetVersion(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to get MongoDB: %v", err)
 			}
+			So(err, ShouldBeNil)
 
 			defer func() { server.Stop(ctx) }()
 

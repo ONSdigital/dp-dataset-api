@@ -10,6 +10,11 @@ import (
 	mongoDriver "github.com/ONSdigital/dp-mongodb/v3/mongodb"
 )
 
+var (
+	staticDatasetID      = "staticDatasetID123"
+	nonExistentDatasetID = "nonExistentDatasetID"
+)
+
 // getTestMongoDB initializes a MongoDB connection for use in tests
 func getTestMongoDB(ctx context.Context) (*Mongo, *mim.Server, error) {
 	mongoVersion := "4.4.8"
@@ -60,9 +65,25 @@ func setupVersionsTestData(ctx context.Context, mongoStore *Mongo) ([]*models.Ve
 			EditionTitle: "First Edition",
 			LastUpdated:  now,
 			Version:      1,
-			State:        "edition-confirmed",
+			State:        "published",
 			Type:         "static",
 			ETag:         "version1ETag",
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{ID: staticDatasetID},
+			},
+		},
+		{
+			ID:           "version2",
+			Edition:      "edition2",
+			EditionTitle: "Second Edition",
+			LastUpdated:  now.Add(time.Hour),
+			Version:      2,
+			State:        "edition-confirmed",
+			Type:         "static",
+			ETag:         "version2ETag",
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{ID: staticDatasetID},
+			},
 		},
 	}
 
