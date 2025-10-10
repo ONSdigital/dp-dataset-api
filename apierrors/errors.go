@@ -57,6 +57,7 @@ var (
 	ErrInvalidDatasetTypeForEditionUpdate = errors.New("unable to update edition-id, invalid dataset type")
 	ErrFileMetadataNotFound               = errors.New("file metadata not found")
 	ErrFileNotInCorrectState              = errors.New("file not in correct state")
+	ErrInvalidParamCombination            = errors.New("cannot request state and published parameters at the same time")
 
 	ErrExpectedResourceStateOfCreated          = errors.New("unable to update resource, expected resource to have a state of created")
 	ErrExpectedResourceStateOfSubmitted        = errors.New("unable to update resource, expected resource to have a state of submitted")
@@ -89,6 +90,7 @@ var (
 		ErrDatasetTypeInvalid:                 true,
 		ErrInvalidVersion:                     true,
 		ErrInvalidDatasetTypeForEditionUpdate: true,
+		ErrInvalidParamCombination:            true,
 	}
 
 	ConflictRequestMap = map[error]bool{

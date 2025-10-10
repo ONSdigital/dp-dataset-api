@@ -183,29 +183,7 @@ func TestGetDatasetEditions_WithPublishedParam(t *testing.T) {
 		r := createRequestWithAuth("GET", "http://localhost:22000/dataset-editions?published=123", http.NoBody)
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &storetest.StorerMock{
-			GetStaticVersionsByStateFunc: func(ctx context.Context, state, published string, offset, limit int) ([]*models.Version, int, error) {
-				return []*models.Version{
-					{
-						Edition:      "January",
-						EditionTitle: "January Edition Title",
-						Version:      1,
-						ReleaseDate:  "2025-01-01",
-						Links:        &models.VersionLinks{Dataset: &models.LinkObject{ID: "Dataset1"}},
-						State:        models.PublishedState,
-					},
-				}, 1, nil
-			},
-			GetDatasetFunc: func(ctx context.Context, id string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{
-					ID: "Dataset1",
-					Next: &models.Dataset{
-						Title:       "Test Dataset 1",
-						Description: "Test dataset 1 description",
-					},
-				}, nil
-			},
-		}
+		mockedDataStore := &storetest.StorerMock{}
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
@@ -216,6 +194,28 @@ func TestGetDatasetEditions_WithPublishedParam(t *testing.T) {
 
 			Convey("Then it should return a 400 status code with an error message", func() {
 				So(err, ShouldEqual, errs.ErrInvalidQueryParameter)
+				So(w.Code, ShouldEqual, http.StatusBadRequest)
+				So(totalCount, ShouldEqual, 0)
+				So(results, ShouldBeNil)
+			})
+		})
+	})
+
+	Convey("Given a request to GET /dataset-editions with both state and published param", t, func() {
+		r := createRequestWithAuth("GET", "http://localhost:22000/dataset-editions?published=true&state=associated", http.NoBody)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+
+		Convey("When getDatasetEditions is called", func() {
+			results, totalCount, err := api.getDatasetEditions(w, r, 20, 0)
+
+			Convey("Then it should return a 400 status code with an error message", func() {
+				So(err, ShouldEqual, errs.ErrInvalidParamCombination)
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
 				So(totalCount, ShouldEqual, 0)
 				So(results, ShouldBeNil)

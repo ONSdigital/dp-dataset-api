@@ -23,6 +23,14 @@ func (api *DatasetAPI) getDatasetEditions(w http.ResponseWriter, r *http.Request
 	logData := log.Data{}
 
 	stateParam := r.URL.Query().Get("state")
+	publishedOnly := r.URL.Query().Get("published")
+
+	if stateParam != "" && publishedOnly != "" {
+		log.Error(ctx, "getDatasetEditions endpoint: cannot request state and published parameters at the same time", errs.ErrInvalidParamCombination, logData)
+		handleVersionAPIErr(ctx, errs.ErrInvalidParamCombination, w, logData)
+		return nil, 0, errs.ErrInvalidParamCombination
+	}
+
 	if stateParam != "" {
 		logData["state"] = stateParam
 		if err := models.CheckState("", stateParam); err != nil {
@@ -32,7 +40,6 @@ func (api *DatasetAPI) getDatasetEditions(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	publishedOnly := r.URL.Query().Get("published")
 	if publishedOnly != "" {
 		logData["publishedOnly"] = publishedOnly
 		_, err := strconv.ParseBool(publishedOnly)

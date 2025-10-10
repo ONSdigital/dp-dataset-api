@@ -409,6 +409,17 @@ Feature: Dataset API
             invalid query parameter
             """
     
+    Scenario: GET /dataset-editions with state and published parameters
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I GET "/dataset-editions?published=true&state=associated"
+        Then the HTTP status code should be "400"
+        And I should receive the following response:
+            """
+            cannot request state and published parameters at the same time
+            """
+    
     Scenario: GET /dataset-editions returns 404 when there are no editions of static datasets
         Given private endpoints are enabled
         And I am identified as "user@ons.gov.uk"
