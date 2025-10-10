@@ -141,6 +141,16 @@ parameters:
     description: "A comma separated list of state values to filter on (e.g. ‘completed,edition-confirmed’)"
     in: query
     type: string
+  single-state:
+    name: "state"
+    description: "A state value to filter on (e.g. ‘published’)"
+    in: query
+    type: string
+  published:
+    name: "published"
+    description: "A boolean value which indicates whether to include published editions/versions in the response"
+    in: query
+    type: boolean
   update_dataset:
     name: dataset
     description: "An update to a dataset"
@@ -424,7 +434,8 @@ paths:
       summary: "Get a list of dataset series that have unpublished versions"
       description: "Get a list of dataset series that have unpublished versions. This is used to easily determine versions/editions of series that are awaiting publication."
       parameters:
-        - $ref: "#/parameters/state"
+        - $ref: "#/parameters/single-state"
+        - $ref: "#/parameters/published"
         - $ref: "#/parameters/limit"
         - $ref: "#/parameters/offset"
       security:
@@ -1629,6 +1640,7 @@ definitions:
     required:
       - dataset_id
       - title
+      - description
       - edition
       - edition_title
       - latest_version
@@ -1641,6 +1653,11 @@ definitions:
         description: "The title of the dataset"
         type: string
         example: "Consumer Prices Index"
+        minLength: 1
+      description:
+        description: "The description of the dataset"
+        type: string
+        example: "CPIH is the most comprehensive measure of inflation. It extends CPI to include a measure of the costs associated with owning, maintaining and living in one's own home, known as owner occupiers' housing costs (OOH), along with council tax. This dataset provides CPIH time series (2005 to latest published month), allowing users to customise their own selection, view or download."
         minLength: 1
       edition:
         $ref: "#/definitions/EditionID"

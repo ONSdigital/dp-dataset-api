@@ -30,14 +30,21 @@ func (api *DatasetAPI) getDatasetEditions(w http.ResponseWriter, r *http.Request
 			handleVersionAPIErr(ctx, errs.ErrInvalidQueryParameter, w, logData)
 			return nil, 0, errs.ErrInvalidQueryParameter
 		}
-		if stateParam == models.PublishedState {
-			log.Error(ctx, "getDatasetEditions endpoint: not allowed to filter by published state", errs.ErrInvalidQueryParameter, logData)
+	}
+
+	publishedOnly := r.URL.Query().Get("published")
+	if publishedOnly != "" {
+		logData["publishedOnly"] = publishedOnly
+		_, err := strconv.ParseBool(publishedOnly)
+		if err != nil {
+			log.Error(ctx, "getDatasetEditions endpoint: invalid published parameter", err, logData)
 			handleVersionAPIErr(ctx, errs.ErrInvalidQueryParameter, w, logData)
 			return nil, 0, errs.ErrInvalidQueryParameter
 		}
 	}
 
-	versions, totalCount, err := api.dataStore.Backend.GetStaticVersionsByState(ctx, stateParam, offset, limit)
+	// need to use the string value of published here if it's provided as the boolean ParseBool function does not allow nil values and this could be nil
+	versions, totalCount, err := api.dataStore.Backend.GetStaticVersionsByState(ctx, stateParam, publishedOnly, offset, limit)
 	if err != nil {
 		if errors.Is(err, errs.ErrVersionsNotFound) {
 			log.Error(ctx, "getDatasetEditions endpoint: no versions found", err, logData)
@@ -57,7 +64,7 @@ func (api *DatasetAPI) getDatasetEditions(w http.ResponseWriter, r *http.Request
 		logData["edition"] = version.Edition
 		logData["version"] = version.Version
 
-		dataset, err := api.dataStore.Backend.GetUnpublishedDatasetStatic(ctx, version.Links.Dataset.ID)
+		dataset, err := api.dataStore.Backend.GetDataset(ctx, version.Links.Dataset.ID)
 		if err != nil {
 			if errors.Is(err, errs.ErrDatasetNotFound) {
 				log.Error(ctx, "getDatasetEditions endpoint: dataset not found", err, logData)
@@ -72,7 +79,8 @@ func (api *DatasetAPI) getDatasetEditions(w http.ResponseWriter, r *http.Request
 
 		results = append(results, &models.DatasetEdition{
 			DatasetID:    dataset.ID,
-			Title:        dataset.Title,
+			Title:        dataset.Next.Title,
+			Description:  dataset.Next.Description,
 			Edition:      version.Edition,
 			EditionTitle: version.EditionTitle,
 			LatestVersion: models.LinkObject{

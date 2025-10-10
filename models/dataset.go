@@ -190,6 +190,7 @@ type Edition struct {
 type DatasetEdition struct {
 	DatasetID     string     `json:"dataset_id"`
 	Title         string     `json:"title"`
+	Description   string     `json:"description"`
 	Edition       string     `json:"edition"`
 	EditionTitle  string     `json:"edition_title"`
 	LatestVersion LinkObject `json:"latest_version"`

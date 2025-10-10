@@ -8,7 +8,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
-	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"sync"
 )
 
@@ -82,7 +82,7 @@ var _ store.MongoDB = &MongoDBMock{}
 //			GetDimensionOptionsFromIDsFunc: func(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error) {
 //				panic("mock out the GetDimensionOptionsFromIDs method")
 //			},
-//			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]bson.M, error) {
+//			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]primitive.M, error) {
 //				panic("mock out the GetDimensions method")
 //			},
 //			GetDimensionsFromInstanceFunc: func(ctx context.Context, ID string, offset int, limit int) ([]*models.DimensionOption, int, error) {
@@ -106,14 +106,11 @@ var _ store.MongoDB = &MongoDBMock{}
 //			GetNextVersionFunc: func(ctx context.Context, datasetID string, editionID string) (int, error) {
 //				panic("mock out the GetNextVersion method")
 //			},
-//			GetStaticVersionsByStateFunc: func(ctx context.Context, state string, offset int, limit int) ([]*models.Version, int, error) {
+//			GetStaticVersionsByStateFunc: func(ctx context.Context, state string, publishedOnly string, offset int, limit int) ([]*models.Version, int, error) {
 //				panic("mock out the GetStaticVersionsByState method")
 //			},
 //			GetUniqueDimensionAndOptionsFunc: func(ctx context.Context, ID string, dimension string) ([]*string, int, error) {
 //				panic("mock out the GetUniqueDimensionAndOptions method")
-//			},
-//			GetUnpublishedDatasetStaticFunc: func(ctx context.Context, id string) (*models.Dataset, error) {
-//				panic("mock out the GetUnpublishedDatasetStatic method")
 //			},
 //			GetVersionFunc: func(ctx context.Context, datasetID string, editionID string, version int, state string) (*models.Version, error) {
 //				panic("mock out the GetVersion method")
@@ -258,7 +255,7 @@ type MongoDBMock struct {
 	GetDimensionOptionsFromIDsFunc func(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error)
 
 	// GetDimensionsFunc mocks the GetDimensions method.
-	GetDimensionsFunc func(ctx context.Context, versionID string) ([]bson.M, error)
+	GetDimensionsFunc func(ctx context.Context, versionID string) ([]primitive.M, error)
 
 	// GetDimensionsFromInstanceFunc mocks the GetDimensionsFromInstance method.
 	GetDimensionsFromInstanceFunc func(ctx context.Context, ID string, offset int, limit int) ([]*models.DimensionOption, int, error)
@@ -282,13 +279,10 @@ type MongoDBMock struct {
 	GetNextVersionFunc func(ctx context.Context, datasetID string, editionID string) (int, error)
 
 	// GetStaticVersionsByStateFunc mocks the GetStaticVersionsByState method.
-	GetStaticVersionsByStateFunc func(ctx context.Context, state string, offset int, limit int) ([]*models.Version, int, error)
+	GetStaticVersionsByStateFunc func(ctx context.Context, state string, publishedOnly string, offset int, limit int) ([]*models.Version, int, error)
 
 	// GetUniqueDimensionAndOptionsFunc mocks the GetUniqueDimensionAndOptions method.
 	GetUniqueDimensionAndOptionsFunc func(ctx context.Context, ID string, dimension string) ([]*string, int, error)
-
-	// GetUnpublishedDatasetStaticFunc mocks the GetUnpublishedDatasetStatic method.
-	GetUnpublishedDatasetStaticFunc func(ctx context.Context, id string) (*models.Dataset, error)
 
 	// GetVersionFunc mocks the GetVersion method.
 	GetVersionFunc func(ctx context.Context, datasetID string, editionID string, version int, state string) (*models.Version, error)
@@ -645,6 +639,8 @@ type MongoDBMock struct {
 			Ctx context.Context
 			// State is the state argument value.
 			State string
+			// PublishedOnly is the publishedOnly argument value.
+			PublishedOnly string
 			// Offset is the offset argument value.
 			Offset int
 			// Limit is the limit argument value.
@@ -658,13 +654,6 @@ type MongoDBMock struct {
 			ID string
 			// Dimension is the dimension argument value.
 			Dimension string
-		}
-		// GetUnpublishedDatasetStatic holds details about calls to the GetUnpublishedDatasetStatic method.
-		GetUnpublishedDatasetStatic []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// ID is the id argument value.
-			ID string
 		}
 		// GetVersion holds details about calls to the GetVersion method.
 		GetVersion []struct {
@@ -966,7 +955,6 @@ type MongoDBMock struct {
 	lockGetNextVersion                      sync.RWMutex
 	lockGetStaticVersionsByState            sync.RWMutex
 	lockGetUniqueDimensionAndOptions        sync.RWMutex
-	lockGetUnpublishedDatasetStatic         sync.RWMutex
 	lockGetVersion                          sync.RWMutex
 	lockGetVersionStatic                    sync.RWMutex
 	lockGetVersions                         sync.RWMutex
@@ -1807,7 +1795,7 @@ func (mock *MongoDBMock) GetDimensionOptionsFromIDsCalls() []struct {
 }
 
 // GetDimensions calls GetDimensionsFunc.
-func (mock *MongoDBMock) GetDimensions(ctx context.Context, versionID string) ([]bson.M, error) {
+func (mock *MongoDBMock) GetDimensions(ctx context.Context, versionID string) ([]primitive.M, error) {
 	if mock.GetDimensionsFunc == nil {
 		panic("MongoDBMock.GetDimensionsFunc: method is nil but MongoDB.GetDimensions was just called")
 	}
@@ -2155,25 +2143,27 @@ func (mock *MongoDBMock) GetNextVersionCalls() []struct {
 }
 
 // GetStaticVersionsByState calls GetStaticVersionsByStateFunc.
-func (mock *MongoDBMock) GetStaticVersionsByState(ctx context.Context, state string, offset int, limit int) ([]*models.Version, int, error) {
+func (mock *MongoDBMock) GetStaticVersionsByState(ctx context.Context, state string, publishedOnly string, offset int, limit int) ([]*models.Version, int, error) {
 	if mock.GetStaticVersionsByStateFunc == nil {
 		panic("MongoDBMock.GetStaticVersionsByStateFunc: method is nil but MongoDB.GetStaticVersionsByState was just called")
 	}
 	callInfo := struct {
-		Ctx    context.Context
-		State  string
-		Offset int
-		Limit  int
+		Ctx           context.Context
+		State         string
+		PublishedOnly string
+		Offset        int
+		Limit         int
 	}{
-		Ctx:    ctx,
-		State:  state,
-		Offset: offset,
-		Limit:  limit,
+		Ctx:           ctx,
+		State:         state,
+		PublishedOnly: publishedOnly,
+		Offset:        offset,
+		Limit:         limit,
 	}
 	mock.lockGetStaticVersionsByState.Lock()
 	mock.calls.GetStaticVersionsByState = append(mock.calls.GetStaticVersionsByState, callInfo)
 	mock.lockGetStaticVersionsByState.Unlock()
-	return mock.GetStaticVersionsByStateFunc(ctx, state, offset, limit)
+	return mock.GetStaticVersionsByStateFunc(ctx, state, publishedOnly, offset, limit)
 }
 
 // GetStaticVersionsByStateCalls gets all the calls that were made to GetStaticVersionsByState.
@@ -2181,16 +2171,18 @@ func (mock *MongoDBMock) GetStaticVersionsByState(ctx context.Context, state str
 //
 //	len(mockedMongoDB.GetStaticVersionsByStateCalls())
 func (mock *MongoDBMock) GetStaticVersionsByStateCalls() []struct {
-	Ctx    context.Context
-	State  string
-	Offset int
-	Limit  int
+	Ctx           context.Context
+	State         string
+	PublishedOnly string
+	Offset        int
+	Limit         int
 } {
 	var calls []struct {
-		Ctx    context.Context
-		State  string
-		Offset int
-		Limit  int
+		Ctx           context.Context
+		State         string
+		PublishedOnly string
+		Offset        int
+		Limit         int
 	}
 	mock.lockGetStaticVersionsByState.RLock()
 	calls = mock.calls.GetStaticVersionsByState
@@ -2235,42 +2227,6 @@ func (mock *MongoDBMock) GetUniqueDimensionAndOptionsCalls() []struct {
 	mock.lockGetUniqueDimensionAndOptions.RLock()
 	calls = mock.calls.GetUniqueDimensionAndOptions
 	mock.lockGetUniqueDimensionAndOptions.RUnlock()
-	return calls
-}
-
-// GetUnpublishedDatasetStatic calls GetUnpublishedDatasetStaticFunc.
-func (mock *MongoDBMock) GetUnpublishedDatasetStatic(ctx context.Context, id string) (*models.Dataset, error) {
-	if mock.GetUnpublishedDatasetStaticFunc == nil {
-		panic("MongoDBMock.GetUnpublishedDatasetStaticFunc: method is nil but MongoDB.GetUnpublishedDatasetStatic was just called")
-	}
-	callInfo := struct {
-		Ctx context.Context
-		ID  string
-	}{
-		Ctx: ctx,
-		ID:  id,
-	}
-	mock.lockGetUnpublishedDatasetStatic.Lock()
-	mock.calls.GetUnpublishedDatasetStatic = append(mock.calls.GetUnpublishedDatasetStatic, callInfo)
-	mock.lockGetUnpublishedDatasetStatic.Unlock()
-	return mock.GetUnpublishedDatasetStaticFunc(ctx, id)
-}
-
-// GetUnpublishedDatasetStaticCalls gets all the calls that were made to GetUnpublishedDatasetStatic.
-// Check the length with:
-//
-//	len(mockedMongoDB.GetUnpublishedDatasetStaticCalls())
-func (mock *MongoDBMock) GetUnpublishedDatasetStaticCalls() []struct {
-	Ctx context.Context
-	ID  string
-} {
-	var calls []struct {
-		Ctx context.Context
-		ID  string
-	}
-	mock.lockGetUnpublishedDatasetStatic.RLock()
-	calls = mock.calls.GetUnpublishedDatasetStatic
-	mock.lockGetUnpublishedDatasetStatic.RUnlock()
 	return calls
 }
 

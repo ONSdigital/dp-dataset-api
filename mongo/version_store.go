@@ -84,13 +84,21 @@ func (m *Mongo) CheckEditionExistsStatic(ctx context.Context, id, editionID, sta
 
 // GetStaticVersionsByState retrieves all versions that match the provided state
 // If state is empty, the search will include any state that is not "published"
-func (m *Mongo) GetStaticVersionsByState(ctx context.Context, state string, offset, limit int) ([]*models.Version, int, error) {
+func (m *Mongo) GetStaticVersionsByState(ctx context.Context, state, publishedOnly string, offset, limit int) ([]*models.Version, int, error) {
 	filter := bson.M{"type": models.Static.String()}
 
-	if state == "" {
-		filter["state"] = bson.M{"$ne": models.PublishedState}
-	} else {
+	if state != "" {
 		filter["state"] = state
+	}
+
+	if publishedOnly != "" {
+		if publishedOnly == "true" {
+			filter["state"] = models.PublishedState
+		}
+
+		if publishedOnly == "false" {
+			filter["state"] = bson.M{"$ne": models.PublishedState}
+		}
 	}
 
 	results := []*models.Version{}
