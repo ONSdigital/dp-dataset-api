@@ -3,6 +3,7 @@ package mongo
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -92,11 +93,11 @@ func (m *Mongo) GetStaticVersionsByState(ctx context.Context, state, publishedOn
 	}
 
 	if publishedOnly != "" {
-		if publishedOnly == "true" {
+		if strings.EqualFold(publishedOnly, "true") || publishedOnly == "1" || strings.EqualFold(publishedOnly, "t") {
 			filter["state"] = models.PublishedState
 		}
 
-		if publishedOnly == "false" {
+		if strings.EqualFold(publishedOnly, "false") || publishedOnly == "0" || strings.EqualFold(publishedOnly, "f") {
 			filter["state"] = bson.M{"$ne": models.PublishedState}
 		}
 	}

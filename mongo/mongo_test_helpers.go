@@ -64,6 +64,16 @@ func setupVersionsTestData(ctx context.Context, mongoStore *Mongo) ([]*models.Ve
 			Type:         "static",
 			ETag:         "version1ETag",
 		},
+		{
+			ID:           "newedition",
+			Edition:      "newedition",
+			EditionTitle: "New Edition",
+			LastUpdated:  now,
+			Version:      1,
+			State:        "published",
+			Type:         "static",
+			ETag:         "newETag",
+		},
 	}
 
 	for _, v := range versions {
