@@ -85,6 +85,16 @@ func setupVersionsTestData(ctx context.Context, mongoStore *Mongo) ([]*models.Ve
 				Dataset: &models.LinkObject{ID: staticDatasetID},
 			},
 		},
+		{
+			ID:           "newedition",
+			Edition:      "newedition",
+			EditionTitle: "New Edition",
+			LastUpdated:  now,
+			Version:      1,
+			State:        "published",
+			Type:         "static",
+			ETag:         "newETag",
+		},
 	}
 
 	for _, v := range versions {

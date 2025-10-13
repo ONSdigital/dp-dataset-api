@@ -507,7 +507,7 @@ func TestDeleteStaticVersionsByDatasetID(t *testing.T) {
 
 			versions, err := setupVersionsTestData(ctx, mongoStore)
 			So(err, ShouldBeNil)
-			So(versions, ShouldHaveLength, 2)
+			So(versions, ShouldHaveLength, 3)
 
 			datasetIDToDelete := staticDatasetID
 

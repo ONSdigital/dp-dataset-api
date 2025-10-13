@@ -145,25 +145,6 @@ func (m *Mongo) GetDataset(ctx context.Context, id string) (*models.DatasetUpdat
 	return &dataset, nil
 }
 
-// GetUnpublishedDataset retrieves an unpublished dataset document that is type "static"
-func (m *Mongo) GetUnpublishedDatasetStatic(ctx context.Context, id string) (*models.Dataset, error) {
-	filter := bson.M{
-		"_id":       id,
-		"next.type": models.Static.String(),
-	}
-
-	var dataset models.DatasetUpdate
-	err := m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).FindOne(ctx, filter, &dataset)
-	if err != nil {
-		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
-			return nil, errs.ErrDatasetNotFound
-		}
-		return nil, err
-	}
-
-	return dataset.Next, nil
-}
-
 func (m *Mongo) CheckDatasetTitleExist(ctx context.Context, title string) (bool, error) {
 	titleFilter := bson.M{
 		"$or": bson.A{

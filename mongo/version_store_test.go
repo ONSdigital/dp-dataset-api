@@ -51,6 +51,40 @@ func TestUpdateVersionStatic(t *testing.T) {
 	})
 }
 
+func TestGetStaticVersionsByState(t *testing.T) {
+	Convey("Given a static versions are retieved", t, func() {
+		ctx := context.Background()
+
+		mongoDB, _, err := getTestMongoDB(ctx)
+		So(err, ShouldBeNil)
+
+		_, err = setupVersionsTestData(ctx, mongoDB)
+		So(err, ShouldBeNil)
+
+		Convey("When GetStaticVersion is called with no published versions to be retrieved", func() {
+			version, count, err := mongoDB.GetStaticVersionsByState(ctx, "", "0", 0, 20)
+
+			Convey("Then the version is retrieved successfully", func() {
+				So(err, ShouldBeNil)
+				So(version, ShouldNotBeNil)
+				So(count, ShouldEqual, 1)
+				So(version[0].State, ShouldNotEqual, models.PublishedState)
+			})
+		})
+
+		Convey("When GetStaticVersion is called with only published versions to be retrieved", func() {
+			version, count, err := mongoDB.GetStaticVersionsByState(ctx, "", "TRUE", 0, 20)
+
+			Convey("Then the version is retrieved successfully", func() {
+				So(err, ShouldBeNil)
+				So(version, ShouldNotBeNil)
+				So(count, ShouldEqual, 2)
+				So(version[0].State, ShouldEqual, models.PublishedState)
+			})
+		})
+	})
+}
+
 func TestGetAllStaticVersions(t *testing.T) {
 	Convey("Given an in-memory MongoDB is running and populated with static versions", t, func() {
 		ctx := context.Background()
