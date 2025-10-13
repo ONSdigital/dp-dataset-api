@@ -652,6 +652,8 @@ paths:
           description: "Unauthorised to update version of dataset"
         404:
           description: "Dataset series was not found for a dataset using the id and edition provided"
+        409:
+          description: "Version already exists"
         500:
           $ref: "#/responses/InternalError"
     put:
