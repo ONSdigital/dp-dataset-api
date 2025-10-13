@@ -3,6 +3,7 @@ package mongo
 import (
 	"context"
 	"errors"
+	"strconv"
 	"strings"
 	"time"
 
@@ -93,11 +94,10 @@ func (m *Mongo) GetStaticVersionsByState(ctx context.Context, state, publishedOn
 	}
 
 	if publishedOnly != "" {
-		if strings.EqualFold(publishedOnly, "true") || publishedOnly == "1" || strings.EqualFold(publishedOnly, "t") {
+		val, _ := strconv.ParseBool(strings.ToLower(publishedOnly))
+		if val {
 			filter["state"] = models.PublishedState
-		}
-
-		if strings.EqualFold(publishedOnly, "false") || publishedOnly == "0" || strings.EqualFold(publishedOnly, "f") {
+		} else {
 			filter["state"] = bson.M{"$ne": models.PublishedState}
 		}
 	}
