@@ -61,7 +61,7 @@ var _ store.MongoDB = &MongoDBMock{}
 //			DeleteEditionFunc: func(ctx context.Context, ID string) error {
 //				panic("mock out the DeleteEdition method")
 //			},
-//			DeleteStaticVersionsByDatasetIDFunc: func(ctx context.Context, ID string) error {
+//			DeleteStaticVersionsByDatasetIDFunc: func(ctx context.Context, ID string) (int, error) {
 //				panic("mock out the DeleteStaticVersionsByDatasetID method")
 //			},
 //			GetAllStaticVersionsFunc: func(ctx context.Context, ID string, state string, offset int, limit int) ([]*models.Version, int, error) {
@@ -240,7 +240,7 @@ type MongoDBMock struct {
 	DeleteEditionFunc func(ctx context.Context, ID string) error
 
 	// DeleteStaticVersionsByDatasetIDFunc mocks the DeleteStaticVersionsByDatasetID method.
-	DeleteStaticVersionsByDatasetIDFunc func(ctx context.Context, ID string) error
+	DeleteStaticVersionsByDatasetIDFunc func(ctx context.Context, ID string) (int, error)
 
 	// GetAllStaticVersionsFunc mocks the GetAllStaticVersions method.
 	GetAllStaticVersionsFunc func(ctx context.Context, ID string, state string, offset int, limit int) ([]*models.Version, int, error)
@@ -1501,7 +1501,7 @@ func (mock *MongoDBMock) DeleteEditionCalls() []struct {
 }
 
 // DeleteStaticVersionsByDatasetID calls DeleteStaticVersionsByDatasetIDFunc.
-func (mock *MongoDBMock) DeleteStaticVersionsByDatasetID(ctx context.Context, ID string) error {
+func (mock *MongoDBMock) DeleteStaticVersionsByDatasetID(ctx context.Context, ID string) (int, error) {
 	if mock.DeleteStaticVersionsByDatasetIDFunc == nil {
 		panic("MongoDBMock.DeleteStaticVersionsByDatasetIDFunc: method is nil but MongoDB.DeleteStaticVersionsByDatasetID was just called")
 	}

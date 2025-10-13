@@ -57,7 +57,7 @@ var _ store.Storer = &StorerMock{}
 //			DeleteEditionFunc: func(ctx context.Context, ID string) error {
 //				panic("mock out the DeleteEdition method")
 //			},
-//			DeleteStaticVersionsByDatasetIDFunc: func(ctx context.Context, ID string) error {
+//			DeleteStaticVersionsByDatasetIDFunc: func(ctx context.Context, ID string) (int, error) {
 //				panic("mock out the DeleteStaticVersionsByDatasetID method")
 //			},
 //			GetAllStaticVersionsFunc: func(ctx context.Context, ID string, state string, offset int, limit int) ([]*models.Version, int, error) {
@@ -236,7 +236,7 @@ type StorerMock struct {
 	DeleteEditionFunc func(ctx context.Context, ID string) error
 
 	// DeleteStaticVersionsByDatasetIDFunc mocks the DeleteStaticVersionsByDatasetID method.
-	DeleteStaticVersionsByDatasetIDFunc func(ctx context.Context, ID string) error
+	DeleteStaticVersionsByDatasetIDFunc func(ctx context.Context, ID string) (int, error)
 
 	// GetAllStaticVersionsFunc mocks the GetAllStaticVersions method.
 	GetAllStaticVersionsFunc func(ctx context.Context, ID string, state string, offset int, limit int) ([]*models.Version, int, error)
@@ -1488,7 +1488,7 @@ func (mock *StorerMock) DeleteEditionCalls() []struct {
 }
 
 // DeleteStaticVersionsByDatasetID calls DeleteStaticVersionsByDatasetIDFunc.
-func (mock *StorerMock) DeleteStaticVersionsByDatasetID(ctx context.Context, ID string) error {
+func (mock *StorerMock) DeleteStaticVersionsByDatasetID(ctx context.Context, ID string) (int, error) {
 	if mock.DeleteStaticVersionsByDatasetIDFunc == nil {
 		panic("StorerMock.DeleteStaticVersionsByDatasetIDFunc: method is nil but Storer.DeleteStaticVersionsByDatasetID was just called")
 	}

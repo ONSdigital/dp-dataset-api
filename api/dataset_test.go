@@ -2038,8 +2038,8 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 				}
 				return versions, 1, nil
 			},
-			DeleteStaticVersionsByDatasetIDFunc: func(ctx context.Context, ID string) error {
-				return nil
+			DeleteStaticVersionsByDatasetIDFunc: func(ctx context.Context, ID string) (int, error) {
+				return 2, nil
 			},
 			DeleteDatasetFunc: func(context.Context, string) error {
 				return nil
@@ -2056,7 +2056,6 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetAllStaticVersionsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteStaticVersionsByDatasetIDCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
 	})
@@ -2079,6 +2078,9 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 				version := []*models.Version{}
 				return version, 0, errs.ErrVersionNotFound
 			},
+			DeleteStaticVersionsByDatasetIDFunc: func(ctx context.Context, ID string) (int, error) {
+				return 0, nil
+			},
 			DeleteDatasetFunc: func(context.Context, string) error {
 				return nil
 			},
@@ -2094,8 +2096,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetAllStaticVersionsCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.DeleteStaticVersionsByDatasetIDCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.DeleteStaticVersionsByDatasetIDCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
 	})
 }
@@ -2280,8 +2281,8 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 				}
 				return versions, 1, nil
 			},
-			DeleteStaticVersionsByDatasetIDFunc: func(ctx context.Context, ID string) error {
-				return errs.ErrInternalServer
+			DeleteStaticVersionsByDatasetIDFunc: func(ctx context.Context, ID string) (int, error) {
+				return 0, errs.ErrInternalServer
 			},
 			DeleteDatasetFunc: func(context.Context, string) error {
 				return nil

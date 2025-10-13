@@ -511,9 +511,9 @@ func TestDeleteStaticVersionsByDatasetID(t *testing.T) {
 
 			datasetIDToDelete := staticDatasetID
 
-			err = mongoStore.DeleteStaticVersionsByDatasetID(ctx, datasetIDToDelete)
+			deleteCount, err := mongoStore.DeleteStaticVersionsByDatasetID(ctx, datasetIDToDelete)
 			So(err, ShouldBeNil)
-
+			So(deleteCount, ShouldEqual, 2)
 			// Version linked to that datasetID are deleted
 			selector := bson.M{"links.dataset.id": datasetIDToDelete}
 			totalCount, err := mongoStore.Connection.Collection(mongoStore.ActualCollectionName(config.VersionsCollection)).Count(ctx, selector)
@@ -530,8 +530,9 @@ func TestDeleteStaticVersionsByDatasetID(t *testing.T) {
 
 			defer func() { server.Stop(ctx) }()
 
-			err = mongoStore.DeleteStaticVersionsByDatasetID(ctx, nonExistentDatasetID)
+			deleteCount, err := mongoStore.DeleteStaticVersionsByDatasetID(ctx, nonExistentDatasetID)
 			So(err, ShouldEqual, errs.ErrVersionsNotFound)
+			So(deleteCount, ShouldEqual, 0)
 		})
 	})
 }

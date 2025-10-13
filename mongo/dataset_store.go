@@ -840,16 +840,31 @@ func (m *Mongo) DeleteEdition(ctx context.Context, id string) (err error) {
 }
 
 // DeleteStaticDatasetVersion deletes an existing edition document
-func (m *Mongo) DeleteStaticVersionsByDatasetID(ctx context.Context, datasetID string) (err error) {
+func (m *Mongo) DeleteStaticVersionsByDatasetID(ctx context.Context, datasetID string) (int, error) {
 	filter := bson.M{"links.dataset.id": datasetID}
 
-	if _, err = m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Must().DeleteMany(ctx, filter); err != nil {
+	deleteResult, err := m.Connection.
+		Collection(m.ActualCollectionName(config.VersionsCollection)).
+		Must().
+		DeleteMany(ctx, filter)
+	if err != nil {
 		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
-			return errs.ErrVersionsNotFound
+			return 0, errs.ErrVersionsNotFound
 		}
-		return err
+		return 0, err
 	}
 
-	log.Info(ctx, "versions deleted", log.Data{"dataset_id": datasetID})
-	return nil
+	deletedCount := deleteResult.DeletedCount
+
+	if deletedCount == 0 {
+		log.Info(ctx, "no static versions found to delete", log.Data{"dataset_id": datasetID})
+		return 0, errs.ErrVersionsNotFound
+	}
+
+	log.Info(ctx, "static versions deleted", log.Data{
+		"dataset_id":    datasetID,
+		"deleted_count": deletedCount,
+	})
+
+	return deletedCount, nil
 }
