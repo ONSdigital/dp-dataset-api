@@ -623,6 +623,37 @@ paths:
         500:
           $ref: "#/responses/InternalError"
   /datasets/{id}/editions/{edition}/versions/{version}:
+    post:
+      tags:
+        - "Private"
+      summary: "Create a specific version"
+      description: "Create a specific version for a dataset series.  This will set the state of the version and dataset series to be associated."
+      parameters:
+        - $ref: "#/parameters/dataset_id"
+        - $ref: "#/parameters/edition"
+        - $ref: "#/parameters/version"
+        - $ref: "#/parameters/new_version"
+      security:
+        - {}
+        - Authorization: []
+      responses:
+        201:
+          description: "A json object containing a version"
+          schema:
+            $ref: "#/definitions/Version"
+        400:
+          description: |
+            Invalid request, reasons can be one of the following:
+              * invalid request body
+              * dataset id was incorrect
+              * edition was incorrect
+              * an unpublished version of the dataset already exists
+        401:
+          description: "Unauthorised to update version of dataset"
+        404:
+          description: "Dataset series was not found for a dataset using the id and edition provided"
+        500:
+          $ref: "#/responses/InternalError"
     put:
       tags:
         - "Private"
