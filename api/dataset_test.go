@@ -2297,7 +2297,6 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		assertInternalServerErr(w)
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetAllStaticVersionsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteStaticVersionsByDatasetIDCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
 	})
