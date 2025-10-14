@@ -3,8 +3,6 @@ package mongo
 import (
 	"context"
 	"errors"
-	"strconv"
-	"strings"
 	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -84,22 +82,40 @@ func (m *Mongo) CheckEditionExistsStatic(ctx context.Context, id, editionID, sta
 	return nil
 }
 
-// GetStaticVersionsByState retrieves all versions that match the provided state
-// If state is empty, the search will include any state that is not "published"
-func (m *Mongo) GetStaticVersionsByState(ctx context.Context, state, publishedOnly string, offset, limit int) ([]*models.Version, int, error) {
+// GetStaticVersionsByState retrieves all versions that match the provided state, ordered by last_updated descending
+// If the state is empty, all versions are returned regardless of state
+func (m *Mongo) GetStaticVersionsByState(ctx context.Context, state string, offset, limit int) ([]*models.Version, int, error) {
 	filter := bson.M{"type": models.Static.String()}
 
 	if state != "" {
 		filter["state"] = state
 	}
 
-	if publishedOnly != "" {
-		val, _ := strconv.ParseBool(strings.ToLower(publishedOnly))
-		if val {
-			filter["state"] = models.PublishedState
-		} else {
-			filter["state"] = bson.M{"$ne": models.PublishedState}
-		}
+	results := []*models.Version{}
+	totalCount, err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Find(ctx, filter, &results,
+		mongodriver.Sort(bson.M{"last_updated": -1}),
+		mongodriver.Offset(offset),
+		mongodriver.Limit(limit))
+	if err != nil {
+		return results, 0, err
+	}
+
+	if totalCount == 0 {
+		return nil, 0, errs.ErrVersionsNotFound
+	}
+
+	return results, totalCount, nil
+}
+
+// GetStaticVersionsByPublishedState retrieves all published or unpublished versions, ordered by last_updated descending
+// If isPublished is true, only published versions are returned, otherwise only unpublished versions are returned
+func (m *Mongo) GetStaticVersionsByPublishedState(ctx context.Context, isPublished bool, offset, limit int) ([]*models.Version, int, error) {
+	filter := bson.M{"type": models.Static.String()}
+
+	if isPublished {
+		filter["state"] = models.PublishedState
+	} else {
+		filter["state"] = bson.M{"$ne": models.PublishedState}
 	}
 
 	results := []*models.Version{}
@@ -257,4 +273,19 @@ func (m *Mongo) GetAllStaticVersions(ctx context.Context, datasetID, state strin
 	}
 
 	return results, totalCount, nil
+}
+
+// DeleteStaticVersionsByDatasetID deletes all versions from the versions collection for a given dataset
+func (m *Mongo) DeleteStaticVersionsByDatasetID(ctx context.Context, datasetID string) (int, error) {
+	filter := bson.M{"links.dataset.id": datasetID}
+
+	deleteResult, err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Must().DeleteMany(ctx, filter)
+	if err != nil {
+		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
+			return 0, errs.ErrVersionsNotFound
+		}
+		return 0, err
+	}
+
+	return deleteResult.DeletedCount, nil
 }

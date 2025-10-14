@@ -86,14 +86,17 @@ func setupVersionsTestData(ctx context.Context, mongoStore *Mongo) ([]*models.Ve
 			},
 		},
 		{
-			ID:           "newedition",
-			Edition:      "newedition",
-			EditionTitle: "New Edition",
+			ID:           "version3",
+			Edition:      "edition3",
+			EditionTitle: "Third Edition",
 			LastUpdated:  now,
 			Version:      1,
 			State:        "published",
 			Type:         "static",
-			ETag:         "newETag",
+			ETag:         "version3ETag",
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{ID: "uniqueDatasetID"},
+			},
 		},
 	}
 

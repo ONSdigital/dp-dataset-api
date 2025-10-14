@@ -8,6 +8,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func TestUpdateVersionStatic(t *testing.T) {
@@ -52,7 +53,50 @@ func TestUpdateVersionStatic(t *testing.T) {
 }
 
 func TestGetStaticVersionsByState(t *testing.T) {
-	Convey("Given a static versions are retieved", t, func() {
+	Convey("Given an in-memory MongoDB is running and populated with static versions", t, func() {
+		ctx := context.Background()
+
+		mongoDB, _, err := getTestMongoDB(ctx)
+		So(err, ShouldBeNil)
+
+		existingVersions, err := setupVersionsTestData(ctx, mongoDB)
+		So(err, ShouldBeNil)
+
+		Convey("When GetStaticVersionsByState is called without a state", func() {
+			versions, count, err := mongoDB.GetStaticVersionsByState(ctx, "", 0, 20)
+
+			Convey("Then all versions are retrieved successfully regardless of state", func() {
+				So(err, ShouldBeNil)
+				So(versions, ShouldNotBeNil)
+				So(count, ShouldEqual, len(existingVersions))
+			})
+		})
+
+		Convey("When GetStaticVersionsByState is called with a specific state", func() {
+			versions, count, err := mongoDB.GetStaticVersionsByState(ctx, models.EditionConfirmedState, 0, 20)
+
+			Convey("Then all versions with the specified state are retrieved successfully", func() {
+				So(err, ShouldBeNil)
+				So(versions, ShouldNotBeNil)
+				So(count, ShouldEqual, 1)
+				So(versions[0].State, ShouldEqual, models.EditionConfirmedState)
+			})
+		})
+
+		Convey("When GetStaticVersionsByState is called and there are no matching versions", func() {
+			versions, count, err := mongoDB.GetStaticVersionsByState(ctx, "nonexistentstate", 0, 20)
+
+			Convey("Then a VersionsNotFound error is returned", func() {
+				So(err, ShouldEqual, errs.ErrVersionsNotFound)
+				So(versions, ShouldBeNil)
+				So(count, ShouldEqual, 0)
+			})
+		})
+	})
+}
+
+func TestGetStaticVersionsByPublishedState(t *testing.T) {
+	Convey("Given an in-memory MongoDB is running and populated with static versions", t, func() {
 		ctx := context.Background()
 
 		mongoDB, _, err := getTestMongoDB(ctx)
@@ -61,25 +105,46 @@ func TestGetStaticVersionsByState(t *testing.T) {
 		_, err = setupVersionsTestData(ctx, mongoDB)
 		So(err, ShouldBeNil)
 
-		Convey("When GetStaticVersion is called with no published versions to be retrieved", func() {
-			version, count, err := mongoDB.GetStaticVersionsByState(ctx, "", "0", 0, 20)
+		Convey("When GetStaticVersionsByPublishedState is called with isPublished=true", func() {
+			versions, count, err := mongoDB.GetStaticVersionsByPublishedState(ctx, true, 0, 20)
 
-			Convey("Then the version is retrieved successfully", func() {
+			Convey("Then all published versions are retrieved successfully", func() {
 				So(err, ShouldBeNil)
-				So(version, ShouldNotBeNil)
-				So(count, ShouldEqual, 1)
-				So(version[0].State, ShouldNotEqual, models.PublishedState)
+				So(versions, ShouldNotBeNil)
+				So(count, ShouldEqual, 2)
+				for _, v := range versions {
+					So(v.State, ShouldEqual, models.PublishedState)
+				}
 			})
 		})
 
-		Convey("When GetStaticVersion is called with only published versions to be retrieved", func() {
-			version, count, err := mongoDB.GetStaticVersionsByState(ctx, "", "TRUE", 0, 20)
+		Convey("When GetStaticVersionsByPublishedState is called with isPublished=false", func() {
+			versions, count, err := mongoDB.GetStaticVersionsByPublishedState(ctx, false, 0, 20)
 
-			Convey("Then the version is retrieved successfully", func() {
+			Convey("Then all unpublished versions are retrieved successfully", func() {
 				So(err, ShouldBeNil)
-				So(version, ShouldNotBeNil)
-				So(count, ShouldEqual, 2)
-				So(version[0].State, ShouldEqual, models.PublishedState)
+				So(versions, ShouldNotBeNil)
+				So(count, ShouldEqual, 1)
+				for _, v := range versions {
+					So(v.State, ShouldNotEqual, models.PublishedState)
+				}
+			})
+		})
+	})
+
+	Convey("Given an in-memory MongoDB is running and has no static versions", t, func() {
+		ctx := context.Background()
+
+		mongoDB, _, err := getTestMongoDB(ctx)
+		So(err, ShouldBeNil)
+
+		Convey("When GetStaticVersionsByPublishedState is called with isPublished=true", func() {
+			versions, count, err := mongoDB.GetStaticVersionsByPublishedState(ctx, true, 0, 20)
+
+			Convey("Then a VersionsNotFound error is returned", func() {
+				So(err, ShouldEqual, errs.ErrVersionsNotFound)
+				So(versions, ShouldBeNil)
+				So(count, ShouldEqual, 0)
 			})
 		})
 	})
@@ -131,6 +196,39 @@ func TestGetAllStaticVersions(t *testing.T) {
 			So(err, ShouldEqual, errs.ErrVersionNotFound)
 			So(count, ShouldEqual, 0)
 			So(retrievedVersions, ShouldBeNil)
+		})
+	})
+}
+
+func TestDeleteStaticVersionsByDatasetID(t *testing.T) {
+	Convey("Given an in-memory MongoDB is running", t, func() {
+		ctx := context.Background()
+
+		Convey("When DeleteStaticVersionsByDatasetID is called with a matching datasetID", func() {
+			mongoStore, _, err := getTestMongoDB(ctx)
+			So(err, ShouldBeNil)
+
+			versions, err := setupVersionsTestData(ctx, mongoStore)
+			So(err, ShouldBeNil)
+			So(versions, ShouldHaveLength, 3)
+
+			deletedCount, err := mongoStore.DeleteStaticVersionsByDatasetID(ctx, staticDatasetID)
+			So(err, ShouldBeNil)
+			So(deletedCount, ShouldEqual, 2)
+
+			selector := bson.M{"links.dataset.id": staticDatasetID}
+			totalCount, err := mongoStore.Connection.Collection(mongoStore.ActualCollectionName(config.VersionsCollection)).Count(ctx, selector)
+			So(err, ShouldBeNil)
+			So(totalCount, ShouldEqual, 0)
+		})
+
+		Convey("When DeleteStaticVersionsByDatasetID is called for a dataset with no versions", func() {
+			mongoStore, _, err := getTestMongoDB(ctx)
+			So(err, ShouldBeNil)
+
+			deletedCount, err := mongoStore.DeleteStaticVersionsByDatasetID(ctx, nonExistentDatasetID)
+			So(err, ShouldEqual, errs.ErrVersionsNotFound)
+			So(deletedCount, ShouldEqual, 0)
 		})
 	})
 }
