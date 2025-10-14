@@ -2017,27 +2017,6 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 					},
 				}, nil
 			},
-			GetAllStaticVersionsFunc: func(context.Context, string, string, int, int) ([]*models.Version, int, error) {
-				versions := []*models.Version{
-					{
-						ID: "V1",
-						Links: &models.VersionLinks{
-							Dataset: &models.LinkObject{
-								ID: "456",
-							},
-						},
-					},
-					{
-						ID: "V2",
-						Links: &models.VersionLinks{
-							Dataset: &models.LinkObject{
-								ID: "456",
-							},
-						},
-					},
-				}
-				return versions, 1, nil
-			},
 			DeleteStaticVersionsByDatasetIDFunc: func(ctx context.Context, ID string) (int, error) {
 				return 2, nil
 			},
@@ -2074,12 +2053,8 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 					},
 				}, nil
 			},
-			GetAllStaticVersionsFunc: func(context.Context, string, string, int, int) ([]*models.Version, int, error) {
-				version := []*models.Version{}
-				return version, 0, errs.ErrVersionNotFound
-			},
 			DeleteStaticVersionsByDatasetIDFunc: func(ctx context.Context, ID string) (int, error) {
-				return 0, nil
+				return 0, errs.ErrVersionsNotFound
 			},
 			DeleteDatasetFunc: func(context.Context, string) error {
 				return nil
@@ -2163,7 +2138,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
 	})
 
-	Convey("When the dataset document cannot be found return status not found ", t, func() {
+	Convey("When the dataset document cannot be found return status not found", t, func() {
 		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
 
 		w := httptest.NewRecorder()
@@ -2194,7 +2169,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
 	})
 
-	Convey("When the dataset document cannot be queried return status 500 ", t, func() {
+	Convey("When the dataset document cannot be queried return status 500", t, func() {
 		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
 
 		w := httptest.NewRecorder()
@@ -2246,7 +2221,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
 	})
 
-	Convey("When deleting static dataset versions fails, return internal server error", t, func() {
+	Convey("When a request to delete versiions of a static dataset fails due to an internal server error", t, func() {
 		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/456", nil)
 		w := httptest.NewRecorder()
 
@@ -2260,32 +2235,8 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 					},
 				}, nil
 			},
-			GetAllStaticVersionsFunc: func(context.Context, string, string, int, int) ([]*models.Version, int, error) {
-				versions := []*models.Version{
-					{
-						ID: "V1",
-						Links: &models.VersionLinks{
-							Dataset: &models.LinkObject{
-								ID: "456",
-							},
-						},
-					},
-					{
-						ID: "V2",
-						Links: &models.VersionLinks{
-							Dataset: &models.LinkObject{
-								ID: "456",
-							},
-						},
-					},
-				}
-				return versions, 1, nil
-			},
 			DeleteStaticVersionsByDatasetIDFunc: func(ctx context.Context, ID string) (int, error) {
 				return 0, errs.ErrInternalServer
-			},
-			DeleteDatasetFunc: func(context.Context, string) error {
-				return nil
 			},
 		}
 
@@ -2298,6 +2249,5 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteStaticVersionsByDatasetIDCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
 	})
 }

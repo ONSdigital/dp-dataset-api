@@ -577,7 +577,7 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 
 		// Find any editions/versions associated with the dataset based on the type
 		if currentDataset.Next.Type == models.Static.String() {
-			_, err := api.dataStore.Backend.DeleteStaticVersionsByDatasetID(ctx, currentDataset.ID)
+			deletedCount, err := api.dataStore.Backend.DeleteStaticVersionsByDatasetID(ctx, currentDataset.ID)
 			if err != nil {
 				if err == errs.ErrVersionsNotFound {
 					log.Info(ctx, "dataset didn't contain any versions, continuing to delete dataset", logData)
@@ -585,6 +585,9 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 					log.Error(ctx, "failed to delete dataset versions", err, logData)
 					return err
 				}
+			} else {
+				logData["deleted_versions_count"] = deletedCount
+				log.Info(ctx, "deleted all existing versions for dataset", logData)
 			}
 		} else {
 			editionDocs, _, err := api.dataStore.Backend.GetEditions(ctx, currentDataset.ID, "", 0, 0, true)
