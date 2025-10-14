@@ -431,8 +431,8 @@ paths:
     get:
       tags:
         - "Private"
-      summary: "Get a list of dataset series that have unpublished versions"
-      description: "Get a list of dataset series that have unpublished versions. This is used to easily determine versions/editions of series that are awaiting publication."
+      summary: "Get a list of dataset editions"
+      description: "Get a list of dataset editions. This is used to easily identify all editions of a dataset."
       parameters:
         - $ref: "#/parameters/single-state"
         - $ref: "#/parameters/published"
