@@ -16,14 +16,14 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestGetDatasetEditions_WithQueryParam_Success(t *testing.T) {
+func TestGetDatasetEditions_WithStateParam_Success(t *testing.T) {
 	t.Parallel()
-	Convey("Given a request to GET /dataset-editions with a valid query parameter", t, func() {
+	Convey("Given a request to GET /dataset-editions with a valid state query parameter", t, func() {
 		r := createRequestWithAuth("GET", "http://localhost:22000/dataset-editions?state=associated", http.NoBody)
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetStaticVersionsByStateFunc: func(ctx context.Context, state, published string, offset, limit int) ([]*models.Version, int, error) {
+			GetStaticVersionsByStateFunc: func(ctx context.Context, state string, offset, limit int) ([]*models.Version, int, error) {
 				return []*models.Version{
 					{
 						Edition:      "January",
@@ -121,7 +121,7 @@ func TestGetDatasetEditions_WithPublishedParam(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetStaticVersionsByStateFunc: func(ctx context.Context, state, published string, offset, limit int) ([]*models.Version, int, error) {
+			GetStaticVersionsByPublishedStateFunc: func(ctx context.Context, isPublished bool, offset, limit int) ([]*models.Version, int, error) {
 				return []*models.Version{
 					{
 						Edition:      "January",
@@ -215,7 +215,7 @@ func TestGetDatasetEditions_WithPublishedParam(t *testing.T) {
 			results, totalCount, err := api.getDatasetEditions(w, r, 20, 0)
 
 			Convey("Then it should return a 400 status code with an error message", func() {
-				So(err, ShouldEqual, errs.ErrInvalidParamCombination)
+				So(err, ShouldEqual, errs.ErrStateAndPublishedParamsConflict)
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
 				So(totalCount, ShouldEqual, 0)
 				So(results, ShouldBeNil)
@@ -231,7 +231,7 @@ func TestGetDatasetEditions_WithoutQueryParam_Success(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetStaticVersionsByStateFunc: func(ctx context.Context, state, published string, offset, limit int) ([]*models.Version, int, error) {
+			GetStaticVersionsByStateFunc: func(ctx context.Context, state string, offset, limit int) ([]*models.Version, int, error) {
 				return []*models.Version{
 					{
 						Edition:      "January",
@@ -382,7 +382,7 @@ func TestGetDatasetEditions_GetStaticVersionsByState_Failure(t *testing.T) {
 	t.Parallel()
 	Convey("Given a request to GET /dataset-editions", t, func() {
 		mockedDataStore := &storetest.StorerMock{
-			GetStaticVersionsByStateFunc: func(ctx context.Context, state, published string, offset, limit int) ([]*models.Version, int, error) {
+			GetStaticVersionsByStateFunc: func(ctx context.Context, state string, offset, limit int) ([]*models.Version, int, error) {
 				if state == "associated" {
 					return nil, 0, errs.ErrVersionsNotFound
 				}
@@ -426,7 +426,7 @@ func TestGetDatasetEditions_GetDataset_Failure(t *testing.T) {
 	t.Parallel()
 	Convey("Given a request to GET /dataset-editions", t, func() {
 		mockedDataStore := &storetest.StorerMock{
-			GetStaticVersionsByStateFunc: func(ctx context.Context, state, published string, offset, limit int) ([]*models.Version, int, error) {
+			GetStaticVersionsByStateFunc: func(ctx context.Context, state string, offset, limit int) ([]*models.Version, int, error) {
 				return []*models.Version{
 					{
 						Edition: "January",
@@ -459,7 +459,7 @@ func TestGetDatasetEditions_GetDataset_Failure(t *testing.T) {
 
 	Convey("Given a request to GET /dataset-editions", t, func() {
 		mockedDataStore := &storetest.StorerMock{
-			GetStaticVersionsByStateFunc: func(ctx context.Context, state, published string, offset, limit int) ([]*models.Version, int, error) {
+			GetStaticVersionsByStateFunc: func(ctx context.Context, state string, offset, limit int) ([]*models.Version, int, error) {
 				return []*models.Version{
 					{
 						Edition: "January",

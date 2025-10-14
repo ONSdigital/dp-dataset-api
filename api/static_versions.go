@@ -23,45 +23,51 @@ func (api *DatasetAPI) getDatasetEditions(w http.ResponseWriter, r *http.Request
 	logData := log.Data{}
 
 	stateParam := r.URL.Query().Get("state")
-	publishedOnly := r.URL.Query().Get("published")
+	publishedParam := r.URL.Query().Get("published")
 
-	if stateParam != "" && publishedOnly != "" {
-		log.Error(ctx, "getDatasetEditions endpoint: cannot request state and published parameters at the same time", errs.ErrInvalidParamCombination, logData)
-		handleVersionAPIErr(ctx, errs.ErrInvalidParamCombination, w, logData)
-		return nil, 0, errs.ErrInvalidParamCombination
+	if stateParam != "" && publishedParam != "" {
+		log.Error(ctx, "getDatasetEditions endpoint: cannot request state and published parameters at the same time", errs.ErrStateAndPublishedParamsConflict, logData)
+		handleVersionAPIErr(ctx, errs.ErrStateAndPublishedParamsConflict, w, logData)
+		return nil, 0, errs.ErrStateAndPublishedParamsConflict
 	}
 
-	if stateParam != "" {
+	var (
+		versions   []*models.Version
+		totalCount int
+		err        error
+	)
+
+	switch {
+	case stateParam != "":
 		logData["state"] = stateParam
-		if err := models.CheckState("", stateParam); err != nil {
+		if err := models.CheckState("version", stateParam); err != nil {
 			log.Error(ctx, "getDatasetEditions endpoint: invalid state parameter", err, logData)
 			handleVersionAPIErr(ctx, errs.ErrInvalidQueryParameter, w, logData)
 			return nil, 0, errs.ErrInvalidQueryParameter
 		}
-	}
-
-	if publishedOnly != "" {
-		logData["publishedOnly"] = publishedOnly
-		_, err := strconv.ParseBool(publishedOnly)
-		if err != nil {
-			log.Error(ctx, "getDatasetEditions endpoint: invalid published parameter", err, logData)
+		versions, totalCount, err = api.dataStore.Backend.GetStaticVersionsByState(ctx, stateParam, offset, limit)
+	case publishedParam != "":
+		logData["published"] = publishedParam
+		isPublished, parseErr := strconv.ParseBool(publishedParam)
+		if parseErr != nil {
+			log.Error(ctx, "getDatasetEditions endpoint: invalid published parameter", parseErr, logData)
 			handleVersionAPIErr(ctx, errs.ErrInvalidQueryParameter, w, logData)
 			return nil, 0, errs.ErrInvalidQueryParameter
 		}
+		versions, totalCount, err = api.dataStore.Backend.GetStaticVersionsByPublishedState(ctx, isPublished, offset, limit)
+	default:
+		versions, totalCount, err = api.dataStore.Backend.GetStaticVersionsByState(ctx, "", offset, limit)
 	}
 
-	// need to use the string value of published here if it's provided as the boolean ParseBool function does not allow nil values and this could be nil
-	versions, totalCount, err := api.dataStore.Backend.GetStaticVersionsByState(ctx, stateParam, publishedOnly, offset, limit)
 	if err != nil {
 		if errors.Is(err, errs.ErrVersionsNotFound) {
-			log.Error(ctx, "getDatasetEditions endpoint: no versions found", err, logData)
+			log.Error(ctx, "getDatasetEditions endpoint: no versions found for given dataset", err, logData)
 			handleVersionAPIErr(ctx, errs.ErrVersionsNotFound, w, logData)
 			return nil, 0, errs.ErrVersionsNotFound
-		} else {
-			log.Error(ctx, "getDatasetEditions endpoint: failed to get versions", err, logData)
-			handleVersionAPIErr(ctx, errs.ErrInternalServer, w, logData)
-			return nil, 0, errs.ErrInternalServer
 		}
+		log.Error(ctx, "getDatasetEditions endpoint: failed to get versions", err, logData)
+		handleVersionAPIErr(ctx, errs.ErrInternalServer, w, logData)
+		return nil, 0, errs.ErrInternalServer
 	}
 
 	results := make([]*models.DatasetEdition, 0, len(versions))
