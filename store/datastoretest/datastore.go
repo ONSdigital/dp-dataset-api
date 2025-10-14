@@ -7,7 +7,7 @@ import (
 	"context"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/bson"
 	"sync"
 )
 
@@ -81,7 +81,7 @@ var _ store.Storer = &StorerMock{}
 //			GetDimensionOptionsFromIDsFunc: func(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error) {
 //				panic("mock out the GetDimensionOptionsFromIDs method")
 //			},
-//			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]primitive.M, error) {
+//			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]bson.M, error) {
 //				panic("mock out the GetDimensions method")
 //			},
 //			GetDimensionsFromInstanceFunc: func(ctx context.Context, ID string, offset int, limit int) ([]*models.DimensionOption, int, error) {
@@ -105,7 +105,10 @@ var _ store.Storer = &StorerMock{}
 //			GetNextVersionFunc: func(ctx context.Context, datasetID string, editionID string) (int, error) {
 //				panic("mock out the GetNextVersion method")
 //			},
-//			GetStaticVersionsByStateFunc: func(ctx context.Context, state string, publishedOnly string, offset int, limit int) ([]*models.Version, int, error) {
+//			GetStaticVersionsByPublishedStateFunc: func(ctx context.Context, isPublished bool, offset int, limit int) ([]*models.Version, int, error) {
+//				panic("mock out the GetStaticVersionsByPublishedState method")
+//			},
+//			GetStaticVersionsByStateFunc: func(ctx context.Context, state string, offset int, limit int) ([]*models.Version, int, error) {
 //				panic("mock out the GetStaticVersionsByState method")
 //			},
 //			GetUniqueDimensionAndOptionsFunc: func(ctx context.Context, ID string, dimension string) ([]*string, int, error) {
@@ -257,7 +260,7 @@ type StorerMock struct {
 	GetDimensionOptionsFromIDsFunc func(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error)
 
 	// GetDimensionsFunc mocks the GetDimensions method.
-	GetDimensionsFunc func(ctx context.Context, versionID string) ([]primitive.M, error)
+	GetDimensionsFunc func(ctx context.Context, versionID string) ([]bson.M, error)
 
 	// GetDimensionsFromInstanceFunc mocks the GetDimensionsFromInstance method.
 	GetDimensionsFromInstanceFunc func(ctx context.Context, ID string, offset int, limit int) ([]*models.DimensionOption, int, error)
@@ -280,8 +283,11 @@ type StorerMock struct {
 	// GetNextVersionFunc mocks the GetNextVersion method.
 	GetNextVersionFunc func(ctx context.Context, datasetID string, editionID string) (int, error)
 
+	// GetStaticVersionsByPublishedStateFunc mocks the GetStaticVersionsByPublishedState method.
+	GetStaticVersionsByPublishedStateFunc func(ctx context.Context, isPublished bool, offset int, limit int) ([]*models.Version, int, error)
+
 	// GetStaticVersionsByStateFunc mocks the GetStaticVersionsByState method.
-	GetStaticVersionsByStateFunc func(ctx context.Context, state string, publishedOnly string, offset int, limit int) ([]*models.Version, int, error)
+	GetStaticVersionsByStateFunc func(ctx context.Context, state string, offset int, limit int) ([]*models.Version, int, error)
 
 	// GetUniqueDimensionAndOptionsFunc mocks the GetUniqueDimensionAndOptions method.
 	GetUniqueDimensionAndOptionsFunc func(ctx context.Context, ID string, dimension string) ([]*string, int, error)
@@ -646,14 +652,23 @@ type StorerMock struct {
 			// EditionID is the editionID argument value.
 			EditionID string
 		}
+		// GetStaticVersionsByPublishedState holds details about calls to the GetStaticVersionsByPublishedState method.
+		GetStaticVersionsByPublishedState []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// IsPublished is the isPublished argument value.
+			IsPublished bool
+			// Offset is the offset argument value.
+			Offset int
+			// Limit is the limit argument value.
+			Limit int
+		}
 		// GetStaticVersionsByState holds details about calls to the GetStaticVersionsByState method.
 		GetStaticVersionsByState []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// State is the state argument value.
 			State string
-			// PublishedOnly is the publishedOnly argument value.
-			PublishedOnly string
 			// Offset is the offset argument value.
 			Offset int
 			// Limit is the limit argument value.
@@ -973,6 +988,7 @@ type StorerMock struct {
 	lockGetInstances                        sync.RWMutex
 	lockGetLatestVersionStatic              sync.RWMutex
 	lockGetNextVersion                      sync.RWMutex
+	lockGetStaticVersionsByPublishedState   sync.RWMutex
 	lockGetStaticVersionsByState            sync.RWMutex
 	lockGetUniqueDimensionAndOptions        sync.RWMutex
 	lockGetVersion                          sync.RWMutex
@@ -1832,7 +1848,7 @@ func (mock *StorerMock) GetDimensionOptionsFromIDsCalls() []struct {
 }
 
 // GetDimensions calls GetDimensionsFunc.
-func (mock *StorerMock) GetDimensions(ctx context.Context, versionID string) ([]primitive.M, error) {
+func (mock *StorerMock) GetDimensions(ctx context.Context, versionID string) ([]bson.M, error) {
 	if mock.GetDimensionsFunc == nil {
 		panic("StorerMock.GetDimensionsFunc: method is nil but Storer.GetDimensions was just called")
 	}
@@ -2179,28 +2195,70 @@ func (mock *StorerMock) GetNextVersionCalls() []struct {
 	return calls
 }
 
+// GetStaticVersionsByPublishedState calls GetStaticVersionsByPublishedStateFunc.
+func (mock *StorerMock) GetStaticVersionsByPublishedState(ctx context.Context, isPublished bool, offset int, limit int) ([]*models.Version, int, error) {
+	if mock.GetStaticVersionsByPublishedStateFunc == nil {
+		panic("StorerMock.GetStaticVersionsByPublishedStateFunc: method is nil but Storer.GetStaticVersionsByPublishedState was just called")
+	}
+	callInfo := struct {
+		Ctx         context.Context
+		IsPublished bool
+		Offset      int
+		Limit       int
+	}{
+		Ctx:         ctx,
+		IsPublished: isPublished,
+		Offset:      offset,
+		Limit:       limit,
+	}
+	mock.lockGetStaticVersionsByPublishedState.Lock()
+	mock.calls.GetStaticVersionsByPublishedState = append(mock.calls.GetStaticVersionsByPublishedState, callInfo)
+	mock.lockGetStaticVersionsByPublishedState.Unlock()
+	return mock.GetStaticVersionsByPublishedStateFunc(ctx, isPublished, offset, limit)
+}
+
+// GetStaticVersionsByPublishedStateCalls gets all the calls that were made to GetStaticVersionsByPublishedState.
+// Check the length with:
+//
+//	len(mockedStorer.GetStaticVersionsByPublishedStateCalls())
+func (mock *StorerMock) GetStaticVersionsByPublishedStateCalls() []struct {
+	Ctx         context.Context
+	IsPublished bool
+	Offset      int
+	Limit       int
+} {
+	var calls []struct {
+		Ctx         context.Context
+		IsPublished bool
+		Offset      int
+		Limit       int
+	}
+	mock.lockGetStaticVersionsByPublishedState.RLock()
+	calls = mock.calls.GetStaticVersionsByPublishedState
+	mock.lockGetStaticVersionsByPublishedState.RUnlock()
+	return calls
+}
+
 // GetStaticVersionsByState calls GetStaticVersionsByStateFunc.
-func (mock *StorerMock) GetStaticVersionsByState(ctx context.Context, state string, publishedOnly string, offset int, limit int) ([]*models.Version, int, error) {
+func (mock *StorerMock) GetStaticVersionsByState(ctx context.Context, state string, offset int, limit int) ([]*models.Version, int, error) {
 	if mock.GetStaticVersionsByStateFunc == nil {
 		panic("StorerMock.GetStaticVersionsByStateFunc: method is nil but Storer.GetStaticVersionsByState was just called")
 	}
 	callInfo := struct {
-		Ctx           context.Context
-		State         string
-		PublishedOnly string
-		Offset        int
-		Limit         int
+		Ctx    context.Context
+		State  string
+		Offset int
+		Limit  int
 	}{
-		Ctx:           ctx,
-		State:         state,
-		PublishedOnly: publishedOnly,
-		Offset:        offset,
-		Limit:         limit,
+		Ctx:    ctx,
+		State:  state,
+		Offset: offset,
+		Limit:  limit,
 	}
 	mock.lockGetStaticVersionsByState.Lock()
 	mock.calls.GetStaticVersionsByState = append(mock.calls.GetStaticVersionsByState, callInfo)
 	mock.lockGetStaticVersionsByState.Unlock()
-	return mock.GetStaticVersionsByStateFunc(ctx, state, publishedOnly, offset, limit)
+	return mock.GetStaticVersionsByStateFunc(ctx, state, offset, limit)
 }
 
 // GetStaticVersionsByStateCalls gets all the calls that were made to GetStaticVersionsByState.
@@ -2208,18 +2266,16 @@ func (mock *StorerMock) GetStaticVersionsByState(ctx context.Context, state stri
 //
 //	len(mockedStorer.GetStaticVersionsByStateCalls())
 func (mock *StorerMock) GetStaticVersionsByStateCalls() []struct {
-	Ctx           context.Context
-	State         string
-	PublishedOnly string
-	Offset        int
-	Limit         int
+	Ctx    context.Context
+	State  string
+	Offset int
+	Limit  int
 } {
 	var calls []struct {
-		Ctx           context.Context
-		State         string
-		PublishedOnly string
-		Offset        int
-		Limit         int
+		Ctx    context.Context
+		State  string
+		Offset int
+		Limit  int
 	}
 	mock.lockGetStaticVersionsByState.RLock()
 	calls = mock.calls.GetStaticVersionsByState
