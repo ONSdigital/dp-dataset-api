@@ -156,7 +156,7 @@ func (api *DatasetAPI) enablePublicEndpoints(paginator *pagination.Paginator) {
 	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options", paginator.Paginate(api.getDimensionOptions))
 }
 
-func writeErrorResponse(ctx context.Context, w http.ResponseWriter, errorResponse *models.ErrorResponse) {
+func writeErrorResponse(w http.ResponseWriter, errorResponse *models.ErrorResponse) {
 	var jsonResponse []byte
 	var err error
 	w.Header().Set("Content-Type", "application/json")
@@ -172,7 +172,7 @@ func writeErrorResponse(ctx context.Context, w http.ResponseWriter, errorRespons
 		var filteredErrors []models.Error
 		for _, err := range errorResponse.Errors {
 			if !internalServerErrWithMessage[err.Cause] {
-				err = models.NewError(ctx, err, models.InternalError, models.InternalErrorDescription)
+				err = models.NewError(err, models.InternalError, models.InternalErrorDescription)
 			}
 			filteredErrors = append(filteredErrors, err)
 		}
@@ -181,20 +181,20 @@ func writeErrorResponse(ctx context.Context, w http.ResponseWriter, errorRespons
 
 	jsonResponse, err = json.Marshal(errorResponse)
 	if err != nil {
-		responseErr := models.NewError(ctx, err, models.JSONMarshalError, models.ErrorMarshalFailedDescription)
+		responseErr := models.NewError(err, models.JSONMarshalError, models.ErrorMarshalFailedDescription)
 		http.Error(w, responseErr.Description, http.StatusInternalServerError)
 		return
 	}
 
 	_, err = w.Write(jsonResponse)
 	if err != nil {
-		responseErr := models.NewError(ctx, err, models.WriteResponseError, models.WriteResponseFailedDescription)
+		responseErr := models.NewError(err, models.WriteResponseError, models.WriteResponseFailedDescription)
 		http.Error(w, responseErr.Description, http.StatusInternalServerError)
 		return
 	}
 }
 
-func writeSuccessResponse(ctx context.Context, w http.ResponseWriter, successResponse *models.SuccessResponse) {
+func writeSuccessResponse(w http.ResponseWriter, successResponse *models.SuccessResponse) {
 	w.Header().Set("Content-Type", "application/json")
 	// process custom headers
 	if successResponse.Headers != nil {
@@ -206,23 +206,22 @@ func writeSuccessResponse(ctx context.Context, w http.ResponseWriter, successRes
 
 	_, err := w.Write(successResponse.Body)
 	if err != nil {
-		responseErr := models.NewError(ctx, err, models.WriteResponseError, models.WriteResponseFailedDescription)
+		responseErr := models.NewError(err, models.WriteResponseError, models.WriteResponseFailedDescription)
 		http.Error(w, responseErr.Description, http.StatusInternalServerError)
 		return
 	}
 }
 
-type baseHandler func(ctx context.Context, w http.ResponseWriter, r *http.Request) (*models.SuccessResponse, *models.ErrorResponse)
+type baseHandler func(w http.ResponseWriter, r *http.Request) (*models.SuccessResponse, *models.ErrorResponse)
 
 func contextAndErrors(h baseHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		ctx := req.Context()
-		response, err := h(ctx, w, req)
+		response, err := h(w, req)
 		if err != nil {
-			writeErrorResponse(ctx, w, err)
+			writeErrorResponse(w, err)
 			return
 		}
-		writeSuccessResponse(ctx, w, response)
+		writeSuccessResponse(w, response)
 	}
 }
 
@@ -342,6 +341,13 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(paginator *pagination.Pagin
 		api.isAuthenticated(
 			api.isAuthorisedForDatasets(createPermission,
 				contextAndErrors(api.addDatasetVersionCondensed))),
+	)
+
+	api.post(
+		"/datasets/{dataset_id}/editions/{edition}/versions/{version}",
+		api.isAuthenticated(
+			api.isAuthorisedForDatasets(createPermission,
+				contextAndErrors(api.createVersion))),
 	)
 
 	if api.enableDetachDataset {

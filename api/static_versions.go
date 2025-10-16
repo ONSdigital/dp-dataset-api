@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -105,8 +104,10 @@ func (api *DatasetAPI) getDatasetEditions(w http.ResponseWriter, r *http.Request
 // condensed api call to add new version
 //
 //nolint:gocyclo,gocognit // high cyclomactic & cognitive complexity not in scope for maintenance
-func (api *DatasetAPI) addDatasetVersionCondensed(ctx context.Context, w http.ResponseWriter, r *http.Request) (*models.SuccessResponse, *models.ErrorResponse) {
+func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http.Request) (*models.SuccessResponse, *models.ErrorResponse) {
 	defer dphttp.DrainBody(r)
+
+	ctx := r.Context()
 
 	vars := mux.Vars(r)
 	datasetID := vars["dataset_id"]
@@ -118,31 +119,31 @@ func (api *DatasetAPI) addDatasetVersionCondensed(ctx context.Context, w http.Re
 	versionRequest := &models.Version{}
 	if err := json.NewDecoder(r.Body).Decode(versionRequest); err != nil {
 		log.Error(ctx, "failed to unmarshal version", err, logData)
-		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(ctx, err, models.JSONUnmarshalError, "failed to unmarshal version"))
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, models.JSONUnmarshalError, "failed to unmarshal version"))
 	}
 
 	if missingFields := validateVersionFields(versionRequest); len(missingFields) > 0 {
 		log.Error(ctx, "failed validation check for version update", fmt.Errorf("missing mandatory version fields"), logData)
-		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewValidationError(ctx, models.ErrMissingParameters, models.ErrMissingParametersDescription+" "+strings.Join(missingFields, " ")))
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewValidationError(models.ErrMissingParameters, models.ErrMissingParametersDescription+" "+strings.Join(missingFields, " ")))
 	}
 
 	// validate versiontype
 	if versionRequest.Type != "" && versionRequest.Type != models.Static.String() {
 		log.Error(ctx, "addDatasetVersionCondensed endpoint: only allowed to create static type versions", errs.ErrInvalidQueryParameter, logData)
-		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewValidationError(ctx, models.ErrInvalidTypeError, models.ErrInvalidType))
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewValidationError(models.ErrInvalidTypeError, models.ErrInvalidType))
 	}
 
 	// Validate dataset existence
 	if err := api.dataStore.Backend.CheckDatasetExists(ctx, datasetID, ""); err != nil {
 		log.Error(ctx, "failed to find dataset", err, logData)
-		return nil, models.NewErrorResponse(http.StatusNotFound, nil, models.NewValidationError(ctx, models.ErrDatasetNotFound, models.ErrDatasetNotFoundDescription))
+		return nil, models.NewErrorResponse(http.StatusNotFound, nil, models.NewValidationError(models.ErrDatasetNotFound, models.ErrDatasetNotFoundDescription))
 	}
 
 	latestVersion, err := api.dataStore.Backend.GetLatestVersionStatic(ctx, datasetID, edition, "")
 
 	if err != nil && !errors.Is(err, errs.ErrVersionNotFound) {
 		log.Error(ctx, "failed to check latest version", err, logData)
-		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(ctx, err, "failed to check latest version", "internal error"))
+		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, "failed to check latest version", "internal error"))
 	}
 
 	var nextVersion int
@@ -159,7 +160,7 @@ func (api *DatasetAPI) addDatasetVersionCondensed(ctx context.Context, w http.Re
 		log.Error(ctx, "unpublished version already exists", errors.New("cannot create new version when unpublished version exists"),
 			log.Data{"state": latestVersion.State, "version": latestVersion.Version})
 
-		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(ctx, err, models.ErrVersionAlreadyExists, models.ErrVersionAlreadyExistsDescription+" - unpublished_version: "+strconv.Itoa(latestVersion.Version)))
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, models.ErrVersionAlreadyExists, models.ErrUnpublishedVersionAlreadyExistsDescription+" - unpublished_version: "+strconv.Itoa(latestVersion.Version)))
 	}
 
 	versionRequest.State = models.AssociatedState
@@ -172,13 +173,13 @@ func (api *DatasetAPI) addDatasetVersionCondensed(ctx context.Context, w http.Re
 	newVersion, err := api.dataStore.Backend.AddVersionStatic(ctx, versionRequest)
 	if err != nil {
 		log.Error(ctx, "failed to add version", err, logData)
-		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(ctx, err, "failed to add version", "internal error"))
+		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, "failed to add version", "internal error"))
 	}
 
 	datasetDoc, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 	if err != nil {
 		log.Error(ctx, "failed to get dataset", err, logData)
-		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(ctx, err, "failed to get dataset", "internal error"))
+		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, "failed to get dataset", "internal error"))
 	}
 
 	datasetDoc.Next.LastUpdated = newVersion.LastUpdated
@@ -186,7 +187,7 @@ func (api *DatasetAPI) addDatasetVersionCondensed(ctx context.Context, w http.Re
 
 	if err := api.dataStore.Backend.UpsertDataset(ctx, datasetID, datasetDoc); err != nil {
 		log.Error(ctx, "failed to update dataset", err, logData)
-		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(ctx, err, "failed to update dataset", "internal error"))
+		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, "failed to update dataset", "internal error"))
 	}
 
 	log.Info(ctx, "add version: request successful", logData)
@@ -196,11 +197,104 @@ func (api *DatasetAPI) addDatasetVersionCondensed(ctx context.Context, w http.Re
 	response, err := json.Marshal(newVersion)
 	if err != nil {
 		log.Error(ctx, "failed to marshal version to JSON", err, logData)
-		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(ctx, errs.ErrInternalServer, "failed to marshal version to JSON", "internal error"))
+		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(errs.ErrInternalServer, "failed to marshal version to JSON", "internal error"))
 	}
 
 	headers := map[string]string{
 		"Code": strconv.Itoa(http.StatusCreated),
 	}
 	return models.NewSuccessResponse(response, http.StatusCreated, headers), nil
+}
+
+func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*models.SuccessResponse, *models.ErrorResponse) {
+	ctx := r.Context()
+
+	vars := mux.Vars(r)
+	datasetID := vars["dataset_id"]
+	edition := vars["edition"]
+	version := vars["version"]
+
+	logData := log.Data{
+		"dataset_id": datasetID,
+		"edition":    edition,
+		"version":    version,
+	}
+
+	newVersion := &models.Version{}
+	if err := json.NewDecoder(r.Body).Decode(newVersion); err != nil {
+		log.Error(ctx, "createVersion endpoint: failed to unmarshal version", err, logData)
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, models.JSONUnmarshalError, "failed to unmarshal version"))
+	}
+
+	versionNumber, err := strconv.Atoi(version)
+	if err != nil || versionNumber < 1 {
+		log.Error(ctx, "createVersion endpoint: invalid version parameter", err, logData)
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, models.ErrInvalidQueryParameter, models.ErrInvalidQueryParameterDescription+": version"))
+	}
+
+	// set mandatory fields
+	newVersion.DatasetID = datasetID
+	newVersion.Edition = edition
+	newVersion.Version = versionNumber
+	newVersion.Type = models.Static.String()
+	newVersion.State = models.AssociatedState
+
+	missingFields := validateVersionFields(newVersion)
+	if len(missingFields) > 0 {
+		logData["missing_fields"] = missingFields
+
+		validationErrors := []models.Error{}
+		for _, field := range missingFields {
+			validationErrors = append(validationErrors, models.NewValidationError(models.ErrMissingParameters, models.ErrMissingParametersDescription+": "+field))
+		}
+
+		log.Error(ctx, "createVersion endpoint: failed validation check for new version", fmt.Errorf("missing mandatory version fields"), logData)
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, validationErrors...)
+	}
+
+	err = api.dataStore.Backend.CheckDatasetExists(ctx, datasetID, "")
+	if err != nil {
+		if err == errs.ErrDatasetNotFound {
+			log.Error(ctx, "createVersion endpoint: dataset not found", err, logData)
+			return nil, models.NewErrorResponse(http.StatusNotFound, nil, models.NewValidationError(models.ErrDatasetNotFound, models.ErrDatasetNotFoundDescription))
+		}
+		log.Error(ctx, "createVersion endpoint: failed to check dataset existence", err, logData)
+		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, models.InternalError, models.InternalErrorDescription))
+	}
+
+	err = api.dataStore.Backend.CheckEditionExistsStatic(ctx, datasetID, edition, "")
+	if err != nil {
+		if err == errs.ErrEditionNotFound {
+			log.Error(ctx, "createVersion endpoint: edition not found", err, logData)
+			return nil, models.NewErrorResponse(http.StatusNotFound, nil, models.NewValidationError(models.ErrEditionNotFound, models.ErrEditionNotFoundDescription))
+		}
+		log.Error(ctx, "createVersion endpoint: failed to check edition existence", err, logData)
+		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, models.InternalError, models.InternalErrorDescription))
+	}
+
+	versionExists, err := api.dataStore.Backend.CheckVersionExistsStatic(ctx, datasetID, edition, versionNumber, "")
+	if err != nil {
+		log.Error(ctx, "createVersion endpoint: failed to check version existence", err, logData)
+		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, models.InternalError, models.InternalErrorDescription))
+	}
+	if versionExists {
+		log.Error(ctx, "createVersion endpoint: version already exists", errs.ErrVersionAlreadyExists, logData)
+		return nil, models.NewErrorResponse(http.StatusConflict, nil, models.NewValidationError(models.ErrVersionAlreadyExists, models.ErrVersionAlreadyExistsDescription))
+	}
+
+	createdVersion, err := api.dataStore.Backend.AddVersionStatic(ctx, newVersion)
+	if err != nil {
+		log.Error(ctx, "createVersion endpoint: failed to create version", err, logData)
+		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, models.InternalError, models.InternalErrorDescription))
+	}
+
+	createdVersionJSON, err := json.Marshal(createdVersion)
+	if err != nil {
+		log.Error(ctx, "createVersion endpoint: failed to marshal version to JSON", err, logData)
+		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(errs.ErrInternalServer, models.JSONMarshalError, models.InternalErrorDescription))
+	}
+
+	dpresponse.SetETag(w, createdVersion.ETag)
+
+	return models.NewSuccessResponse(createdVersionJSON, http.StatusCreated, nil), nil
 }

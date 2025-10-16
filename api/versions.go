@@ -166,7 +166,9 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 // TODO: Refactor this to reduce the complexity
 //
 //nolint:gocyclo,gocognit // high cyclomactic & cognitive complexity not in scope for maintenance
-func (api *DatasetAPI) getVersion(ctx context.Context, w http.ResponseWriter, r *http.Request) (*models.SuccessResponse, *models.ErrorResponse) {
+func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*models.SuccessResponse, *models.ErrorResponse) {
+	ctx := r.Context()
+
 	vars := mux.Vars(r)
 	datasetID := vars["dataset_id"]
 	edition := vars["edition"]
@@ -253,7 +255,7 @@ func (api *DatasetAPI) getVersion(ctx context.Context, w http.ResponseWriter, r 
 		return version, nil
 	}()
 	if getVersionErr != nil {
-		responseError := models.NewError(ctx, getVersionErr, getVersionErr.Error(), "internal error")
+		responseError := models.NewError(getVersionErr, getVersionErr.Error(), "internal error")
 		return nil, models.NewErrorResponse(getVersionAPIErrStatusCode(getVersionErr), nil, responseError)
 	}
 
@@ -266,25 +268,25 @@ func (api *DatasetAPI) getVersion(ctx context.Context, w http.ResponseWriter, r 
 		err = utils.RewriteVersionLinks(ctx, v.Links, datasetLinksBuilder)
 		if err != nil {
 			log.Error(ctx, "getVersion endpoint: failed to rewrite version links", err, logData)
-			return nil, models.NewErrorResponse(getVersionAPIErrStatusCode(err), nil, models.NewError(ctx, err, "failed to rewrite version links", "internal error"))
+			return nil, models.NewErrorResponse(getVersionAPIErrStatusCode(err), nil, models.NewError(err, "failed to rewrite version links", "internal error"))
 		}
 
 		v.Dimensions, err = utils.RewriteDimensions(ctx, v.Dimensions, datasetLinksBuilder, codeListLinksBuilder)
 		if err != nil {
 			log.Error(ctx, "getVersion endpoint: failed to rewrite dimensions", err, logData)
-			return nil, models.NewErrorResponse(getVersionAPIErrStatusCode(err), nil, models.NewError(ctx, err, "failed to rewrite dimensions", "internal error"))
+			return nil, models.NewErrorResponse(getVersionAPIErrStatusCode(err), nil, models.NewError(err, "failed to rewrite dimensions", "internal error"))
 		}
 
 		err = utils.RewriteDownloadLinks(ctx, v.Downloads, api.urlBuilder.GetDownloadServiceURL())
 		if err != nil {
 			log.Error(ctx, "getVersion endpoint: failed to rewrite download links", err, logData)
-			return nil, models.NewErrorResponse(getVersionAPIErrStatusCode(err), nil, models.NewError(ctx, err, "failed to rewrite download links", "internal error"))
+			return nil, models.NewErrorResponse(getVersionAPIErrStatusCode(err), nil, models.NewError(err, "failed to rewrite download links", "internal error"))
 		}
 
 		v.Distributions, err = utils.RewriteDistributions(ctx, v.Distributions, api.urlBuilder.GetDownloadServiceURL())
 		if err != nil {
 			log.Error(ctx, "getVersion endpoint: failed to rewrite distributions DownloadURLs", err, logData)
-			return nil, models.NewErrorResponse(getVersionAPIErrStatusCode(err), nil, models.NewError(ctx, err, "failed to rewrite distributions DownloadURLs", "internal error"))
+			return nil, models.NewErrorResponse(getVersionAPIErrStatusCode(err), nil, models.NewError(err, "failed to rewrite distributions DownloadURLs", "internal error"))
 		}
 	}
 
@@ -296,7 +298,7 @@ func (api *DatasetAPI) getVersion(ctx context.Context, w http.ResponseWriter, r 
 	versionBytes, err := json.Marshal(v)
 	if err != nil {
 		log.Error(ctx, "failed to marshal version resource into bytes", err, logData)
-		return nil, models.NewErrorResponse(getVersionAPIErrStatusCode(err), nil, models.NewError(ctx, err, "failed to marshal version into bytes", "internal error"))
+		return nil, models.NewErrorResponse(getVersionAPIErrStatusCode(err), nil, models.NewError(err, "failed to marshal version into bytes", "internal error"))
 	}
 
 	headers := map[string]string{
