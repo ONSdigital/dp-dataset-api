@@ -587,10 +587,13 @@ func (c *DatasetComponent) staticVersionShouldNotExist(versionID string) error {
 
 func (c *DatasetComponent) IShouldReceiveTheFollowingJSONResponseIgnoringLastUpdated(expectedAPIResponse *godog.DocString) error {
 	responseBody := c.apiFeature.HTTPResponse.Body
-	body, _ := io.ReadAll(responseBody)
+	body, err := io.ReadAll(responseBody)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
 
 	var actual, expected map[string]interface{}
-	err := json.Unmarshal(body, &actual)
+	err = json.Unmarshal(body, &actual)
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal actual response body: %w", err)
 	}
@@ -602,8 +605,14 @@ func (c *DatasetComponent) IShouldReceiveTheFollowingJSONResponseIgnoringLastUpd
 	delete(actual, "last_updated")
 	delete(expected, "last_updated")
 
-	actualSanitized, _ := json.Marshal(actual)
-	expectedSanitized, _ := json.Marshal(expected)
+	actualSanitized, err := json.Marshal(actual)
+	if err != nil {
+		return fmt.Errorf("failed to marshal actual response body: %w", err)
+	}
+	expectedSanitized, err := json.Marshal(expected)
+	if err != nil {
+		return fmt.Errorf("failed to marshal expected response body: %w", err)
+	}
 
 	assert.JSONEq(c.apiFeature, string(expectedSanitized), string(actualSanitized))
 
