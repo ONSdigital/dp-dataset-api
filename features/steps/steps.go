@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 
@@ -28,6 +29,8 @@ func WellKnownTestTime() time.Time {
 }
 
 func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
+	c.apiFeature.RegisterSteps(ctx)
+
 	ctx.Step(`^private endpoints are enabled$`, c.privateEndpointsAreEnabled)
 	ctx.Step(`^URL rewriting is enabled$`, c.URLRewritingIsEnabled)
 	ctx.Step(`^the document in the database for id "([^"]*)" should be:$`, c.theDocumentInTheDatabaseForIDShouldBe)
@@ -50,6 +53,7 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the dataset "([^"]*)" should not exist$`, c.datasetShouldNotExist)
 	ctx.Step(`^the static version "([^"]*)" should exist$`, c.staticVersionShouldExist)
 	ctx.Step(`^the static version "([^"]*)" should not exist$`, c.staticVersionShouldNotExist)
+	ctx.Step(`^I should receive the following JSON response ignoring last updated:$`, c.IShouldReceiveTheFollowingJSONResponseIgnoringLastUpdated)
 }
 
 func (c *DatasetComponent) thereAreNoDatasets() error {
@@ -579,4 +583,29 @@ func (c *DatasetComponent) staticVersionShouldExist(versionID string) error {
 // staticVersionShouldNotExist checks the version document does not exist in the versions collection
 func (c *DatasetComponent) staticVersionShouldNotExist(versionID string) error {
 	return c.checkDocumentExistence(config.VersionsCollection, versionID, false)
+}
+
+func (c *DatasetComponent) IShouldReceiveTheFollowingJSONResponseIgnoringLastUpdated(expectedAPIResponse *godog.DocString) error {
+	responseBody := c.apiFeature.HTTPResponse.Body
+	body, _ := io.ReadAll(responseBody)
+
+	var actual, expected map[string]interface{}
+	err := json.Unmarshal(body, &actual)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal actual response body: %w", err)
+	}
+	err = json.Unmarshal([]byte(expectedAPIResponse.Content), &expected)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal expected response body: %w", err)
+	}
+
+	delete(actual, "last_updated")
+	delete(expected, "last_updated")
+
+	actualSanitized, _ := json.Marshal(actual)
+	expectedSanitized, _ := json.Marshal(expected)
+
+	assert.JSONEq(c.apiFeature, string(expectedSanitized), string(actualSanitized))
+
+	return c.apiFeature.StepError()
 }
