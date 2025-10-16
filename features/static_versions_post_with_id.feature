@@ -32,6 +32,13 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                         "edition": {
                             "href": "/datasets/static-dataset-1/editions/2024",
                             "id": "2024"
+                        },
+                        "version": {
+                            "href": "/datasets/static-dataset-1/editions/2024/versions/1",
+                            "id": "1"
+                        },
+                        "self": {
+                            "href": "/datasets/static-dataset-1/editions/2024/versions/1"
                         }
                     },
                     "version": 1,
@@ -59,6 +66,13 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                         "edition": {
                             "href": "/datasets/static-dataset-1/editions/2025",
                             "id": "2025"
+                        },
+                        "version": {
+                            "href": "/datasets/static-dataset-1/editions/2025/versions/2",
+                            "id": "2025"
+                        },
+                        "self": {
+                            "href": "/datasets/static-dataset-1/editions/2025/versions/2"
                         }
                     },
                     "version": 2,
@@ -112,6 +126,19 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                     "title": "Full Dataset CSV"
                     }
                 ],
+                "links": {
+                        "dataset": {
+                            "href": "http://localhost:22000/datasets/static-dataset-1",
+                            "id": "static-dataset-1"
+                        },
+                        "edition": {
+                            "href": "http://localhost:22000/datasets/static-dataset-1/editions/2024",
+                            "id": "2024"
+                        },
+                        "self": {
+                            "href": "http://localhost:22000/datasets/static-dataset-1/editions/2024/versions/2"
+                        }
+                    },
                 "edition": "2024",
                 "edition_title": "2024",
                 "last_updated": "ignored",

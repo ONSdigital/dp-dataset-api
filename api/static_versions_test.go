@@ -1112,10 +1112,20 @@ func TestCreateVersion_Success(t *testing.T) {
 		State:   models.AssociatedState,
 		Links: &models.VersionLinks{
 			Dataset: &models.LinkObject{
-				ID: "123",
+				ID:   "123",
+				HRef: "/datasets/123",
 			},
 			Edition: &models.LinkObject{
-				ID: "edition1",
+				ID:   "edition1",
+				HRef: "/datasets/123/editions/edition1",
+			},
+			Version: &models.LinkObject{
+				ID:   "1",
+				HRef: "/datasets/123/editions/edition1/versions/1",
+			},
+			Self: &models.LinkObject{
+				ID:   "1",
+				HRef: "/datasets/123/editions/edition1/versions/1",
 			},
 		},
 		ETag: "etag",

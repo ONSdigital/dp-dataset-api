@@ -238,6 +238,7 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 	newVersion.Version = versionNumber
 	newVersion.Type = models.Static.String()
 	newVersion.State = models.AssociatedState
+	newVersion.Links = api.generateVersionLinks(datasetID, edition, versionNumber, nil)
 
 	missingFields := validateVersionFields(newVersion)
 	if len(missingFields) > 0 {
