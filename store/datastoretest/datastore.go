@@ -7,7 +7,7 @@ import (
 	"context"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/bson"
 	"sync"
 )
 
@@ -48,8 +48,11 @@ var _ store.Storer = &StorerMock{}
 //			CheckEditionExistsFunc: func(ctx context.Context, ID string, editionID string, state string) error {
 //				panic("mock out the CheckEditionExists method")
 //			},
-//			CheckEditionExistsStaticFunc: func(ctx context.Context, id string, editionID string, state string) error {
+//			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID string, editionID string, state string) error {
 //				panic("mock out the CheckEditionExistsStatic method")
+//			},
+//			CheckVersionExistsStaticFunc: func(ctx context.Context, datasetID string, editionID string, version int, state string) (bool, error) {
+//				panic("mock out the CheckVersionExistsStatic method")
 //			},
 //			DeleteDatasetFunc: func(ctx context.Context, ID string) error {
 //				panic("mock out the DeleteDataset method")
@@ -81,7 +84,7 @@ var _ store.Storer = &StorerMock{}
 //			GetDimensionOptionsFromIDsFunc: func(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error) {
 //				panic("mock out the GetDimensionOptionsFromIDs method")
 //			},
-//			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]primitive.M, error) {
+//			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]bson.M, error) {
 //				panic("mock out the GetDimensions method")
 //			},
 //			GetDimensionsFromInstanceFunc: func(ctx context.Context, ID string, offset int, limit int) ([]*models.DimensionOption, int, error) {
@@ -224,7 +227,10 @@ type StorerMock struct {
 	CheckEditionExistsFunc func(ctx context.Context, ID string, editionID string, state string) error
 
 	// CheckEditionExistsStaticFunc mocks the CheckEditionExistsStatic method.
-	CheckEditionExistsStaticFunc func(ctx context.Context, id string, editionID string, state string) error
+	CheckEditionExistsStaticFunc func(ctx context.Context, datasetID string, editionID string, state string) error
+
+	// CheckVersionExistsStaticFunc mocks the CheckVersionExistsStatic method.
+	CheckVersionExistsStaticFunc func(ctx context.Context, datasetID string, editionID string, version int, state string) (bool, error)
 
 	// DeleteDatasetFunc mocks the DeleteDataset method.
 	DeleteDatasetFunc func(ctx context.Context, ID string) error
@@ -257,7 +263,7 @@ type StorerMock struct {
 	GetDimensionOptionsFromIDsFunc func(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error)
 
 	// GetDimensionsFunc mocks the GetDimensions method.
-	GetDimensionsFunc func(ctx context.Context, versionID string) ([]primitive.M, error)
+	GetDimensionsFunc func(ctx context.Context, versionID string) ([]bson.M, error)
 
 	// GetDimensionsFromInstanceFunc mocks the GetDimensionsFromInstance method.
 	GetDimensionsFromInstanceFunc func(ctx context.Context, ID string, offset int, limit int) ([]*models.DimensionOption, int, error)
@@ -449,10 +455,23 @@ type StorerMock struct {
 		CheckEditionExistsStatic []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
-			// ID is the id argument value.
-			ID string
+			// DatasetID is the datasetID argument value.
+			DatasetID string
 			// EditionID is the editionID argument value.
 			EditionID string
+			// State is the state argument value.
+			State string
+		}
+		// CheckVersionExistsStatic holds details about calls to the CheckVersionExistsStatic method.
+		CheckVersionExistsStatic []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// EditionID is the editionID argument value.
+			EditionID string
+			// Version is the version argument value.
+			Version int
 			// State is the state argument value.
 			State string
 		}
@@ -955,6 +974,7 @@ type StorerMock struct {
 	lockCheckDatasetTitleExist              sync.RWMutex
 	lockCheckEditionExists                  sync.RWMutex
 	lockCheckEditionExistsStatic            sync.RWMutex
+	lockCheckVersionExistsStatic            sync.RWMutex
 	lockDeleteDataset                       sync.RWMutex
 	lockDeleteEdition                       sync.RWMutex
 	lockDeleteStaticVersionsByDatasetID     sync.RWMutex
@@ -1360,25 +1380,25 @@ func (mock *StorerMock) CheckEditionExistsCalls() []struct {
 }
 
 // CheckEditionExistsStatic calls CheckEditionExistsStaticFunc.
-func (mock *StorerMock) CheckEditionExistsStatic(ctx context.Context, id string, editionID string, state string) error {
+func (mock *StorerMock) CheckEditionExistsStatic(ctx context.Context, datasetID string, editionID string, state string) error {
 	if mock.CheckEditionExistsStaticFunc == nil {
 		panic("StorerMock.CheckEditionExistsStaticFunc: method is nil but Storer.CheckEditionExistsStatic was just called")
 	}
 	callInfo := struct {
 		Ctx       context.Context
-		ID        string
+		DatasetID string
 		EditionID string
 		State     string
 	}{
 		Ctx:       ctx,
-		ID:        id,
+		DatasetID: datasetID,
 		EditionID: editionID,
 		State:     state,
 	}
 	mock.lockCheckEditionExistsStatic.Lock()
 	mock.calls.CheckEditionExistsStatic = append(mock.calls.CheckEditionExistsStatic, callInfo)
 	mock.lockCheckEditionExistsStatic.Unlock()
-	return mock.CheckEditionExistsStaticFunc(ctx, id, editionID, state)
+	return mock.CheckEditionExistsStaticFunc(ctx, datasetID, editionID, state)
 }
 
 // CheckEditionExistsStaticCalls gets all the calls that were made to CheckEditionExistsStatic.
@@ -1387,19 +1407,67 @@ func (mock *StorerMock) CheckEditionExistsStatic(ctx context.Context, id string,
 //	len(mockedStorer.CheckEditionExistsStaticCalls())
 func (mock *StorerMock) CheckEditionExistsStaticCalls() []struct {
 	Ctx       context.Context
-	ID        string
+	DatasetID string
 	EditionID string
 	State     string
 } {
 	var calls []struct {
 		Ctx       context.Context
-		ID        string
+		DatasetID string
 		EditionID string
 		State     string
 	}
 	mock.lockCheckEditionExistsStatic.RLock()
 	calls = mock.calls.CheckEditionExistsStatic
 	mock.lockCheckEditionExistsStatic.RUnlock()
+	return calls
+}
+
+// CheckVersionExistsStatic calls CheckVersionExistsStaticFunc.
+func (mock *StorerMock) CheckVersionExistsStatic(ctx context.Context, datasetID string, editionID string, version int, state string) (bool, error) {
+	if mock.CheckVersionExistsStaticFunc == nil {
+		panic("StorerMock.CheckVersionExistsStaticFunc: method is nil but Storer.CheckVersionExistsStatic was just called")
+	}
+	callInfo := struct {
+		Ctx       context.Context
+		DatasetID string
+		EditionID string
+		Version   int
+		State     string
+	}{
+		Ctx:       ctx,
+		DatasetID: datasetID,
+		EditionID: editionID,
+		Version:   version,
+		State:     state,
+	}
+	mock.lockCheckVersionExistsStatic.Lock()
+	mock.calls.CheckVersionExistsStatic = append(mock.calls.CheckVersionExistsStatic, callInfo)
+	mock.lockCheckVersionExistsStatic.Unlock()
+	return mock.CheckVersionExistsStaticFunc(ctx, datasetID, editionID, version, state)
+}
+
+// CheckVersionExistsStaticCalls gets all the calls that were made to CheckVersionExistsStatic.
+// Check the length with:
+//
+//	len(mockedStorer.CheckVersionExistsStaticCalls())
+func (mock *StorerMock) CheckVersionExistsStaticCalls() []struct {
+	Ctx       context.Context
+	DatasetID string
+	EditionID string
+	Version   int
+	State     string
+} {
+	var calls []struct {
+		Ctx       context.Context
+		DatasetID string
+		EditionID string
+		Version   int
+		State     string
+	}
+	mock.lockCheckVersionExistsStatic.RLock()
+	calls = mock.calls.CheckVersionExistsStatic
+	mock.lockCheckVersionExistsStatic.RUnlock()
 	return calls
 }
 
@@ -1832,7 +1900,7 @@ func (mock *StorerMock) GetDimensionOptionsFromIDsCalls() []struct {
 }
 
 // GetDimensions calls GetDimensionsFunc.
-func (mock *StorerMock) GetDimensions(ctx context.Context, versionID string) ([]primitive.M, error) {
+func (mock *StorerMock) GetDimensions(ctx context.Context, versionID string) ([]bson.M, error) {
 	if mock.GetDimensionsFunc == nil {
 		panic("StorerMock.GetDimensionsFunc: method is nil but Storer.GetDimensions was just called")
 	}

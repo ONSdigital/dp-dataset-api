@@ -70,6 +70,7 @@ func setupVersionsTestData(ctx context.Context, mongoStore *Mongo) ([]*models.Ve
 			ETag:         "version1ETag",
 			Links: &models.VersionLinks{
 				Dataset: &models.LinkObject{ID: staticDatasetID},
+				Edition: &models.LinkObject{ID: "edition1"},
 			},
 		},
 		{
@@ -83,6 +84,7 @@ func setupVersionsTestData(ctx context.Context, mongoStore *Mongo) ([]*models.Ve
 			ETag:         "version2ETag",
 			Links: &models.VersionLinks{
 				Dataset: &models.LinkObject{ID: staticDatasetID},
+				Edition: &models.LinkObject{ID: "edition2"},
 			},
 		},
 		{

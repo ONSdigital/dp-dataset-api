@@ -134,3 +134,58 @@ func TestGetAllStaticVersions(t *testing.T) {
 		})
 	})
 }
+
+func TestCheckVersionExistsStatic(t *testing.T) {
+	Convey("Given a MongoDB instance with static versions", t, func() {
+		ctx := context.Background()
+		mongo, _, err := getTestMongoDB(ctx)
+		So(err, ShouldBeNil)
+
+		versions, err := setupVersionsTestData(ctx, mongo)
+		So(err, ShouldBeNil)
+		So(versions, ShouldNotBeEmpty)
+
+		Convey("When CheckVersionExistsStatic is called for an existing version", func() {
+			exists, err := mongo.CheckVersionExistsStatic(ctx, staticDatasetID, "edition1", 1, "")
+			Convey("Then it returns true with no error", func() {
+				So(err, ShouldBeNil)
+				So(exists, ShouldBeTrue)
+			})
+		})
+
+		Convey("When CheckVersionExistsStatic is called for a non-existing version", func() {
+			exists, err := mongo.CheckVersionExistsStatic(ctx, staticDatasetID, "edition1", 99, "")
+			Convey("Then it returns false with no error", func() {
+				So(err, ShouldBeNil)
+				So(exists, ShouldBeFalse)
+			})
+		})
+
+		Convey("When CheckVersionExistsStatic is called for an existing version with a specific state", func() {
+			exists, err := mongo.CheckVersionExistsStatic(ctx, staticDatasetID, "edition1", 1, "published")
+			Convey("Then it returns true with no error", func() {
+				So(err, ShouldBeNil)
+				So(exists, ShouldBeTrue)
+			})
+		})
+
+		Convey("When CheckVersionExistsStatic is called for an existing version with a non-matching state", func() {
+			exists, err := mongo.CheckVersionExistsStatic(ctx, staticDatasetID, "edition1", 1, "stateThatDoesNotMatch")
+			Convey("Then it returns false with no error", func() {
+				So(err, ShouldBeNil)
+				So(exists, ShouldBeFalse)
+			})
+		})
+
+		Convey("When CheckVersionExistsStatic is called and the mongo connection fails", func() {
+			err = mongo.Connection.Close(ctx)
+			So(err, ShouldBeNil)
+
+			exists, err := mongo.CheckVersionExistsStatic(ctx, staticDatasetID, "edition1", 1, "")
+			Convey("Then it returns an error", func() {
+				So(err, ShouldNotBeNil)
+				So(exists, ShouldBeFalse)
+			})
+		})
+	})
+}
