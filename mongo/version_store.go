@@ -3,6 +3,7 @@ package mongo
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	mongodriver "github.com/ONSdigital/dp-mongodb/v3/mongodb"
+	"github.com/ONSdigital/log.go/v2/log"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -257,4 +259,28 @@ func (m *Mongo) GetAllStaticVersions(ctx context.Context, datasetID, state strin
 	}
 
 	return results, totalCount, nil
+}
+
+func (m *Mongo) DeleteStaticDatasetVersion(ctx context.Context, datasetID, editionID string, versionNumber string) (err error) {
+
+	// convert versionNumber to int
+
+	// build filter to find the version document
+
+	filter := bson.M{"links.dataset.id": datasetID,
+		"links.edition.id": editionID,
+		"links.version.id": versionNumber,
+	}
+	fmt.Println("deleting version with filter:", filter)
+	_, err = m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Must().Delete(ctx, filter)
+	if err != nil {
+		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
+			fmt.Println("version not found for deletion")
+			return errs.ErrVersionNotFound
+		}
+		return err
+	}
+	log.Info(context.TODO(), "version deleted", log.Data{"version": filter})
+
+	return err
 }

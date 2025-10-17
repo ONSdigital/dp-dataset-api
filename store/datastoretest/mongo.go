@@ -8,7 +8,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/bson"
 	"sync"
 )
 
@@ -61,6 +61,9 @@ var _ store.MongoDB = &MongoDBMock{}
 //			DeleteEditionFunc: func(ctx context.Context, ID string) error {
 //				panic("mock out the DeleteEdition method")
 //			},
+//			DeleteStaticDatasetVersionFunc: func(ctx context.Context, datasetID string, editionID string, version string) error {
+//				panic("mock out the DeleteStaticDatasetVersion method")
+//			},
 //			DeleteStaticVersionsByDatasetIDFunc: func(ctx context.Context, ID string) (int, error) {
 //				panic("mock out the DeleteStaticVersionsByDatasetID method")
 //			},
@@ -85,7 +88,7 @@ var _ store.MongoDB = &MongoDBMock{}
 //			GetDimensionOptionsFromIDsFunc: func(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error) {
 //				panic("mock out the GetDimensionOptionsFromIDs method")
 //			},
-//			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]primitive.M, error) {
+//			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]bson.M, error) {
 //				panic("mock out the GetDimensions method")
 //			},
 //			GetDimensionsFromInstanceFunc: func(ctx context.Context, ID string, offset int, limit int) ([]*models.DimensionOption, int, error) {
@@ -236,6 +239,9 @@ type MongoDBMock struct {
 	// DeleteEditionFunc mocks the DeleteEdition method.
 	DeleteEditionFunc func(ctx context.Context, ID string) error
 
+	// DeleteStaticDatasetVersionFunc mocks the DeleteStaticDatasetVersion method.
+	DeleteStaticDatasetVersionFunc func(ctx context.Context, datasetID string, editionID string, version string) error
+
 	// DeleteStaticVersionsByDatasetIDFunc mocks the DeleteStaticVersionsByDatasetID method.
 	DeleteStaticVersionsByDatasetIDFunc func(ctx context.Context, ID string) (int, error)
 
@@ -261,7 +267,7 @@ type MongoDBMock struct {
 	GetDimensionOptionsFromIDsFunc func(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error)
 
 	// GetDimensionsFunc mocks the GetDimensions method.
-	GetDimensionsFunc func(ctx context.Context, versionID string) ([]primitive.M, error)
+	GetDimensionsFunc func(ctx context.Context, versionID string) ([]bson.M, error)
 
 	// GetDimensionsFromInstanceFunc mocks the GetDimensionsFromInstance method.
 	GetDimensionsFromInstanceFunc func(ctx context.Context, ID string, offset int, limit int) ([]*models.DimensionOption, int, error)
@@ -469,6 +475,17 @@ type MongoDBMock struct {
 			Ctx context.Context
 			// ID is the ID argument value.
 			ID string
+		}
+		// DeleteStaticDatasetVersion holds details about calls to the DeleteStaticDatasetVersion method.
+		DeleteStaticDatasetVersion []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// EditionID is the editionID argument value.
+			EditionID string
+			// Version is the version argument value.
+			Version string
 		}
 		// DeleteStaticVersionsByDatasetID holds details about calls to the DeleteStaticVersionsByDatasetID method.
 		DeleteStaticVersionsByDatasetID []struct {
@@ -951,6 +968,7 @@ type MongoDBMock struct {
 	lockClose                               sync.RWMutex
 	lockDeleteDataset                       sync.RWMutex
 	lockDeleteEdition                       sync.RWMutex
+	lockDeleteStaticDatasetVersion          sync.RWMutex
 	lockDeleteStaticVersionsByDatasetID     sync.RWMutex
 	lockGetAllStaticVersions                sync.RWMutex
 	lockGetDataset                          sync.RWMutex
@@ -1488,6 +1506,50 @@ func (mock *MongoDBMock) DeleteEditionCalls() []struct {
 	return calls
 }
 
+// DeleteStaticDatasetVersion calls DeleteStaticDatasetVersionFunc.
+func (mock *MongoDBMock) DeleteStaticDatasetVersion(ctx context.Context, datasetID string, editionID string, version string) error {
+	if mock.DeleteStaticDatasetVersionFunc == nil {
+		panic("MongoDBMock.DeleteStaticDatasetVersionFunc: method is nil but MongoDB.DeleteStaticDatasetVersion was just called")
+	}
+	callInfo := struct {
+		Ctx       context.Context
+		DatasetID string
+		EditionID string
+		Version   string
+	}{
+		Ctx:       ctx,
+		DatasetID: datasetID,
+		EditionID: editionID,
+		Version:   version,
+	}
+	mock.lockDeleteStaticDatasetVersion.Lock()
+	mock.calls.DeleteStaticDatasetVersion = append(mock.calls.DeleteStaticDatasetVersion, callInfo)
+	mock.lockDeleteStaticDatasetVersion.Unlock()
+	return mock.DeleteStaticDatasetVersionFunc(ctx, datasetID, editionID, version)
+}
+
+// DeleteStaticDatasetVersionCalls gets all the calls that were made to DeleteStaticDatasetVersion.
+// Check the length with:
+//
+//	len(mockedMongoDB.DeleteStaticDatasetVersionCalls())
+func (mock *MongoDBMock) DeleteStaticDatasetVersionCalls() []struct {
+	Ctx       context.Context
+	DatasetID string
+	EditionID string
+	Version   string
+} {
+	var calls []struct {
+		Ctx       context.Context
+		DatasetID string
+		EditionID string
+		Version   string
+	}
+	mock.lockDeleteStaticDatasetVersion.RLock()
+	calls = mock.calls.DeleteStaticDatasetVersion
+	mock.lockDeleteStaticDatasetVersion.RUnlock()
+	return calls
+}
+
 // DeleteStaticVersionsByDatasetID calls DeleteStaticVersionsByDatasetIDFunc.
 func (mock *MongoDBMock) DeleteStaticVersionsByDatasetID(ctx context.Context, ID string) (int, error) {
 	if mock.DeleteStaticVersionsByDatasetIDFunc == nil {
@@ -1845,7 +1907,7 @@ func (mock *MongoDBMock) GetDimensionOptionsFromIDsCalls() []struct {
 }
 
 // GetDimensions calls GetDimensionsFunc.
-func (mock *MongoDBMock) GetDimensions(ctx context.Context, versionID string) ([]primitive.M, error) {
+func (mock *MongoDBMock) GetDimensions(ctx context.Context, versionID string) ([]bson.M, error) {
 	if mock.GetDimensionsFunc == nil {
 		panic("MongoDBMock.GetDimensionsFunc: method is nil but MongoDB.GetDimensions was just called")
 	}

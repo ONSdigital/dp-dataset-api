@@ -349,6 +349,84 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	log.Info(ctx, "putVersion endpoint: request successful", data)
 }
 
+func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("deleteVersion endpoint called")
+	defer dphttp.DrainBody(r)
+
+	ctx := r.Context()
+	vars := mux.Vars(r)
+
+	logData := log.Data{
+		"dataset_id": vars["dataset_id"],
+		"edition":    vars["edition"],
+		"version":    vars["version"],
+	}
+
+	log.Info(ctx, "deleteVersion endpoint called", logData)
+
+	// Validate version param
+	_, err := models.ParseAndValidateVersionNumber(ctx, vars["version"])
+	if err != nil {
+		log.Error(ctx, "deleteVersion: invalid version number", err, logData)
+		handleVersionAPIErr(ctx, err, w, logData)
+		return
+	}
+
+	// Retrieve dataset
+	dataset, err := api.dataStore.Backend.GetDataset(ctx, vars["dataset_id"])
+	if err != nil {
+		log.Error(ctx, "deleteVersion: failed to retrieve dataset", err, logData)
+		handleVersionAPIErr(ctx, err, w, logData)
+		return
+	}
+
+	// Apply correct deletion logic
+	if dataset.Next.Type == models.Static.String() {
+		fmt.Println("deleteVersion: deleting static version")
+		api.deleteStaticVersion(w, r)
+	} else {
+		fmt.Println("deleteVersion: detaching version")
+		api.detachVersion(w, r)
+		return
+	}
+	log.Info(ctx, "deleteVersion: version deleted successfully", logData)
+}
+
+func (api *DatasetAPI) deleteStaticVersion(w http.ResponseWriter, r *http.Request) {
+	defer dphttp.DrainBody(r)
+
+	ctx := r.Context()
+	vars := mux.Vars(r)
+
+	log.Info(ctx, "detachVersion endpoint: endpoint called")
+
+	datasetID := vars["dataset_id"]
+	edition := vars["edition"]
+	version := vars["version"]
+
+	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
+	fmt.Println("version to delete:", version)
+	if err := func() error {
+		authorised := api.authenticate(r, logData)
+		if !authorised {
+			log.Error(ctx, "deleteVersion endpoint: User is not authorised to detach a dataset version", errs.ErrUnauthorised, logData)
+			return errs.ErrNotFound
+		}
+		// call deleteStaticDatasetVersion to remove version from data store
+		err := api.dataStore.Backend.DeleteStaticDatasetVersion(ctx, datasetID, edition, version)
+		if err != nil {
+			log.Error(ctx, "deleteStaticVersion: failed to delete static dataset version", err, logData)
+			return err
+		}
+		return nil
+	}(); err != nil {
+		handleVersionAPIErr(ctx, err, w, logData)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	log.Info(ctx, "deleteStaticVersion: successfully deleted version", logData)
+}
+
 // TODO: Refactor this to reduce the complexity
 //
 //nolint:gocyclo,gocognit // high cyclomactic & cognitive complexity not in scope for maintenance
@@ -378,6 +456,8 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 			log.Error(ctx, "detachVersion endpoint: invalid version request", err, logData)
 			return err
 		}
+
+		// add type check when static versions are supported
 
 		editionDoc, err := api.dataStore.Backend.GetEdition(ctx, datasetID, edition, "")
 		if err != nil {

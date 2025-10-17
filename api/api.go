@@ -349,7 +349,7 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(paginator *pagination.Pagin
 			"/datasets/{dataset_id}/editions/{edition}/versions/{version}",
 			api.isAuthenticated(
 				api.isAuthorisedForDatasets(deletePermission,
-					api.detachVersion)),
+					api.deleteVersion)),
 		)
 	}
 }
