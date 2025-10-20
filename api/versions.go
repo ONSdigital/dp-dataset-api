@@ -352,7 +352,6 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 
 func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("deleteVersion endpoint called")
-	// get the ""
 	featureEnvString := os.Getenv("ENABLE_DETACH_DATASET")
 	fmt.Println("ENABLE_DETACH_DATASET:", featureEnvString)
 	defer dphttp.DrainBody(r)

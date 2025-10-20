@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -50,8 +51,13 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the dataset "([^"]*)" should not exist$`, c.datasetShouldNotExist)
 	ctx.Step(`^the static version "([^"]*)" should exist$`, c.staticVersionShouldExist)
 	ctx.Step(`^the static version "([^"]*)" should not exist$`, c.staticVersionShouldNotExist)
+	ctx.Step(`^detach dataset feature is enabled$`, detachDatasetFeatureIsEnabled)
 }
 
+func detachDatasetFeatureIsEnabled() error {
+	os.Setenv("ENABLE_DETACH_DATASET", "true")
+	return nil
+}
 func (c *DatasetComponent) thereAreNoDatasets() error {
 	return c.MongoClient.Connection.DropDatabase(context.Background())
 }
