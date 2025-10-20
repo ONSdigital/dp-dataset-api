@@ -432,7 +432,6 @@ func (api *DatasetAPI) deleteStaticVersion(w http.ResponseWriter, r *http.Reques
 		if datasetDoc.Current != nil {
 			fmt.Println("deleteStaticVersion: rolling back dataset document to current")
 			datasetDoc.Next = datasetDoc.Current
-			//datasetDoc.Next.Description = "update by the deleteStaticVersion endpoint to roll back to current"
 			err = api.dataStore.Backend.UpsertDataset(ctx, datasetID, datasetDoc)
 			if err != nil {
 				fmt.Println("deleteStaticVersion: failed to update dataset document")
