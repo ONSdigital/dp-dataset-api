@@ -3031,7 +3031,6 @@ func TestDeleteVersionNonStaticDatasetReturnError(t *testing.T) {
 }
 
 func TestDeleteVersionStaticDatasetReturnOK(t *testing.T) {
-
 	featureEnvString := os.Getenv("ENABLE_DETACH_DATASET")
 	featureOn, _ := strconv.ParseBool(featureEnvString)
 
@@ -3080,14 +3079,11 @@ func TestDeleteVersionStaticDatasetReturnOK(t *testing.T) {
 		So(len(mockedDataStore.IsStaticDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteStaticDatasetVersionCalls()), ShouldEqual, 1)
-
 	})
 }
 
 func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
-
 	// TODO conditional test for feature flagged functionality. Will need tidying up eventually.
-
 	featureEnvString := os.Getenv("ENABLE_DETACH_DATASET")
 	featureOn, _ := strconv.ParseBool(featureEnvString)
 

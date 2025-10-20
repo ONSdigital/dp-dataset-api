@@ -261,7 +261,7 @@ func (m *Mongo) GetAllStaticVersions(ctx context.Context, datasetID, state strin
 	return results, totalCount, nil
 }
 
-func (m *Mongo) DeleteStaticDatasetVersion(ctx context.Context, datasetID, editionID string, versionNumber string) (err error) {
+func (m *Mongo) DeleteStaticDatasetVersion(ctx context.Context, datasetID, editionID, versionNumber string) (err error) {
 	filter := bson.M{"links.dataset.id": datasetID,
 		"links.edition.id": editionID,
 		"links.version.id": versionNumber,
