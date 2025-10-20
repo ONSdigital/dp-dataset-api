@@ -12,6 +12,7 @@ import (
 
 var (
 	staticDatasetID      = "staticDatasetID123"
+	staticDatasetID2     = "staticDatasetID456"
 	nonExistentDatasetID = "nonExistentDatasetID"
 )
 
@@ -70,6 +71,8 @@ func setupVersionsTestData(ctx context.Context, mongoStore *Mongo) ([]*models.Ve
 			ETag:         "version1ETag",
 			Links: &models.VersionLinks{
 				Dataset: &models.LinkObject{ID: staticDatasetID},
+				Edition: &models.LinkObject{ID: "edition1"},
+				Version: &models.LinkObject{ID: "1"},
 			},
 		},
 		{
@@ -83,6 +86,8 @@ func setupVersionsTestData(ctx context.Context, mongoStore *Mongo) ([]*models.Ve
 			ETag:         "version2ETag",
 			Links: &models.VersionLinks{
 				Dataset: &models.LinkObject{ID: staticDatasetID},
+				Edition: &models.LinkObject{ID: "edition2"},
+				Version: &models.LinkObject{ID: "2"},
 			},
 		},
 		{
@@ -94,6 +99,11 @@ func setupVersionsTestData(ctx context.Context, mongoStore *Mongo) ([]*models.Ve
 			State:        "published",
 			Type:         "static",
 			ETag:         "newETag",
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{ID: staticDatasetID2},
+				Edition: &models.LinkObject{ID: "newedition"},
+				Version: &models.LinkObject{ID: "1"},
+			},
 		},
 	}
 

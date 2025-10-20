@@ -849,3 +849,24 @@ func (m *Mongo) DeleteStaticVersionsByDatasetID(ctx context.Context, datasetID s
 
 	return deletedCount, nil
 }
+
+// check if dataset type is static
+func (m *Mongo) IsStaticDataset(ctx context.Context, datasetID string) (bool, error) {
+	dataset, err := m.GetDataset(ctx, datasetID)
+	if err != nil {
+		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	if dataset.Current != nil && dataset.Current.Type == models.Static.String() {
+		return true, nil
+	}
+
+	if dataset.Next != nil && dataset.Next.Type == models.Static.String() {
+		return true, nil
+	}
+
+	return false, nil
+}
