@@ -4,7 +4,7 @@ import (
 	"errors"
 )
 
-// Error represents a custom error type with additional context and description.
+// Error represents a custom error type containing a cause, code, and description.
 type Error struct {
 	Cause       error  `json:"-"`           // The underlying error, if available.
 	Code        string `json:"code"`        // Error code representing the type of error.
@@ -19,7 +19,7 @@ func (e Error) Error() string {
 	return e.Code + ": " + e.Description
 }
 
-// NewError creates and logs a new Error with the provided cause, code and description.
+// NewError creates a new Error with the given cause, code, and description.
 func NewError(cause error, code, description string) Error {
 	err := Error{
 		Cause:       cause,
