@@ -1,6 +1,7 @@
 package steps
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -53,7 +54,7 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the dataset "([^"]*)" should not exist$`, c.datasetShouldNotExist)
 	ctx.Step(`^the static version "([^"]*)" should exist$`, c.staticVersionShouldExist)
 	ctx.Step(`^the static version "([^"]*)" should not exist$`, c.staticVersionShouldNotExist)
-	ctx.Step(`^I should receive the following JSON response ignoring last updated:$`, c.IShouldReceiveTheFollowingJSONResponseIgnoringLastUpdated)
+	ctx.Step(`^I should receive the following JSON response with a dynamic timestamp:$`, c.IShouldReceiveTheFollowingJSONResponseWithADynamicTimestamp)
 	ctx.Step(`^the response header "([^"]*)" should not be empty$`, c.theResponseHeaderShouldNotBeEmpty)
 }
 
@@ -586,38 +587,51 @@ func (c *DatasetComponent) staticVersionShouldNotExist(versionID string) error {
 	return c.checkDocumentExistence(config.VersionsCollection, versionID, false)
 }
 
-func (c *DatasetComponent) IShouldReceiveTheFollowingJSONResponseIgnoringLastUpdated(expectedAPIResponse *godog.DocString) error {
-	responseBody := c.apiFeature.HTTPResponse.Body
-	body, err := io.ReadAll(responseBody)
+func (c *DatasetComponent) IShouldReceiveTheFollowingJSONResponseWithADynamicTimestamp(expectedJSON *godog.DocString) error {
+	b, err := io.ReadAll(c.apiFeature.HTTPResponse.Body)
 	if err != nil {
-		return fmt.Errorf("failed to read response body: %w", err)
+		return fmt.Errorf("reading body: %w", err)
 	}
+	c.apiFeature.HTTPResponse.Body = io.NopCloser(bytes.NewReader(b))
 
 	var actual, expected map[string]interface{}
-	err = json.Unmarshal(body, &actual)
-	if err != nil {
-		return fmt.Errorf("failed to unmarshal actual response body: %w", err)
+	if err := json.Unmarshal(b, &actual); err != nil {
+		return fmt.Errorf("invalid actual JSON: %w", err)
 	}
-	err = json.Unmarshal([]byte(expectedAPIResponse.Content), &expected)
-	if err != nil {
-		return fmt.Errorf("failed to unmarshal expected response body: %w", err)
+	if err := json.Unmarshal([]byte(expectedJSON.Content), &expected); err != nil {
+		return fmt.Errorf("invalid expected JSON: %w", err)
 	}
 
-	delete(actual, "last_updated")
-	delete(expected, "last_updated")
+	if expectedTimestamp, ok := expected["last_updated"].(string); ok && expectedTimestamp == "{{DYNAMIC_TIMESTAMP}}" {
+		actualTimestampStr, ok := actual["last_updated"].(string)
+		if !ok {
+			return fmt.Errorf("missing or non-string last_updated in actual")
+		}
+		parsedTimestamp, err := time.Parse(time.RFC3339, actualTimestampStr)
+		if err != nil {
+			return fmt.Errorf("last_updated is not a valid RFC3339 timestamp: %w", err)
+		}
+		timestampAge := time.Since(parsedTimestamp)
+		if timestampAge < 0 || timestampAge > 10*time.Second {
+			return fmt.Errorf("last_updated %v is not within 10s of now", parsedTimestamp)
+		}
 
-	actualSanitized, err := json.Marshal(actual)
-	if err != nil {
-		return fmt.Errorf("failed to marshal actual response body: %w", err)
+		delete(actual, "last_updated")
+		delete(expected, "last_updated")
 	}
-	expectedSanitized, err := json.Marshal(expected)
+
+	got, err := json.Marshal(actual)
 	if err != nil {
-		return fmt.Errorf("failed to marshal expected response body: %w", err)
+		return fmt.Errorf("marshalling actual JSON: %w", err)
 	}
-
-	assert.JSONEq(c.apiFeature, string(expectedSanitized), string(actualSanitized))
-
-	return c.apiFeature.StepError()
+	want, err := json.Marshal(expected)
+	if err != nil {
+		return fmt.Errorf("marshalling expected JSON: %w", err)
+	}
+	if !bytes.Equal(got, want) {
+		return fmt.Errorf("response mismatch:\nExpected: %s\nActual:   %s", want, got)
+	}
+	return nil
 }
 
 func (c *DatasetComponent) theResponseHeaderShouldNotBeEmpty(header string) error {

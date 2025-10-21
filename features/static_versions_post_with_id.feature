@@ -108,7 +108,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
             }
             """
         Then the HTTP status code should be "201"
-        And I should receive the following JSON response ignoring last updated:
+        And I should receive the following JSON response with a dynamic timestamp:
             """
             {
                 "dataset_id": "static-dataset-1",
@@ -136,7 +136,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                     },
                 "edition": "2024",
                 "edition_title": "2024",
-                "last_updated": "ignored",
+                "last_updated": "{{DYNAMIC_TIMESTAMP}}",
                 "release_date": "2024-12-01T09:00:00.000Z",
                 "state": "associated",
                 "type": "static",
