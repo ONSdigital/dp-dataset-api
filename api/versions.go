@@ -473,8 +473,6 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		// add type check when static versions are supported
-
 		editionDoc, err := api.dataStore.Backend.GetEdition(ctx, datasetID, edition, "")
 		if err != nil {
 			log.Error(ctx, "detachVersion endpoint: Cannot find the specified edition", errs.ErrEditionNotFound, logData)
