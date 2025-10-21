@@ -54,6 +54,7 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the static version "([^"]*)" should exist$`, c.staticVersionShouldExist)
 	ctx.Step(`^the static version "([^"]*)" should not exist$`, c.staticVersionShouldNotExist)
 	ctx.Step(`^I should receive the following JSON response ignoring last updated:$`, c.IShouldReceiveTheFollowingJSONResponseIgnoringLastUpdated)
+	ctx.Step(`^the response header "([^"]*)" should not be empty$`, c.theResponseHeaderShouldNotBeEmpty)
 }
 
 func (c *DatasetComponent) thereAreNoDatasets() error {
@@ -617,4 +618,12 @@ func (c *DatasetComponent) IShouldReceiveTheFollowingJSONResponseIgnoringLastUpd
 	assert.JSONEq(c.apiFeature, string(expectedSanitized), string(actualSanitized))
 
 	return c.apiFeature.StepError()
+}
+
+func (c *DatasetComponent) theResponseHeaderShouldNotBeEmpty(header string) error {
+	value := c.apiFeature.HTTPResponse.Header.Get(header)
+	if value == "" {
+		return fmt.Errorf("expected non-empty header %q but got empty", header)
+	}
+	return nil
 }

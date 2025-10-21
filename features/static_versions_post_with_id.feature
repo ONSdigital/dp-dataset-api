@@ -9,12 +9,6 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                     "title": "static dataset with published version",
                     "state": "published",
                     "type": "static"
-                },
-                {
-                    "id": "static-dataset-2",
-                    "title": "Static dataset created",
-                    "state": "created",
-                    "type": "static"
                 }
             ]
             """
@@ -148,6 +142,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                 "version": 2
             }
             """
+        And the response header "ETag" should not be empty
 
     Scenario: Request without Authorization header returns 401
         Given private endpoints are enabled
