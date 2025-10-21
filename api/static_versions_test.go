@@ -1016,7 +1016,7 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 		So(errorResponse.Status, ShouldEqual, http.StatusBadRequest)
 		err := errorResponse.Errors[0]
 		So(err.Code, ShouldEqual, models.ErrInvalidTypeError)
-		So(err.Description, ShouldEqual, models.ErrInvalidType)
+		So(err.Description, ShouldEqual, models.ErrTypeNotStaticDescription)
 		So(successResponse, ShouldBeNil)
 	})
 }
@@ -1064,6 +1064,7 @@ func TestCreateVersion_Success(t *testing.T) {
 				Title: "Usage Note 2",
 			},
 		},
+		Type: models.Static.String(),
 	}
 
 	expectedVersion := &models.Version{
@@ -1225,6 +1226,7 @@ func TestCreateVersion_Failure(t *testing.T) {
 				Title: "Usage Note 2",
 			},
 		},
+		Type: models.Static.String(),
 	}
 
 	mockedDataStore := &storetest.StorerMock{}
@@ -1280,9 +1282,39 @@ func TestCreateVersion_Failure(t *testing.T) {
 		})
 	})
 
+	Convey("When the version type is not static", t, func() {
+		invalidTypeVersion := &models.Version{
+			Type: "Not-Static",
+		}
+		invalidTypeVersionJSON, err := json.Marshal(invalidTypeVersion)
+		So(err, ShouldBeNil)
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(invalidTypeVersionJSON))
+		vars := map[string]string{
+			"dataset_id": "123",
+			"edition":    "edition1",
+			"version":    "1",
+		}
+		r = mux.SetURLVars(r, vars)
+		w := httptest.NewRecorder()
+
+		Convey("When createVersion is called", func() {
+			successResponse, errorResponse := api.createVersion(w, r)
+
+			Convey("Then it should return a 400 status code with an error message", func() {
+				So(successResponse, ShouldBeNil)
+				So(errorResponse.Status, ShouldEqual, http.StatusBadRequest)
+				So(errorResponse.Errors[0].Code, ShouldEqual, models.ErrInvalidTypeError)
+				So(errorResponse.Errors[0].Description, ShouldEqual, models.ErrTypeNotStaticDescription)
+			})
+		})
+	})
+
 	Convey("When all mandatory fields are not provided", t, func() {
 		invalidVersion := &models.Version{
 			Version: 1,
+			Type:    models.Static.String(),
 		}
 		invalidVersionJSON, err := json.Marshal(invalidVersion)
 		So(err, ShouldBeNil)

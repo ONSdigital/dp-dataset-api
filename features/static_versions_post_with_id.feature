@@ -103,7 +103,8 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                         "download_url": "/downloads/datasets/static-dataset-1/editions/2024/versions/2.csv",
                         "byte_size": 100
                     }
-                ]
+                ],
+                "type": "static"
             }
             """
         Then the HTTP status code should be "201"
@@ -159,7 +160,8 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                     "download_url": "/downloads/datasets/static-dataset-1/editions/2024/versions/2.csv",
                     "byte_size": 100
                 }
-            ]
+            ],
+            "type": "static"
         }
         """
         Then the HTTP status code should be "401"
@@ -181,7 +183,8 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                         "download_url": "/downloads/datasets/static-dataset-1/editions/2024/versions/2.csv",
                         "byte_size": 100
                     }
-                ]
+                ],
+                "type": "static"
             }
             """
         Then I should receive the following JSON response with status "404":
@@ -213,7 +216,8 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                         "download_url": "/downloads/datasets/static-dataset-1/editions/2024/versions/2.csv",
                         "byte_size": 100
                     }
-                ]
+                ],
+                "type": "static"
             }
             """
         Then I should receive the following JSON response with status "404":
@@ -245,7 +249,8 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                         "download_url": "/downloads/datasets/static-dataset-1/editions/2024/versions/1.csv",
                         "byte_size": 100
                     }
-                ]
+                ],
+                "type": "static"
             }
             """
         Then I should receive the following JSON response with status "409":
@@ -277,7 +282,8 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                         "download_url": "/downloads/datasets/static-dataset-1/editions/2024/versions/2.csv",
                         "byte_size": 100
                     }
-                ]
+                ],
+                "type": "static"
             }
             """
         Then I should receive the following JSON response with status "400":
@@ -287,6 +293,39 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                 {
                     "code": "ErrInvalidQueryParameter",
                     "description": "invalid query parameter: version"
+                }
+            ]
+        }
+        """
+
+    Scenario: Request with a type that isn't static returns 400
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I POST "/datasets/static-dataset-1/editions/2024/versions/2"
+            """
+            {
+                "release_date": "2024-12-01T09:00:00.000Z",
+                "edition_title": "2024",
+                "distributions": [
+                    {
+                        "title": "Full Dataset CSV",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "download_url": "/downloads/datasets/static-dataset-1/editions/2024/versions/2.csv",
+                        "byte_size": 100
+                    }
+                ],
+                "type": "not valid"
+            }
+            """
+        Then I should receive the following JSON response with status "400":
+        """
+        {
+            "errors": [
+                {
+                    "code": "InvalidType",
+                    "description": "version type should be static"
                 }
             ]
         }

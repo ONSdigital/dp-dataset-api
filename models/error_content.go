@@ -35,5 +35,5 @@ const (
 	ErrMissingParametersDescription               = "missing properties in JSON"
 	ErrUnpublishedVersionAlreadyExistsDescription = "an unpublished version of this dataset already exists"
 	ErrVersionAlreadyExistsDescription            = "version already exists"
-	ErrInvalidType                                = "version type should be static"
+	ErrTypeNotStaticDescription                   = "version type should be static"
 )

@@ -129,8 +129,8 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 
 	// validate versiontype
 	if versionRequest.Type != "" && versionRequest.Type != models.Static.String() {
-		log.Error(ctx, "addDatasetVersionCondensed endpoint: only allowed to create static type versions", errs.ErrInvalidQueryParameter, logData)
-		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewValidationError(models.ErrInvalidTypeError, models.ErrInvalidType))
+		log.Error(ctx, "addDatasetVersionCondensed endpoint: only allowed to create static type versions", errs.ErrInvalidBody, logData)
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewValidationError(models.ErrInvalidTypeError, models.ErrTypeNotStaticDescription))
 	}
 
 	// Validate dataset existence
@@ -230,6 +230,11 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 	if err != nil || versionNumber < 1 {
 		log.Error(ctx, "createVersion endpoint: invalid version parameter", err, logData)
 		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, models.ErrInvalidQueryParameter, models.ErrInvalidQueryParameterDescription+": version"))
+	}
+
+	if newVersion.Type != models.Static.String() {
+		log.Error(ctx, "createVersion endpoint: only allowed to create static type versions", errs.ErrInvalidBody, logData)
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewValidationError(models.ErrInvalidTypeError, models.ErrTypeNotStaticDescription))
 	}
 
 	// set mandatory fields
