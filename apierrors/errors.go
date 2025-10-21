@@ -24,6 +24,7 @@ var (
 	ErrDatasetNotFound                    = errors.New("dataset not found")
 	ErrDeleteDatasetNotFound              = errors.New("delete dataset not found")
 	ErrDeletePublishedDatasetForbidden    = errors.New("a published dataset cannot be deleted")
+	ErrDeletePublishedVersionForbidden    = errors.New("a published version cannot be deleted")
 	ErrDimensionNodeNotFound              = errors.New("dimension node not found")
 	ErrDimensionNotFound                  = errors.New("dimension not found")
 	ErrDimensionOptionNotFound            = errors.New("dimension option not found")
@@ -106,7 +107,7 @@ var (
 		ErrExpectedResourceStateOfCompleted:        true,
 		ErrExpectedResourceStateOfEditionConfirmed: true,
 		ErrExpectedResourceStateOfAssociated:       true,
-
-		ErrResourcePublished: true,
+		ErrResourcePublished:                       true,
+		ErrDeletePublishedVersionForbidden:         true,
 	}
 )

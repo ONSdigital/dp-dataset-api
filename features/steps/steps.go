@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -51,12 +50,7 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the dataset "([^"]*)" should not exist$`, c.datasetShouldNotExist)
 	ctx.Step(`^the static version "([^"]*)" should exist$`, c.staticVersionShouldExist)
 	ctx.Step(`^the static version "([^"]*)" should not exist$`, c.staticVersionShouldNotExist)
-	ctx.Step(`^detach dataset feature is enabled$`, detachDatasetFeatureIsEnabled)
-}
-
-func detachDatasetFeatureIsEnabled() error {
-	os.Setenv("ENABLE_DETACH_DATASET", "true")
-	return nil
+	ctx.Step(`^the dataset "([^"]*)" should have next equal to current$`, c.theDatasetShouldHaveNextEqualToCurrent)
 }
 func (c *DatasetComponent) thereAreNoDatasets() error {
 	return c.MongoClient.Connection.DropDatabase(context.Background())
@@ -585,4 +579,25 @@ func (c *DatasetComponent) staticVersionShouldExist(versionID string) error {
 // staticVersionShouldNotExist checks the version document does not exist in the versions collection
 func (c *DatasetComponent) staticVersionShouldNotExist(versionID string) error {
 	return c.checkDocumentExistence(config.VersionsCollection, versionID, false)
+}
+
+func (c *DatasetComponent) theDatasetShouldHaveNextEqualToCurrent(datasetID string) error {
+	collectionName := c.MongoClient.ActualCollectionName(config.DatasetsCollection)
+	var link models.DatasetUpdate
+
+	if err := c.MongoClient.Connection.Collection(collectionName).FindOne(context.Background(), bson.M{"_id": datasetID}, &link); err != nil {
+		return err
+	}
+
+	if link.Next == nil || link.Current == nil {
+		return fmt.Errorf("dataset %s has nil next or current document", datasetID)
+	}
+
+	next := *link.Next
+	current := *link.Current
+
+	if diff := cmp.Diff(next, current); diff != "" {
+		return fmt.Errorf("next and current do not match for dataset %s:\n%s", datasetID, diff)
+	}
+	return nil
 }

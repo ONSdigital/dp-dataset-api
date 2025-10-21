@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"maps"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 
@@ -351,9 +350,6 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("deleteVersion endpoint called")
-	featureEnvString := os.Getenv("ENABLE_DETACH_DATASET")
-	fmt.Println("ENABLE_DETACH_DATASET:", featureEnvString)
 	defer dphttp.DrainBody(r)
 
 	ctx := r.Context()
@@ -364,8 +360,6 @@ func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
 		"edition":    vars["edition"],
 		"version":    vars["version"],
 	}
-
-	log.Info(ctx, "deleteVersion endpoint called", logData)
 
 	// Validate version param
 	_, err := models.ParseAndValidateVersionNumber(ctx, vars["version"])
@@ -382,14 +376,19 @@ func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Apply correct deletion logic
 	if isStatic {
-		fmt.Println("deleteVersion: deleting static version")
 		api.deleteStaticVersion(w, r)
 	} else {
-		fmt.Println("deleteVersion: detaching version")
-		api.detachVersion(w, r)
-		return
+		// Validate detach feature flag is enabled
+		if api.enableDetachDataset {
+			api.detachVersion(w, r)
+			return
+		} else {
+			// define and log error for disabled feature flag
+			err := errors.New("method not allowed")
+			handleVersionAPIErr(ctx, err, w, logData)
+			return
+		}
 	}
 	log.Info(ctx, "deleteVersion: version deleted successfully", logData)
 }
@@ -400,14 +399,11 @@ func (api *DatasetAPI) deleteStaticVersion(w http.ResponseWriter, r *http.Reques
 	ctx := r.Context()
 	vars := mux.Vars(r)
 
-	log.Info(ctx, "detachVersion endpoint: endpoint called")
-
 	datasetID := vars["dataset_id"]
 	edition := vars["edition"]
 	version := vars["version"]
 
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
-	fmt.Println("version to delete:", version)
 	if err := func() error {
 		authorised := api.authenticate(r, logData)
 		if !authorised {
@@ -428,12 +424,12 @@ func (api *DatasetAPI) deleteStaticVersion(w http.ResponseWriter, r *http.Reques
 			return err
 		}
 
+		// Update dataset document Next to roll back to Current version
 		if datasetDoc.Current != nil {
 			fmt.Println("deleteStaticVersion: rolling back dataset document to current")
 			datasetDoc.Next = datasetDoc.Current
 			err = api.dataStore.Backend.UpsertDataset(ctx, datasetID, datasetDoc)
 			if err != nil {
-				fmt.Println("deleteStaticVersion: failed to update dataset document")
 				log.Error(ctx, "deleteStaticVersion: failed to update dataset document", err, logData)
 				return err
 			}
@@ -719,6 +715,10 @@ func getVersionAPIErrStatusCode(err error) int {
 		status = http.StatusBadRequest
 	case strings.HasPrefix(err.Error(), "state not allowed to transition"):
 		status = http.StatusBadRequest
+	case strings.HasPrefix(err.Error(), "a published version cannot be deleted"):
+		status = http.StatusForbidden
+	case strings.HasPrefix(err.Error(), "method not allowed"):
+		status = http.StatusMethodNotAllowed
 	default:
 		status = http.StatusInternalServerError
 	}

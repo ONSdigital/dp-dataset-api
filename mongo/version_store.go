@@ -3,7 +3,6 @@ package mongo
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -262,16 +261,30 @@ func (m *Mongo) GetAllStaticVersions(ctx context.Context, datasetID, state strin
 }
 
 func (m *Mongo) DeleteStaticDatasetVersion(ctx context.Context, datasetID, editionID, versionNumber string) (err error) {
-	filter := bson.M{"links.dataset.id": datasetID,
-		"links.edition.id": editionID,
-		"links.version.id": versionNumber,
+	// convert versionNumber to int
+	versionInt, _ := strconv.Atoi(versionNumber)
+	// retrieve version document
+	versionDoc, err := m.GetVersionStatic(ctx, datasetID, editionID, versionInt, "")
+	if err != nil {
+		log.Error(ctx, "failed to retrieve version document for deletion", err, log.Data{"datasetID": datasetID, "editionID": editionID, "versionNumber": versionNumber})
+		return err
+	}
+	// check if version is published
+	if versionDoc.State == models.PublishedState {
+		log.Error(ctx, "cannot delete a published version", errs.ErrDeletePublishedVersionForbidden, log.Data{"datasetID": datasetID, "editionID": editionID, "versionNumber": versionNumber})
+		return errs.ErrDeletePublishedVersionForbidden
 	}
 
-	log.Info(ctx, "attempting to delete version", log.Data{"filter": filter})
+	// proceed to delete version
+	filter := bson.M{
+		"links.dataset.id": datasetID,
+		"edition":          editionID,
+		"version":          versionInt,
+	}
+
 	_, err = m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Must().Delete(ctx, filter)
 	if err != nil {
 		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
-			fmt.Println("version not found for deletion")
 			return errs.ErrVersionNotFound
 		}
 		return err

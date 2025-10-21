@@ -43,6 +43,7 @@ type Configuration struct {
 	HealthCheckCriticalTimeout     time.Duration `envconfig:"HEALTHCHECK_CRITICAL_TIMEOUT"`
 	EnablePrivateEndpoints         bool          `envconfig:"ENABLE_PRIVATE_ENDPOINTS"`
 	EnableDetachDataset            bool          `envconfig:"ENABLE_DETACH_DATASET"`
+	EnableDeleteStaticVersion      bool          `envconfig:"ENABLE_DELETE_STATIC_VERSION"`
 	EnablePermissionsAuth          bool          `envconfig:"ENABLE_PERMISSIONS_AUTH"`
 	EnableObservationEndpoint      bool          `envconfig:"ENABLE_OBSERVATION_ENDPOINT"`
 	EnableURLRewriting             bool          `envconfig:"ENABLE_URL_REWRITING"`
@@ -104,6 +105,7 @@ func Get() (*Configuration, error) {
 		OtelEnabled:                    false,
 		EnablePrivateEndpoints:         false,
 		EnableDetachDataset:            false,
+		EnableDeleteStaticVersion:      true,
 		EnablePermissionsAuth:          false,
 		EnableObservationEndpoint:      true,
 		EnableURLRewriting:             false,
