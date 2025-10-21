@@ -273,7 +273,7 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, models.InternalError, models.InternalErrorDescription))
 	}
 
-	versionExists, err := api.dataStore.Backend.CheckVersionExistsStatic(ctx, datasetID, edition, versionNumber, "")
+	versionExists, err := api.dataStore.Backend.CheckVersionExistsStatic(ctx, datasetID, edition, versionNumber)
 	if err != nil {
 		log.Error(ctx, "createVersion endpoint: failed to check version existence", err, logData)
 		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, models.InternalError, models.InternalErrorDescription))

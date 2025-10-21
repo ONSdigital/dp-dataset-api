@@ -1138,7 +1138,7 @@ func TestCreateVersion_Success(t *testing.T) {
 		CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
 			return nil
 		},
-		CheckVersionExistsStaticFunc: func(context.Context, string, string, int, string) (bool, error) {
+		CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
 			return false, nil
 		},
 		AddVersionStaticFunc: func(context.Context, *models.Version) (*models.Version, error) {
@@ -1460,7 +1460,7 @@ func TestCreateVersion_Failure(t *testing.T) {
 			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
-			CheckVersionExistsStaticFunc: func(context.Context, string, string, int, string) (bool, error) {
+			CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
 				return true, nil
 			},
 		}
@@ -1498,7 +1498,7 @@ func TestCreateVersion_Failure(t *testing.T) {
 			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
-			CheckVersionExistsStaticFunc: func(context.Context, string, string, int, string) (bool, error) {
+			CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
 				return false, errs.ErrInternalServer
 			},
 		}
@@ -1536,7 +1536,7 @@ func TestCreateVersion_Failure(t *testing.T) {
 			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
-			CheckVersionExistsStaticFunc: func(context.Context, string, string, int, string) (bool, error) {
+			CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
 				return false, nil
 			},
 			AddVersionStaticFunc: func(context.Context, *models.Version) (*models.Version, error) {

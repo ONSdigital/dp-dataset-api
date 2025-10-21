@@ -51,7 +51,7 @@ var _ store.Storer = &StorerMock{}
 //			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID string, editionID string, state string) error {
 //				panic("mock out the CheckEditionExistsStatic method")
 //			},
-//			CheckVersionExistsStaticFunc: func(ctx context.Context, datasetID string, editionID string, version int, state string) (bool, error) {
+//			CheckVersionExistsStaticFunc: func(ctx context.Context, datasetID string, editionID string, version int) (bool, error) {
 //				panic("mock out the CheckVersionExistsStatic method")
 //			},
 //			DeleteDatasetFunc: func(ctx context.Context, ID string) error {
@@ -230,7 +230,7 @@ type StorerMock struct {
 	CheckEditionExistsStaticFunc func(ctx context.Context, datasetID string, editionID string, state string) error
 
 	// CheckVersionExistsStaticFunc mocks the CheckVersionExistsStatic method.
-	CheckVersionExistsStaticFunc func(ctx context.Context, datasetID string, editionID string, version int, state string) (bool, error)
+	CheckVersionExistsStaticFunc func(ctx context.Context, datasetID string, editionID string, version int) (bool, error)
 
 	// DeleteDatasetFunc mocks the DeleteDataset method.
 	DeleteDatasetFunc func(ctx context.Context, ID string) error
@@ -472,8 +472,6 @@ type StorerMock struct {
 			EditionID string
 			// Version is the version argument value.
 			Version int
-			// State is the state argument value.
-			State string
 		}
 		// DeleteDataset holds details about calls to the DeleteDataset method.
 		DeleteDataset []struct {
@@ -1424,7 +1422,7 @@ func (mock *StorerMock) CheckEditionExistsStaticCalls() []struct {
 }
 
 // CheckVersionExistsStatic calls CheckVersionExistsStaticFunc.
-func (mock *StorerMock) CheckVersionExistsStatic(ctx context.Context, datasetID string, editionID string, version int, state string) (bool, error) {
+func (mock *StorerMock) CheckVersionExistsStatic(ctx context.Context, datasetID string, editionID string, version int) (bool, error) {
 	if mock.CheckVersionExistsStaticFunc == nil {
 		panic("StorerMock.CheckVersionExistsStaticFunc: method is nil but Storer.CheckVersionExistsStatic was just called")
 	}
@@ -1433,18 +1431,16 @@ func (mock *StorerMock) CheckVersionExistsStatic(ctx context.Context, datasetID 
 		DatasetID string
 		EditionID string
 		Version   int
-		State     string
 	}{
 		Ctx:       ctx,
 		DatasetID: datasetID,
 		EditionID: editionID,
 		Version:   version,
-		State:     state,
 	}
 	mock.lockCheckVersionExistsStatic.Lock()
 	mock.calls.CheckVersionExistsStatic = append(mock.calls.CheckVersionExistsStatic, callInfo)
 	mock.lockCheckVersionExistsStatic.Unlock()
-	return mock.CheckVersionExistsStaticFunc(ctx, datasetID, editionID, version, state)
+	return mock.CheckVersionExistsStaticFunc(ctx, datasetID, editionID, version)
 }
 
 // CheckVersionExistsStaticCalls gets all the calls that were made to CheckVersionExistsStatic.
@@ -1456,14 +1452,12 @@ func (mock *StorerMock) CheckVersionExistsStaticCalls() []struct {
 	DatasetID string
 	EditionID string
 	Version   int
-	State     string
 } {
 	var calls []struct {
 		Ctx       context.Context
 		DatasetID string
 		EditionID string
 		Version   int
-		State     string
 	}
 	mock.lockCheckVersionExistsStatic.RLock()
 	calls = mock.calls.CheckVersionExistsStatic

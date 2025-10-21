@@ -146,7 +146,7 @@ func TestCheckVersionExistsStatic(t *testing.T) {
 		So(versions, ShouldNotBeEmpty)
 
 		Convey("When CheckVersionExistsStatic is called for an existing version", func() {
-			exists, err := mongo.CheckVersionExistsStatic(ctx, staticDatasetID, "edition1", 1, "")
+			exists, err := mongo.CheckVersionExistsStatic(ctx, staticDatasetID, "edition1", 1)
 			Convey("Then it returns true with no error", func() {
 				So(err, ShouldBeNil)
 				So(exists, ShouldBeTrue)
@@ -154,23 +154,7 @@ func TestCheckVersionExistsStatic(t *testing.T) {
 		})
 
 		Convey("When CheckVersionExistsStatic is called for a non-existing version", func() {
-			exists, err := mongo.CheckVersionExistsStatic(ctx, staticDatasetID, "edition1", 99, "")
-			Convey("Then it returns false with no error", func() {
-				So(err, ShouldBeNil)
-				So(exists, ShouldBeFalse)
-			})
-		})
-
-		Convey("When CheckVersionExistsStatic is called for an existing version with a specific state", func() {
-			exists, err := mongo.CheckVersionExistsStatic(ctx, staticDatasetID, "edition1", 1, "published")
-			Convey("Then it returns true with no error", func() {
-				So(err, ShouldBeNil)
-				So(exists, ShouldBeTrue)
-			})
-		})
-
-		Convey("When CheckVersionExistsStatic is called for an existing version with a non-matching state", func() {
-			exists, err := mongo.CheckVersionExistsStatic(ctx, staticDatasetID, "edition1", 1, "stateThatDoesNotMatch")
+			exists, err := mongo.CheckVersionExistsStatic(ctx, staticDatasetID, "edition1", 99)
 			Convey("Then it returns false with no error", func() {
 				So(err, ShouldBeNil)
 				So(exists, ShouldBeFalse)
@@ -181,7 +165,7 @@ func TestCheckVersionExistsStatic(t *testing.T) {
 			err = mongo.Connection.Close(ctx)
 			So(err, ShouldBeNil)
 
-			exists, err := mongo.CheckVersionExistsStatic(ctx, staticDatasetID, "edition1", 1, "")
+			exists, err := mongo.CheckVersionExistsStatic(ctx, staticDatasetID, "edition1", 1)
 			Convey("Then it returns an error", func() {
 				So(err, ShouldNotBeNil)
 				So(exists, ShouldBeFalse)

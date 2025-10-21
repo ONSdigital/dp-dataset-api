@@ -49,7 +49,7 @@ var _ store.MongoDB = &MongoDBMock{}
 //			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID string, editionID string, state string) error {
 //				panic("mock out the CheckEditionExistsStatic method")
 //			},
-//			CheckVersionExistsStaticFunc: func(ctx context.Context, datasetID string, editionID string, version int, state string) (bool, error) {
+//			CheckVersionExistsStaticFunc: func(ctx context.Context, datasetID string, editionID string, version int) (bool, error) {
 //				panic("mock out the CheckVersionExistsStatic method")
 //			},
 //			CheckerFunc: func(contextMoqParam context.Context, checkState *healthcheck.CheckState) error {
@@ -228,7 +228,7 @@ type MongoDBMock struct {
 	CheckEditionExistsStaticFunc func(ctx context.Context, datasetID string, editionID string, state string) error
 
 	// CheckVersionExistsStaticFunc mocks the CheckVersionExistsStatic method.
-	CheckVersionExistsStaticFunc func(ctx context.Context, datasetID string, editionID string, version int, state string) (bool, error)
+	CheckVersionExistsStaticFunc func(ctx context.Context, datasetID string, editionID string, version int) (bool, error)
 
 	// CheckerFunc mocks the Checker method.
 	CheckerFunc func(contextMoqParam context.Context, checkState *healthcheck.CheckState) error
@@ -460,8 +460,6 @@ type MongoDBMock struct {
 			EditionID string
 			// Version is the version argument value.
 			Version int
-			// State is the state argument value.
-			State string
 		}
 		// Checker holds details about calls to the Checker method.
 		Checker []struct {
@@ -1369,7 +1367,7 @@ func (mock *MongoDBMock) CheckEditionExistsStaticCalls() []struct {
 }
 
 // CheckVersionExistsStatic calls CheckVersionExistsStaticFunc.
-func (mock *MongoDBMock) CheckVersionExistsStatic(ctx context.Context, datasetID string, editionID string, version int, state string) (bool, error) {
+func (mock *MongoDBMock) CheckVersionExistsStatic(ctx context.Context, datasetID string, editionID string, version int) (bool, error) {
 	if mock.CheckVersionExistsStaticFunc == nil {
 		panic("MongoDBMock.CheckVersionExistsStaticFunc: method is nil but MongoDB.CheckVersionExistsStatic was just called")
 	}
@@ -1378,18 +1376,16 @@ func (mock *MongoDBMock) CheckVersionExistsStatic(ctx context.Context, datasetID
 		DatasetID string
 		EditionID string
 		Version   int
-		State     string
 	}{
 		Ctx:       ctx,
 		DatasetID: datasetID,
 		EditionID: editionID,
 		Version:   version,
-		State:     state,
 	}
 	mock.lockCheckVersionExistsStatic.Lock()
 	mock.calls.CheckVersionExistsStatic = append(mock.calls.CheckVersionExistsStatic, callInfo)
 	mock.lockCheckVersionExistsStatic.Unlock()
-	return mock.CheckVersionExistsStaticFunc(ctx, datasetID, editionID, version, state)
+	return mock.CheckVersionExistsStaticFunc(ctx, datasetID, editionID, version)
 }
 
 // CheckVersionExistsStaticCalls gets all the calls that were made to CheckVersionExistsStatic.
@@ -1401,14 +1397,12 @@ func (mock *MongoDBMock) CheckVersionExistsStaticCalls() []struct {
 	DatasetID string
 	EditionID string
 	Version   int
-	State     string
 } {
 	var calls []struct {
 		Ctx       context.Context
 		DatasetID string
 		EditionID string
 		Version   int
-		State     string
 	}
 	mock.lockCheckVersionExistsStatic.RLock()
 	calls = mock.calls.CheckVersionExistsStatic
