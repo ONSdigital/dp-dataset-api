@@ -373,7 +373,7 @@ func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
 
 	isStatic, err := api.dataStore.Backend.IsStaticDataset(ctx, vars["dataset_id"])
 	if err != nil {
-		log.Error(ctx, "deleteVersion: failed to determine if dataset is static", err, logData)
+		log.Error(ctx, "deleteVersion: failed to determine dataset type", err, logData)
 		handleVersionAPIErr(ctx, err, w, logData)
 		return
 	}

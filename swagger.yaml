@@ -726,7 +726,7 @@ paths:
       tags:
         - "Private"
       summary: "Delete a version"
-      description: "detaches a version from a collection. Effectively a soft delete."
+      description: "detache/delete a version from a dataset. For CMD and Cantabular datasets, the version is `soft-deleted`. For static datasets, the version is `permanently deleted` from the versions collection."
       parameters:
         - $ref: "#/parameters/edition"
         - $ref: "#/parameters/dataset_id"
@@ -735,18 +735,17 @@ paths:
         - Authorization: []
       responses:
         200:
-          description: "A json object containing the edition and version of a dataset"
+          description: "A json object containing the edition and version of a dataset. For CMD, Cantabular"
           schema:
             $ref: "#/definitions/Version"
-        400:
-          description: |
-            Invalid request, reasons can be one of the following:
-              * dataset id was incorrect
-              * edition was incorrect
-              * version state was incorrect
-              * not the most recent unpublished version
+        204:
+          description: "Version successfully deleted (no content). For static datasets"
+        403:
+          description: "Forbidden – published static versions cannot be deleted"
         404:
           description: "No version was found for an edition of a dataset using the id, edition and version provided"
+        405:
+          description: "Requested method is not allowed"
         500:
           $ref: "#/responses/InternalError"
   /datasets/{id}/editions/{edition}/versions/{version}/state:
