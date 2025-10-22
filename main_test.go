@@ -31,13 +31,11 @@ func (f *ComponentTest) InitializeScenario(godogCtx *godog.ScenarioContext) {
 		panic(err)
 	}
 
-	apiFeature := componenttest.NewAPIFeature(datasetFeature.InitialiseService)
-
 	godogCtx.Before(func(ctx context.Context, _ *godog.Scenario) (context.Context, error) {
-		apiFeature.Reset()
 		if err := datasetFeature.Reset(); err != nil {
-			panic(err)
+			log.Error(context.Background(), "failed to reset dataset feature", err)
 		}
+
 		if err := f.MongoFeature.Reset(); err != nil {
 			log.Error(context.Background(), "failed to reset mongo feature", err)
 		}
@@ -52,7 +50,6 @@ func (f *ComponentTest) InitializeScenario(godogCtx *godog.ScenarioContext) {
 	})
 
 	datasetFeature.RegisterSteps(godogCtx)
-	apiFeature.RegisterSteps(godogCtx)
 	authorizationFeature.RegisterSteps(godogCtx)
 }
 

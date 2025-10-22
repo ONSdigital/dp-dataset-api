@@ -13,6 +13,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -547,7 +548,7 @@ func TestAddDatasetVersionCondensed_Success(t *testing.T) {
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		successResponse, errorResponse := api.addDatasetVersionCondensed(testContext, w, r)
+		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
 
 		So(successResponse.Status, ShouldEqual, http.StatusCreated)
 		So(errorResponse, ShouldBeNil)
@@ -617,7 +618,7 @@ func TestAddDatasetVersionCondensed_Success(t *testing.T) {
 		}
 
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getAuthorisationHandlerMock(), getAuthorisationHandlerMock())
-		successResponse, errorResponse := api.addDatasetVersionCondensed(testContext, w, r)
+		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
 
 		So(successResponse.Status, ShouldEqual, http.StatusCreated)
 		So(errorResponse, ShouldBeNil)
@@ -654,7 +655,7 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		successResponse, errorResponse := api.addDatasetVersionCondensed(testContext, w, r)
+		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
 
 		castErr := errorResponse.Errors[0]
 		So(errorResponse.Status, ShouldEqual, http.StatusBadRequest)
@@ -696,7 +697,7 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		successResponse, errorResponse := api.addDatasetVersionCondensed(testContext, w, r)
+		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
 
 		So(successResponse.Status, ShouldEqual, http.StatusCreated)
 		So(errorResponse, ShouldBeNil)
@@ -725,7 +726,7 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		successResponse, errorResponse := api.addDatasetVersionCondensed(testContext, w, r)
+		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
 
 		So(errorResponse.Status, ShouldEqual, http.StatusInternalServerError)
 		So(successResponse, ShouldBeNil)
@@ -808,7 +809,7 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		successResponse, errorResponse := api.addDatasetVersionCondensed(testContext, w, r)
+		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
 
 		So(errorResponse.Status, ShouldEqual, http.StatusNotFound)
 		So(successResponse, ShouldBeNil)
@@ -906,7 +907,7 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 		permissions := getAuthorisationHandlerMock()
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
 
-		successResponse, errorResponse := api.addDatasetVersionCondensed(testContext, w, r)
+		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
 
 		So(successResponse.Status, ShouldEqual, http.StatusCreated)
 		So(errorResponse, ShouldBeNil)
@@ -949,7 +950,7 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		successResponse, errorResponse := api.addDatasetVersionCondensed(testContext, w, r)
+		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
 
 		So(errorResponse.Status, ShouldEqual, http.StatusBadRequest)
 		So(successResponse, ShouldBeNil)
@@ -1010,12 +1011,590 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
-		successResponse, errorResponse := api.addDatasetVersionCondensed(testContext, w, r)
+		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
 
 		So(errorResponse.Status, ShouldEqual, http.StatusBadRequest)
 		err := errorResponse.Errors[0]
 		So(err.Code, ShouldEqual, models.ErrInvalidTypeError)
-		So(err.Description, ShouldEqual, models.ErrInvalidType)
+		So(err.Description, ShouldEqual, models.ErrTypeNotStaticDescription)
 		So(successResponse, ShouldBeNil)
+	})
+}
+
+func TestCreateVersion_Success(t *testing.T) {
+	t.Parallel()
+
+	validVersion := &models.Version{
+		EditionTitle: "New edition title",
+		ReleaseDate:  "2025-01-01",
+		Distributions: &[]models.Distribution{
+			{
+				Title:       "Distribution 1",
+				Format:      "csv",
+				DownloadURL: "path/to/download/1",
+				ByteSize:    100,
+				MediaType:   "text/csv",
+			},
+			{
+				Title:       "Distribution 2",
+				Format:      "csv",
+				DownloadURL: "path/to/download/2",
+				ByteSize:    200,
+				MediaType:   "text/csv",
+			},
+		},
+		QualityDesignation: models.QualityDesignationOfficial,
+		Alerts: &[]models.Alert{
+			{
+				Description: "First alert",
+				Type:        models.AlertTypeAlert,
+			},
+			{
+				Description: "First correction",
+				Type:        models.AlertTypeCorrection,
+			},
+		},
+		UsageNotes: &[]models.UsageNote{
+			{
+				Note:  "Note 1",
+				Title: "Usage Note 1",
+			},
+			{
+				Note:  "Note 2",
+				Title: "Usage Note 2",
+			},
+		},
+		Type: models.Static.String(),
+	}
+
+	expectedVersion := &models.Version{
+		EditionTitle: "New edition title",
+		ReleaseDate:  "2025-01-01",
+		Distributions: &[]models.Distribution{
+			{
+				Title:       "Distribution 1",
+				Format:      "csv",
+				DownloadURL: "path/to/download/1",
+				ByteSize:    100,
+				MediaType:   "text/csv",
+			},
+			{
+				Title:       "Distribution 2",
+				Format:      "csv",
+				DownloadURL: "path/to/download/2",
+				ByteSize:    200,
+				MediaType:   "text/csv",
+			},
+		},
+		QualityDesignation: models.QualityDesignationOfficial,
+		Alerts: &[]models.Alert{
+			{
+				Description: "First alert",
+				Type:        models.AlertTypeAlert,
+			},
+			{
+				Description: "First correction",
+				Type:        models.AlertTypeCorrection,
+			},
+		},
+		UsageNotes: &[]models.UsageNote{
+			{
+				Note:  "Note 1",
+				Title: "Usage Note 1",
+			},
+			{
+				Note:  "Note 2",
+				Title: "Usage Note 2",
+			},
+		},
+		Edition: "edition1",
+		Version: 1,
+		Type:    models.Static.String(),
+		State:   models.AssociatedState,
+		Links: &models.VersionLinks{
+			Dataset: &models.LinkObject{
+				ID:   "123",
+				HRef: "/datasets/123",
+			},
+			Edition: &models.LinkObject{
+				ID:   "edition1",
+				HRef: "/datasets/123/editions/edition1",
+			},
+			Version: &models.LinkObject{
+				ID:   "1",
+				HRef: "/datasets/123/editions/edition1/versions/1",
+			},
+			Self: &models.LinkObject{
+				ID:   "1",
+				HRef: "/datasets/123/editions/edition1/versions/1",
+			},
+		},
+		ETag: "etag",
+	}
+
+	mockedDataStore := &storetest.StorerMock{
+		CheckDatasetExistsFunc: func(context.Context, string, string) error {
+			return nil
+		},
+		CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+			return nil
+		},
+		CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
+			return false, nil
+		},
+		AddVersionStaticFunc: func(context.Context, *models.Version) (*models.Version, error) {
+			return expectedVersion, nil
+		},
+	}
+
+	datasetPermissions := getAuthorisationHandlerMock()
+	permissions := getAuthorisationHandlerMock()
+
+	Convey("Given a valid request to createVersion", t, func() {
+		validVersionJSON, err := json.Marshal(validVersion)
+		So(err, ShouldBeNil)
+
+		returnedVersionJSON, err := json.Marshal(expectedVersion)
+		So(err, ShouldBeNil)
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(validVersionJSON))
+		vars := map[string]string{
+			"dataset_id": "123",
+			"edition":    "edition1",
+			"version":    "1",
+		}
+		r = mux.SetURLVars(r, vars)
+		w := httptest.NewRecorder()
+
+		Convey("When createVersion is called", func() {
+			successResponse, errorResponse := api.createVersion(w, r)
+
+			Convey("Then it should return a 201 status code with the created version", func() {
+				So(errorResponse, ShouldBeNil)
+				So(successResponse.Status, ShouldEqual, http.StatusCreated)
+				So(successResponse.Body, ShouldEqual, returnedVersionJSON)
+			})
+
+			Convey("And the eTag header should be set", func() {
+				So(w.Header().Get("ETag"), ShouldEqual, "etag")
+			})
+		})
+	})
+}
+
+func TestCreateVersion_Failure(t *testing.T) {
+	t.Parallel()
+
+	validVersion := &models.Version{
+		EditionTitle: "New edition title",
+		ReleaseDate:  "2025-01-01",
+		Distributions: &[]models.Distribution{
+			{
+				Title:       "Distribution 1",
+				Format:      "csv",
+				DownloadURL: "path/to/download/1",
+				ByteSize:    100,
+				MediaType:   "text/csv",
+			},
+			{
+				Title:       "Distribution 2",
+				Format:      "csv",
+				DownloadURL: "path/to/download/2",
+				ByteSize:    200,
+				MediaType:   "text/csv",
+			},
+		},
+		QualityDesignation: models.QualityDesignationOfficial,
+		Alerts: &[]models.Alert{
+			{
+				Description: "First alert",
+				Type:        models.AlertTypeAlert,
+			},
+			{
+				Description: "First correction",
+				Type:        models.AlertTypeCorrection,
+			},
+		},
+		UsageNotes: &[]models.UsageNote{
+			{
+				Note:  "Note 1",
+				Title: "Usage Note 1",
+			},
+			{
+				Note:  "Note 2",
+				Title: "Usage Note 2",
+			},
+		},
+		Type: models.Static.String(),
+	}
+
+	mockedDataStore := &storetest.StorerMock{}
+	datasetPermissions := getAuthorisationHandlerMock()
+	permissions := getAuthorisationHandlerMock()
+
+	Convey("When the JSON body provided is invalid", t, func() {
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/invalid", http.NoBody)
+		vars := map[string]string{
+			"dataset_id": "123",
+			"edition":    "edition1",
+			"version":    "1",
+		}
+		r = mux.SetURLVars(r, vars)
+		w := httptest.NewRecorder()
+
+		Convey("When createVersion is called", func() {
+			successResponse, errorResponse := api.createVersion(w, r)
+
+			Convey("Then it should return a 400 status code with an error message", func() {
+				So(successResponse, ShouldBeNil)
+				So(errorResponse.Status, ShouldEqual, http.StatusBadRequest)
+				So(errorResponse.Errors[0].Code, ShouldEqual, models.JSONUnmarshalError)
+				So(errorResponse.Errors[0].Description, ShouldEqual, "failed to unmarshal version")
+			})
+		})
+	})
+
+	Convey("When the version number provided is invalid", t, func() {
+		validVersionJSON, err := json.Marshal(validVersion)
+		So(err, ShouldBeNil)
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/invalid", bytes.NewBuffer(validVersionJSON))
+		vars := map[string]string{
+			"dataset_id": "123",
+			"edition":    "edition1",
+			"version":    "invalid",
+		}
+		r = mux.SetURLVars(r, vars)
+		w := httptest.NewRecorder()
+
+		Convey("When createVersion is called", func() {
+			successResponse, errorResponse := api.createVersion(w, r)
+
+			Convey("Then it should return a 400 status code with an error message", func() {
+				So(successResponse, ShouldBeNil)
+				So(errorResponse.Status, ShouldEqual, http.StatusBadRequest)
+				So(errorResponse.Errors[0].Code, ShouldEqual, models.ErrInvalidQueryParameter)
+				So(errorResponse.Errors[0].Description, ShouldEqual, models.ErrInvalidQueryParameterDescription+": version")
+			})
+		})
+	})
+
+	Convey("When the version type is not static", t, func() {
+		invalidTypeVersion := &models.Version{
+			Type: "Not-Static",
+		}
+		invalidTypeVersionJSON, err := json.Marshal(invalidTypeVersion)
+		So(err, ShouldBeNil)
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(invalidTypeVersionJSON))
+		vars := map[string]string{
+			"dataset_id": "123",
+			"edition":    "edition1",
+			"version":    "1",
+		}
+		r = mux.SetURLVars(r, vars)
+		w := httptest.NewRecorder()
+
+		Convey("When createVersion is called", func() {
+			successResponse, errorResponse := api.createVersion(w, r)
+
+			Convey("Then it should return a 400 status code with an error message", func() {
+				So(successResponse, ShouldBeNil)
+				So(errorResponse.Status, ShouldEqual, http.StatusBadRequest)
+				So(errorResponse.Errors[0].Code, ShouldEqual, models.ErrInvalidTypeError)
+				So(errorResponse.Errors[0].Description, ShouldEqual, models.ErrTypeNotStaticDescription)
+			})
+		})
+	})
+
+	Convey("When all mandatory fields are not provided", t, func() {
+		invalidVersion := &models.Version{
+			Version: 1,
+			Type:    models.Static.String(),
+		}
+		invalidVersionJSON, err := json.Marshal(invalidVersion)
+		So(err, ShouldBeNil)
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/100", bytes.NewBuffer(invalidVersionJSON))
+		vars := map[string]string{
+			"dataset_id": "123",
+			"edition":    "edition1",
+			"version":    "1",
+		}
+		r = mux.SetURLVars(r, vars)
+		w := httptest.NewRecorder()
+
+		Convey("When createVersion is called", func() {
+			successResponse, errorResponse := api.createVersion(w, r)
+
+			Convey("Then it should return a 400 status code with all the mandatory field errors", func() {
+				So(successResponse, ShouldBeNil)
+				So(errorResponse.Status, ShouldEqual, http.StatusBadRequest)
+				So(errorResponse.Errors, ShouldHaveLength, 3)
+
+				So(errorResponse.Errors[0].Code, ShouldEqual, models.ErrMissingParameters)
+				So(errorResponse.Errors[0].Description, ShouldEqual, models.ErrMissingParametersDescription+": release_date")
+				So(errorResponse.Errors[1].Code, ShouldEqual, models.ErrMissingParameters)
+				So(errorResponse.Errors[1].Description, ShouldEqual, models.ErrMissingParametersDescription+": distributions")
+				So(errorResponse.Errors[2].Code, ShouldEqual, models.ErrMissingParameters)
+				So(errorResponse.Errors[2].Description, ShouldEqual, models.ErrMissingParametersDescription+": edition_title")
+			})
+		})
+	})
+
+	Convey("When the dataset does not exist", t, func() {
+		validVersionJSON, err := json.Marshal(validVersion)
+		So(err, ShouldBeNil)
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return errs.ErrDatasetNotFound
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(validVersionJSON))
+		vars := map[string]string{
+			"dataset_id": "123",
+			"edition":    "edition1",
+			"version":    "1",
+		}
+		r = mux.SetURLVars(r, vars)
+		w := httptest.NewRecorder()
+
+		Convey("When createVersion is called", func() {
+			successResponse, errorResponse := api.createVersion(w, r)
+
+			Convey("Then it should return a 404 status code with an error message", func() {
+				So(successResponse, ShouldBeNil)
+				So(errorResponse.Status, ShouldEqual, http.StatusNotFound)
+				So(errorResponse.Errors[0].Code, ShouldEqual, models.ErrDatasetNotFound)
+				So(errorResponse.Errors[0].Description, ShouldEqual, models.ErrDatasetNotFoundDescription)
+			})
+		})
+	})
+
+	Convey("When checking if the dataset exists returns an error", t, func() {
+		validVersionJSON, err := json.Marshal(validVersion)
+		So(err, ShouldBeNil)
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return errs.ErrInternalServer
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(validVersionJSON))
+		vars := map[string]string{
+			"dataset_id": "123",
+			"edition":    "edition1",
+			"version":    "1",
+		}
+		r = mux.SetURLVars(r, vars)
+		w := httptest.NewRecorder()
+
+		Convey("When createVersion is called", func() {
+			successResponse, errorResponse := api.createVersion(w, r)
+
+			Convey("Then it should return a 500 status code with an error message", func() {
+				So(successResponse, ShouldBeNil)
+				So(errorResponse.Status, ShouldEqual, http.StatusInternalServerError)
+				So(errorResponse.Errors[0].Code, ShouldEqual, models.InternalError)
+				So(errorResponse.Errors[0].Description, ShouldEqual, models.InternalErrorDescription)
+			})
+		})
+	})
+
+	Convey("When the edition does not exist", t, func() {
+		validVersionJSON, err := json.Marshal(validVersion)
+		So(err, ShouldBeNil)
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return errs.ErrEditionNotFound
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(validVersionJSON))
+		vars := map[string]string{
+			"dataset_id": "123",
+			"edition":    "edition1",
+			"version":    "1",
+		}
+		r = mux.SetURLVars(r, vars)
+		w := httptest.NewRecorder()
+
+		Convey("When createVersion is called", func() {
+			successResponse, errorResponse := api.createVersion(w, r)
+
+			Convey("Then it should return a 404 status code with an error message", func() {
+				So(successResponse, ShouldBeNil)
+				So(errorResponse.Status, ShouldEqual, http.StatusNotFound)
+				So(errorResponse.Errors[0].Code, ShouldEqual, models.ErrEditionNotFound)
+				So(errorResponse.Errors[0].Description, ShouldEqual, models.ErrEditionNotFoundDescription)
+			})
+		})
+	})
+
+	Convey("When checking if the edition exists returns an error", t, func() {
+		validVersionJSON, err := json.Marshal(validVersion)
+		So(err, ShouldBeNil)
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return errs.ErrInternalServer
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(validVersionJSON))
+		vars := map[string]string{
+			"dataset_id": "123",
+			"edition":    "edition1",
+			"version":    "1",
+		}
+		r = mux.SetURLVars(r, vars)
+		w := httptest.NewRecorder()
+
+		Convey("When createVersion is called", func() {
+			successResponse, errorResponse := api.createVersion(w, r)
+
+			Convey("Then it should return a 500 status code with an error message", func() {
+				So(successResponse, ShouldBeNil)
+				So(errorResponse.Status, ShouldEqual, http.StatusInternalServerError)
+				So(errorResponse.Errors[0].Code, ShouldEqual, models.InternalError)
+				So(errorResponse.Errors[0].Description, ShouldEqual, models.InternalErrorDescription)
+			})
+		})
+	})
+
+	Convey("When the version already exists", t, func() {
+		validVersionJSON, err := json.Marshal(validVersion)
+		So(err, ShouldBeNil)
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
+				return true, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(validVersionJSON))
+		vars := map[string]string{
+			"dataset_id": "123",
+			"edition":    "edition1",
+			"version":    "1",
+		}
+		r = mux.SetURLVars(r, vars)
+		w := httptest.NewRecorder()
+
+		Convey("When createVersion is called", func() {
+			successResponse, errorResponse := api.createVersion(w, r)
+
+			Convey("Then it should return a 409 status code with an error message", func() {
+				So(successResponse, ShouldBeNil)
+				So(errorResponse.Status, ShouldEqual, http.StatusConflict)
+				So(errorResponse.Errors[0].Code, ShouldEqual, models.ErrVersionAlreadyExists)
+				So(errorResponse.Errors[0].Description, ShouldEqual, models.ErrVersionAlreadyExistsDescription)
+			})
+		})
+	})
+
+	Convey("When checking if the version exists returns an error", t, func() {
+		validVersionJSON, err := json.Marshal(validVersion)
+		So(err, ShouldBeNil)
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
+				return false, errs.ErrInternalServer
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(validVersionJSON))
+		vars := map[string]string{
+			"dataset_id": "123",
+			"edition":    "edition1",
+			"version":    "1",
+		}
+		r = mux.SetURLVars(r, vars)
+		w := httptest.NewRecorder()
+
+		Convey("When createVersion is called", func() {
+			successResponse, errorResponse := api.createVersion(w, r)
+
+			Convey("Then it should return a 500 status code with an error message", func() {
+				So(successResponse, ShouldBeNil)
+				So(errorResponse.Status, ShouldEqual, http.StatusInternalServerError)
+				So(errorResponse.Errors[0].Code, ShouldEqual, models.InternalError)
+				So(errorResponse.Errors[0].Description, ShouldEqual, models.InternalErrorDescription)
+			})
+		})
+	})
+
+	Convey("When adding the version to the datastore returns an error", t, func() {
+		validVersionJSON, err := json.Marshal(validVersion)
+		So(err, ShouldBeNil)
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
+				return false, nil
+			},
+			AddVersionStaticFunc: func(context.Context, *models.Version) (*models.Version, error) {
+				return nil, errs.ErrInternalServer
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(validVersionJSON))
+		vars := map[string]string{
+			"dataset_id": "123",
+			"edition":    "edition1",
+			"version":    "1",
+		}
+		r = mux.SetURLVars(r, vars)
+		w := httptest.NewRecorder()
+
+		Convey("When createVersion is called", func() {
+			successResponse, errorResponse := api.createVersion(w, r)
+
+			Convey("Then it should return a 500 status code with an error message", func() {
+				So(successResponse, ShouldBeNil)
+				So(errorResponse.Status, ShouldEqual, http.StatusInternalServerError)
+				So(errorResponse.Errors[0].Code, ShouldEqual, models.InternalError)
+				So(errorResponse.Errors[0].Description, ShouldEqual, models.InternalErrorDescription)
+			})
+		})
 	})
 }

@@ -3114,11 +3114,9 @@ func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			IsStaticDatasetFunc: func(context.Context, string) (bool, error) {
-				log.Info(context.Background(), "mocked IsStaticDatasetFunc called")
 				return true, nil
 			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				log.Info(context.Background(), "mocked GetDatasetFunc called")
 				return &models.DatasetUpdate{
 					ID: "123",
 					Current: &models.Dataset{
@@ -3127,7 +3125,6 @@ func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
 				}, nil
 			},
 			DeleteStaticDatasetVersionFunc: func(context.Context, string, string, string) error {
-				log.Info(context.Background(), "mocked DeleteStaticDatasetVersionFunc called")
 				return errs.ErrVersionNotFound
 			},
 		}
@@ -3159,11 +3156,9 @@ func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			IsStaticDatasetFunc: func(context.Context, string) (bool, error) {
-				log.Info(context.Background(), "mocked IsStaticDatasetFunc called")
 				return true, nil
 			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				log.Info(context.Background(), "mocked GetDatasetFunc called")
 				return &models.DatasetUpdate{
 					ID: "123",
 					Current: &models.Dataset{
@@ -3172,7 +3167,6 @@ func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
 				}, nil
 			},
 			DeleteStaticDatasetVersionFunc: func(context.Context, string, string, string) error {
-				log.Info(context.Background(), "mocked DeleteStaticDatasetVersionFunc called")
 				return errs.ErrDeletePublishedVersionForbidden
 			},
 		}

@@ -23,6 +23,7 @@ import (
 
 type DatasetComponent struct {
 	ErrorFeature   componenttest.ErrorFeature
+	apiFeature     *componenttest.APIFeature
 	svc            *service.Service
 	errorChan      chan error
 	MongoClient    *mongo.Mongo
@@ -74,6 +75,7 @@ func NewDatasetComponent(mongoURI, zebedeeURL string) (*DatasetComponent, error)
 	}
 
 	c.MongoClient = mongodb
+	c.apiFeature = componenttest.NewAPIFeature(c.InitialiseService)
 
 	return c, nil
 }

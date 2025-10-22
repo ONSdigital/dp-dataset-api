@@ -64,10 +64,10 @@ func (m *Mongo) AddVersionStatic(ctx context.Context, version *models.Version) (
 	return version, nil
 }
 
-// CheckEditionExists checks that the edition of a dataset exists in the versions collection
-func (m *Mongo) CheckEditionExistsStatic(ctx context.Context, id, editionID, state string) error {
+// CheckEditionExistsStatic checks that the edition of a dataset exists in the versions collection
+func (m *Mongo) CheckEditionExistsStatic(ctx context.Context, datasetID, editionID, state string) error {
 	query := bson.M{
-		"links.dataset.id": id,
+		"links.dataset.id": datasetID,
 		"links.edition.id": editionID,
 	}
 	if state != "" {
@@ -83,6 +83,22 @@ func (m *Mongo) CheckEditionExistsStatic(ctx context.Context, id, editionID, sta
 	}
 
 	return nil
+}
+
+// CheckVersionExistsStatic checks that the version of a dataset exists in the versions collection
+func (m *Mongo) CheckVersionExistsStatic(ctx context.Context, datasetID, editionID string, version int) (bool, error) {
+	query := bson.M{
+		"links.dataset.id": datasetID,
+		"links.edition.id": editionID,
+		"version":          version,
+	}
+
+	count, err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Count(ctx, query)
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
 }
 
 // GetStaticVersionsByState retrieves all versions that match the provided state
