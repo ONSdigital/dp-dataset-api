@@ -107,8 +107,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                 "type": "static"
             }
             """
-        Then the HTTP status code should be "201"
-        And I should receive the following JSON response with a dynamic timestamp:
+        Then I should receive the following JSON response with status "201":
             """
             {
                 "dataset_id": "static-dataset-1",
