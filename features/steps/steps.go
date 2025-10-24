@@ -57,7 +57,21 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I should receive the following JSON response with a dynamic timestamp:$`, c.IShouldReceiveTheFollowingJSONResponseWithADynamicTimestamp)
 	ctx.Step(`^the response header "([^"]*)" should not be empty$`, c.theResponseHeaderShouldNotBeEmpty)
 	ctx.Step(`^the dataset "([^"]*)" should have next equal to current$`, c.theDatasetShouldHaveNextEqualToCurrent)
+	ctx.Step(`^the "([^"]*)" feature flag is "([^"]*)"$`, c.theFeatureFlagIs)
 }
+
+func (c *DatasetComponent) theFeatureFlagIs(flagName, status string) error {
+	switch flagName {
+	case "ENABLE_DETACH_DATASET":
+		c.Config.EnableDetachDataset = status == "true"
+	case "ENABLE_DELETE_STATIC_VERSION":
+		c.Config.EnableDeleteStaticVersion = status == "true"
+	default:
+		return fmt.Errorf("unknown feature flag: %s", flagName)
+	}
+	return nil
+}
+
 func (c *DatasetComponent) thereAreNoDatasets() error {
 	return c.MongoClient.Connection.DropDatabase(context.Background())
 }

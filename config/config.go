@@ -105,7 +105,7 @@ func Get() (*Configuration, error) {
 		OtelEnabled:                    false,
 		EnablePrivateEndpoints:         false,
 		EnableDetachDataset:            false,
-		EnableDeleteStaticVersion:      true,
+		EnableDeleteStaticVersion:      false,
 		EnablePermissionsAuth:          false,
 		EnableObservationEndpoint:      true,
 		EnableURLRewriting:             false,

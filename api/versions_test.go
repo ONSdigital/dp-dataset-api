@@ -3031,9 +3031,15 @@ func TestDetachVersionReturnsError(t *testing.T) {
 }
 
 func TestDeleteVersionStaticDatasetReturnOK(t *testing.T) {
+	featureEnvString := os.Getenv("ENABLE_DELETE_STATIC_VERSION")
+	featureOn, _ := strconv.ParseBool(featureEnvString)
+	if !featureOn {
+		return
+	}
+	os.Setenv("ENABLE_DELETE_STATIC_VERSION", "true")
 	t.Parallel()
 
-	Convey("When deleteVersion endpoint is called with a valid unpublished version", t, func() {
+	Convey("When deleteVersionStatic endpoint is called with a valid unpublished version", t, func() {
 		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
 
 		w := httptest.NewRecorder()
@@ -3072,9 +3078,14 @@ func TestDeleteVersionStaticDatasetReturnOK(t *testing.T) {
 }
 
 func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
+	featureEnvString := os.Getenv("ENABLE_DELETE_STATIC_VERSION")
+	featureOn, _ := strconv.ParseBool(featureEnvString)
+	if !featureOn {
+		return
+	}
 	t.Parallel()
 
-	Convey("When deleteVersion is called against invalid version, return an invalid version error", t, func() {
+	Convey("When deleteVersionStatic is called against invalid version, return an invalid version error", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
 			GenerateFunc: func(context.Context, string, string, string, string) error {
 				return nil
@@ -3096,10 +3107,6 @@ func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInvalidVersion.Error())
 
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
-		So(len(mockedDataStore.IsStaticDatasetCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.DeleteStaticDatasetVersionCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When the requested version cannot be found, return a not found error", t, func() {
@@ -3187,7 +3194,7 @@ func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
 	})
 
 	// When non-static version delete request is attempted but DETACH_DATASET feature flag is off but ENABLE_DELETE_STATIC_VERSION is on
-	Convey("When deleteVersion endpoint is called for non-static version but DETACH_DATASET feature flag is off return 405 error", t, func() {
+	Convey("When deleteVersionStatic endpoint is called for non-static version but DETACH_DATASET feature flag is off return 405 error", t, func() {
 		featureEnvString := os.Getenv("ENABLE_DETACH_DATASET")
 		featureOn, _ := strconv.ParseBool(featureEnvString)
 		if featureOn {

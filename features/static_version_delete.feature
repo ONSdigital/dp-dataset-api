@@ -110,6 +110,8 @@ Feature: Static Dataset Version DELETE API
         Given private endpoints are enabled
         And I am identified as "user@ons.gov.uk"
         And I am authorised
+        And the "ENABLE_DETACH_DATASET" feature flag is "false"
+        And the "ENABLE_DELETE_STATIC_VERSION" feature flag is "true"
         When I DELETE "/datasets/static-dataset-test/editions/2024/versions/1"
         Then the HTTP status code should be "204"
         And the static version "static-version-approved" should not exist
@@ -120,6 +122,8 @@ Feature: Static Dataset Version DELETE API
         Given private endpoints are enabled
         And I am identified as "user@ons.gov.uk"
         And I am authorised
+        And the "ENABLE_DETACH_DATASET" feature flag is "false"
+        And the "ENABLE_DELETE_STATIC_VERSION" feature flag is "true"
         When I DELETE "/datasets/static-dataset-test/editions/2024/versions/99"
         Then the HTTP status code should be "404"
         And I should receive the following response:
@@ -131,6 +135,8 @@ Feature: Static Dataset Version DELETE API
         Given private endpoints are enabled
         And I am identified as "user@ons.gov.uk"
         And I am authorised
+        And the "ENABLE_DETACH_DATASET" feature flag is "false"
+        And the "ENABLE_DELETE_STATIC_VERSION" feature flag is "true"
         When I DELETE "/datasets/static-dataset-published/editions/2025/versions/1"
         Then the HTTP status code should be "403"
         And I should receive the following response:
@@ -142,6 +148,8 @@ Feature: Static Dataset Version DELETE API
     Given private endpoints are enabled
         And I am identified as "user@ons.gov.uk"
         And I am authorised
+        And the "ENABLE_DETACH_DATASET" feature flag is "false"
+        And the "ENABLE_DELETE_STATIC_VERSION" feature flag is "true"
         When I DELETE "/datasets/non-static-dataset-no-versions/editions/2025/versions/1"
         Then the HTTP status code should be "405"
         And I should receive the following response:

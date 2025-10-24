@@ -59,6 +59,7 @@ var (
 	ErrFileMetadataNotFound               = errors.New("file metadata not found")
 	ErrFileNotInCorrectState              = errors.New("file not in correct state")
 	ErrInvalidParamCombination            = errors.New("cannot request state and published parameters at the same time")
+	ErrMethodNotAllowed                   = errors.New("method not allowed")
 
 	ErrExpectedResourceStateOfCreated          = errors.New("unable to update resource, expected resource to have a state of created")
 	ErrExpectedResourceStateOfSubmitted        = errors.New("unable to update resource, expected resource to have a state of submitted")
@@ -109,5 +110,9 @@ var (
 		ErrExpectedResourceStateOfAssociated:       true,
 		ErrResourcePublished:                       true,
 		ErrDeletePublishedVersionForbidden:         true,
+	}
+
+	NotAllowedMap = map[error]bool{
+		ErrMethodNotAllowed: true,
 	}
 )

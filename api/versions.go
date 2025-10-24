@@ -378,21 +378,22 @@ func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var handler func(http.ResponseWriter, *http.Request)
+	var enabled bool
+
 	if isStatic {
-		api.deleteStaticVersion(w, r)
+		handler = api.deleteStaticVersion
+		enabled = api.enableDeleteStaticVersion
 	} else {
-		// Validate detach feature flag is enabled
-		if api.enableDetachDataset {
-			api.detachVersion(w, r)
-			return
-		} else {
-			// define and log error for disabled feature flag
-			err := errors.New("method not allowed")
-			handleVersionAPIErr(ctx, err, w, logData)
-			return
-		}
+		handler = api.detachVersion
+		enabled = api.enableDetachDataset
 	}
-	log.Info(ctx, "deleteVersion: version deleted successfully", logData)
+
+	if enabled {
+		handler(w, r)
+		return
+	}
+	handleVersionAPIErr(ctx, errs.ErrMethodNotAllowed, w, logData)
 }
 
 func (api *DatasetAPI) deleteStaticVersion(w http.ResponseWriter, r *http.Request) {
@@ -409,7 +410,7 @@ func (api *DatasetAPI) deleteStaticVersion(w http.ResponseWriter, r *http.Reques
 	if err := func() error {
 		authorised := api.authenticate(r, logData)
 		if !authorised {
-			log.Error(ctx, "deleteVersion endpoint: User is not authorised to detach a dataset version", errs.ErrUnauthorised, logData)
+			log.Error(ctx, "deleteStaticVersion : User is not authorised to detach a dataset version", errs.ErrUnauthorised, logData)
 			return errs.ErrNotFound
 		}
 
@@ -428,7 +429,7 @@ func (api *DatasetAPI) deleteStaticVersion(w http.ResponseWriter, r *http.Reques
 
 		// Update dataset document Next to roll back to Current version
 		if datasetDoc.Current != nil {
-			fmt.Println("deleteStaticVersion: rolling back dataset document to current")
+			log.Info(ctx, "deleteStaticVersion: rolling back dataset document to current", logData)
 			datasetDoc.Next = datasetDoc.Current
 			err = api.dataStore.Backend.UpsertDataset(ctx, datasetID, datasetDoc)
 			if err != nil {
@@ -717,7 +718,7 @@ func getVersionAPIErrStatusCode(err error) int {
 		status = http.StatusBadRequest
 	case strings.HasPrefix(err.Error(), "a published version cannot be deleted"):
 		status = http.StatusForbidden
-	case strings.HasPrefix(err.Error(), "method not allowed"):
+	case errs.NotAllowedMap[err]:
 		status = http.StatusMethodNotAllowed
 	default:
 		status = http.StatusInternalServerError

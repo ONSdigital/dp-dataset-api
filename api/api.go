@@ -352,14 +352,12 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(paginator *pagination.Pagin
 				contextAndErrors(api.createVersion))),
 	)
 
-	if api.enableDetachDataset || api.enableDeleteStaticVersion {
-		api.delete(
-			"/datasets/{dataset_id}/editions/{edition}/versions/{version}",
-			api.isAuthenticated(
-				api.isAuthorisedForDatasets(deletePermission,
-					api.deleteVersion)),
-		)
-	}
+	api.delete(
+		"/datasets/{dataset_id}/editions/{edition}/versions/{version}",
+		api.isAuthenticated(
+			api.isAuthorisedForDatasets(deletePermission,
+				api.deleteVersion)),
+	)
 }
 
 // enablePrivateInstancesEndpoints register the instance endpoints with the appropriate authentication and authorisation

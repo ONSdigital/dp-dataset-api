@@ -11,7 +11,6 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	mongodriver "github.com/ONSdigital/dp-mongodb/v3/mongodb"
-	"github.com/ONSdigital/log.go/v2/log"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -282,12 +281,10 @@ func (m *Mongo) DeleteStaticDatasetVersion(ctx context.Context, datasetID, editi
 	// retrieve version document
 	versionDoc, err := m.GetVersionStatic(ctx, datasetID, editionID, versionInt, "")
 	if err != nil {
-		log.Error(ctx, "failed to retrieve version document for deletion", err, log.Data{"datasetID": datasetID, "editionID": editionID, "versionNumber": versionNumber})
 		return err
 	}
 	// check if version is published
 	if versionDoc.State == models.PublishedState {
-		log.Error(ctx, "cannot delete a published version", errs.ErrDeletePublishedVersionForbidden, log.Data{"datasetID": datasetID, "editionID": editionID, "versionNumber": versionNumber})
 		return errs.ErrDeletePublishedVersionForbidden
 	}
 
@@ -305,7 +302,6 @@ func (m *Mongo) DeleteStaticDatasetVersion(ctx context.Context, datasetID, editi
 		}
 		return err
 	}
-	log.Info(context.TODO(), "version deleted", log.Data{"version": filter})
 
-	return err
+	return nil
 }
