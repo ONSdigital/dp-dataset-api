@@ -414,14 +414,7 @@ func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
 	api.detachVersion(w, r)
 }
 
-func (api *DatasetAPI) deleteStaticVersion(
-	ctx context.Context,
-	w http.ResponseWriter,
-	r *http.Request,
-	datasetID, edition string,
-	version int,
-	logData log.Data,
-) {
+func (api *DatasetAPI) deleteStaticVersion(ctx context.Context, w http.ResponseWriter, r *http.Request, datasetID, edition string, version int, logData log.Data) {
 	if !api.authenticate(r, logData) {
 		log.Error(ctx, "deleteStaticVersion: user is not authorised", errs.ErrUnauthorised, logData)
 		handleVersionAPIErr(ctx, errs.ErrUnauthorised, w, logData)
