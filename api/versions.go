@@ -382,6 +382,42 @@ func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
 	var enabled bool
 
 	if isStatic {
+		//convert vars["version"] into int
+		versionInt, err := strconv.Atoi(vars["version"])
+		if err != nil {
+			log.Error(ctx, "deleteVersion: failed to convert version to int", err, logData)
+			handleVersionAPIErr(ctx, err, w, logData)
+			return
+		}
+
+		// check if edition exists
+		err = api.dataStore.Backend.CheckEditionExistsStatic(ctx, vars["dataset_id"], vars["edition"], "")
+		if err != nil {
+			log.Error(ctx, "deleteVersion: edition does not exist", err, logData)
+			handleVersionAPIErr(ctx, err, w, logData)
+			return
+		}
+
+		// check if version exists
+		_, err = api.dataStore.Backend.CheckVersionExistsStatic(ctx, vars["dataset_id"], vars["edition"], versionInt)
+		if err != nil {
+			log.Error(ctx, "deleteVersion: version does not exist", err, logData)
+			handleVersionAPIErr(ctx, err, w, logData)
+			return
+		}
+
+		// check if version state is "published" and reject delete if so
+		versionDoc, err := api.dataStore.Backend.GetVersionStatic(ctx, vars["dataset_id"], vars["edition"], versionInt, "")
+		if err != nil {
+			log.Error(ctx, "deleteVersion: failed to retrieve version", err, logData)
+			handleVersionAPIErr(ctx, err, w, logData)
+			return
+		}
+		if versionDoc.State == models.PublishedState {
+			log.Error(ctx, "deleteVersion: cannot delete a published version", errs.ErrDeletePublishedVersionForbidden, logData)
+			handleVersionAPIErr(ctx, errs.ErrDeletePublishedVersionForbidden, w, logData)
+			return
+		}
 		handler = api.deleteStaticVersion
 		enabled = api.enableDeleteStaticVersion
 	} else {
@@ -416,6 +452,7 @@ func (api *DatasetAPI) deleteStaticVersion(w http.ResponseWriter, r *http.Reques
 
 		datasetDoc, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 		if err != nil {
+			log.Info(ctx, "deleteStaticVersion: cannot find the specified dataset", logData)
 			log.Error(ctx, "deleteStaticVersion: datastore.GetDatasets returned an error", err, logData)
 			return err
 		}

@@ -278,16 +278,6 @@ func (m *Mongo) GetAllStaticVersions(ctx context.Context, datasetID, state strin
 func (m *Mongo) DeleteStaticDatasetVersion(ctx context.Context, datasetID, editionID, versionNumber string) (err error) {
 	// convert versionNumber to int
 	versionInt, _ := strconv.Atoi(versionNumber)
-	// retrieve version document
-	versionDoc, err := m.GetVersionStatic(ctx, datasetID, editionID, versionInt, "")
-	if err != nil {
-		return err
-	}
-	// check if version is published
-	if versionDoc.State == models.PublishedState {
-		return errs.ErrDeletePublishedVersionForbidden
-	}
-
 	// proceed to delete version
 	filter := bson.M{
 		"links.dataset.id": datasetID,
