@@ -275,14 +275,12 @@ func (m *Mongo) GetAllStaticVersions(ctx context.Context, datasetID, state strin
 	return results, totalCount, nil
 }
 
-func (m *Mongo) DeleteStaticDatasetVersion(ctx context.Context, datasetID, editionID, versionNumber string) (err error) {
-	// convert versionNumber to int
-	versionInt, _ := strconv.Atoi(versionNumber)
+func (m *Mongo) DeleteStaticDatasetVersion(ctx context.Context, datasetID, editionID string, versionNumber int) (err error) {
 	// proceed to delete version
 	filter := bson.M{
 		"links.dataset.id": datasetID,
 		"edition":          editionID,
-		"version":          versionInt,
+		"version":          versionNumber,
 	}
 
 	_, err = m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Must().Delete(ctx, filter)

@@ -60,7 +60,7 @@ var _ store.Storer = &StorerMock{}
 //			DeleteEditionFunc: func(ctx context.Context, ID string) error {
 //				panic("mock out the DeleteEdition method")
 //			},
-//			DeleteStaticDatasetVersionFunc: func(ctx context.Context, datasetID string, editionID string, version string) error {
+//			DeleteStaticDatasetVersionFunc: func(ctx context.Context, datasetID string, editionID string, version int) error {
 //				panic("mock out the DeleteStaticDatasetVersion method")
 //			},
 //			DeleteStaticVersionsByDatasetIDFunc: func(ctx context.Context, ID string) (int, error) {
@@ -245,7 +245,7 @@ type StorerMock struct {
 	DeleteEditionFunc func(ctx context.Context, ID string) error
 
 	// DeleteStaticDatasetVersionFunc mocks the DeleteStaticDatasetVersion method.
-	DeleteStaticDatasetVersionFunc func(ctx context.Context, datasetID string, editionID string, version string) error
+	DeleteStaticDatasetVersionFunc func(ctx context.Context, datasetID string, editionID string, version int) error
 
 	// DeleteStaticVersionsByDatasetIDFunc mocks the DeleteStaticVersionsByDatasetID method.
 	DeleteStaticVersionsByDatasetIDFunc func(ctx context.Context, ID string) (int, error)
@@ -508,7 +508,7 @@ type StorerMock struct {
 			// EditionID is the editionID argument value.
 			EditionID string
 			// Version is the version argument value.
-			Version string
+			Version int
 		}
 		// DeleteStaticVersionsByDatasetID holds details about calls to the DeleteStaticVersionsByDatasetID method.
 		DeleteStaticVersionsByDatasetID []struct {
@@ -1570,7 +1570,7 @@ func (mock *StorerMock) DeleteEditionCalls() []struct {
 }
 
 // DeleteStaticDatasetVersion calls DeleteStaticDatasetVersionFunc.
-func (mock *StorerMock) DeleteStaticDatasetVersion(ctx context.Context, datasetID string, editionID string, version string) error {
+func (mock *StorerMock) DeleteStaticDatasetVersion(ctx context.Context, datasetID string, editionID string, version int) error {
 	if mock.DeleteStaticDatasetVersionFunc == nil {
 		panic("StorerMock.DeleteStaticDatasetVersionFunc: method is nil but Storer.DeleteStaticDatasetVersion was just called")
 	}
@@ -1578,7 +1578,7 @@ func (mock *StorerMock) DeleteStaticDatasetVersion(ctx context.Context, datasetI
 		Ctx       context.Context
 		DatasetID string
 		EditionID string
-		Version   string
+		Version   int
 	}{
 		Ctx:       ctx,
 		DatasetID: datasetID,
@@ -1599,13 +1599,13 @@ func (mock *StorerMock) DeleteStaticDatasetVersionCalls() []struct {
 	Ctx       context.Context
 	DatasetID string
 	EditionID string
-	Version   string
+	Version   int
 } {
 	var calls []struct {
 		Ctx       context.Context
 		DatasetID string
 		EditionID string
-		Version   string
+		Version   int
 	}
 	mock.lockDeleteStaticDatasetVersion.RLock()
 	calls = mock.calls.DeleteStaticDatasetVersion

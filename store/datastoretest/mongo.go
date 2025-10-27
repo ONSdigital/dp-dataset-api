@@ -64,7 +64,7 @@ var _ store.MongoDB = &MongoDBMock{}
 //			DeleteEditionFunc: func(ctx context.Context, ID string) error {
 //				panic("mock out the DeleteEdition method")
 //			},
-//			DeleteStaticDatasetVersionFunc: func(ctx context.Context, datasetID string, editionID string, version string) error {
+//			DeleteStaticDatasetVersionFunc: func(ctx context.Context, datasetID string, editionID string, version int) error {
 //				panic("mock out the DeleteStaticDatasetVersion method")
 //			},
 //			DeleteStaticVersionsByDatasetIDFunc: func(ctx context.Context, ID string) (int, error) {
@@ -249,7 +249,7 @@ type MongoDBMock struct {
 	DeleteEditionFunc func(ctx context.Context, ID string) error
 
 	// DeleteStaticDatasetVersionFunc mocks the DeleteStaticDatasetVersion method.
-	DeleteStaticDatasetVersionFunc func(ctx context.Context, datasetID string, editionID string, version string) error
+	DeleteStaticDatasetVersionFunc func(ctx context.Context, datasetID string, editionID string, version int) error
 
 	// DeleteStaticVersionsByDatasetIDFunc mocks the DeleteStaticVersionsByDatasetID method.
 	DeleteStaticVersionsByDatasetIDFunc func(ctx context.Context, ID string) (int, error)
@@ -508,7 +508,7 @@ type MongoDBMock struct {
 			// EditionID is the editionID argument value.
 			EditionID string
 			// Version is the version argument value.
-			Version string
+			Version int
 		}
 		// DeleteStaticVersionsByDatasetID holds details about calls to the DeleteStaticVersionsByDatasetID method.
 		DeleteStaticVersionsByDatasetID []struct {
@@ -1583,7 +1583,7 @@ func (mock *MongoDBMock) DeleteEditionCalls() []struct {
 }
 
 // DeleteStaticDatasetVersion calls DeleteStaticDatasetVersionFunc.
-func (mock *MongoDBMock) DeleteStaticDatasetVersion(ctx context.Context, datasetID string, editionID string, version string) error {
+func (mock *MongoDBMock) DeleteStaticDatasetVersion(ctx context.Context, datasetID string, editionID string, version int) error {
 	if mock.DeleteStaticDatasetVersionFunc == nil {
 		panic("MongoDBMock.DeleteStaticDatasetVersionFunc: method is nil but MongoDB.DeleteStaticDatasetVersion was just called")
 	}
@@ -1591,7 +1591,7 @@ func (mock *MongoDBMock) DeleteStaticDatasetVersion(ctx context.Context, dataset
 		Ctx       context.Context
 		DatasetID string
 		EditionID string
-		Version   string
+		Version   int
 	}{
 		Ctx:       ctx,
 		DatasetID: datasetID,
@@ -1612,13 +1612,13 @@ func (mock *MongoDBMock) DeleteStaticDatasetVersionCalls() []struct {
 	Ctx       context.Context
 	DatasetID string
 	EditionID string
-	Version   string
+	Version   int
 } {
 	var calls []struct {
 		Ctx       context.Context
 		DatasetID string
 		EditionID string
-		Version   string
+		Version   int
 	}
 	mock.lockDeleteStaticDatasetVersion.RLock()
 	calls = mock.calls.DeleteStaticDatasetVersion

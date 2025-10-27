@@ -3031,12 +3031,6 @@ func TestDetachVersionReturnsError(t *testing.T) {
 }
 
 func TestDeleteVersionStaticDatasetReturnOK(t *testing.T) {
-	featureEnvString := os.Getenv("ENABLE_DELETE_STATIC_VERSION")
-	featureOn, _ := strconv.ParseBool(featureEnvString)
-	if !featureOn {
-		return
-	}
-	os.Setenv("ENABLE_DELETE_STATIC_VERSION", "true")
 	t.Parallel()
 
 	Convey("When deleteVersionStatic endpoint is called with a valid unpublished version", t, func() {
@@ -3055,7 +3049,16 @@ func TestDeleteVersionStaticDatasetReturnOK(t *testing.T) {
 					},
 				}, nil
 			},
-			DeleteStaticDatasetVersionFunc: func(context.Context, string, string, string) error {
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					Version: 1,
+					State:   models.CreatedState,
+				}, nil
+			},
+			DeleteStaticDatasetVersionFunc: func(context.Context, string, string, int) error {
 				return nil
 			},
 			UpsertDatasetFunc: func(ctx context.Context, ID string, datasetDoc *models.DatasetUpdate) error {
@@ -3078,11 +3081,6 @@ func TestDeleteVersionStaticDatasetReturnOK(t *testing.T) {
 }
 
 func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
-	featureEnvString := os.Getenv("ENABLE_DELETE_STATIC_VERSION")
-	featureOn, _ := strconv.ParseBool(featureEnvString)
-	if !featureOn {
-		return
-	}
 	t.Parallel()
 
 	Convey("When deleteVersionStatic is called against invalid version, return an invalid version error", t, func() {
@@ -3109,14 +3107,14 @@ func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 	})
 
-	Convey("When the requested version cannot be found, return a not found error", t, func() {
+	Convey("When deleteVersionStatic is called against invalid edition, return an invalid edition error", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
 			GenerateFunc: func(context.Context, string, string, string, string) error {
 				return nil
 			},
 		}
 
-		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/99", nil)
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/non-existent-edition/versions/1", nil)
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -3131,8 +3129,52 @@ func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
 					},
 				}, nil
 			},
-			DeleteStaticDatasetVersionFunc: func(context.Context, string, string, string) error {
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return errs.ErrEditionNotFound
+			},
+			DeleteStaticDatasetVersionFunc: func(context.Context, string, string, int) error {
 				return errs.ErrVersionNotFound
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+	})
+
+	Convey("When deleteVersionStatic is called against invalid version, return an invalid version error", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(context.Context, string, string, string, string) error {
+				return nil
+			},
+		}
+
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			IsStaticDatasetFunc: func(context.Context, string) (bool, error) {
+				return true, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					ID: "123",
+					Current: &models.Dataset{
+						Type: models.Static.String(),
+					},
+				}, nil
+			},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return nil, errs.ErrVersionNotFound
 			},
 		}
 
@@ -3147,8 +3189,7 @@ func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
 
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.IsStaticDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.DeleteStaticDatasetVersionCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionStaticCalls()), ShouldEqual, 1)
 	})
 
 	Convey("When trying to delete a published version return a forbidden error", t, func() {
@@ -3173,7 +3214,16 @@ func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
 					},
 				}, nil
 			},
-			DeleteStaticDatasetVersionFunc: func(context.Context, string, string, string) error {
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					Version: 1,
+					State:   models.PublishedState,
+				}, nil
+			},
+			DeleteStaticDatasetVersionFunc: func(context.Context, string, string, int) error {
 				return errs.ErrDeletePublishedVersionForbidden
 			},
 		}
@@ -3189,8 +3239,6 @@ func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
 
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.IsStaticDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.DeleteStaticDatasetVersionCalls()), ShouldEqual, 1)
 	})
 
 	// When non-static version delete request is attempted but DETACH_DATASET feature flag is off but ENABLE_DELETE_STATIC_VERSION is on
@@ -3249,6 +3297,9 @@ func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
 			},
 			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
 				return true, nil
+			},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return errs.ErrInternalServer
 			},
 		}
 

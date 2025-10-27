@@ -70,7 +70,7 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 	cfg.EnablePrivateEndpoints = true
 	cfg.DefaultLimit = 0
 	cfg.DefaultOffset = 0
-
+	cfg.EnableDeleteStaticVersion = true
 	mockedMapGeneratedDownloads := map[models.DatasetType]DownloadsGenerator{
 		models.Filterable:              mockedGeneratedDownloads,
 		models.CantabularFlexibleTable: mockedGeneratedDownloads,

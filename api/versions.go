@@ -357,128 +357,100 @@ func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 
+	datasetID := vars["dataset_id"]
+	edition := vars["edition"]
+	versionStr := vars["version"]
+
 	logData := log.Data{
-		"dataset_id": vars["dataset_id"],
-		"edition":    vars["edition"],
-		"version":    vars["version"],
+		"dataset_id": datasetID,
+		"edition":    edition,
+		"version":    versionStr,
 	}
 
-	// Validate version param
-	_, err := models.ParseAndValidateVersionNumber(ctx, vars["version"])
+	versionNum, err := models.ParseAndValidateVersionNumber(ctx, versionStr)
 	if err != nil {
 		log.Error(ctx, "deleteVersion: invalid version number", err, logData)
 		handleVersionAPIErr(ctx, err, w, logData)
 		return
 	}
 
-	isStatic, err := api.dataStore.Backend.IsStaticDataset(ctx, vars["dataset_id"])
+	isStatic, err := api.dataStore.Backend.IsStaticDataset(ctx, datasetID)
 	if err != nil {
 		log.Error(ctx, "deleteVersion: failed to determine dataset type", err, logData)
 		handleVersionAPIErr(ctx, err, w, logData)
 		return
 	}
 
-	var handler func(http.ResponseWriter, *http.Request)
-	var enabled bool
-
 	if isStatic {
-		//convert vars["version"] into int
-		versionInt, err := strconv.Atoi(vars["version"])
-		if err != nil {
-			log.Error(ctx, "deleteVersion: failed to convert version to int", err, logData)
+		if !api.enableDeleteStaticVersion {
+			handleVersionAPIErr(ctx, errs.ErrMethodNotAllowed, w, logData)
+			return
+		}
+
+		if err := api.dataStore.Backend.CheckEditionExistsStatic(ctx, datasetID, edition, ""); err != nil {
 			handleVersionAPIErr(ctx, err, w, logData)
 			return
 		}
 
-		// check if edition exists
-		err = api.dataStore.Backend.CheckEditionExistsStatic(ctx, vars["dataset_id"], vars["edition"], "")
+		versionDoc, err := api.dataStore.Backend.GetVersionStatic(ctx, datasetID, edition, versionNum, "")
 		if err != nil {
-			log.Error(ctx, "deleteVersion: edition does not exist", err, logData)
 			handleVersionAPIErr(ctx, err, w, logData)
 			return
 		}
 
-		// check if version exists
-		_, err = api.dataStore.Backend.CheckVersionExistsStatic(ctx, vars["dataset_id"], vars["edition"], versionInt)
-		if err != nil {
-			log.Error(ctx, "deleteVersion: version does not exist", err, logData)
-			handleVersionAPIErr(ctx, err, w, logData)
-			return
-		}
-
-		// check if version state is "published" and reject delete if so
-		versionDoc, err := api.dataStore.Backend.GetVersionStatic(ctx, vars["dataset_id"], vars["edition"], versionInt, "")
-		if err != nil {
-			log.Error(ctx, "deleteVersion: failed to retrieve version", err, logData)
-			handleVersionAPIErr(ctx, err, w, logData)
-			return
-		}
 		if versionDoc.State == models.PublishedState {
-			log.Error(ctx, "deleteVersion: cannot delete a published version", errs.ErrDeletePublishedVersionForbidden, logData)
 			handleVersionAPIErr(ctx, errs.ErrDeletePublishedVersionForbidden, w, logData)
 			return
 		}
-		handler = api.deleteStaticVersion
-		enabled = api.enableDeleteStaticVersion
-	} else {
-		handler = api.detachVersion
-		enabled = api.enableDetachDataset
-	}
-
-	if enabled {
-		handler(w, r)
+		api.deleteStaticVersion(ctx, w, r, datasetID, edition, versionNum, logData)
 		return
 	}
-	handleVersionAPIErr(ctx, errs.ErrMethodNotAllowed, w, logData)
+
+	if !api.enableDetachDataset {
+		handleVersionAPIErr(ctx, errs.ErrMethodNotAllowed, w, logData)
+		return
+	}
+
+	api.detachVersion(w, r)
 }
 
-func (api *DatasetAPI) deleteStaticVersion(w http.ResponseWriter, r *http.Request) {
-	defer dphttp.DrainBody(r)
+func (api *DatasetAPI) deleteStaticVersion(
+	ctx context.Context,
+	w http.ResponseWriter,
+	r *http.Request,
+	datasetID, edition string,
+	version int,
+	logData log.Data,
+) {
+	if !api.authenticate(r, logData) {
+		log.Error(ctx, "deleteStaticVersion: user is not authorised", errs.ErrUnauthorised, logData)
+		handleVersionAPIErr(ctx, errs.ErrUnauthorised, w, logData)
+		return
+	}
 
-	ctx := r.Context()
-	vars := mux.Vars(r)
-
-	datasetID := vars["dataset_id"]
-	edition := vars["edition"]
-	version := vars["version"]
-
-	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
-	if err := func() error {
-		authorised := api.authenticate(r, logData)
-		if !authorised {
-			log.Error(ctx, "deleteStaticVersion : User is not authorised to detach a dataset version", errs.ErrUnauthorised, logData)
-			return errs.ErrNotFound
-		}
-
-		datasetDoc, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
-		if err != nil {
-			log.Info(ctx, "deleteStaticVersion: cannot find the specified dataset", logData)
-			log.Error(ctx, "deleteStaticVersion: datastore.GetDatasets returned an error", err, logData)
-			return err
-		}
-
-		// call deleteStaticDatasetVersion to remove version from data store
-		err = api.dataStore.Backend.DeleteStaticDatasetVersion(ctx, datasetID, edition, version)
-		if err != nil {
-			log.Error(ctx, "deleteStaticVersion: failed to delete static dataset version", err, logData)
-			return err
-		}
-
-		// Update dataset document Next to roll back to Current version
-		if datasetDoc.Current != nil {
-			log.Info(ctx, "deleteStaticVersion: rolling back dataset document to current", logData)
-			datasetDoc.Next = datasetDoc.Current
-			err = api.dataStore.Backend.UpsertDataset(ctx, datasetID, datasetDoc)
-			if err != nil {
-				log.Error(ctx, "deleteStaticVersion: failed to update dataset document", err, logData)
-				return err
-			}
-		}
-		return nil
-	}(); err != nil {
+	datasetDoc, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
+	if err != nil {
+		log.Error(ctx, "deleteStaticVersion: dataset not found", err, logData)
 		handleVersionAPIErr(ctx, err, w, logData)
 		return
 	}
+
+	if err := api.dataStore.Backend.DeleteStaticDatasetVersion(ctx, datasetID, edition, version); err != nil {
+		log.Error(ctx, "deleteStaticVersion: failed to delete version", err, logData)
+		handleVersionAPIErr(ctx, err, w, logData)
+		return
+	}
+
+	if datasetDoc.Current != nil {
+		datasetDoc.Next = datasetDoc.Current
+		if err := api.dataStore.Backend.UpsertDataset(ctx, datasetID, datasetDoc); err != nil {
+			log.Error(ctx, "deleteStaticVersion: failed to update dataset", err, logData)
+			handleVersionAPIErr(ctx, err, w, logData)
+			return
+		}
+		log.Info(ctx, "deleteStaticVersion: updated dataset next document to current", logData)
+	}
+
 	w.WriteHeader(http.StatusNoContent)
 	log.Info(ctx, "deleteStaticVersion: successfully deleted version", logData)
 }
