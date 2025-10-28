@@ -1,12 +1,10 @@
 package steps
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"strings"
 	"time"
 
@@ -617,53 +615,6 @@ func (c *DatasetComponent) theDatasetShouldHaveNextEqualToCurrent(datasetID stri
 
 	if diff := cmp.Diff(next, current); diff != "" {
 		return fmt.Errorf("next and current do not match for dataset %s:\n%s", datasetID, diff)
-	}
-	return nil
-}
-
-func (c *DatasetComponent) IShouldReceiveTheFollowingJSONResponseWithADynamicTimestamp(expectedJSON *godog.DocString) error {
-	b, err := io.ReadAll(c.apiFeature.HTTPResponse.Body)
-	if err != nil {
-		return fmt.Errorf("reading body: %w", err)
-	}
-	c.apiFeature.HTTPResponse.Body = io.NopCloser(bytes.NewReader(b))
-
-	var actual, expected map[string]interface{}
-	if err := json.Unmarshal(b, &actual); err != nil {
-		return fmt.Errorf("invalid actual JSON: %w", err)
-	}
-	if err := json.Unmarshal([]byte(expectedJSON.Content), &expected); err != nil {
-		return fmt.Errorf("invalid expected JSON: %w", err)
-	}
-
-	if expectedTimestamp, ok := expected["last_updated"].(string); ok && expectedTimestamp == "{{DYNAMIC_TIMESTAMP}}" {
-		actualTimestampStr, ok := actual["last_updated"].(string)
-		if !ok {
-			return fmt.Errorf("missing or non-string last_updated in actual")
-		}
-		parsedTimestamp, err := time.Parse(time.RFC3339, actualTimestampStr)
-		if err != nil {
-			return fmt.Errorf("last_updated is not a valid RFC3339 timestamp: %w", err)
-		}
-		timestampAge := time.Since(parsedTimestamp)
-		if timestampAge < 0 || timestampAge > 10*time.Second {
-			return fmt.Errorf("last_updated %v is not within 10s of now", parsedTimestamp)
-		}
-
-		delete(actual, "last_updated")
-		delete(expected, "last_updated")
-	}
-
-	got, err := json.Marshal(actual)
-	if err != nil {
-		return fmt.Errorf("marshalling actual JSON: %w", err)
-	}
-	want, err := json.Marshal(expected)
-	if err != nil {
-		return fmt.Errorf("marshalling expected JSON: %w", err)
-	}
-	if !bytes.Equal(got, want) {
-		return fmt.Errorf("response mismatch:\nExpected: %s\nActual:   %s", want, got)
 	}
 	return nil
 }

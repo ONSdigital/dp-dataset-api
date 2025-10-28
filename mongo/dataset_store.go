@@ -851,39 +851,32 @@ func (m *Mongo) DeleteStaticVersionsByDatasetID(ctx context.Context, datasetID s
 }
 
 func (m *Mongo) IsStaticDataset(ctx context.Context, datasetID string) (bool, error) {
-	// Filter for dataset ID and check both current and next type fields.
-	// This avoids fetching unnecessary fields, while distinguishing missing datasets.
-	filter := bson.M{
-		"_id": datasetID,
-		"$or": bson.A{
-			bson.M{"current.type": models.Static.String()},
-			bson.M{"next.type": models.Static.String()},
-		},
-	}
-
-	var dataset models.DatasetUpdate
 	coll := m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection))
 
-	err := coll.FindOne(ctx, filter, &dataset)
+	filter := bson.M{"_id": datasetID}
+
+	var result struct {
+		Current struct {
+			Type string `bson:"type"`
+		} `bson:"current"`
+		Next struct {
+			Type string `bson:"type"`
+		} `bson:"next"`
+	}
+
+	err := coll.FindOne(ctx, filter, &result, mongodriver.Projection(bson.M{
+		"_id":          1,
+		"current.type": 1,
+		"next.type":    1,
+	}))
 	if err != nil {
-		// If no document matched the filter, dataset may be non-static or missing
 		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
-			// Verify if the dataset exists at all (to distinguish 404 vs 405)
-			existsFilter := bson.M{"_id": datasetID}
-			var tmp models.DatasetUpdate
-			mongoErr := coll.FindOne(ctx, existsFilter, &tmp)
-			if mongoErr != nil {
-				if errors.Is(mongoErr, mongodriver.ErrNoDocumentFound) {
-					return false, errs.ErrDatasetNotFound
-				}
-				return false, mongoErr
-			}
-			// Dataset exists but is not static
-			return false, nil
+			return false, errs.ErrDatasetNotFound
 		}
 		return false, err
 	}
 
-	// If we reach here, the dataset is static
-	return true, nil
+	isStatic := result.Current.Type == models.Static.String() || result.Next.Type == models.Static.String()
+
+	return isStatic, nil
 }
