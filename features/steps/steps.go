@@ -54,7 +54,6 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the dataset "([^"]*)" should not exist$`, c.datasetShouldNotExist)
 	ctx.Step(`^the static version "([^"]*)" should exist$`, c.staticVersionShouldExist)
 	ctx.Step(`^the static version "([^"]*)" should not exist$`, c.staticVersionShouldNotExist)
-	ctx.Step(`^I should receive the following JSON response with a dynamic timestamp:$`, c.IShouldReceiveTheFollowingJSONResponseWithADynamicTimestamp)
 	ctx.Step(`^the response header "([^"]*)" should not be empty$`, c.theResponseHeaderShouldNotBeEmpty)
 	ctx.Step(`^the dataset "([^"]*)" should have next equal to current$`, c.theDatasetShouldHaveNextEqualToCurrent)
 	ctx.Step(`^the "([^"]*)" feature flag is "([^"]*)"$`, c.theFeatureFlagIs)

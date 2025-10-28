@@ -204,9 +204,6 @@ func TestDeleteStaticDatasetVersion(t *testing.T) {
 
 		Convey("When DeleteStaticVersionsByDatasetID is called for a dataset with no versions", func() {
 			mongoStore, server, err := getTestMongoDB(ctx)
-			if err != nil {
-				t.Fatalf("Failed to get MongoDB: %v", err)
-			}
 			So(err, ShouldBeNil)
 
 			defer func() { server.Stop(ctx) }()

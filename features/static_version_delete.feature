@@ -38,7 +38,19 @@ Feature: Static Dataset Version DELETE API
                     "id": "non-static-dataset-no-versions",
                     "title": "non-static dataset with no versions",
                     "state": "created",
-                    "type": "filterable"
+                    "type": "filterable",
+                    "current": {
+                        "id": "non-static-dataset-no-versions",
+                        "title": "non-static dataset with no versions",
+                        "state": "created",
+                        "type": "filterable"
+                    },
+                    "next": {
+                        "id": "non-static-dataset-no-versions",
+                        "title": "non-static dataset with no versions - Updated Title",
+                        "state": "edition-confirmed",
+                        "type": "filterable"
+                    }
                 }
             ]
             """

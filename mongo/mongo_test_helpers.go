@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/ONSdigital/dp-dataset-api/config"
@@ -14,6 +15,8 @@ var (
 	staticDatasetID      = "staticDatasetID123"
 	staticDatasetID2     = "staticDatasetID456"
 	nonExistentDatasetID = "nonExistentDatasetID"
+	nonStaticDatasetID   = "nonStaticDatasetID"
+	unpublishedStaticID  = "unpublished-static-id"
 )
 
 // getTestMongoDB initializes a MongoDB connection for use in tests
@@ -114,4 +117,71 @@ func setupVersionsTestData(ctx context.Context, mongoStore *Mongo) ([]*models.Ve
 	}
 
 	return versions, nil
+}
+
+func setupDatasetTestData(ctx context.Context, mongoStore *Mongo) ([]*models.DatasetUpdate, error) {
+	if err := mongoStore.Connection.DropDatabase(ctx); err != nil {
+		return nil, err
+	}
+
+	now := time.Now()
+
+	datasets := []*models.DatasetUpdate{
+		{
+			ID: staticDatasetID,
+			Next: &models.Dataset{
+				ID:   staticDatasetID,
+				Type: models.Static.String(),
+				Links: &models.DatasetLinks{
+					Self: &models.LinkObject{ID: staticDatasetID},
+				},
+				LastUpdated: now,
+				State:       "published",
+			},
+			Current: &models.Dataset{
+				ID:    staticDatasetID,
+				Type:  models.Static.String(),
+				State: "published",
+			},
+		},
+		{
+			ID: nonStaticDatasetID,
+			Next: &models.Dataset{
+				ID:   nonStaticDatasetID,
+				Type: models.Filterable.String(),
+				Links: &models.DatasetLinks{
+					Self: &models.LinkObject{ID: nonStaticDatasetID},
+				},
+				LastUpdated: now.Add(time.Minute),
+				State:       "published",
+			},
+			Current: &models.Dataset{
+				ID:    nonStaticDatasetID,
+				Type:  models.Filterable.String(),
+				State: "published",
+			},
+		},
+		{
+			ID: unpublishedStaticID,
+			Next: &models.Dataset{
+				ID:   unpublishedStaticID,
+				Type: models.Static.String(),
+				Links: &models.DatasetLinks{
+					Self: &models.LinkObject{ID: unpublishedStaticID},
+				},
+				LastUpdated: now.Add(2 * time.Minute),
+				State:       "created",
+			},
+		},
+	}
+
+	for _, ds := range datasets {
+		if _, err := mongoStore.Connection.
+			Collection(mongoStore.ActualCollectionName(config.DatasetsCollection)).
+			InsertOne(ctx, ds); err != nil {
+			return nil, fmt.Errorf("failed to insert dataset %q: %w", ds.ID, err)
+		}
+	}
+
+	return datasets, nil
 }
