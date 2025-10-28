@@ -733,3 +733,52 @@ func PublishDataset(ctx context.Context, smDS *StateMachineDatasetAPI,
 
 	return nil
 }
+
+func (smDS *StateMachineDatasetAPI) DeleteStaticVersion(ctx context.Context, datasetID, edition string, version int) error {
+	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
+
+	// Validate edition exists for the dataset (static context)
+	if err := smDS.DataStore.Backend.CheckEditionExistsStatic(ctx, datasetID, edition, ""); err != nil {
+		log.Error(ctx, "DeleteStaticVersion: edition not found or dataset missing", err, logData)
+		return err
+	}
+
+	// Retrieve the version document (any state)
+	versionDoc, err := smDS.DataStore.Backend.GetVersionStatic(ctx, datasetID, edition, version, "")
+	if err != nil {
+		log.Error(ctx, "DeleteStaticVersion: failed to find version for dataset edition", err, logData)
+		return err
+	}
+
+	// Prevent deletion of published versions
+	if versionDoc.State == models.PublishedState {
+		log.Error(ctx, "DeleteStaticVersion: unable to delete a published version", errs.ErrDeletePublishedVersionForbidden, logData)
+		return errs.ErrDeletePublishedVersionForbidden
+	}
+
+	// Get the dataset to allow Next<-Current sync after deletion
+	datasetDoc, err := smDS.DataStore.Backend.GetDataset(ctx, datasetID)
+	if err != nil {
+		log.Error(ctx, "DeleteStaticVersion: failed to get dataset", err, logData)
+		return err
+	}
+
+	// Perform the deletion
+	if err := smDS.DataStore.Backend.DeleteStaticDatasetVersion(ctx, datasetID, edition, version); err != nil {
+		log.Error(ctx, "DeleteStaticVersion: failed to delete static dataset version", err, logData)
+		return err
+	}
+
+	// If there is a current document, make next equal to current to retain consistency
+	if datasetDoc.Current != nil {
+		datasetDoc.Next = datasetDoc.Current
+		if err := smDS.DataStore.Backend.UpsertDataset(ctx, datasetID, datasetDoc); err != nil {
+			log.Error(ctx, "DeleteStaticVersion: failed to update dataset after version deletion", err, logData)
+			return err
+		}
+		log.Info(ctx, "DeleteStaticVersion: updated dataset next document to current", logData)
+	}
+
+	log.Info(ctx, "DeleteStaticVersion: successfully deleted static version", logData)
+	return nil
+}

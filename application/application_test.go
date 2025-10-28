@@ -3013,3 +3013,126 @@ func TestPopulateVersionInfoEditionValidationStaticSuccess(t *testing.T) {
 		So(len(mockedDataStore.GetVersionStaticCalls()), ShouldEqual, 1)
 	})
 }
+
+func TestDeleteStaticVersion_ReturnSuccess(t *testing.T) {
+	t.Parallel()
+
+	Convey("Given an unpublished static version and dataset has Current set, when deleting then Next is synced to Current", t, func() {
+		mocked := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error { return nil },
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{State: models.CreatedState}, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Current: &models.Dataset{State: models.PublishedState}}, nil
+			},
+			DeleteStaticDatasetVersionFunc: func(context.Context, string, string, int) error { return nil },
+			UpsertDatasetFunc:              func(context.Context, string, *models.DatasetUpdate) error { return nil },
+		}
+
+		sm := &StateMachine{}
+		smDS := Setup(store.DataStore{Backend: mocked}, map[models.DatasetType]DownloadsGenerator{}, sm)
+
+		err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 1)
+		So(err, ShouldBeNil)
+		So(len(mocked.CheckEditionExistsStaticCalls()), ShouldEqual, 1)
+		So(len(mocked.GetVersionStaticCalls()), ShouldEqual, 1)
+		So(len(mocked.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mocked.DeleteStaticDatasetVersionCalls()), ShouldEqual, 1)
+		So(len(mocked.UpsertDatasetCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestDeleteStaticVersion_Errors(t *testing.T) {
+	t.Parallel()
+
+	Convey("When edition doesn't exist, return edition not found", t, func() {
+		mocked := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error { return errs.ErrEditionNotFound },
+		}
+		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{})
+		err := smDS.DeleteStaticVersion(context.Background(), "ds1", "missing", 1)
+		So(err, ShouldEqual, errs.ErrEditionNotFound)
+		So(len(mocked.CheckEditionExistsStaticCalls()), ShouldEqual, 1)
+		So(len(mocked.GetVersionStaticCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When version not found, return version not found", t, func() {
+		mocked := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error { return nil },
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return nil, errs.ErrVersionNotFound
+			},
+		}
+		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{})
+		err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 10)
+		So(err, ShouldEqual, errs.ErrVersionNotFound)
+		So(len(mocked.CheckEditionExistsStaticCalls()), ShouldEqual, 1)
+		So(len(mocked.GetVersionStaticCalls()), ShouldEqual, 1)
+		So(len(mocked.DeleteStaticDatasetVersionCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When version is published, return forbidden and do not delete", t, func() {
+		mocked := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error { return nil },
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{State: models.PublishedState}, nil
+			},
+		}
+		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{})
+		err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 3)
+		So(err, ShouldEqual, errs.ErrDeletePublishedVersionForbidden)
+		So(len(mocked.DeleteStaticDatasetVersionCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When getting dataset fails, internal error", t, func() {
+		mocked := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error { return nil },
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{State: models.CreatedState}, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) { return nil, errs.ErrInternalServer },
+		}
+		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{})
+		err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 4)
+		So(err, ShouldEqual, errs.ErrInternalServer)
+		So(len(mocked.DeleteStaticDatasetVersionCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When delete fails, internal error", t, func() {
+		mocked := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error { return nil },
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{State: models.AssociatedState}, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Current: &models.Dataset{}}, nil
+			},
+			DeleteStaticDatasetVersionFunc: func(context.Context, string, string, int) error { return errs.ErrInternalServer },
+		}
+		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{})
+		err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 5)
+		So(err, ShouldEqual, errs.ErrInternalServer)
+		So(len(mocked.DeleteStaticDatasetVersionCalls()), ShouldEqual, 1)
+		So(len(mocked.UpsertDatasetCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When upsert dataset fails after delete, internal error", t, func() {
+		mocked := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error { return nil },
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{State: models.CreatedState}, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Current: &models.Dataset{}}, nil
+			},
+			DeleteStaticDatasetVersionFunc: func(context.Context, string, string, int) error { return nil },
+			UpsertDatasetFunc:              func(context.Context, string, *models.DatasetUpdate) error { return errs.ErrInternalServer },
+		}
+		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{})
+		err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 6)
+		So(err, ShouldEqual, errs.ErrInternalServer)
+		So(len(mocked.DeleteStaticDatasetVersionCalls()), ShouldEqual, 1)
+		So(len(mocked.UpsertDatasetCalls()), ShouldEqual, 1)
+	})
+}

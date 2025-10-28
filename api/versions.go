@@ -390,40 +390,9 @@ func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if err := api.dataStore.Backend.CheckEditionExistsStatic(ctx, datasetID, edition, ""); err != nil {
+		if err := api.smDatasetAPI.DeleteStaticVersion(ctx, datasetID, edition, versionNum); err != nil {
 			handleVersionAPIErr(ctx, err, w, logData)
 			return
-		}
-
-		versionDoc, err := api.dataStore.Backend.GetVersionStatic(ctx, datasetID, edition, versionNum, "")
-		if err != nil {
-			handleVersionAPIErr(ctx, err, w, logData)
-			return
-		}
-
-		if versionDoc.State == models.PublishedState {
-			handleVersionAPIErr(ctx, errs.ErrDeletePublishedVersionForbidden, w, logData)
-			return
-		}
-
-		datasetDoc, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
-		if err != nil {
-			handleVersionAPIErr(ctx, err, w, logData)
-			return
-		}
-
-		if err := api.dataStore.Backend.DeleteStaticDatasetVersion(ctx, datasetID, edition, versionNum); err != nil {
-			handleVersionAPIErr(ctx, err, w, logData)
-			return
-		}
-
-		if datasetDoc.Current != nil {
-			datasetDoc.Next = datasetDoc.Current
-			if err := api.dataStore.Backend.UpsertDataset(ctx, datasetID, datasetDoc); err != nil {
-				handleVersionAPIErr(ctx, err, w, logData)
-				return
-			}
-			log.Info(ctx, "deleteVersion: updated dataset next document to current", logData)
 		}
 
 		w.WriteHeader(http.StatusNoContent)
