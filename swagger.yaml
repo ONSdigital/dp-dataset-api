@@ -740,6 +740,12 @@ paths:
             $ref: "#/definitions/Version"
         204:
           description: "Version successfully deleted (no content). For static datasets"
+        400:
+          description: |
+            Invalid request, reasons can be one of the following:
+              * dataset id was invalid
+        401:
+          description: "Unauthorised to delete version of dataset"
         403:
           description: "Forbidden – published static versions cannot be deleted"
         404:

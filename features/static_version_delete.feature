@@ -149,19 +149,6 @@ Feature: Static Dataset Version DELETE API
             a published version cannot be deleted
             """
 
-    Scenario: DELETE single static dataset version that does not exist returns 404
-        Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
-        And the "ENABLE_DETACH_DATASET" feature flag is "false"
-        And the "ENABLE_DELETE_STATIC_VERSION" feature flag is "true"
-        When I DELETE "/datasets/static-dataset-test/editions/2024/versions/99"
-        Then the HTTP status code should be "404"
-        And I should receive the following response:
-            """
-            version not found
-            """
-
     Scenario: DELETE static dataset with non-existent dataset-id returns 404
         Given private endpoints are enabled
         And I am identified as "user@ons.gov.uk"

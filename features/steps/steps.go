@@ -603,18 +603,18 @@ func (c *DatasetComponent) staticVersionShouldNotExist(versionID string) error {
 
 func (c *DatasetComponent) theDatasetShouldHaveNextEqualToCurrent(datasetID string) error {
 	collectionName := c.MongoClient.ActualCollectionName(config.DatasetsCollection)
-	var link models.DatasetUpdate
+	var dataset models.DatasetUpdate
 
 	if err := c.MongoClient.Connection.Collection(collectionName).FindOne(context.Background(), bson.M{"_id": datasetID}, &link); err != nil {
 		return err
 	}
 
-	if link.Next == nil || link.Current == nil {
+	if dataset.Next == nil || dataset.Current == nil {
 		return fmt.Errorf("dataset %s has nil next or current document", datasetID)
 	}
 
-	next := *link.Next
-	current := *link.Current
+	next := *dataset.Next
+	current := *dataset.Current
 
 	if diff := cmp.Diff(next, current); diff != "" {
 		return fmt.Errorf("next and current do not match for dataset %s:\n%s", datasetID, diff)
