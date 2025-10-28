@@ -605,7 +605,7 @@ func (c *DatasetComponent) theDatasetShouldHaveNextEqualToCurrent(datasetID stri
 	collectionName := c.MongoClient.ActualCollectionName(config.DatasetsCollection)
 	var dataset models.DatasetUpdate
 
-	if err := c.MongoClient.Connection.Collection(collectionName).FindOne(context.Background(), bson.M{"_id": datasetID}, &link); err != nil {
+	if err := c.MongoClient.Connection.Collection(collectionName).FindOne(context.Background(), bson.M{"_id": datasetID}, &dataset); err != nil {
 		return err
 	}
 
