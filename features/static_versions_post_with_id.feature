@@ -135,7 +135,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                     },
                 "edition": "2024",
                 "edition_title": "2024",
-                "last_updated": "{{DYNAMIC_TIMESTAMP}}",
+                "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
                 "release_date": "2024-12-01T09:00:00.000Z",
                 "state": "associated",
                 "type": "static",

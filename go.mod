@@ -7,7 +7,7 @@ require (
 	github.com/ONSdigital/dp-api-clients-go/v2 v2.267.0
 	github.com/ONSdigital/dp-assistdog v0.0.1
 	github.com/ONSdigital/dp-authorisation v0.5.0
-	github.com/ONSdigital/dp-component-test v0.27.0
+	github.com/ONSdigital/dp-component-test v0.28.0
 	github.com/ONSdigital/dp-graph/v2 v2.18.0
 	github.com/ONSdigital/dp-healthcheck v1.6.4
 	github.com/ONSdigital/dp-kafka/v4 v4.2.0
