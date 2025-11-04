@@ -29,6 +29,7 @@ const (
 	collectionID         = "collection"
 	editionID            = "my-edition"
 	versionID            = "1"
+	etag                 = "example-etag"
 	serviceToken         = "myservicetoken"
 	userAccessToken      = "myuseraccesstoken"
 )
@@ -134,6 +135,36 @@ func TestClientDoAuthenticatedPutRequest(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(resp, ShouldNotBeNil)
 	})
+}
+
+func TestClientDoAuthenticatedPostRequest(t *testing.T) {
+	Convey("Given a mocked dataset API client", t, func() {
+		expectedResponseBody := map[string]string{"message": "success"}
+		mockHTTPClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, expectedResponseBody, nil})
+		client := newDatasetAPIHealthcheckClient(t, mockHTTPClient)
+
+		Convey("When DoAuthenticatedPostRequest is called", func() {
+			uri, err := url.Parse("https://domain.com/target-path")
+			So(err, ShouldBeNil)
+
+			payload := []byte(`{"testing_key":"testing_value"}`)
+			resp, err := client.DoAuthenticatedPostRequest(context.Background(), headers, uri, payload)
+
+			Convey("Then no error is returned", func() {
+				So(err, ShouldBeNil)
+			})
+
+			Convey("And the response is returned with the expected body", func() {
+				So(resp, ShouldNotBeNil)
+
+				var respBody map[string]string
+				err = json.NewDecoder(resp.Body).Decode(&respBody)
+				So(err, ShouldBeNil)
+				So(respBody, ShouldResemble, expectedResponseBody)
+			})
+		})
+	})
+
 }
 
 // Test the `Headers` struct and associated methods
@@ -354,6 +385,66 @@ type errorReader struct{}
 
 func (e errorReader) Read(p []byte) (n int, err error) {
 	return 0, errors.New("mock read error")
+}
+
+func TestUnmarshalErrorResponse(t *testing.T) {
+	Convey("Given a valid ErrorResponse body", t, func() {
+		errorResponse := models.ErrorResponse{
+			// cause field is not included as it is an ignored JSON field
+			Errors: []models.Error{
+				{
+					Code:        models.InternalError,
+					Description: models.InternalErrorDescription,
+				},
+			},
+		}
+		responseJSON, err := json.Marshal(errorResponse)
+		So(err, ShouldBeNil)
+		mockResponseBody := io.NopCloser(bytes.NewBuffer(responseJSON))
+
+		Convey("When unmarshalErrorResponse is called", func() {
+			result, err := unmarshalErrorResponse(mockResponseBody)
+
+			Convey("Then no error is returned", func() {
+				So(err, ShouldBeNil)
+			})
+
+			Convey("And the expected ErrorResponse is returned", func() {
+				So(result, ShouldResemble, &errorResponse)
+			})
+		})
+	})
+
+	Convey("Given an invalid ErrorResponse body", t, func() {
+		body := `invalid json`
+		mockResponseBody := io.NopCloser(strings.NewReader(body))
+
+		Convey("When unmarshalErrorResponse is called", func() {
+			result, err := unmarshalErrorResponse(mockResponseBody)
+
+			Convey("Then an error is returned", func() {
+				So(err, ShouldNotBeNil)
+			})
+
+			Convey("And the result is nil", func() {
+				So(result, ShouldBeNil)
+			})
+		})
+	})
+
+	Convey("Given a nil body", t, func() {
+		Convey("When unmarshalErrorResponse is called", func() {
+			result, err := unmarshalErrorResponse(nil)
+
+			Convey("Then an error is returned", func() {
+				So(err, ShouldEqual, errors.New("response body is nil"))
+			})
+
+			Convey("And the result is nil", func() {
+				So(result, ShouldBeNil)
+			})
+		})
+	})
 }
 
 func TestGetStringResponseBody(t *testing.T) {
