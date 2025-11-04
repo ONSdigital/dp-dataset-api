@@ -164,7 +164,6 @@ func TestClientDoAuthenticatedPostRequest(t *testing.T) {
 			})
 		})
 	})
-
 }
 
 // Test the `Headers` struct and associated methods

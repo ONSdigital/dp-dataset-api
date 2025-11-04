@@ -12,6 +12,8 @@ import (
 	"strings"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
+
+	dpresponse "github.com/ONSdigital/dp-net/v3/handlers/response"
 )
 
 const (
@@ -331,6 +333,55 @@ func (c *Client) PutVersionState(ctx context.Context, headers Headers, datasetID
 	}
 
 	return nil
+}
+
+// PostVersion creates a specific version for a dataset series
+func (c *Client) PostVersion(ctx context.Context, headers Headers, datasetID, editionID, versionID string, version models.Version) (createdVersion *models.Version, err error) {
+	if err := validateRequiredParams(map[string]string{
+		"datasetID": datasetID,
+		"editionID": editionID,
+		"versionID": versionID,
+	}); err != nil {
+		return createdVersion, err
+	}
+
+	uri := &url.URL{}
+	uri.Path, err = url.JoinPath(c.hcCli.URL, "datasets", datasetID, "editions", editionID, "versions", versionID)
+	if err != nil {
+		return createdVersion, err
+	}
+
+	requestBody, err := json.Marshal(version)
+	if err != nil {
+		return createdVersion, err
+	}
+
+	resp, err := c.DoAuthenticatedPostRequest(ctx, headers, uri, requestBody)
+	if err != nil {
+		return createdVersion, err
+	}
+	defer closeResponseBody(ctx, resp)
+
+	if resp.StatusCode != http.StatusCreated {
+		errorResponse, err := unmarshalErrorResponse(resp.Body)
+		if err != nil {
+			return createdVersion, err
+		}
+		return createdVersion, fmt.Errorf("did not receive success response. received status %d, response body: %v", resp.StatusCode, errorResponse)
+	}
+
+	err = json.NewDecoder(resp.Body).Decode(&createdVersion)
+	if err != nil {
+		return createdVersion, err
+	}
+
+	// ETag must be taken from response header since it is not included in the response body
+	eTag := resp.Header.Get(dpresponse.ETagHeader)
+	if createdVersion != nil {
+		createdVersion.ETag = eTag
+	}
+
+	return createdVersion, nil
 }
 
 // Validate that all the specified params are not empty, and return an error message describing which ones are empty (if any)
