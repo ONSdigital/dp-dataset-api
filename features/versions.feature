@@ -95,7 +95,7 @@ Feature: Dataset API
                         }
                     }
                 },
-                 {
+                {
                     "id": "test-edition-static",
                     "edition": "test-edition-static",
                     "state": "created",
@@ -107,6 +107,21 @@ Feature: Dataset API
                         "latest_version": {
                             "id": "1",
                             "href": "/datasets/test-static/editions/test-edition-static/versions/1"
+                        }
+                    }
+                },
+                {
+                    "id": "test-edition-static-approved",
+                    "edition": "test-edition-static-approved",
+                    "state": "approved",
+                    "type":"static",
+                    "links": {
+                        "dataset": {
+                            "id": "test-static"
+                        },
+                        "latest_version": {
+                            "id": "1",
+                            "href": "/datasets/test-static/editions/test-edition-static-approved/versions/1"
                         }
                     }
                 }
@@ -283,6 +298,30 @@ Feature: Dataset API
                             "format": "csv",
                             "media_type": "text/csv",
                             "download_url": "/datasets/test-static/editions/test-edition-static/versions/1.csv",
+                            "byte_size": 100000
+                        }
+                    ]
+                },
+                {
+                    "id": "test-static-version-approved-1",
+                    "version": 1,
+                    "state": "approved",
+                    "type": "static",
+                    "links": {
+                        "dataset": {
+                            "id": "test-static"
+                        },
+                        "self": {
+                            "href": "/datasets/test-static/editions/test-edition-static-approved/versions/1"
+                        }
+                    },
+                    "edition": "test-edition-static-approved",
+                    "distributions": [
+                        {
+                            "title": "Distribution 1",
+                            "format": "csv",
+                            "media_type": "text/csv",
+                            "download_url": "/datasets/test-static/editions/test-edition-static-approved/versions/1.csv",
                             "byte_size": 100000
                         }
                     ]
@@ -609,6 +648,49 @@ Feature: Dataset API
                 "limit": 20,
                 "offset": 0,
                 "total_count": 3
+            }
+            """
+
+  Scenario: GET /datasets/test-static/editions/test-edition-static-approved/versions in private mode returns all versions
+    Given private endpoints are enabled
+    And I am identified as "user@ons.gov.uk"
+    And I am authorised
+    When I GET "/datasets/test-static/editions/test-edition-static-approved/versions"
+    Then I should receive the following JSON response with status "200":
+            """
+            {
+                "count": 1,
+                "items": [
+                    {
+                        "dataset_id": "test-static",
+                        "id": "test-static-version-approved-1",
+                        "last_updated":"2021-01-01T00:00:07Z",
+                        "type":"static",
+                        "version": 1,
+                        "state": "approved",
+                        "links": {
+                            "dataset": {
+                                "id": "test-static"
+                            },
+                            "self": {
+                                "href": "/datasets/test-static/editions/test-edition-static-approved/versions/1"
+                            }
+                        },
+                        "edition": "test-edition-static-approved",
+                        "distributions": [
+                            {
+                                "title": "Distribution 1",
+                                "format": "csv",
+                                "media_type": "text/csv",
+                                "download_url": "/datasets/test-static/editions/test-edition-static-approved/versions/1.csv",
+                                "byte_size": 100000
+                            }
+                        ]
+                    }
+                ],
+                "limit": 20,
+                "offset": 0,
+                "total_count": 1
             }
             """
 

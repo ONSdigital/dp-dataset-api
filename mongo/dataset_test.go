@@ -89,6 +89,7 @@ func TestBuildVersionsQuery(t *testing.T) {
 			"$or": []interface{}{
 				bson.M{"state": "edition-confirmed"},
 				bson.M{"state": "associated"},
+				bson.M{"state": "approved"},
 				bson.M{"state": "published"},
 			},
 		}
