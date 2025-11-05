@@ -5,8 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
-
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -14,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ONSdigital/dp-api-clients-go/v2/files"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -2541,6 +2540,9 @@ func TestDetachVersionReturnOK(t *testing.T) {
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return false, nil
+			},
 		}
 
 		datasetPermissions := getAuthorisationHandlerMock()
@@ -2599,6 +2601,15 @@ func TestDetachVersionReturnOK(t *testing.T) {
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return false, nil
+			},
+			DeleteEditionFunc: func(ctx context.Context, editionID string) error {
+				return nil
+			},
+			RemoveDatasetVersionAndEditionLinksFunc: func(ctx context.Context, datasetID string) error {
+				return nil
+			},
 		}
 
 		datasetPermissions := getAuthorisationHandlerMock()
@@ -2645,6 +2656,9 @@ func TestDetachVersionReturnsError(t *testing.T) {
 			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
 				return nil, errs.ErrInternalServer
 			},
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return false, nil
+			},
 		}
 
 		datasetPermissions := getAuthorisationHandlerMock()
@@ -2676,6 +2690,9 @@ func TestDetachVersionReturnsError(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{
 			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
 				return nil, errs.ErrEditionNotFound
+			},
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return false, nil
 			},
 		}
 
@@ -2711,6 +2728,9 @@ func TestDetachVersionReturnsError(t *testing.T) {
 					Next: &models.Edition{
 						State: models.EditionConfirmedState,
 						Links: &models.EditionUpdateLinks{LatestVersion: &models.LinkObject{ID: "2"}}}}, nil
+			},
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return false, nil
 			},
 		}
 
@@ -2750,6 +2770,9 @@ func TestDetachVersionReturnsError(t *testing.T) {
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return &models.Version{}, nil
 			},
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return false, nil
+			},
 		}
 
 		datasetPermissions := getAuthorisationHandlerMock()
@@ -2788,6 +2811,9 @@ func TestDetachVersionReturnsError(t *testing.T) {
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return nil, errs.ErrVersionNotFound
 			},
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return false, nil
+			},
 		}
 
 		datasetPermissions := getAuthorisationHandlerMock()
@@ -2817,6 +2843,9 @@ func TestDetachVersionReturnsError(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return false, nil
+			},
 			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
 				return &models.EditionUpdate{
 					Next: &models.Edition{
@@ -2864,6 +2893,9 @@ func TestDetachVersionReturnsError(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return false, nil
+			},
 			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
 				return &models.EditionUpdate{
 					Next: &models.Edition{
@@ -2995,6 +3027,296 @@ func TestDetachVersionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
 		So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
+	})
+}
+
+func TestDeleteVersionStaticDatasetReturnOK(t *testing.T) {
+	t.Parallel()
+
+	Convey("When deleteVersionStatic endpoint is called with a valid unpublished version", t, func() {
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			IsStaticDatasetFunc: func(context.Context, string) (bool, error) {
+				return true, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					ID: "123",
+					Current: &models.Dataset{
+						Type: models.Static.String(),
+					},
+				}, nil
+			},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					Version: 1,
+					State:   models.CreatedState,
+				}, nil
+			},
+			DeleteStaticDatasetVersionFunc: func(context.Context, string, string, int) error {
+				return nil
+			},
+			UpsertDatasetFunc: func(ctx context.Context, ID string, datasetDoc *models.DatasetUpdate) error {
+				return nil
+			},
+		}
+
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusNoContent)
+
+		So(permissions.Required.Calls, ShouldEqual, 1)
+		So(len(mockedDataStore.IsStaticDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.DeleteStaticDatasetVersionCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
+	t.Parallel()
+
+	Convey("When deleteVersionStatic is called against invalid version, return an invalid version error", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(context.Context, string, string, string, string) error {
+				return nil
+			},
+		}
+
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/-1", nil)
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInvalidVersion.Error())
+
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+	})
+
+	Convey("When deleteVersionStatic is called against invalid edition, return an invalid edition error", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(context.Context, string, string, string, string) error {
+				return nil
+			},
+		}
+
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/non-existent-edition/versions/1", nil)
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			IsStaticDatasetFunc: func(context.Context, string) (bool, error) {
+				return true, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					ID: "123",
+					Current: &models.Dataset{
+						Type: models.Static.String(),
+					},
+				}, nil
+			},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return errs.ErrEditionNotFound
+			},
+			DeleteStaticDatasetVersionFunc: func(context.Context, string, string, int) error {
+				return errs.ErrVersionNotFound
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+	})
+
+	Convey("When deleteVersionStatic is called against invalid version, return an invalid version error", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(context.Context, string, string, string, string) error {
+				return nil
+			},
+		}
+
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			IsStaticDatasetFunc: func(context.Context, string) (bool, error) {
+				return true, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					ID: "123",
+					Current: &models.Dataset{
+						Type: models.Static.String(),
+					},
+				}, nil
+			},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return nil, errs.ErrVersionNotFound
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
+
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(len(mockedDataStore.IsStaticDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionStaticCalls()), ShouldEqual, 1)
+	})
+
+	Convey("When trying to delete a published version return a forbidden error", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(context.Context, string, string, string, string) error {
+				return nil
+			},
+		}
+
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			IsStaticDatasetFunc: func(context.Context, string) (bool, error) {
+				return true, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					ID: "123",
+					Current: &models.Dataset{
+						Type: models.Static.String(),
+					},
+				}, nil
+			},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					Version: 1,
+					State:   models.PublishedState,
+				}, nil
+			},
+			DeleteStaticDatasetVersionFunc: func(context.Context, string, string, int) error {
+				return errs.ErrDeletePublishedVersionForbidden
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusForbidden)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrDeletePublishedVersionForbidden.Error())
+
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(len(mockedDataStore.IsStaticDatasetCalls()), ShouldEqual, 1)
+	})
+
+	// When non-static version delete request is attempted but DETACH_DATASET feature flag is off but ENABLE_DELETE_STATIC_VERSION is on
+	Convey("When deleteVersionStatic endpoint is called for non-static version but DETACH_DATASET feature flag is off return 405 error", t, func() {
+		featureEnvString := os.Getenv("ENABLE_DETACH_DATASET")
+		featureOn, _ := strconv.ParseBool(featureEnvString)
+		if featureOn {
+			return
+		}
+
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(context.Context, string, string, string, string) error {
+				return nil
+			},
+		}
+
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return false, nil
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusMethodNotAllowed)
+		So(w.Body.String(), ShouldContainSubstring, "method not allowed")
+
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(len(mockedDataStore.IsStaticDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.DeleteStaticDatasetVersionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)
+	})
+
+	Convey("When the api cannot connect to datastore return an internal server error.", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(context.Context, string, string, string, string) error {
+				return nil
+			},
+		}
+
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return nil, errs.ErrInternalServer
+			},
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return true, nil
+			},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return errs.ErrInternalServer
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(permissions.Required.Calls, ShouldEqual, 0)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.DeleteStaticDatasetVersionCalls()), ShouldEqual, 0)
 	})
 }
 

@@ -8,6 +8,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	. "github.com/smartystreets/goconvey/convey"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func TestUpdateVersionStatic(t *testing.T) {
@@ -170,6 +171,46 @@ func TestCheckVersionExistsStatic(t *testing.T) {
 				So(err, ShouldNotBeNil)
 				So(exists, ShouldBeFalse)
 			})
+		})
+	})
+}
+
+func TestDeleteStaticDatasetVersion(t *testing.T) {
+	Convey("Given an in-memory MongoDB is running", t, func() {
+		ctx := context.Background()
+
+		Convey("When DeleteStaticDatasetVersion is called with a matching dataset, edition and unpublished version", func() {
+			mongoStore, server, err := getTestMongoDB(ctx)
+			So(err, ShouldBeNil)
+			defer func() {
+				server.Stop(ctx)
+			}()
+
+			versions, err := setupVersionsTestData(ctx, mongoStore)
+			So(err, ShouldBeNil)
+			So(versions, ShouldHaveLength, 3)
+
+			datasetToDelete := staticDatasetID
+			editionToDelete := "edition2"
+			versionToDelete := 2
+			err = mongoStore.DeleteStaticDatasetVersion(ctx, datasetToDelete, editionToDelete, versionToDelete)
+
+			So(err, ShouldBeNil)
+			selector := bson.M{"links.dataset.id": staticDatasetID}
+			totalCount, err := mongoStore.Connection.Collection(mongoStore.ActualCollectionName(config.VersionsCollection)).Count(ctx, selector)
+			So(err, ShouldBeNil)
+			So(totalCount, ShouldEqual, 1)
+		})
+
+		Convey("When DeleteStaticVersionsByDatasetID is called for a dataset with no versions", func() {
+			mongoStore, server, err := getTestMongoDB(ctx)
+			So(err, ShouldBeNil)
+
+			defer func() { server.Stop(ctx) }()
+
+			deleteCount, err := mongoStore.DeleteStaticVersionsByDatasetID(ctx, nonExistentDatasetID)
+			So(err, ShouldEqual, errs.ErrVersionsNotFound)
+			So(deleteCount, ShouldEqual, 0)
 		})
 	})
 }

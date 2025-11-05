@@ -64,6 +64,9 @@ var _ store.MongoDB = &MongoDBMock{}
 //			DeleteEditionFunc: func(ctx context.Context, ID string) error {
 //				panic("mock out the DeleteEdition method")
 //			},
+//			DeleteStaticDatasetVersionFunc: func(ctx context.Context, datasetID string, editionID string, version int) error {
+//				panic("mock out the DeleteStaticDatasetVersion method")
+//			},
 //			DeleteStaticVersionsByDatasetIDFunc: func(ctx context.Context, ID string) (int, error) {
 //				panic("mock out the DeleteStaticVersionsByDatasetID method")
 //			},
@@ -129,6 +132,9 @@ var _ store.MongoDB = &MongoDBMock{}
 //			},
 //			GetVersionsStaticFunc: func(ctx context.Context, datasetID string, edition string, state string, offset int, limit int) ([]models.Version, int, error) {
 //				panic("mock out the GetVersionsStatic method")
+//			},
+//			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+//				panic("mock out the IsStaticDataset method")
 //			},
 //			RemoveDatasetVersionAndEditionLinksFunc: func(ctx context.Context, id string) error {
 //				panic("mock out the RemoveDatasetVersionAndEditionLinks method")
@@ -242,6 +248,9 @@ type MongoDBMock struct {
 	// DeleteEditionFunc mocks the DeleteEdition method.
 	DeleteEditionFunc func(ctx context.Context, ID string) error
 
+	// DeleteStaticDatasetVersionFunc mocks the DeleteStaticDatasetVersion method.
+	DeleteStaticDatasetVersionFunc func(ctx context.Context, datasetID string, editionID string, version int) error
+
 	// DeleteStaticVersionsByDatasetIDFunc mocks the DeleteStaticVersionsByDatasetID method.
 	DeleteStaticVersionsByDatasetIDFunc func(ctx context.Context, ID string) (int, error)
 
@@ -307,6 +316,9 @@ type MongoDBMock struct {
 
 	// GetVersionsStaticFunc mocks the GetVersionsStatic method.
 	GetVersionsStaticFunc func(ctx context.Context, datasetID string, edition string, state string, offset int, limit int) ([]models.Version, int, error)
+
+	// IsStaticDatasetFunc mocks the IsStaticDataset method.
+	IsStaticDatasetFunc func(ctx context.Context, datasetID string) (bool, error)
 
 	// RemoveDatasetVersionAndEditionLinksFunc mocks the RemoveDatasetVersionAndEditionLinks method.
 	RemoveDatasetVersionAndEditionLinksFunc func(ctx context.Context, id string) error
@@ -486,6 +498,17 @@ type MongoDBMock struct {
 			Ctx context.Context
 			// ID is the ID argument value.
 			ID string
+		}
+		// DeleteStaticDatasetVersion holds details about calls to the DeleteStaticDatasetVersion method.
+		DeleteStaticDatasetVersion []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// EditionID is the editionID argument value.
+			EditionID string
+			// Version is the version argument value.
+			Version int
 		}
 		// DeleteStaticVersionsByDatasetID holds details about calls to the DeleteStaticVersionsByDatasetID method.
 		DeleteStaticVersionsByDatasetID []struct {
@@ -741,6 +764,13 @@ type MongoDBMock struct {
 			// Limit is the limit argument value.
 			Limit int
 		}
+		// IsStaticDataset holds details about calls to the IsStaticDataset method.
+		IsStaticDataset []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+		}
 		// RemoveDatasetVersionAndEditionLinks holds details about calls to the RemoveDatasetVersionAndEditionLinks method.
 		RemoveDatasetVersionAndEditionLinks []struct {
 			// Ctx is the ctx argument value.
@@ -969,6 +999,7 @@ type MongoDBMock struct {
 	lockClose                               sync.RWMutex
 	lockDeleteDataset                       sync.RWMutex
 	lockDeleteEdition                       sync.RWMutex
+	lockDeleteStaticDatasetVersion          sync.RWMutex
 	lockDeleteStaticVersionsByDatasetID     sync.RWMutex
 	lockGetAllStaticVersions                sync.RWMutex
 	lockGetDataset                          sync.RWMutex
@@ -991,6 +1022,7 @@ type MongoDBMock struct {
 	lockGetVersionStatic                    sync.RWMutex
 	lockGetVersions                         sync.RWMutex
 	lockGetVersionsStatic                   sync.RWMutex
+	lockIsStaticDataset                     sync.RWMutex
 	lockRemoveDatasetVersionAndEditionLinks sync.RWMutex
 	lockUnlockInstance                      sync.RWMutex
 	lockUnlockVersions                      sync.RWMutex
@@ -1547,6 +1579,50 @@ func (mock *MongoDBMock) DeleteEditionCalls() []struct {
 	mock.lockDeleteEdition.RLock()
 	calls = mock.calls.DeleteEdition
 	mock.lockDeleteEdition.RUnlock()
+	return calls
+}
+
+// DeleteStaticDatasetVersion calls DeleteStaticDatasetVersionFunc.
+func (mock *MongoDBMock) DeleteStaticDatasetVersion(ctx context.Context, datasetID string, editionID string, version int) error {
+	if mock.DeleteStaticDatasetVersionFunc == nil {
+		panic("MongoDBMock.DeleteStaticDatasetVersionFunc: method is nil but MongoDB.DeleteStaticDatasetVersion was just called")
+	}
+	callInfo := struct {
+		Ctx       context.Context
+		DatasetID string
+		EditionID string
+		Version   int
+	}{
+		Ctx:       ctx,
+		DatasetID: datasetID,
+		EditionID: editionID,
+		Version:   version,
+	}
+	mock.lockDeleteStaticDatasetVersion.Lock()
+	mock.calls.DeleteStaticDatasetVersion = append(mock.calls.DeleteStaticDatasetVersion, callInfo)
+	mock.lockDeleteStaticDatasetVersion.Unlock()
+	return mock.DeleteStaticDatasetVersionFunc(ctx, datasetID, editionID, version)
+}
+
+// DeleteStaticDatasetVersionCalls gets all the calls that were made to DeleteStaticDatasetVersion.
+// Check the length with:
+//
+//	len(mockedMongoDB.DeleteStaticDatasetVersionCalls())
+func (mock *MongoDBMock) DeleteStaticDatasetVersionCalls() []struct {
+	Ctx       context.Context
+	DatasetID string
+	EditionID string
+	Version   int
+} {
+	var calls []struct {
+		Ctx       context.Context
+		DatasetID string
+		EditionID string
+		Version   int
+	}
+	mock.lockDeleteStaticDatasetVersion.RLock()
+	calls = mock.calls.DeleteStaticDatasetVersion
+	mock.lockDeleteStaticDatasetVersion.RUnlock()
 	return calls
 }
 
@@ -2539,6 +2615,42 @@ func (mock *MongoDBMock) GetVersionsStaticCalls() []struct {
 	mock.lockGetVersionsStatic.RLock()
 	calls = mock.calls.GetVersionsStatic
 	mock.lockGetVersionsStatic.RUnlock()
+	return calls
+}
+
+// IsStaticDataset calls IsStaticDatasetFunc.
+func (mock *MongoDBMock) IsStaticDataset(ctx context.Context, datasetID string) (bool, error) {
+	if mock.IsStaticDatasetFunc == nil {
+		panic("MongoDBMock.IsStaticDatasetFunc: method is nil but MongoDB.IsStaticDataset was just called")
+	}
+	callInfo := struct {
+		Ctx       context.Context
+		DatasetID string
+	}{
+		Ctx:       ctx,
+		DatasetID: datasetID,
+	}
+	mock.lockIsStaticDataset.Lock()
+	mock.calls.IsStaticDataset = append(mock.calls.IsStaticDataset, callInfo)
+	mock.lockIsStaticDataset.Unlock()
+	return mock.IsStaticDatasetFunc(ctx, datasetID)
+}
+
+// IsStaticDatasetCalls gets all the calls that were made to IsStaticDataset.
+// Check the length with:
+//
+//	len(mockedMongoDB.IsStaticDatasetCalls())
+func (mock *MongoDBMock) IsStaticDatasetCalls() []struct {
+	Ctx       context.Context
+	DatasetID string
+} {
+	var calls []struct {
+		Ctx       context.Context
+		DatasetID string
+	}
+	mock.lockIsStaticDataset.RLock()
+	calls = mock.calls.IsStaticDataset
+	mock.lockIsStaticDataset.RUnlock()
 	return calls
 }
 

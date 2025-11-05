@@ -536,3 +536,50 @@ func TestDeleteStaticVersionsByDatasetID(t *testing.T) {
 		})
 	})
 }
+
+func TestIsStaticDataset(t *testing.T) {
+	Convey("Given an in-memory MongoDB is running", t, func() {
+		ctx := context.Background()
+		mongo, server, err := getTestMongoDB(ctx)
+		So(err, ShouldBeNil)
+		defer func() {
+			server.Stop(ctx)
+		}()
+
+		Convey("When IsStaticDataset is called with a static dataset ID", func() {
+			datasets, err := setupDatasetTestData(ctx, mongo)
+			So(err, ShouldBeNil)
+			So(datasets, ShouldHaveLength, 3)
+
+			isStatic, err := mongo.IsStaticDataset(ctx, staticDatasetID)
+			Convey("Then it returns true with no error", func() {
+				So(err, ShouldBeNil)
+				So(isStatic, ShouldBeTrue)
+			})
+		})
+
+		Convey("When IsStaticDataset is called with a non-static dataset ID", func() {
+			datasets, err := setupDatasetTestData(ctx, mongo)
+			So(err, ShouldBeNil)
+			So(datasets, ShouldHaveLength, 3)
+
+			isStatic, err := mongo.IsStaticDataset(ctx, nonStaticDatasetID)
+			Convey("Then it returns false with no error", func() {
+				So(err, ShouldBeNil)
+				So(isStatic, ShouldBeFalse)
+			})
+		})
+
+		Convey("When IsStaticDataset is called with a non-existing dataset ID", func() {
+			datasets, err := setupDatasetTestData(ctx, mongo)
+			So(err, ShouldBeNil)
+			So(datasets, ShouldHaveLength, 3)
+
+			isStatic, err := mongo.IsStaticDataset(ctx, nonExistentDatasetID)
+			Convey("Then it returns false with an ErrDatasetNotFound error", func() {
+				So(err, ShouldEqual, errs.ErrDatasetNotFound)
+				So(isStatic, ShouldBeFalse)
+			})
+		})
+	})
+}

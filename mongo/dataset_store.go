@@ -849,3 +849,34 @@ func (m *Mongo) DeleteStaticVersionsByDatasetID(ctx context.Context, datasetID s
 
 	return deletedCount, nil
 }
+
+func (m *Mongo) IsStaticDataset(ctx context.Context, datasetID string) (bool, error) {
+	coll := m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection))
+
+	filter := bson.M{"_id": datasetID}
+
+	var result struct {
+		Current struct {
+			Type string `bson:"type"`
+		} `bson:"current"`
+		Next struct {
+			Type string `bson:"type"`
+		} `bson:"next"`
+	}
+
+	err := coll.FindOne(ctx, filter, &result, mongodriver.Projection(bson.M{
+		"_id":          1,
+		"current.type": 1,
+		"next.type":    1,
+	}))
+	if err != nil {
+		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
+			return false, errs.ErrDatasetNotFound
+		}
+		return false, err
+	}
+
+	isStatic := result.Current.Type == models.Static.String() || result.Next.Type == models.Static.String()
+
+	return isStatic, nil
+}

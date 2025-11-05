@@ -351,6 +351,63 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	log.Info(ctx, "putVersion endpoint: request successful", data)
 }
 
+func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
+	defer dphttp.DrainBody(r)
+
+	ctx := r.Context()
+	vars := mux.Vars(r)
+
+	datasetID := vars["dataset_id"]
+	edition := vars["edition"]
+	versionStr := vars["version"]
+
+	logData := log.Data{
+		"dataset_id": datasetID,
+		"edition":    edition,
+		"version":    versionStr,
+	}
+
+	versionNum, err := models.ParseAndValidateVersionNumber(ctx, versionStr)
+	if err != nil {
+		handleVersionAPIErr(ctx, err, w, logData)
+		return
+	}
+
+	isStatic, err := api.dataStore.Backend.IsStaticDataset(ctx, datasetID)
+	if err != nil {
+		handleVersionAPIErr(ctx, err, w, logData)
+		return
+	}
+
+	if isStatic {
+		if !api.enableDeleteStaticVersion {
+			handleVersionAPIErr(ctx, errs.ErrMethodNotAllowed, w, logData)
+			return
+		}
+
+		if !api.authenticate(r, logData) {
+			handleVersionAPIErr(ctx, errs.ErrUnauthorised, w, logData)
+			return
+		}
+
+		if err := api.smDatasetAPI.DeleteStaticVersion(ctx, datasetID, edition, versionNum); err != nil {
+			handleVersionAPIErr(ctx, err, w, logData)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+		log.Info(ctx, "deleteVersion: successfully deleted static version", logData)
+		return
+	}
+
+	if !api.enableDetachDataset {
+		handleVersionAPIErr(ctx, errs.ErrMethodNotAllowed, w, logData)
+		return
+	}
+
+	api.detachVersion(w, r)
+}
+
 // TODO: Refactor this to reduce the complexity
 //
 //nolint:gocyclo,gocognit // high cyclomactic & cognitive complexity not in scope for maintenance
@@ -621,6 +678,10 @@ func getVersionAPIErrStatusCode(err error) int {
 		status = http.StatusBadRequest
 	case strings.HasPrefix(err.Error(), "state not allowed to transition"):
 		status = http.StatusBadRequest
+	case strings.HasPrefix(err.Error(), "a published version cannot be deleted"):
+		status = http.StatusForbidden
+	case errs.NotAllowedMap[err]:
+		status = http.StatusMethodNotAllowed
 	default:
 		status = http.StatusInternalServerError
 	}

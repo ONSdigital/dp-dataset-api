@@ -53,6 +53,20 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the static version "([^"]*)" should exist$`, c.staticVersionShouldExist)
 	ctx.Step(`^the static version "([^"]*)" should not exist$`, c.staticVersionShouldNotExist)
 	ctx.Step(`^the response header "([^"]*)" should not be empty$`, c.theResponseHeaderShouldNotBeEmpty)
+	ctx.Step(`^the dataset "([^"]*)" should have next equal to current$`, c.theDatasetShouldHaveNextEqualToCurrent)
+	ctx.Step(`^the "([^"]*)" feature flag is "([^"]*)"$`, c.theFeatureFlagIs)
+}
+
+func (c *DatasetComponent) theFeatureFlagIs(flagName, status string) error {
+	switch flagName {
+	case "ENABLE_DETACH_DATASET":
+		c.Config.EnableDetachDataset = status == "true"
+	case "ENABLE_DELETE_STATIC_VERSION":
+		c.Config.EnableDeleteStaticVersion = status == "true"
+	default:
+		return fmt.Errorf("unknown feature flag: %s", flagName)
+	}
+	return nil
 }
 
 func (c *DatasetComponent) thereAreNoDatasets() error {
@@ -582,6 +596,27 @@ func (c *DatasetComponent) staticVersionShouldExist(versionID string) error {
 // staticVersionShouldNotExist checks the version document does not exist in the versions collection
 func (c *DatasetComponent) staticVersionShouldNotExist(versionID string) error {
 	return c.checkDocumentExistence(config.VersionsCollection, versionID, false)
+}
+
+func (c *DatasetComponent) theDatasetShouldHaveNextEqualToCurrent(datasetID string) error {
+	collectionName := c.MongoClient.ActualCollectionName(config.DatasetsCollection)
+	var dataset models.DatasetUpdate
+
+	if err := c.MongoClient.Connection.Collection(collectionName).FindOne(context.Background(), bson.M{"_id": datasetID}, &dataset); err != nil {
+		return err
+	}
+
+	if dataset.Next == nil || dataset.Current == nil {
+		return fmt.Errorf("dataset %s has nil next or current document", datasetID)
+	}
+
+	next := *dataset.Next
+	current := *dataset.Current
+
+	if diff := cmp.Diff(next, current); diff != "" {
+		return fmt.Errorf("next and current do not match for dataset %s:\n%s", datasetID, diff)
+	}
+	return nil
 }
 
 func (c *DatasetComponent) theResponseHeaderShouldNotBeEmpty(header string) error {

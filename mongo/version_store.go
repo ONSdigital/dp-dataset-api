@@ -274,3 +274,22 @@ func (m *Mongo) GetAllStaticVersions(ctx context.Context, datasetID, state strin
 
 	return results, totalCount, nil
 }
+
+func (m *Mongo) DeleteStaticDatasetVersion(ctx context.Context, datasetID, editionID string, versionNumber int) (err error) {
+	// proceed to delete version
+	filter := bson.M{
+		"links.dataset.id": datasetID,
+		"edition":          editionID,
+		"version":          versionNumber,
+	}
+
+	_, err = m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Must().Delete(ctx, filter)
+	if err != nil {
+		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
+			return errs.ErrVersionNotFound
+		}
+		return err
+	}
+
+	return nil
+}

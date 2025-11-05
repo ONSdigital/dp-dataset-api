@@ -24,6 +24,7 @@ var (
 	ErrDatasetNotFound                    = errors.New("dataset not found")
 	ErrDeleteDatasetNotFound              = errors.New("delete dataset not found")
 	ErrDeletePublishedDatasetForbidden    = errors.New("a published dataset cannot be deleted")
+	ErrDeletePublishedVersionForbidden    = errors.New("a published version cannot be deleted")
 	ErrDimensionNodeNotFound              = errors.New("dimension node not found")
 	ErrDimensionNotFound                  = errors.New("dimension not found")
 	ErrDimensionOptionNotFound            = errors.New("dimension option not found")
@@ -58,6 +59,7 @@ var (
 	ErrFileMetadataNotFound               = errors.New("file metadata not found")
 	ErrFileNotInCorrectState              = errors.New("file not in correct state")
 	ErrInvalidParamCombination            = errors.New("cannot request state and published parameters at the same time")
+	ErrMethodNotAllowed                   = errors.New("method not allowed")
 
 	ErrExpectedResourceStateOfCreated          = errors.New("unable to update resource, expected resource to have a state of created")
 	ErrExpectedResourceStateOfSubmitted        = errors.New("unable to update resource, expected resource to have a state of submitted")
@@ -106,7 +108,11 @@ var (
 		ErrExpectedResourceStateOfCompleted:        true,
 		ErrExpectedResourceStateOfEditionConfirmed: true,
 		ErrExpectedResourceStateOfAssociated:       true,
+		ErrResourcePublished:                       true,
+		ErrDeletePublishedVersionForbidden:         true,
+	}
 
-		ErrResourcePublished: true,
+	NotAllowedMap = map[error]bool{
+		ErrMethodNotAllowed: true,
 	}
 )

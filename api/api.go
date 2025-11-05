@@ -57,45 +57,47 @@ type AuthHandler interface {
 
 // DatasetAPI manages importing filters against a dataset
 type DatasetAPI struct {
-	Router                   *mux.Router
-	dataStore                store.DataStore
-	urlBuilder               *url.Builder
-	enableURLRewriting       bool
-	host                     string
-	downloadServiceToken     string
-	EnablePrePublishView     bool
-	downloadGenerators       map[models.DatasetType]DownloadsGenerator
-	enablePrivateEndpoints   bool
-	enableDetachDataset      bool
-	datasetPermissions       AuthHandler
-	permissions              AuthHandler
-	instancePublishedChecker *instance.PublishCheck
-	versionPublishedChecker  *PublishCheck
-	MaxRequestOptions        int
-	smDatasetAPI             *application.StateMachineDatasetAPI
-	filesAPIClient           *files.Client
-	authToken                string
+	Router                    *mux.Router
+	dataStore                 store.DataStore
+	urlBuilder                *url.Builder
+	enableURLRewriting        bool
+	host                      string
+	downloadServiceToken      string
+	EnablePrePublishView      bool
+	downloadGenerators        map[models.DatasetType]DownloadsGenerator
+	enablePrivateEndpoints    bool
+	enableDetachDataset       bool
+	enableDeleteStaticVersion bool
+	datasetPermissions        AuthHandler
+	permissions               AuthHandler
+	instancePublishedChecker  *instance.PublishCheck
+	versionPublishedChecker   *PublishCheck
+	MaxRequestOptions         int
+	smDatasetAPI              *application.StateMachineDatasetAPI
+	filesAPIClient            *files.Client
+	authToken                 string
 }
 
 // Setup creates a new Dataset API instance and register the API routes based on the application configuration.
 func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerators map[models.DatasetType]DownloadsGenerator, datasetPermissions, permissions AuthHandler, enableURLRewriting bool, smDatasetAPI *application.StateMachineDatasetAPI) *DatasetAPI {
 	api := &DatasetAPI{
-		dataStore:                dataStore,
-		host:                     cfg.DatasetAPIURL,
-		downloadServiceToken:     cfg.DownloadServiceSecretKey,
-		EnablePrePublishView:     cfg.EnablePrivateEndpoints,
-		Router:                   router,
-		urlBuilder:               urlBuilder,
-		enableURLRewriting:       enableURLRewriting,
-		downloadGenerators:       downloadGenerators,
-		enablePrivateEndpoints:   cfg.EnablePrivateEndpoints,
-		enableDetachDataset:      cfg.EnableDetachDataset,
-		datasetPermissions:       datasetPermissions,
-		permissions:              permissions,
-		versionPublishedChecker:  nil,
-		instancePublishedChecker: nil,
-		MaxRequestOptions:        cfg.MaxRequestOptions,
-		smDatasetAPI:             smDatasetAPI,
+		dataStore:                 dataStore,
+		host:                      cfg.DatasetAPIURL,
+		downloadServiceToken:      cfg.DownloadServiceSecretKey,
+		EnablePrePublishView:      cfg.EnablePrivateEndpoints,
+		Router:                    router,
+		urlBuilder:                urlBuilder,
+		enableURLRewriting:        enableURLRewriting,
+		downloadGenerators:        downloadGenerators,
+		enablePrivateEndpoints:    cfg.EnablePrivateEndpoints,
+		enableDetachDataset:       cfg.EnableDetachDataset,
+		enableDeleteStaticVersion: cfg.EnableDeleteStaticVersion,
+		datasetPermissions:        datasetPermissions,
+		permissions:               permissions,
+		versionPublishedChecker:   nil,
+		instancePublishedChecker:  nil,
+		MaxRequestOptions:         cfg.MaxRequestOptions,
+		smDatasetAPI:              smDatasetAPI,
 	}
 
 	paginator := pagination.NewPaginator(cfg.DefaultLimit, cfg.DefaultOffset, cfg.DefaultMaxLimit)
@@ -350,14 +352,12 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(paginator *pagination.Pagin
 				contextAndErrors(api.createVersion))),
 	)
 
-	if api.enableDetachDataset {
-		api.delete(
-			"/datasets/{dataset_id}/editions/{edition}/versions/{version}",
-			api.isAuthenticated(
-				api.isAuthorisedForDatasets(deletePermission,
-					api.detachVersion)),
-		)
-	}
+	api.delete(
+		"/datasets/{dataset_id}/editions/{edition}/versions/{version}",
+		api.isAuthenticated(
+			api.isAuthorisedForDatasets(deletePermission,
+				api.deleteVersion)),
+	)
 }
 
 // enablePrivateInstancesEndpoints register the instance endpoints with the appropriate authentication and authorisation
