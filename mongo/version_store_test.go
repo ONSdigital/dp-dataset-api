@@ -68,7 +68,7 @@ func TestGetStaticVersionsByState(t *testing.T) {
 			Convey("Then the version is retrieved successfully", func() {
 				So(err, ShouldBeNil)
 				So(version, ShouldNotBeNil)
-				So(count, ShouldEqual, 1)
+				So(count, ShouldEqual, 2)
 				So(version[0].State, ShouldNotEqual, models.PublishedState)
 			})
 		})
@@ -82,6 +82,26 @@ func TestGetStaticVersionsByState(t *testing.T) {
 				So(count, ShouldEqual, 2)
 				So(version[0].State, ShouldEqual, models.PublishedState)
 			})
+		})
+	})
+}
+
+func TestVersionsStatic(t *testing.T) {
+	Convey("Given an in-memory MongoDB is running and populated with static versions", t, func() {
+		ctx := context.Background()
+		mongoDB, _, err := getTestMongoDB(ctx)
+		So(err, ShouldBeNil)
+
+		_, err = setupVersionsTestData(ctx, mongoDB)
+		So(err, ShouldBeNil)
+		Convey("When GetVersionsStatic is called with no state, an approved version is returned", func() {
+			retrievedVersions, count, err := mongoDB.GetVersionsStatic(ctx, staticDatasetID2, "neweditionapproved", "", 0, 20)
+
+			So(err, ShouldBeNil)
+			So(count, ShouldEqual, 1)
+			So(retrievedVersions, ShouldHaveLength, 1)
+
+			So(retrievedVersions[0].State, ShouldEqual, models.ApprovedState)
 		})
 	})
 }
@@ -188,7 +208,7 @@ func TestDeleteStaticDatasetVersion(t *testing.T) {
 
 			versions, err := setupVersionsTestData(ctx, mongoStore)
 			So(err, ShouldBeNil)
-			So(versions, ShouldHaveLength, 3)
+			So(versions, ShouldHaveLength, 4)
 
 			datasetToDelete := staticDatasetID
 			editionToDelete := "edition2"
