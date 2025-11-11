@@ -73,6 +73,10 @@ linters:
         path: _test\.go
       - linters:
           - revive
+        path: _test\.go
+        text: unused-parameter
+      - linters:
+          - revive
         path: _test.go
         text: dot-imports
         source: github.com/smartystreets/goconvey/convey
