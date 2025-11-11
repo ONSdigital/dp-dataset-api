@@ -301,11 +301,11 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 		return nil, models.NewErrorResponse(getVersionAPIErrStatusCode(err), nil, models.NewError(err, "failed to marshal version into bytes", "internal error"))
 	}
 
-	headers := map[string]string{
+	responseHeaders := map[string]string{
 		"Code": strconv.Itoa(http.StatusOK),
 	}
 
-	return models.NewSuccessResponse(versionBytes, http.StatusOK, headers), nil
+	return models.NewSuccessResponse(versionBytes, http.StatusOK, responseHeaders), nil
 }
 
 func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {

@@ -460,6 +460,7 @@ func (api *DatasetAPI) enablePrivateDimensionsEndpoints(dimensionAPI *dimension.
 	)
 
 	// Deprecated (use patch /instances/{instance_id}/dimensions/{dimension}/options/{option} instead)
+	//nolint:staticcheck // Accept deprecated AddNodeIDHandler for legacy support
 	api.put(
 		"/instances/{instance_id}/dimensions/{dimension}/options/{option}/node_id/{node_id}",
 		api.isAuthenticated(

@@ -378,28 +378,28 @@ func (svc *Service) initGraphDB(ctx context.Context) error {
 	return err
 }
 
-func createURLBuilder(config *config.Configuration) (*url.Builder, error) {
-	websiteURL, err := neturl.Parse(config.WebsiteURL)
+func createURLBuilder(cfg *config.Configuration) (*url.Builder, error) {
+	websiteURL, err := neturl.Parse(cfg.WebsiteURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to parse websiteURL from config")
 	}
 
-	downloadServiceURL, err := neturl.Parse(config.DownloadServiceURL)
+	downloadServiceURL, err := neturl.Parse(cfg.DownloadServiceURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to parse downloadServiceURL from config")
 	}
 
-	datasetAPIURL, err := neturl.Parse(config.DatasetAPIURL)
+	datasetAPIURL, err := neturl.Parse(cfg.DatasetAPIURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to parse datasetAPIURL from config")
 	}
 
-	codeListAPIURL, err := neturl.Parse(config.CodeListAPIURL)
+	codeListAPIURL, err := neturl.Parse(cfg.CodeListAPIURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to parse codeListAPIURL from config")
 	}
 
-	importAPIURL, err := neturl.Parse(config.ImportAPIURL)
+	importAPIURL, err := neturl.Parse(cfg.ImportAPIURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to parse importAPIURL from config")
 	}
