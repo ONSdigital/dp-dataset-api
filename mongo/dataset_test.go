@@ -89,6 +89,7 @@ func TestBuildVersionsQuery(t *testing.T) {
 			"$or": []interface{}{
 				bson.M{"state": "edition-confirmed"},
 				bson.M{"state": "associated"},
+				bson.M{"state": "approved"},
 				bson.M{"state": "published"},
 			},
 		}
@@ -507,7 +508,7 @@ func TestDeleteStaticVersionsByDatasetID(t *testing.T) {
 
 			versions, err := setupVersionsTestData(ctx, mongoStore)
 			So(err, ShouldBeNil)
-			So(versions, ShouldHaveLength, 3)
+			So(versions, ShouldHaveLength, 4)
 
 			datasetIDToDelete := staticDatasetID
 
