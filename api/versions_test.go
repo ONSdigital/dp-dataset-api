@@ -31,6 +31,7 @@ const (
 	versionPublishedPayload  = `{"instance_id":"a1b2c3","edition":"2017","license":"ONS","release_date":"2017-04-04","state":"published","collection_id":"12345"}`
 	testLockID               = "testLockID"
 	testETag                 = "testETag"
+	testAuthToken            = "test-auth-token"
 )
 
 type mockFilesClient struct {
@@ -3337,8 +3338,7 @@ func validateLock(mockedDataStore *storetest.StorerMock, expectedInstanceID stri
 
 func TestPutStateReturnsOk(t *testing.T) {
 	Convey("When we make a valid request to the state endpoint", t, func() {
-		b := `{"state":"published"}`
-		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1/state", bytes.NewBufferString(b))
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1/state", bytes.NewBufferString(`{"state":"published"}`))
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -3420,7 +3420,7 @@ func TestPutStateReturnsOk(t *testing.T) {
 				return models.Static.String(), nil
 			},
 
-			UpsertVersionStaticFunc: func(ctx context.Context, ID string, versionDoc *models.Version) error {
+			UpsertVersionStaticFunc: func(ctx context.Context, versionDoc *models.Version) error {
 				return nil
 			},
 
@@ -3543,8 +3543,7 @@ func TestPutStateReturnsError(t *testing.T) {
 	})
 
 	Convey("When the version is not found, return a not found error", t, func() {
-		b := `{"state":"published"}`
-		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123-456/editions/678/versions/1/state", bytes.NewBufferString(b))
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123-456/editions/678/versions/1/state", bytes.NewBufferString(`{"state":"published"}`))
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -3563,8 +3562,7 @@ func TestPutStateReturnsError(t *testing.T) {
 	})
 
 	Convey("When an error occurs, return internal server error", t, func() {
-		b := `{"state":"published"}`
-		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123-456/editions/678/versions/1/state", bytes.NewBufferString(b))
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123-456/editions/678/versions/1/state", bytes.NewBufferString(`{"state":"published"}`))
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
@@ -3622,7 +3620,7 @@ func TestPublishDistributionFiles(t *testing.T) {
 		Convey("When publishDistributionFiles is called with a mocked files client that succeeds", func() {
 			getFileCalls := 0
 			markPublishedCalls := 0
-			authToken := "test-auth-token"
+			authToken := testAuthToken
 
 			mockClient := &mockFilesClient{
 				GetFileFunc: func(ctx context.Context, path string, token string) (files.FileMetaData, error) {
@@ -3664,7 +3662,7 @@ func TestPublishDistributionFiles(t *testing.T) {
 		Convey("When publishDistributionFiles is called with a mocked files client that fails on GetFile", func() {
 			getFileCalls := 0
 			markPublishedCalls := 0
-			authToken := "test-auth-token"
+			authToken := testAuthToken
 
 			mockClient := &mockFilesClient{
 				GetFileFunc: func(ctx context.Context, path string, token string) (files.FileMetaData, error) {
@@ -3702,7 +3700,7 @@ func TestPublishDistributionFiles(t *testing.T) {
 		Convey("When publishDistributionFiles is called with a mocked files client that fails on MarkFilePublished", func() {
 			getFileCalls := 0
 			markPublishedCalls := 0
-			authToken := "test-auth-token"
+			authToken := testAuthToken
 
 			mockClient := &mockFilesClient{
 				GetFileFunc: func(ctx context.Context, path string, token string) (files.FileMetaData, error) {

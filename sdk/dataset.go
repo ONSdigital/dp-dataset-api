@@ -14,7 +14,7 @@ import (
 )
 
 // Get returns dataset level information for a given dataset id
-func (c *Client) GetDataset(ctx context.Context, headers Headers, collectionID, datasetID string) (dataset models.Dataset, err error) {
+func (c *Client) GetDataset(ctx context.Context, headers Headers, datasetID string) (dataset models.Dataset, err error) {
 	dataset = models.Dataset{}
 
 	// Build URI

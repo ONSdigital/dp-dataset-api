@@ -196,7 +196,7 @@ var _ store.MongoDB = &MongoDBMock{}
 //			UpsertVersionFunc: func(ctx context.Context, ID string, versionDoc *models.Version) error {
 //				panic("mock out the UpsertVersion method")
 //			},
-//			UpsertVersionStaticFunc: func(ctx context.Context, ID string, versionDoc *models.Version) error {
+//			UpsertVersionStaticFunc: func(ctx context.Context, versionDoc *models.Version) error {
 //				panic("mock out the UpsertVersionStatic method")
 //			},
 //		}
@@ -381,7 +381,7 @@ type MongoDBMock struct {
 	UpsertVersionFunc func(ctx context.Context, ID string, versionDoc *models.Version) error
 
 	// UpsertVersionStaticFunc mocks the UpsertVersionStatic method.
-	UpsertVersionStaticFunc func(ctx context.Context, ID string, versionDoc *models.Version) error
+	UpsertVersionStaticFunc func(ctx context.Context, versionDoc *models.Version) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -979,8 +979,6 @@ type MongoDBMock struct {
 		UpsertVersionStatic []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
-			// ID is the ID argument value.
-			ID string
 			// VersionDoc is the versionDoc argument value.
 			VersionDoc *models.Version
 		}
@@ -3503,23 +3501,21 @@ func (mock *MongoDBMock) UpsertVersionCalls() []struct {
 }
 
 // UpsertVersionStatic calls UpsertVersionStaticFunc.
-func (mock *MongoDBMock) UpsertVersionStatic(ctx context.Context, ID string, versionDoc *models.Version) error {
+func (mock *MongoDBMock) UpsertVersionStatic(ctx context.Context, versionDoc *models.Version) error {
 	if mock.UpsertVersionStaticFunc == nil {
 		panic("MongoDBMock.UpsertVersionStaticFunc: method is nil but MongoDB.UpsertVersionStatic was just called")
 	}
 	callInfo := struct {
 		Ctx        context.Context
-		ID         string
 		VersionDoc *models.Version
 	}{
 		Ctx:        ctx,
-		ID:         ID,
 		VersionDoc: versionDoc,
 	}
 	mock.lockUpsertVersionStatic.Lock()
 	mock.calls.UpsertVersionStatic = append(mock.calls.UpsertVersionStatic, callInfo)
 	mock.lockUpsertVersionStatic.Unlock()
-	return mock.UpsertVersionStaticFunc(ctx, ID, versionDoc)
+	return mock.UpsertVersionStaticFunc(ctx, versionDoc)
 }
 
 // UpsertVersionStaticCalls gets all the calls that were made to UpsertVersionStatic.
@@ -3528,12 +3524,10 @@ func (mock *MongoDBMock) UpsertVersionStatic(ctx context.Context, ID string, ver
 //	len(mockedMongoDB.UpsertVersionStaticCalls())
 func (mock *MongoDBMock) UpsertVersionStaticCalls() []struct {
 	Ctx        context.Context
-	ID         string
 	VersionDoc *models.Version
 } {
 	var calls []struct {
 		Ctx        context.Context
-		ID         string
 		VersionDoc *models.Version
 	}
 	mock.lockUpsertVersionStatic.RLock()

@@ -198,7 +198,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 
 				dataset.Current.ID = dataset.ID
 
-				if dataset.Current.Type != "static" && dataset.Current.Topics == nil {
+				if dataset.Current.Type != models.Static.String() && dataset.Current.Topics == nil {
 					dataset.Current.Topics = nil
 				}
 
@@ -211,11 +211,11 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 				}
 				log.Info(ctx, "getDataset endpoint: caller authorised returning dataset current sub document", logData)
 
-				if dataset.Current != nil && dataset.Current.Type != "static" && dataset.Current.Topics == nil {
+				if dataset.Current != nil && dataset.Current.Type != models.Static.String() && dataset.Current.Topics == nil {
 					dataset.Current.Topics = nil
 				}
 
-				if dataset.Next != nil && dataset.Next.Type != "static" && dataset.Next.Topics == nil {
+				if dataset.Next != nil && dataset.Next.Type != models.Static.String() && dataset.Next.Topics == nil {
 					dataset.Next.Topics = nil
 				}
 
@@ -552,6 +552,7 @@ func (api *DatasetAPI) publishDataset(ctx context.Context, currentDataset *model
 	return nil
 }
 
+//nolint:gocognit // Complexity acceptable for now, refactoring can be done later if needed
 func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)

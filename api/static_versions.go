@@ -56,11 +56,10 @@ func (api *DatasetAPI) getDatasetEditions(w http.ResponseWriter, r *http.Request
 			log.Error(ctx, "getDatasetEditions endpoint: no versions found", err, logData)
 			handleVersionAPIErr(ctx, errs.ErrVersionsNotFound, w, logData)
 			return nil, 0, errs.ErrVersionsNotFound
-		} else {
-			log.Error(ctx, "getDatasetEditions endpoint: failed to get versions", err, logData)
-			handleVersionAPIErr(ctx, errs.ErrInternalServer, w, logData)
-			return nil, 0, errs.ErrInternalServer
 		}
+		log.Error(ctx, "getDatasetEditions endpoint: failed to get versions", err, logData)
+		handleVersionAPIErr(ctx, errs.ErrInternalServer, w, logData)
+		return nil, 0, errs.ErrInternalServer
 	}
 
 	results := make([]*models.DatasetEdition, 0, len(versions))
@@ -76,11 +75,10 @@ func (api *DatasetAPI) getDatasetEditions(w http.ResponseWriter, r *http.Request
 				log.Error(ctx, "getDatasetEditions endpoint: dataset not found", err, logData)
 				handleVersionAPIErr(ctx, errs.ErrDatasetNotFound, w, logData)
 				return nil, 0, errs.ErrDatasetNotFound
-			} else {
-				log.Error(ctx, "getDatasetEditions endpoint: failed to get dataset", err, logData)
-				handleVersionAPIErr(ctx, errs.ErrInternalServer, w, logData)
-				return nil, 0, errs.ErrInternalServer
 			}
+			log.Error(ctx, "getDatasetEditions endpoint: failed to get dataset", err, logData)
+			handleVersionAPIErr(ctx, errs.ErrInternalServer, w, logData)
+			return nil, 0, errs.ErrInternalServer
 		}
 
 		results = append(results, &models.DatasetEdition{

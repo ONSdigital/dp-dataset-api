@@ -158,9 +158,8 @@ func (m *Mongo) CheckDatasetTitleExist(ctx context.Context, title string) (bool,
 	}
 	if count > 0 {
 		return true, nil
-	} else {
-		return false, nil
 	}
+	return false, nil
 }
 
 // GetEditions retrieves all edition documents for a dataset

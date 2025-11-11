@@ -446,6 +446,7 @@ func AssociateVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 	return nil
 }
 
+//nolint:revive // hasDownloads is intentionally unused to be compatible with the State struct
 func ApproveVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 	currentVersion *models.Version, // Called Instances in Mongo
 	versionUpdate *models.Version, // Next version, that is the new version
@@ -545,6 +546,7 @@ func PublishVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 	return nil
 }
 
+//nolint:gocognit // Complexity is acceptable for now, refactoring can be considered later if needed
 func UpdateVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 	currentVersion *models.Version, // Called Instances in Mongo
 	versionUpdate *models.Version,
@@ -653,7 +655,7 @@ func PublishEdition(ctx context.Context, smDS *StateMachineDatasetAPI,
 	}
 
 	if datasetType == models.Static.String() {
-		if err := smDS.DataStore.Backend.UpsertVersionStatic(ctx, versionDetails.version, versionDoc); err != nil {
+		if err := smDS.DataStore.Backend.UpsertVersionStatic(ctx, versionDoc); err != nil {
 			log.Error(ctx, "State Machine - Publish: PublishEdition: failed to update version during publishing", err, data)
 			return err
 		}

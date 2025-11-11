@@ -321,7 +321,7 @@ func TestUnmarshalResponseBodyExpectingStringError(t *testing.T) {
 		})
 	})
 	Convey("If response status code is not 404 (StatusNotFound)", t, func() {
-		responseErr := errors.New("Not found!")
+		responseErr := errors.New("not found")
 		responseJSON, _ := json.Marshal(responseErr.Error())
 		mockResponse := &http.Response{
 			StatusCode: http.StatusNotFound,
