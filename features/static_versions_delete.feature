@@ -21,6 +21,12 @@ Feature: Static Dataset Versions DELETE API
                     "title": "static dataset with no versions",
                     "state": "created",
                     "type": "static"
+                },
+                {
+                    "id": "static-dataset-bad-version-download-url",
+                    "title": "static dataset with bad version download_url",
+                    "state": "created",
+                    "type": "static"
                 }
             ]
             """
@@ -80,6 +86,33 @@ Feature: Static Dataset Versions DELETE API
                             "byte_size": 150000
                         }
                     ]
+                },
+                {
+                    "id": "static-version-bad-download-url",
+                    "edition": "January",
+                    "edition_title": "January Edition Title",
+                    "links": {
+                        "dataset": {
+                            "id": "static-dataset-bad-version-download-url"
+                        },
+                        "edition": {
+                            "href": "/datasets/static-dataset-bad-version-download-url/editions/January",
+                            "id": "January"
+                        }
+                    },
+                    "version": 1,
+                    "release_date": "2026-01-01T09:00:00.000Z",
+                    "state": "associated",
+                    "type": "static",
+                    "distributions": [
+                        {
+                            "title": "Files API expected to fail",
+                            "format": "csv",
+                            "media_type": "text/csv",
+                            "download_url": "/fail/to/delete.csv",
+                            "byte_size": 150000
+                        }
+                    ]
                 }
             ]
             """
@@ -101,6 +134,15 @@ Feature: Static Dataset Versions DELETE API
         Then the HTTP status code should be "403"
         And the dataset "static-dataset-published" should exist
         And the static version "static-version-published" should exist
+
+    Scenario: DELETE /datasets/{id} fails due to bad files-api client response
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I DELETE "/datasets/static-dataset-bad-version-download-url"
+        Then the HTTP status code should be "500"
+        And the dataset "static-dataset-bad-version-download-url" should exist
+        And the static version "static-version-bad-download-url" should exist
 
     Scenario: DELETE unpublished static dataset with no versions successfully
         Given private endpoints are enabled
