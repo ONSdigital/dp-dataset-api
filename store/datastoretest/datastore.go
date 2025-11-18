@@ -63,9 +63,6 @@ var _ store.Storer = &StorerMock{}
 //			DeleteStaticDatasetVersionFunc: func(ctx context.Context, datasetID string, editionID string, version int) error {
 //				panic("mock out the DeleteStaticDatasetVersion method")
 //			},
-//			DeleteStaticVersionsByDatasetIDFunc: func(ctx context.Context, ID string) (int, error) {
-//				panic("mock out the DeleteStaticVersionsByDatasetID method")
-//			},
 //			GetAllStaticVersionsFunc: func(ctx context.Context, ID string, state string, offset int, limit int) ([]*models.Version, int, error) {
 //				panic("mock out the GetAllStaticVersions method")
 //			},
@@ -246,9 +243,6 @@ type StorerMock struct {
 
 	// DeleteStaticDatasetVersionFunc mocks the DeleteStaticDatasetVersion method.
 	DeleteStaticDatasetVersionFunc func(ctx context.Context, datasetID string, editionID string, version int) error
-
-	// DeleteStaticVersionsByDatasetIDFunc mocks the DeleteStaticVersionsByDatasetID method.
-	DeleteStaticVersionsByDatasetIDFunc func(ctx context.Context, ID string) (int, error)
 
 	// GetAllStaticVersionsFunc mocks the GetAllStaticVersions method.
 	GetAllStaticVersionsFunc func(ctx context.Context, ID string, state string, offset int, limit int) ([]*models.Version, int, error)
@@ -509,13 +503,6 @@ type StorerMock struct {
 			EditionID string
 			// Version is the version argument value.
 			Version int
-		}
-		// DeleteStaticVersionsByDatasetID holds details about calls to the DeleteStaticVersionsByDatasetID method.
-		DeleteStaticVersionsByDatasetID []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// ID is the ID argument value.
-			ID string
 		}
 		// GetAllStaticVersions holds details about calls to the GetAllStaticVersions method.
 		GetAllStaticVersions []struct {
@@ -1004,7 +991,6 @@ type StorerMock struct {
 	lockDeleteDataset                       sync.RWMutex
 	lockDeleteEdition                       sync.RWMutex
 	lockDeleteStaticDatasetVersion          sync.RWMutex
-	lockDeleteStaticVersionsByDatasetID     sync.RWMutex
 	lockGetAllStaticVersions                sync.RWMutex
 	lockGetDataset                          sync.RWMutex
 	lockGetDatasetType                      sync.RWMutex
@@ -1608,42 +1594,6 @@ func (mock *StorerMock) DeleteStaticDatasetVersionCalls() []struct {
 	mock.lockDeleteStaticDatasetVersion.RLock()
 	calls = mock.calls.DeleteStaticDatasetVersion
 	mock.lockDeleteStaticDatasetVersion.RUnlock()
-	return calls
-}
-
-// DeleteStaticVersionsByDatasetID calls DeleteStaticVersionsByDatasetIDFunc.
-func (mock *StorerMock) DeleteStaticVersionsByDatasetID(ctx context.Context, ID string) (int, error) {
-	if mock.DeleteStaticVersionsByDatasetIDFunc == nil {
-		panic("StorerMock.DeleteStaticVersionsByDatasetIDFunc: method is nil but Storer.DeleteStaticVersionsByDatasetID was just called")
-	}
-	callInfo := struct {
-		Ctx context.Context
-		ID  string
-	}{
-		Ctx: ctx,
-		ID:  ID,
-	}
-	mock.lockDeleteStaticVersionsByDatasetID.Lock()
-	mock.calls.DeleteStaticVersionsByDatasetID = append(mock.calls.DeleteStaticVersionsByDatasetID, callInfo)
-	mock.lockDeleteStaticVersionsByDatasetID.Unlock()
-	return mock.DeleteStaticVersionsByDatasetIDFunc(ctx, ID)
-}
-
-// DeleteStaticVersionsByDatasetIDCalls gets all the calls that were made to DeleteStaticVersionsByDatasetID.
-// Check the length with:
-//
-//	len(mockedStorer.DeleteStaticVersionsByDatasetIDCalls())
-func (mock *StorerMock) DeleteStaticVersionsByDatasetIDCalls() []struct {
-	Ctx context.Context
-	ID  string
-} {
-	var calls []struct {
-		Ctx context.Context
-		ID  string
-	}
-	mock.lockDeleteStaticVersionsByDatasetID.RLock()
-	calls = mock.calls.DeleteStaticVersionsByDatasetID
-	mock.lockDeleteStaticVersionsByDatasetID.RUnlock()
 	return calls
 }
 
