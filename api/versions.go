@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ONSdigital/dp-api-clients-go/v2/files"
 	"github.com/ONSdigital/dp-api-clients-go/v2/headers"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -20,7 +19,6 @@ import (
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
-	"github.com/pkg/errors"
 )
 
 var (
@@ -390,7 +388,7 @@ func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if err := api.smDatasetAPI.DeleteStaticVersion(ctx, datasetID, edition, versionNum); err != nil {
+		if err := api.smDatasetAPI.DeleteStaticVersion(ctx, datasetID, edition, versionNum, api.filesAPIClient); err != nil {
 			handleVersionAPIErr(ctx, err, w, logData)
 			return
 		}
@@ -826,12 +824,11 @@ func (api *DatasetAPI) publishDistributionFiles(ctx context.Context, version *mo
 		}
 		maps.Copy(fileLogData, logData)
 
-		fileMetadata, err := api.filesAPIClient.GetFile(ctx, filepath, api.authToken)
+		_, err := api.filesAPIClient.GetFile(ctx, filepath)
 		if err != nil {
 			log.Error(ctx, "failed to get file metadata", err, fileLogData)
 
-			if errors.Is(err, files.ErrFileNotFound) ||
-				strings.Contains(err.Error(), "FileNotRegistered") ||
+			if strings.Contains(err.Error(), "FileNotRegistered") ||
 				strings.Contains(err.Error(), "file not registered") ||
 				strings.Contains(err.Error(), "not found") {
 				filesAPIError = errs.ErrFileMetadataNotFound
@@ -840,11 +837,13 @@ func (api *DatasetAPI) publishDistributionFiles(ctx context.Context, version *mo
 			continue
 		}
 
-		err = api.filesAPIClient.MarkFilePublished(ctx, filepath, fileMetadata.Etag)
+		err = api.filesAPIClient.MarkFilePublished(ctx, filepath)
 		if err != nil {
 			log.Error(ctx, "failed to publish file", err, fileLogData)
 
-			if errors.Is(err, files.ErrInvalidState) {
+			if strings.Contains(err.Error(), "FileStateError") ||
+				strings.Contains(err.Error(), "file is not set as publishable") ||
+				strings.Contains(err.Error(), "file state is not in state uploaded") {
 				filesAPIError = errs.ErrFileNotInCorrectState
 			}
 			lastError = err
