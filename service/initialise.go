@@ -7,6 +7,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	"github.com/ONSdigital/dp-graph/v2/graph"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	kafka "github.com/ONSdigital/dp-kafka/v4"
@@ -20,6 +21,7 @@ type ExternalServiceList struct {
 	Graph                     bool
 	HealthCheck               bool
 	MongoDB                   bool
+	FilesAPIClient            bool
 	Init                      Initialiser
 }
 
@@ -78,6 +80,20 @@ func (e *ExternalServiceList) GetMongoDB(ctx context.Context, cfg config.MongoCo
 	}
 	e.MongoDB = true
 	return mongodb, nil
+}
+
+// GetFilesAPIClient returns a files API client
+func (e *ExternalServiceList) GetFilesAPIClient(ctx context.Context, cfg *config.Configuration) (filesAPISDK.Clienter, error) {
+	if cfg.EnablePrivateEndpoints {
+		filesAPIClient, err := e.Init.DoGetFilesAPIClient(ctx, cfg)
+		if err != nil {
+			log.Error(ctx, "failed to initialise files API client", err)
+			return nil, err
+		}
+		e.FilesAPIClient = true
+		return filesAPIClient, nil
+	}
+	return nil, nil
 }
 
 // DoGetHTTPServer creates an HTTP Server with the provided bind address and router
@@ -140,4 +156,9 @@ func (e *Init) DoGetMongoDB(ctx context.Context, cfg config.MongoConfig) (store.
 	}
 	log.Info(ctx, "listening to mongo db session", log.Data{"URI": mongodb.ClusterEndpoint})
 	return mongodb, nil
+}
+
+// DoGetFilesAPIClient returns a files API client
+func (e *Init) DoGetFilesAPIClient(ctx context.Context, cfg *config.Configuration) (filesAPISDK.Clienter, error) {
+	return filesAPISDK.New(cfg.FilesAPIURL, cfg.ServiceAuthToken), nil
 }

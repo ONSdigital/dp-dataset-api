@@ -7,7 +7,6 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/ONSdigital/dp-api-clients-go/v2/files"
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
 	"github.com/ONSdigital/dp-authorisation/auth"
 	"github.com/ONSdigital/dp-dataset-api/api"
@@ -20,6 +19,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/dp-dataset-api/url"
+	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	kafka "github.com/ONSdigital/dp-kafka/v4"
 	dphandlers "github.com/ONSdigital/dp-net/v3/handlers"
 	dphttp "github.com/ONSdigital/dp-net/v3/http"
@@ -50,7 +50,7 @@ type Service struct {
 	generateCMDDownloadsProducer        kafka.IProducer
 	generateCantabularDownloadsProducer kafka.IProducer
 	identityClient                      *clientsidentity.Client
-	filesAPIClient                      *files.Client
+	filesAPIClient                      filesAPISDK.Clienter
 	server                              HTTPServer
 	healthCheck                         HealthChecker
 	api                                 *api.DatasetAPI
@@ -213,7 +213,7 @@ func (svc *Service) SetGraphDBErrorConsumer(graphDBErrorConsumer Closer) {
 }
 
 // SetFilesAPIClient sets the files API client for a service
-func (svc *Service) SetFilesAPIClient(filesAPIClient *files.Client) {
+func (svc *Service) SetFilesAPIClient(filesAPIClient filesAPISDK.Clienter) {
 	svc.filesAPIClient = filesAPIClient
 }
 
@@ -225,6 +225,10 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	}
 
 	if err := svc.initGraphDB(ctx); err != nil {
+		return err
+	}
+
+	if err := svc.initFilesAPIClient(ctx); err != nil {
 		return err
 	}
 
@@ -277,14 +281,6 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	// Get Identity Client (only if private endpoints are enabled)
 	if svc.config.EnablePrivateEndpoints {
 		svc.identityClient = clientsidentity.New(svc.config.ZebedeeURL)
-	}
-
-	// Initialise Files API Client (if private endpoints are enabled)
-	if svc.config.EnablePrivateEndpoints {
-		if svc.filesAPIClient == nil {
-			svc.filesAPIClient = files.NewAPIClient(svc.config.FilesAPIURL, svc.config.ServiceAuthToken)
-			log.Info(ctx, "files API client created", log.Data{"url": svc.config.FilesAPIURL})
-		}
 	}
 
 	// Get HealthCheck
@@ -375,6 +371,12 @@ func (svc *Service) initGraphDB(ctx context.Context) error {
 			log.Fatal(ctx, "failed to initialise graph driver", err)
 		}
 	}
+	return err
+}
+
+func (svc *Service) initFilesAPIClient(ctx context.Context) error {
+	var err error
+	svc.filesAPIClient, err = svc.serviceList.GetFilesAPIClient(ctx, svc.config)
 	return err
 }
 
@@ -563,6 +565,11 @@ func (svc *Service) registerCheckers(ctx context.Context) (err error) {
 		if err = svc.healthCheck.AddCheck("Kafka Generate Cantabular Downloads Producer", svc.generateCantabularDownloadsProducer.Checker); err != nil {
 			hasErrors = true
 			log.Error(ctx, "error adding check for cantabular kafka downloads producer", err)
+		}
+
+		if err = svc.healthCheck.AddCheck("Files API Client", svc.filesAPIClient.Checker); err != nil {
+			hasErrors = true
+			log.Error(ctx, "error adding check for files api client", err)
 		}
 
 		// If running Catabular Locally then don't do health checks against GraphDB
