@@ -610,7 +610,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 				return models.Static.String(), nil
 			},
 			GetAllStaticVersionsFunc: func(ctx context.Context, ID, state string, offset, limit int) ([]*models.Version, int, error) {
-				return nil, 0, errs.ErrVersionNotFound
+				return nil, 0, errs.ErrVersionsNotFound
 			},
 		}
 
