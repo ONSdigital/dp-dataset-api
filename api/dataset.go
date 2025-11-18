@@ -552,7 +552,7 @@ func (api *DatasetAPI) publishDataset(ctx context.Context, currentDataset *model
 	return nil
 }
 
-//nolint:gocognit // Complexity acceptable for now, refactoring can be done later if needed
+//nolint:gocognit,gocyclo // Complexity acceptable for now, refactoring can be done later if needed
 func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
@@ -578,12 +578,37 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 
 		// Find any editions/versions associated with the dataset based on the type
 		if currentDataset.Next.Type == models.Static.String() {
-			_, err := api.dataStore.Backend.DeleteStaticVersionsByDatasetID(ctx, currentDataset.ID)
+			// Limit is hardcoded to 20 (DEFAULT_LIMIT) to prevent unbounded queries.
+			// If a dataset has more than 20 unpublished editions/versions, only the first 20 will be deleted.
+			// Refactoring is required if more than 20 editions/versions per dataset is a possibility.
+			versionDocs, _, err := api.dataStore.Backend.GetAllStaticVersions(ctx, currentDataset.ID, "", 0, 20)
 			if err != nil {
 				if err == errs.ErrVersionsNotFound {
-					log.Info(ctx, "dataset didn't contain any versions, continuing to delete dataset", logData)
+					log.Info(ctx, "deleteDataset endpoint: dataset didn't contain any versions, continuing to delete dataset", logData)
 				} else {
-					log.Error(ctx, "failed to delete dataset versions", err, logData)
+					log.Error(ctx, "deleteDataset endpoint: failed to get versions for static dataset", err, logData)
+					return err
+				}
+			}
+
+			for i := range versionDocs {
+				if versionDocs[i].Distributions != nil {
+					for _, distribution := range *versionDocs[i].Distributions {
+						logData["distribution_title"] = distribution.Title
+						logData["distribution_download_url"] = distribution.DownloadURL
+
+						err := api.filesAPIClient.DeleteFile(ctx, distribution.DownloadURL)
+						if err != nil {
+							log.Error(ctx, "deleteDataset endpoint: failed to delete distribution file from files API", err, logData)
+							return err
+						}
+						log.Info(ctx, "deleteDataset endpoint: successfully deleted distribution file from files API", logData)
+					}
+				}
+
+				err := api.dataStore.Backend.DeleteStaticDatasetVersion(ctx, currentDataset.ID, versionDocs[i].Edition, versionDocs[i].Version)
+				if err != nil {
+					log.Error(ctx, "deleteDataset endpoint: failed to delete version", err, logData)
 					return err
 				}
 			}
