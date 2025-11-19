@@ -51,6 +51,9 @@ var _ store.Storer = &StorerMock{}
 //			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID string, editionID string, state string) error {
 //				panic("mock out the CheckEditionExistsStatic method")
 //			},
+//			CheckEditionTitleIDExistsStaticFunc: func(ctx context.Context, datasetID string, editionID string, editionTitle string) error {
+//				panic("mock out the CheckEditionTitleIDExistsStatic method")
+//			},
 //			CheckVersionExistsStaticFunc: func(ctx context.Context, datasetID string, editionID string, version int) (bool, error) {
 //				panic("mock out the CheckVersionExistsStatic method")
 //			},
@@ -234,6 +237,9 @@ type StorerMock struct {
 
 	// CheckEditionExistsStaticFunc mocks the CheckEditionExistsStatic method.
 	CheckEditionExistsStaticFunc func(ctx context.Context, datasetID string, editionID string, state string) error
+
+	// CheckEditionTitleIDExistsStaticFunc mocks the CheckEditionTitleIDExistsStatic method.
+	CheckEditionTitleIDExistsStaticFunc func(ctx context.Context, datasetID string, editionID string, editionTitle string) error
 
 	// CheckVersionExistsStaticFunc mocks the CheckVersionExistsStatic method.
 	CheckVersionExistsStaticFunc func(ctx context.Context, datasetID string, editionID string, version int) (bool, error)
@@ -473,6 +479,17 @@ type StorerMock struct {
 			EditionID string
 			// State is the state argument value.
 			State string
+		}
+		// CheckEditionTitleIDExistsStatic holds details about calls to the CheckEditionTitleIDExistsStatic method.
+		CheckEditionTitleIDExistsStatic []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// EditionID is the editionID argument value.
+			EditionID string
+			// EditionTitle is the editionTitle argument value.
+			EditionTitle string
 		}
 		// CheckVersionExistsStatic holds details about calls to the CheckVersionExistsStatic method.
 		CheckVersionExistsStatic []struct {
@@ -1000,6 +1017,7 @@ type StorerMock struct {
 	lockCheckDatasetTitleExist              sync.RWMutex
 	lockCheckEditionExists                  sync.RWMutex
 	lockCheckEditionExistsStatic            sync.RWMutex
+	lockCheckEditionTitleIDExistsStatic     sync.RWMutex
 	lockCheckVersionExistsStatic            sync.RWMutex
 	lockDeleteDataset                       sync.RWMutex
 	lockDeleteEdition                       sync.RWMutex
@@ -1448,6 +1466,50 @@ func (mock *StorerMock) CheckEditionExistsStaticCalls() []struct {
 	mock.lockCheckEditionExistsStatic.RLock()
 	calls = mock.calls.CheckEditionExistsStatic
 	mock.lockCheckEditionExistsStatic.RUnlock()
+	return calls
+}
+
+// CheckEditionTitleIDExistsStatic calls CheckEditionTitleIDExistsStaticFunc.
+func (mock *StorerMock) CheckEditionTitleIDExistsStatic(ctx context.Context, datasetID string, editionID string, editionTitle string) error {
+	if mock.CheckEditionTitleIDExistsStaticFunc == nil {
+		panic("StorerMock.CheckEditionTitleIDExistsStaticFunc: method is nil but Storer.CheckEditionTitleIDExistsStatic was just called")
+	}
+	callInfo := struct {
+		Ctx          context.Context
+		DatasetID    string
+		EditionID    string
+		EditionTitle string
+	}{
+		Ctx:          ctx,
+		DatasetID:    datasetID,
+		EditionID:    editionID,
+		EditionTitle: editionTitle,
+	}
+	mock.lockCheckEditionTitleIDExistsStatic.Lock()
+	mock.calls.CheckEditionTitleIDExistsStatic = append(mock.calls.CheckEditionTitleIDExistsStatic, callInfo)
+	mock.lockCheckEditionTitleIDExistsStatic.Unlock()
+	return mock.CheckEditionTitleIDExistsStaticFunc(ctx, datasetID, editionID, editionTitle)
+}
+
+// CheckEditionTitleIDExistsStaticCalls gets all the calls that were made to CheckEditionTitleIDExistsStatic.
+// Check the length with:
+//
+//	len(mockedStorer.CheckEditionTitleIDExistsStaticCalls())
+func (mock *StorerMock) CheckEditionTitleIDExistsStaticCalls() []struct {
+	Ctx          context.Context
+	DatasetID    string
+	EditionID    string
+	EditionTitle string
+} {
+	var calls []struct {
+		Ctx          context.Context
+		DatasetID    string
+		EditionID    string
+		EditionTitle string
+	}
+	mock.lockCheckEditionTitleIDExistsStatic.RLock()
+	calls = mock.calls.CheckEditionTitleIDExistsStatic
+	mock.lockCheckEditionTitleIDExistsStatic.RUnlock()
 	return calls
 }
 

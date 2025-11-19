@@ -27,6 +27,7 @@ type dataMongoDB interface {
 	CheckDatasetTitleExist(ctx context.Context, title string) (bool, error)
 	CheckEditionExists(ctx context.Context, ID, editionID, state string) error
 	CheckEditionExistsStatic(ctx context.Context, datasetID, editionID, state string) error
+	CheckEditionTitleIDExistsStatic(ctx context.Context, datasetID, editionID, editionTitle string) error
 	CheckVersionExistsStatic(ctx context.Context, datasetID, editionID string, version int) (bool, error)
 	GetDataset(ctx context.Context, ID string) (*models.DatasetUpdate, error)
 	GetDatasets(ctx context.Context, offset, limit int, authorised bool) ([]*models.DatasetUpdate, int, error)

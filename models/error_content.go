@@ -15,8 +15,10 @@ const (
 	MissingConfigError       = "MissingConfig"
 	UnknownRequestTypeError  = "UnknownRequestType"
 	NotImplementedError      = "NotImplemented"
-	BodyCloseError           = "BodyCloseError"
-	ErrInvalidTypeError      = "InvalidType"
+	BodyCloseError              = "BodyCloseError"
+	ErrInvalidTypeError         = "InvalidType"
+	ErrEditionAlreadyExists     = "ErrEditionTitleAlreadyExists"
+	ErrEditionTitleAlreadyExists = "ErrEditionTitleAlreadyExists"
 )
 
 // API error descriptions
@@ -36,4 +38,6 @@ const (
 	ErrUnpublishedVersionAlreadyExistsDescription = "an unpublished version of this dataset already exists"
 	ErrVersionAlreadyExistsDescription            = "version already exists"
 	ErrTypeNotStaticDescription                   = "version type should be static"
+	ErrEditionAlreadyExistsDescription            = "edition title already exists"
+	ErrEditionTitleAlreadyExistsDescription       = "edition title already exists for this dataset"
 )

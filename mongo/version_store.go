@@ -3,6 +3,7 @@ package mongo
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -288,6 +289,39 @@ func (m *Mongo) DeleteStaticDatasetVersion(ctx context.Context, datasetID, editi
 		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
 			return errs.ErrVersionNotFound
 		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *Mongo) CheckEditionTitleIDExistsStatic(ctx context.Context, datasetID, editionId, editionTitle string) error {
+
+	fmt.Println("Checking if edition ID or title already exists for dataset:", datasetID)
+	fmt.Println("Edition ID to check:", editionId)
+	fmt.Println("Edition title to check:", editionTitle)
+
+	// Check if edition ID already exists
+	queryByID := bson.M{
+		"links.dataset.id": datasetID,
+		"edition":          editionId,
+	}
+	var d models.Version
+	if err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).FindOne(ctx, queryByID, &d, mongodriver.Projection(bson.M{"_id": 1})); err == nil {
+		fmt.Println("Edition ID already exists")
+		return errs.ErrEditionAlreadyExists
+	} else if !errors.Is(err, mongodriver.ErrNoDocumentFound) {
+		return err
+	}
+
+	// Check if edition title already exists
+	queryByTitle := bson.M{
+		"links.dataset.id": datasetID,
+		"edition_title":    editionTitle,
+	}
+	if err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).FindOne(ctx, queryByTitle, &d, mongodriver.Projection(bson.M{"_id": 1})); err == nil {
+		return errs.ErrEditionTitleAlreadyExists
+	} else if !errors.Is(err, mongodriver.ErrNoDocumentFound) {
 		return err
 	}
 
