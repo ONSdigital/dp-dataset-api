@@ -313,7 +313,6 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	vars := mux.Vars(r)
-
 	data := log.Data{
 		"datasetID": vars["dataset_id"],
 		"edition":   vars["edition"],
@@ -323,6 +322,19 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	version, err := models.CreateVersion(r.Body, vars["dataset_id"])
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, data)
+		return
+	}
+
+	checkErr := api.dataStore.Backend.CheckEditionTitleIDExistsStatic(ctx, version.DatasetID, version.Edition, version.EditionTitle)
+	if checkErr != nil {
+		if errors.Is(checkErr, errs.ErrEditionAlreadyExists) {
+			log.Error(ctx, "edition ID already exists for this dataset", checkErr, data)
+		} else if errors.Is(checkErr, errs.ErrEditionTitleAlreadyExists) {
+			log.Error(ctx, "edition title already exists for this dataset", checkErr, data)
+		} else {
+			log.Error(ctx, "failed to check edition ID and title existence", checkErr, data)
+		}
+		handleVersionAPIErr(ctx, checkErr, w, data)
 		return
 	}
 

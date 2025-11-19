@@ -301,10 +301,12 @@ func (m *Mongo) CheckEditionTitleIDExistsStatic(ctx context.Context, datasetID, 
 	fmt.Println("Edition ID to check:", editionId)
 	fmt.Println("Edition title to check:", editionTitle)
 
-	// Check if edition ID already exists
 	queryByID := bson.M{
 		"links.dataset.id": datasetID,
-		"edition":          editionId,
+		"$or": []bson.M{
+			{"edition": editionId},
+			{"links.edition.id": editionId},
+		},
 	}
 	var d models.Version
 	if err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).FindOne(ctx, queryByID, &d, mongodriver.Projection(bson.M{"_id": 1})); err == nil {
@@ -320,6 +322,7 @@ func (m *Mongo) CheckEditionTitleIDExistsStatic(ctx context.Context, datasetID, 
 		"edition_title":    editionTitle,
 	}
 	if err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).FindOne(ctx, queryByTitle, &d, mongodriver.Projection(bson.M{"_id": 1})); err == nil {
+		fmt.Println("Edition title already exists")
 		return errs.ErrEditionTitleAlreadyExists
 	} else if !errors.Is(err, mongodriver.ErrNoDocumentFound) {
 		return err
