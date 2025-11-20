@@ -578,10 +578,10 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 
 		// Find any editions/versions associated with the dataset based on the type
 		if currentDataset.Next.Type == models.Static.String() {
-			// Limit is hardcoded to 20 (DEFAULT_LIMIT) to prevent unbounded queries.
-			// If a dataset has more than 20 unpublished editions/versions, only the first 20 will be deleted.
-			// Refactoring is required if more than 20 editions/versions per dataset is a possibility.
-			versionDocs, _, err := api.dataStore.Backend.GetAllStaticVersions(ctx, currentDataset.ID, "", 0, 20)
+			// Limit is set to DEFAULT_LIMIT (20) to prevent unbounded queries.
+			// If a dataset has more than DEFAULT_LIMIT unpublished editions/versions, only the first DEFAULT_LIMIT will be deleted.
+			// Refactoring is required if more than DEFAULT_LIMIT editions/versions per dataset is a possibility.
+			versionDocs, _, err := api.dataStore.Backend.GetAllStaticVersions(ctx, currentDataset.ID, "", 0, api.defaultLimit)
 			if err != nil {
 				if err == errs.ErrVersionsNotFound {
 					log.Info(ctx, "deleteDataset endpoint: dataset didn't contain any versions, continuing to delete dataset", logData)
