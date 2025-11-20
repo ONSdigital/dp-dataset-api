@@ -91,6 +91,7 @@ func (e *ExternalServiceList) GetFilesAPIClient(ctx context.Context, cfg *config
 			return nil, err
 		}
 		e.FilesAPIClient = true
+		log.Info(ctx, "files API client created successfully", log.Data{"url": cfg.FilesAPIURL})
 		return filesAPIClient, nil
 	}
 	return nil, nil
