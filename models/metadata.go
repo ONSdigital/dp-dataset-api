@@ -78,7 +78,7 @@ type MetadataLinks struct {
 // CreateMetaDataDoc manages the creation of metadata across dataset and version docs
 func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url.Builder) *Metadata {
 	var topics []string
-	if datasetDoc.Type == "static" {
+	if datasetDoc.Type == Static.String() {
 		topics = datasetDoc.Topics
 	}
 
@@ -149,7 +149,7 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 		}
 	}
 
-	if datasetDoc.Type != "static" {
+	if datasetDoc.Type != Static.String() {
 		metaDataDoc.Distribution = getDistribution(versionDoc.Downloads)
 	}
 
@@ -325,7 +325,7 @@ func (d *Dataset) UpdateMetadata(metadata EditableMetadata) {
 	d.Publications = metadata.Publications
 	d.Survey = metadata.Survey
 
-	if d.Type == "static" && metadata.Topics != nil {
+	if d.Type == Static.String() && metadata.Topics != nil {
 		d.Topics = metadata.Topics
 	}
 }

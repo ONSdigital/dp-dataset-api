@@ -12,6 +12,8 @@ import (
 	serviceMock "github.com/ONSdigital/dp-dataset-api/service/mock"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	storeMock "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
+	filesAPISDKMocks "github.com/ONSdigital/dp-files-api/sdk/mocks"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	kafka "github.com/ONSdigital/dp-kafka/v4"
 	"github.com/ONSdigital/dp-kafka/v4/kafkatest"
@@ -27,16 +29,13 @@ var (
 )
 
 var (
-	errMongo       = errors.New("MongoDB error")
-	errGraph       = errors.New("GraphDB error")
-	errKafka       = errors.New("Kafka producer error")
-	errServer      = errors.New("HTTP Server error")
-	errHealthcheck = errors.New("healthCheck error")
+	errMongo          = errors.New("MongoDB error")
+	errGraph          = errors.New("GraphDB error")
+	errFilesAPIClient = errors.New("Files API client error")
+	errKafka          = errors.New("Kafka producer error")
+	errServer         = errors.New("HTTP Server error")
+	errHealthcheck    = errors.New("healthCheck error")
 )
-
-var funcDoGetHealthcheckErr = func(*config.Configuration, string, string, string) (service.HealthChecker, error) {
-	return nil, errHealthcheck
-}
 
 var funcDoGetMongoDBErr = func(context.Context, config.MongoConfig) (store.MongoDB, error) {
 	return nil, errMongo
@@ -46,8 +45,16 @@ var funcDoGetGraphDBErr = func(context.Context) (store.GraphDB, service.Closer, 
 	return nil, nil, errGraph
 }
 
+var funcDoGetFilesAPIClientErr = func(context.Context, *config.Configuration) (filesAPISDK.Clienter, error) {
+	return nil, errFilesAPIClient
+}
+
 var funcDoGetKafkaProducerErr = func(context.Context, *config.Configuration, string) (kafka.IProducer, error) {
 	return nil, errKafka
+}
+
+var funcDoGetHealthcheckErr = func(*config.Configuration, string, string, string) (service.HealthChecker, error) {
+	return nil, errHealthcheck
 }
 
 func TestRun(t *testing.T) {
@@ -84,7 +91,7 @@ func TestRun(t *testing.T) {
 			return serverMock
 		}
 
-		funcDoGetFailingHTTPSerer := func(string, http.Handler) service.HTTPServer {
+		funcDoGetFailingHTTPServer := func(string, http.Handler) service.HTTPServer {
 			return failingServerMock
 		}
 
@@ -97,6 +104,10 @@ func TestRun(t *testing.T) {
 				return nil
 			}
 			return &storeMock.GraphDBMock{}, &serviceMock.CloserMock{CloseFunc: funcClose}, nil
+		}
+
+		funcDoGetFilesAPIClientOk := func(context.Context, *config.Configuration) (filesAPISDK.Clienter, error) {
+			return &filesAPISDKMocks.ClienterMock{}, nil
 		}
 
 		funcDoGetKafkaProducerOk := func(context.Context, *config.Configuration, string) (kafka.IProducer, error) {
@@ -123,6 +134,7 @@ func TestRun(t *testing.T) {
 				So(err, ShouldResemble, errMongo)
 				So(svcList.MongoDB, ShouldBeFalse)
 				So(svcList.Graph, ShouldBeFalse)
+				So(svcList.FilesAPIClient, ShouldBeFalse)
 				So(svcList.GenerateDownloadsProducer, ShouldBeFalse)
 				So(svcList.HealthCheck, ShouldBeFalse)
 			})
@@ -142,6 +154,28 @@ func TestRun(t *testing.T) {
 				So(err, ShouldResemble, errGraph)
 				So(svcList.MongoDB, ShouldBeTrue)
 				So(svcList.Graph, ShouldBeFalse)
+				So(svcList.FilesAPIClient, ShouldBeFalse)
+				So(svcList.GenerateDownloadsProducer, ShouldBeFalse)
+				So(svcList.HealthCheck, ShouldBeFalse)
+			})
+		})
+
+		Convey("Given that initialising files API client returns an error", func() {
+			initMock := &serviceMock.InitialiserMock{
+				DoGetMongoDBFunc:        funcDoGetMongoDBOk,
+				DoGetGraphDBFunc:        funcDoGetGraphDBOk,
+				DoGetFilesAPIClientFunc: funcDoGetFilesAPIClientErr,
+			}
+			svcErrors := make(chan error, 1)
+			svcList := service.NewServiceList(initMock)
+			svc := service.New(cfg, svcList)
+			err := svc.Run(ctx, testBuildTime, testGitCommit, testVersion, svcErrors)
+
+			Convey("Then service Run fails with the same error and the flag is not set. No further initialisations are attempted", func() {
+				So(err, ShouldResemble, errFilesAPIClient)
+				So(svcList.MongoDB, ShouldBeTrue)
+				So(svcList.Graph, ShouldBeTrue)
+				So(svcList.FilesAPIClient, ShouldBeFalse)
 				So(svcList.GenerateDownloadsProducer, ShouldBeFalse)
 				So(svcList.HealthCheck, ShouldBeFalse)
 			})
@@ -149,9 +183,10 @@ func TestRun(t *testing.T) {
 
 		Convey("Given that initialising Kafka producer returns an error", func() {
 			initMock := &serviceMock.InitialiserMock{
-				DoGetMongoDBFunc:       funcDoGetMongoDBOk,
-				DoGetGraphDBFunc:       funcDoGetGraphDBOk,
-				DoGetKafkaProducerFunc: funcDoGetKafkaProducerErr,
+				DoGetMongoDBFunc:        funcDoGetMongoDBOk,
+				DoGetGraphDBFunc:        funcDoGetGraphDBOk,
+				DoGetFilesAPIClientFunc: funcDoGetFilesAPIClientOk,
+				DoGetKafkaProducerFunc:  funcDoGetKafkaProducerErr,
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
@@ -162,17 +197,19 @@ func TestRun(t *testing.T) {
 				So(err, ShouldResemble, errKafka)
 				So(svcList.MongoDB, ShouldBeTrue)
 				So(svcList.Graph, ShouldBeTrue)
+				So(svcList.FilesAPIClient, ShouldBeTrue)
 				So(svcList.GenerateDownloadsProducer, ShouldBeFalse)
 				So(svcList.HealthCheck, ShouldBeFalse)
 			})
 		})
 
-		Convey("Given that initialising Helthcheck returns an error", func() {
+		Convey("Given that initialising Healthcheck returns an error", func() {
 			initMock := &serviceMock.InitialiserMock{
-				DoGetMongoDBFunc:       funcDoGetMongoDBOk,
-				DoGetGraphDBFunc:       funcDoGetGraphDBOk,
-				DoGetKafkaProducerFunc: funcDoGetKafkaProducerOk,
-				DoGetHealthCheckFunc:   funcDoGetHealthcheckErr,
+				DoGetMongoDBFunc:        funcDoGetMongoDBOk,
+				DoGetGraphDBFunc:        funcDoGetGraphDBOk,
+				DoGetFilesAPIClientFunc: funcDoGetFilesAPIClientOk,
+				DoGetKafkaProducerFunc:  funcDoGetKafkaProducerOk,
+				DoGetHealthCheckFunc:    funcDoGetHealthcheckErr,
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
@@ -183,6 +220,7 @@ func TestRun(t *testing.T) {
 				So(err, ShouldResemble, errHealthcheck)
 				So(svcList.MongoDB, ShouldBeTrue)
 				So(svcList.Graph, ShouldBeTrue)
+				So(svcList.FilesAPIClient, ShouldBeTrue)
 				So(svcList.GenerateDownloadsProducer, ShouldBeTrue)
 				So(svcList.HealthCheck, ShouldBeFalse)
 			})
@@ -196,9 +234,10 @@ func TestRun(t *testing.T) {
 			}
 
 			initMock := &serviceMock.InitialiserMock{
-				DoGetMongoDBFunc:       funcDoGetMongoDBOk,
-				DoGetGraphDBFunc:       funcDoGetGraphDBOk,
-				DoGetKafkaProducerFunc: funcDoGetKafkaProducerOk,
+				DoGetMongoDBFunc:        funcDoGetMongoDBOk,
+				DoGetGraphDBFunc:        funcDoGetGraphDBOk,
+				DoGetFilesAPIClientFunc: funcDoGetFilesAPIClientOk,
+				DoGetKafkaProducerFunc:  funcDoGetKafkaProducerOk,
 				DoGetHealthCheckFunc: func(*config.Configuration, string, string, string) (service.HealthChecker, error) {
 					return hcMockAddFail, nil
 				},
@@ -214,23 +253,26 @@ func TestRun(t *testing.T) {
 				So(svcList.MongoDB, ShouldBeTrue)
 				So(svcList.Graph, ShouldBeTrue)
 				So(svcList.GenerateDownloadsProducer, ShouldBeTrue)
+				So(svcList.FilesAPIClient, ShouldBeTrue)
 				So(svcList.HealthCheck, ShouldBeTrue)
-				So(len(hcMockAddFail.AddCheckCalls()), ShouldEqual, 5)
+				So(len(hcMockAddFail.AddCheckCalls()), ShouldEqual, 6)
 				So(hcMockAddFail.AddCheckCalls()[0].Name, ShouldResemble, "Zebedee")
 				So(hcMockAddFail.AddCheckCalls()[1].Name, ShouldResemble, "Kafka Generate Downloads Producer")
 				So(hcMockAddFail.AddCheckCalls()[2].Name, ShouldResemble, "Kafka Generate Cantabular Downloads Producer")
-				So(hcMockAddFail.AddCheckCalls()[3].Name, ShouldResemble, "Graph DB")
-				So(hcMockAddFail.AddCheckCalls()[4].Name, ShouldResemble, "Mongo DB")
+				So(hcMockAddFail.AddCheckCalls()[3].Name, ShouldResemble, "Files API Client")
+				So(hcMockAddFail.AddCheckCalls()[4].Name, ShouldResemble, "Graph DB")
+				So(hcMockAddFail.AddCheckCalls()[5].Name, ShouldResemble, "Mongo DB")
 			})
 		})
 
 		Convey("Given that all dependencies are successfully initialised", func() {
 			initMock := &serviceMock.InitialiserMock{
-				DoGetMongoDBFunc:       funcDoGetMongoDBOk,
-				DoGetGraphDBFunc:       funcDoGetGraphDBOk,
-				DoGetKafkaProducerFunc: funcDoGetKafkaProducerOk,
-				DoGetHealthCheckFunc:   funcDoGetHealthcheckOk,
-				DoGetHTTPServerFunc:    funcDoGetHTTPServer,
+				DoGetMongoDBFunc:        funcDoGetMongoDBOk,
+				DoGetGraphDBFunc:        funcDoGetGraphDBOk,
+				DoGetFilesAPIClientFunc: funcDoGetFilesAPIClientOk,
+				DoGetKafkaProducerFunc:  funcDoGetKafkaProducerOk,
+				DoGetHealthCheckFunc:    funcDoGetHealthcheckOk,
+				DoGetHTTPServerFunc:     funcDoGetHTTPServer,
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
@@ -242,17 +284,19 @@ func TestRun(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(svcList.MongoDB, ShouldBeTrue)
 				So(svcList.Graph, ShouldBeTrue)
+				So(svcList.FilesAPIClient, ShouldBeTrue)
 				So(svcList.GenerateDownloadsProducer, ShouldBeTrue)
 				So(svcList.HealthCheck, ShouldBeTrue)
 			})
 
 			Convey("The checkers are registered and the healthcheck and http server started", func() {
-				So(len(hcMock.AddCheckCalls()), ShouldEqual, 5)
+				So(len(hcMock.AddCheckCalls()), ShouldEqual, 6)
 				So(hcMock.AddCheckCalls()[0].Name, ShouldResemble, "Zebedee")
 				So(hcMock.AddCheckCalls()[1].Name, ShouldResemble, "Kafka Generate Downloads Producer")
 				So(hcMock.AddCheckCalls()[2].Name, ShouldResemble, "Kafka Generate Cantabular Downloads Producer")
-				So(hcMock.AddCheckCalls()[3].Name, ShouldResemble, "Graph DB")
-				So(hcMock.AddCheckCalls()[4].Name, ShouldResemble, "Mongo DB")
+				So(hcMock.AddCheckCalls()[3].Name, ShouldResemble, "Files API Client")
+				So(hcMock.AddCheckCalls()[4].Name, ShouldResemble, "Graph DB")
+				So(hcMock.AddCheckCalls()[5].Name, ShouldResemble, "Mongo DB")
 				So(len(initMock.DoGetHTTPServerCalls()), ShouldEqual, 1)
 				So(initMock.DoGetHTTPServerCalls()[0].BindAddr, ShouldEqual, ":22000")
 				So(len(hcMock.StartCalls()), ShouldEqual, 1)
@@ -279,6 +323,7 @@ func TestRun(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(svcList.MongoDB, ShouldBeTrue)
 				So(svcList.Graph, ShouldBeFalse)
+				So(svcList.FilesAPIClient, ShouldBeFalse)
 				So(svcList.GenerateDownloadsProducer, ShouldBeFalse)
 				So(svcList.HealthCheck, ShouldBeTrue)
 			})
@@ -296,11 +341,12 @@ func TestRun(t *testing.T) {
 
 		Convey("Given that all dependencies are successfully initialised but the http server fails", func() {
 			initMock := &serviceMock.InitialiserMock{
-				DoGetMongoDBFunc:       funcDoGetMongoDBOk,
-				DoGetGraphDBFunc:       funcDoGetGraphDBOk,
-				DoGetKafkaProducerFunc: funcDoGetKafkaProducerOk,
-				DoGetHealthCheckFunc:   funcDoGetHealthcheckOk,
-				DoGetHTTPServerFunc:    funcDoGetFailingHTTPSerer,
+				DoGetMongoDBFunc:        funcDoGetMongoDBOk,
+				DoGetGraphDBFunc:        funcDoGetGraphDBOk,
+				DoGetFilesAPIClientFunc: funcDoGetFilesAPIClientOk,
+				DoGetKafkaProducerFunc:  funcDoGetKafkaProducerOk,
+				DoGetHealthCheckFunc:    funcDoGetHealthcheckOk,
+				DoGetHTTPServerFunc:     funcDoGetFailingHTTPServer,
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
@@ -397,6 +443,7 @@ func TestClose(t *testing.T) {
 			Graph:                     true,
 			HealthCheck:               true,
 			MongoDB:                   true,
+			FilesAPIClient:            true,
 			Init:                      nil,
 		}
 

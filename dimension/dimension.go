@@ -498,6 +498,7 @@ func (s *Store) patchOption(ctx context.Context, instanceID, dimensionName, opti
 }
 
 // AddNodeIDHandler against a specific option for dimension
+//
 // Deprecated: this method is superseded by PatchOptionHandler
 func (s *Store) AddNodeIDHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()

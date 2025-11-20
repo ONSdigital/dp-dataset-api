@@ -76,6 +76,17 @@ func (c *Client) DoAuthenticatedPutRequest(ctx context.Context, headers Headers,
 	return c.hcCli.Client.Do(ctx, req)
 }
 
+// Creates new request object, executes a post request using the input `headers`, `uri`, and payload, and returns the response
+func (c *Client) DoAuthenticatedPostRequest(ctx context.Context, headers Headers, uri *url.URL, payload []byte) (*http.Response, error) {
+	req, err := http.NewRequest(http.MethodPost, uri.RequestURI(), bytes.NewBuffer(payload))
+	if err != nil {
+		return nil, err
+	}
+
+	headers.Add(req)
+	return c.hcCli.Client.Do(ctx, req)
+}
+
 // Health returns the underlying Healthcheck Client for this API client
 func (c *Client) Health() *health.Client {
 	return c.hcCli
@@ -183,6 +194,22 @@ func unmarshalResponseBodyExpectingErrorResponseV2(response *http.Response, targ
 	}
 
 	return json.Unmarshal(b, &target)
+}
+
+// unmarshalErrorResponse unmarshals the response body into an ErrorResponse
+func unmarshalErrorResponse(body io.ReadCloser) (*models.ErrorResponse, error) {
+	if body == nil {
+		return nil, errors.New("response body is nil")
+	}
+
+	var errorResponse models.ErrorResponse
+
+	err := json.NewDecoder(body).Decode(&errorResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	return &errorResponse, nil
 }
 
 func getStringResponseBody(resp *http.Response) (*string, error) {

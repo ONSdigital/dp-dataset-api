@@ -21,7 +21,7 @@ func TestGetDataset(t *testing.T) {
 	Convey("If requested dataset is valid and get request returns 200", t, func() {
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, mockGetResponse, map[string]string{}})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
-		returnedDataset, err := datasetAPIClient.GetDataset(ctx, headers, collectionID, datasetID)
+		returnedDataset, err := datasetAPIClient.GetDataset(ctx, headers, datasetID)
 
 		Convey("Test that the request URI is constructed correctly and the correct method is used", func() {
 			expectedURI := "/datasets/" + datasetID
@@ -38,7 +38,7 @@ func TestGetDataset(t *testing.T) {
 	Convey("If requested dataset is not valid and get request returns 404", t, func() {
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusNotFound, apierrors.ErrDatasetNotFound.Error(), map[string]string{}})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
-		_, err := datasetAPIClient.GetDataset(ctx, headers, collectionID, datasetID)
+		_, err := datasetAPIClient.GetDataset(ctx, headers, datasetID)
 
 		Convey("Test that an error is raised and should contain status code", func() {
 			So(err, ShouldNotBeNil)
@@ -49,7 +49,7 @@ func TestGetDataset(t *testing.T) {
 	Convey("If the request encounters a server error and returns 500", t, func() {
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusInternalServerError, "Internal server error", map[string]string{}})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
-		_, err := datasetAPIClient.GetDataset(ctx, headers, collectionID, datasetID)
+		_, err := datasetAPIClient.GetDataset(ctx, headers, datasetID)
 
 		Convey("Test that an error is raised with the correct message", func() {
 			So(err, ShouldNotBeNil)
@@ -71,7 +71,7 @@ func TestGetDataset(t *testing.T) {
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, responseWithNext, map[string]string{}})
 
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
-		returnedDataset, err := datasetAPIClient.GetDataset(ctx, authHeaders, collectionID, datasetID)
+		returnedDataset, err := datasetAPIClient.GetDataset(ctx, authHeaders, datasetID)
 
 		Convey("Test that the dataset is extracted from the 'next' object", func() {
 			So(err, ShouldBeNil)

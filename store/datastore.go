@@ -65,7 +65,7 @@ type dataMongoDB interface {
 	UpsertDataset(ctx context.Context, ID string, datasetDoc *models.DatasetUpdate) error
 	UpsertEdition(ctx context.Context, datasetID, edition string, editionDoc *models.EditionUpdate) error
 	UpsertVersion(ctx context.Context, ID string, versionDoc *models.Version) error
-	UpsertVersionStatic(ctx context.Context, ID string, versionDoc *models.Version) error
+	UpsertVersionStatic(ctx context.Context, versionDoc *models.Version) error
 	DeleteDataset(ctx context.Context, ID string) error
 	DeleteEdition(ctx context.Context, ID string) error
 	AcquireInstanceLock(ctx context.Context, instanceID string) (lockID string, err error)
@@ -73,7 +73,6 @@ type dataMongoDB interface {
 	AcquireVersionsLock(ctx context.Context, versionID string) (lockID string, err error)
 	UnlockVersions(ctx context.Context, lockID string)
 	RemoveDatasetVersionAndEditionLinks(ctx context.Context, id string) error
-	DeleteStaticVersionsByDatasetID(ctx context.Context, ID string) (int, error)
 	DeleteStaticDatasetVersion(ctx context.Context, datasetID, editionID string, version int) error
 	IsStaticDataset(ctx context.Context, datasetID string) (bool, error)
 }

@@ -19,6 +19,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/dp-dataset-api/url"
+	filesAPISDKMocks "github.com/ONSdigital/dp-files-api/sdk/mocks"
 	dprequest "github.com/ONSdigital/dp-net/v3/request"
 	"github.com/gorilla/mux"
 
@@ -2026,6 +2027,16 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 								ID: "456",
 							},
 						},
+						Distributions: &[]models.Distribution{
+							{
+								Title:       "Distribution1",
+								DownloadURL: "path/to/distribution1.txt",
+							},
+							{
+								Title:       "Distribution2",
+								DownloadURL: "path/to/distribution2.txt",
+							},
+						},
 					},
 					{
 						ID: "V2",
@@ -2038,10 +2049,16 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 				}
 				return versions, 1, nil
 			},
-			DeleteStaticVersionsByDatasetIDFunc: func(ctx context.Context, ID string) (int, error) {
-				return 2, nil
+			DeleteStaticDatasetVersionFunc: func(ctx context.Context, datasetID, editionID string, version int) error {
+				return nil
 			},
 			DeleteDatasetFunc: func(context.Context, string) error {
+				return nil
+			},
+		}
+
+		mockFilesAPIClient := filesAPISDKMocks.ClienterMock{
+			DeleteFileFunc: func(ctx context.Context, filePath string) error {
 				return nil
 			},
 		}
@@ -2049,6 +2066,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api.filesAPIClient = &mockFilesAPIClient
 
 		api.Router.ServeHTTP(w, r)
 
@@ -2056,7 +2074,9 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.DeleteStaticVersionsByDatasetIDCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetAllStaticVersionsCalls()), ShouldEqual, 1)
+		So(len(mockFilesAPIClient.DeleteFileCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.DeleteStaticDatasetVersionCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
 	})
 
@@ -2076,10 +2096,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 			},
 			GetAllStaticVersionsFunc: func(context.Context, string, string, int, int) ([]*models.Version, int, error) {
 				version := []*models.Version{}
-				return version, 0, errs.ErrVersionNotFound
-			},
-			DeleteStaticVersionsByDatasetIDFunc: func(ctx context.Context, ID string) (int, error) {
-				return 0, nil
+				return version, 0, errs.ErrVersionsNotFound
 			},
 			DeleteDatasetFunc: func(context.Context, string) error {
 				return nil
@@ -2096,7 +2113,6 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.DeleteStaticVersionsByDatasetIDCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
 	})
 }
@@ -2246,7 +2262,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
 	})
 
-	Convey("When deleting static dataset versions fails, return internal server error", t, func() {
+	Convey("When deleting a static dataset fails at DeleteStaticDatasetVersion, return internal server error", t, func() {
 		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/456", nil)
 		w := httptest.NewRecorder()
 
@@ -2281,11 +2297,8 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 				}
 				return versions, 1, nil
 			},
-			DeleteStaticVersionsByDatasetIDFunc: func(ctx context.Context, ID string) (int, error) {
-				return 0, errs.ErrInternalServer
-			},
-			DeleteDatasetFunc: func(context.Context, string) error {
-				return nil
+			DeleteStaticDatasetVersionFunc: func(ctx context.Context, datasetID, editionID string, version int) error {
+				return errs.ErrInternalServer
 			},
 		}
 
@@ -2297,7 +2310,59 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		assertInternalServerErr(w)
 		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.DeleteStaticVersionsByDatasetIDCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.DeleteStaticDatasetVersionCalls()), ShouldEqual, 1)
+	})
+
+	Convey("When deleting a static dataset fails at DeleteFile, return internal server error", t, func() {
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/456", nil)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					Next: &models.Dataset{
+						ID:    "456",
+						Type:  models.Static.String(),
+						State: models.CreatedState,
+					},
+				}, nil
+			},
+			GetAllStaticVersionsFunc: func(context.Context, string, string, int, int) ([]*models.Version, int, error) {
+				versions := []*models.Version{
+					{
+						ID: "1",
+						Links: &models.VersionLinks{
+							Dataset: &models.LinkObject{
+								ID: "456",
+							},
+						},
+						Distributions: &[]models.Distribution{
+							{
+								Title:       "Distribution1",
+								DownloadURL: "path/to/distribution1.txt",
+							},
+						},
+					},
+				}
+				return versions, 1, nil
+			},
+		}
+
+		mockFilesAPIClient := filesAPISDKMocks.ClienterMock{
+			DeleteFileFunc: func(ctx context.Context, filePath string) error {
+				return errors.New("files api returned an error")
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api.filesAPIClient = &mockFilesAPIClient
+		api.Router.ServeHTTP(w, r)
+
+		assertInternalServerErr(w)
+		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockFilesAPIClient.DeleteFileCalls()), ShouldEqual, 1)
 	})
 }

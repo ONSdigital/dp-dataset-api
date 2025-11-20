@@ -25,7 +25,7 @@ func (m *Mongo) UnlockVersions(ctx context.Context, lockID string) {
 }
 
 // UpsertVersion adds or overrides an existing version document
-func (m *Mongo) UpsertVersionStatic(ctx context.Context, id string, version *models.Version) (err error) {
+func (m *Mongo) UpsertVersionStatic(ctx context.Context, version *models.Version) (err error) {
 	version.LastUpdated = time.Now()
 	update := bson.M{
 		"$set": version,
@@ -253,12 +253,13 @@ func (m *Mongo) UpdateVersionStatic(ctx context.Context, currentVersion, version
 	return newETag, nil
 }
 
+// NOTE: passing in limit as 0 will return the total count but no results
 func (m *Mongo) GetAllStaticVersions(ctx context.Context, datasetID, state string, offset, limit int) ([]*models.Version, int, error) {
 	selector := bson.M{"links.dataset.id": datasetID}
 	if state != "" {
 		selector["state"] = state
 	}
-	// get total count and paginated values according to provided offset and limit
+
 	results := []*models.Version{}
 	totalCount, err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Find(ctx, selector, &results,
 		mongodriver.Sort(bson.M{"last_updated": -1}),
@@ -269,7 +270,7 @@ func (m *Mongo) GetAllStaticVersions(ctx context.Context, datasetID, state strin
 	}
 
 	if totalCount < 1 {
-		return nil, 0, errs.ErrVersionNotFound
+		return nil, 0, errs.ErrVersionsNotFound
 	}
 
 	return results, totalCount, nil

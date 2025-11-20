@@ -45,7 +45,8 @@ func TestGetDatasetEditions_WithQueryParam_Success(t *testing.T) {
 				}, 2, nil
 			},
 			GetDatasetFunc: func(ctx context.Context, id string) (*models.DatasetUpdate, error) {
-				if id == "Dataset1" {
+				switch id {
+				case "Dataset1":
 					return &models.DatasetUpdate{
 						ID: "Dataset1",
 						Next: &models.Dataset{
@@ -53,7 +54,7 @@ func TestGetDatasetEditions_WithQueryParam_Success(t *testing.T) {
 							Description: "Test dataset 1 description",
 						},
 					}, nil
-				} else if id == "Dataset2" {
+				case "Dataset2":
 					return &models.DatasetUpdate{
 						ID: "Dataset2",
 						Next: &models.Dataset{
@@ -61,8 +62,9 @@ func TestGetDatasetEditions_WithQueryParam_Success(t *testing.T) {
 							Description: "Test dataset 2 description",
 						},
 					}, nil
+				default:
+					return nil, errs.ErrDatasetNotFound
 				}
-				return nil, errs.ErrDatasetNotFound
 			},
 		}
 
