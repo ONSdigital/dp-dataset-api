@@ -435,3 +435,64 @@ Scenario: PUT state handles idempotent transitions correctly
         }
         """
     Then the HTTP status code should be "200"
+
+    Scenario: PUT succeeds when updating edition title to unique value within series
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
+            """
+            {
+                "edition_title": "Unique 2025 Edition",
+                "type": "static"
+            }
+            """
+        Then the HTTP status code should be "200"
+
+    Scenario: PUT fails when updating edition title to duplicate value within same series
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
+            """
+            {
+                "edition_title": "2025 Edition",
+                "type": "static"
+            }
+            """
+        Then the HTTP status code should be "409"
+        And I should receive the following response:
+            """
+            the edition-title already exists
+            """
+
+    Scenario: PUT succeeds when updating edition ID to unique value within series
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
+            """
+            {
+                "edition": "2026",
+                "type": "static"
+            }
+            """
+        Then the HTTP status code should be "200"
+
+    Scenario: PUT fails when updating edition ID to duplicate value within same series
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
+            """
+            {
+                "edition": "2025",
+                "edition_title": "Different Title",
+                "type": "static"
+            }
+            """
+        Then the HTTP status code should be "409"
+        And I should receive the following response:
+            """
+            the edition-id already exists
+            """
