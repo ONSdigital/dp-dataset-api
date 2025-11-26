@@ -208,14 +208,38 @@ Feature: Static Dataset Versions POST API
             """
         Then the HTTP status code should be "401"
 
-        Scenario: POST creates a new static dataset version with exisiting edition title fails
+    Scenario: POST creates a new version when edition title already does not exists within the same dataset successfully
         Given private endpoints are enabled
         And I am identified as "user@ons.gov.uk"
         And I am authorised
         When I POST "/datasets/static-dataset-existing/editions/2025/versions"
             """
             {
-                            "release_date": "2024-12-01T09:00:00.000Z",
+                "release_date": "2025-12-01T09:00:00.000Z",
+                "edition_title": "new title",
+                "type": "static",
+                "edition": "2024",
+                "distributions": [
+                    {
+                        "title": "CSV",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "download_url": "/downloads/test.csv",
+                        "byte_size": 100000
+                    }
+                ]
+            }
+            """
+        Then the HTTP status code should be "201"
+
+    Scenario: POST creates a new static dataset version with exisiting edition title fails
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I POST "/datasets/static-dataset-existing/editions/2025/versions"
+            """
+            {
+                "release_date": "2024-12-01T09:00:00.000Z",
                 "edition_title": "2024 Edition",
                 "type": "static",
                 "distributions": [

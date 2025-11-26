@@ -148,22 +148,18 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	versionRequest.Edition = edition
 
 	if errors.Is(err, errs.ErrVersionNotFound) {
-		fmt.Println("No latest version found, creating version 1")
 		// Creating version 1 of a new edition - ensure title don't exist in other editions
 		checkErr := api.dataStore.Backend.CheckEditionTitleIDExistsStatic(ctx, datasetID, edition, versionRequest.EditionTitle)
 		if checkErr != nil {
 			if errors.Is(checkErr, errs.ErrEditionTitleAlreadyExists) {
-				fmt.Println("Edition title already exists")
 				log.Error(ctx, "edition title already exists", checkErr, logData)
 				return nil, models.NewErrorResponse(http.StatusConflict, nil, models.NewValidationError(models.ErrEditionTitleAlreadyExists, models.ErrEditionTitleAlreadyExistsDescription))
 			}
-			fmt.Println("Failed to check edition ID and title existence")
 			log.Error(ctx, "failed to check edition ID and title existence", checkErr, logData)
 			return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(checkErr, "failed to check edition ID and title", "internal error"))
 		}
 		nextVersion = 1
 	} else {
-		fmt.Println("Latest version found, creating next version:", latestVersion.Version+1)
 		nextVersion = latestVersion.Version + 1
 	}
 
