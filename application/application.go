@@ -10,12 +10,12 @@ import (
 	"github.com/ONSdigital/dp-api-clients-go/headers"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/pkg/errors"
-
 	"github.com/ONSdigital/dp-dataset-api/store"
+	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	dprequest "github.com/ONSdigital/dp-net/v3/request"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/jinzhu/copier"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -736,7 +736,7 @@ func PublishDataset(ctx context.Context, smDS *StateMachineDatasetAPI,
 	return nil
 }
 
-func (smDS *StateMachineDatasetAPI) DeleteStaticVersion(ctx context.Context, datasetID, edition string, version int) error {
+func (smDS *StateMachineDatasetAPI) DeleteStaticVersion(ctx context.Context, datasetID, edition string, version int, filesAPIClient filesAPISDK.Clienter) error {
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
 
 	// Validate edition exists for the dataset (static context)
@@ -756,6 +756,21 @@ func (smDS *StateMachineDatasetAPI) DeleteStaticVersion(ctx context.Context, dat
 	if versionDoc.State == models.PublishedState {
 		log.Error(ctx, "DeleteStaticVersion: unable to delete a published version", errs.ErrDeletePublishedVersionForbidden, logData)
 		return errs.ErrDeletePublishedVersionForbidden
+	}
+
+	// Delete any files associated with the version
+	if versionDoc.Distributions != nil {
+		for _, distribution := range *versionDoc.Distributions {
+			logData["distribution_title"] = distribution.Title
+			logData["distribution_download_url"] = distribution.DownloadURL
+
+			err := filesAPIClient.DeleteFile(ctx, distribution.DownloadURL)
+			if err != nil {
+				log.Error(ctx, "DeleteStaticVersion: failed to delete distribution file from files API", err, logData)
+				return err
+			}
+			log.Info(ctx, "DeleteStaticVersion: successfully deleted distribution file from files API", logData)
+		}
 	}
 
 	// Get the dataset to allow Next<-Current sync after deletion

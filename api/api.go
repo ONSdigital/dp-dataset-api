@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/ONSdigital/dp-api-clients-go/v2/files"
 	"github.com/ONSdigital/dp-authorisation/auth"
 	"github.com/ONSdigital/dp-dataset-api/application"
 	"github.com/ONSdigital/dp-dataset-api/config"
@@ -18,6 +17,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/pagination"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/url"
+	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	dphandlers "github.com/ONSdigital/dp-net/v3/handlers"
 	dprequest "github.com/ONSdigital/dp-net/v3/request"
 	"github.com/ONSdigital/log.go/v2/log"
@@ -73,8 +73,9 @@ type DatasetAPI struct {
 	instancePublishedChecker  *instance.PublishCheck
 	versionPublishedChecker   *PublishCheck
 	MaxRequestOptions         int
+	defaultLimit              int
 	smDatasetAPI              *application.StateMachineDatasetAPI
-	filesAPIClient            *files.Client
+	filesAPIClient            filesAPISDK.Clienter
 	authToken                 string
 }
 
@@ -97,6 +98,7 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		versionPublishedChecker:   nil,
 		instancePublishedChecker:  nil,
 		MaxRequestOptions:         cfg.MaxRequestOptions,
+		defaultLimit:              cfg.DefaultLimit,
 		smDatasetAPI:              smDatasetAPI,
 	}
 
@@ -140,7 +142,7 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 }
 
 // SetFilesAPIClient sets the files API client and auth token for the API
-func (api *DatasetAPI) SetFilesAPIClient(client *files.Client, authToken string) {
+func (api *DatasetAPI) SetFilesAPIClient(client filesAPISDK.Clienter, authToken string) {
 	api.filesAPIClient = client
 	api.authToken = authToken
 }

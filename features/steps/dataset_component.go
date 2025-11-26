@@ -14,6 +14,8 @@ import (
 	serviceMock "github.com/ONSdigital/dp-dataset-api/service/mock"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	storeMock "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
+	filesAPISDKMocks "github.com/ONSdigital/dp-files-api/sdk/mocks"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	kafka "github.com/ONSdigital/dp-kafka/v4"
 	"github.com/ONSdigital/dp-kafka/v4/kafkatest"
@@ -233,21 +235,34 @@ func (c *DatasetComponent) DoGetGraphDBOk(context.Context) (store.GraphDB, servi
 		nil
 }
 
+func (c *DatasetComponent) DoGetFilesAPIClientOk(ctx context.Context, cfg *config.Configuration) (filesAPISDK.Clienter, error) {
+	return &filesAPISDKMocks.ClienterMock{
+		DeleteFileFunc: func(ctx context.Context, filePath string) error {
+			if filePath == "/fail/to/delete.csv" {
+				return fmt.Errorf("failed to delete file at path: %s", filePath)
+			}
+			return nil
+		},
+	}, nil
+}
+
 func (c *DatasetComponent) setInitialiserMock() {
 	c.initialiser = &serviceMock.InitialiserMock{
-		DoGetMongoDBFunc:       c.DoGetMongoDB,
-		DoGetGraphDBFunc:       c.DoGetGraphDBOk,
-		DoGetKafkaProducerFunc: c.DoGetMockedKafkaProducerOk,
-		DoGetHealthCheckFunc:   c.DoGetHealthcheckOk,
-		DoGetHTTPServerFunc:    c.DoGetHTTPServer,
+		DoGetMongoDBFunc:        c.DoGetMongoDB,
+		DoGetGraphDBFunc:        c.DoGetGraphDBOk,
+		DoGetFilesAPIClientFunc: c.DoGetFilesAPIClientOk,
+		DoGetKafkaProducerFunc:  c.DoGetMockedKafkaProducerOk,
+		DoGetHealthCheckFunc:    c.DoGetHealthcheckOk,
+		DoGetHTTPServerFunc:     c.DoGetHTTPServer,
 	}
 }
 func (c *DatasetComponent) setInitialiserRealKafka() {
 	c.initialiser = &serviceMock.InitialiserMock{
-		DoGetMongoDBFunc:       c.DoGetMongoDB,
-		DoGetGraphDBFunc:       c.DoGetGraphDBOk,
-		DoGetKafkaProducerFunc: c.DoGetKafkaProducer,
-		DoGetHealthCheckFunc:   c.DoGetHealthcheckOk,
-		DoGetHTTPServerFunc:    c.DoGetHTTPServer,
+		DoGetMongoDBFunc:        c.DoGetMongoDB,
+		DoGetGraphDBFunc:        c.DoGetGraphDBOk,
+		DoGetFilesAPIClientFunc: c.DoGetFilesAPIClientOk,
+		DoGetKafkaProducerFunc:  c.DoGetKafkaProducer,
+		DoGetHealthCheckFunc:    c.DoGetHealthcheckOk,
+		DoGetHTTPServerFunc:     c.DoGetHTTPServer,
 	}
 }

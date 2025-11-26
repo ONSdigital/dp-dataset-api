@@ -14,12 +14,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ONSdigital/dp-api-clients-go/v2/files"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	filesAPIModels "github.com/ONSdigital/dp-files-api/files"
+	filesAPIErrors "github.com/ONSdigital/dp-files-api/store"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
@@ -35,16 +36,16 @@ const (
 )
 
 type mockFilesClient struct {
-	GetFileFunc           func(ctx context.Context, path, authToken string) (files.FileMetaData, error)
-	MarkFilePublishedFunc func(ctx context.Context, path, etag string) error
+	GetFileFunc           func(ctx context.Context, path string) (*filesAPIModels.StoredRegisteredMetaData, error)
+	MarkFilePublishedFunc func(ctx context.Context, path string) error
 }
 
-func (m *mockFilesClient) GetFile(ctx context.Context, path, authToken string) (files.FileMetaData, error) {
-	return m.GetFileFunc(ctx, path, authToken)
+func (m *mockFilesClient) GetFile(ctx context.Context, path string) (*filesAPIModels.StoredRegisteredMetaData, error) {
+	return m.GetFileFunc(ctx, path)
 }
 
-func (m *mockFilesClient) MarkFilePublished(ctx context.Context, path, etag string) error {
-	return m.MarkFilePublishedFunc(ctx, path, etag)
+func (m *mockFilesClient) MarkFilePublished(ctx context.Context, path string) error {
+	return m.MarkFilePublishedFunc(ctx, path)
 }
 
 func TestGetVersionsReturnsOK(t *testing.T) {
@@ -3650,34 +3651,28 @@ func TestPublishDistributionFiles(t *testing.T) {
 		Convey("When publishDistributionFiles is called with a mocked files client that succeeds", func() {
 			getFileCalls := 0
 			markPublishedCalls := 0
-			authToken := testAuthToken
 
 			mockClient := &mockFilesClient{
-				GetFileFunc: func(ctx context.Context, path string, token string) (files.FileMetaData, error) {
+				GetFileFunc: func(ctx context.Context, path string) (*filesAPIModels.StoredRegisteredMetaData, error) {
 					getFileCalls++
-					So(token, ShouldEqual, authToken)
-					return files.FileMetaData{
-						Path: path,
-						Etag: "etag-" + path,
-					}, nil
+					return &filesAPIModels.StoredRegisteredMetaData{}, nil
 				},
-				MarkFilePublishedFunc: func(ctx context.Context, path string, etag string) error {
+				MarkFilePublishedFunc: func(ctx context.Context, path string) error {
 					markPublishedCalls++
-					So(etag, ShouldEqual, "etag-"+path)
 					return nil
 				},
 			}
 
 			testFunc := func() error {
-				getFileFn := func(ctx context.Context, path string, token string) (files.FileMetaData, error) {
-					return mockClient.GetFile(ctx, path, token)
+				getFileFn := func(ctx context.Context, path string) (*filesAPIModels.StoredRegisteredMetaData, error) {
+					return mockClient.GetFile(ctx, path)
 				}
 
-				markPublishedFn := func(ctx context.Context, path string, etag string) error {
-					return mockClient.MarkFilePublished(ctx, path, etag)
+				markPublishedFn := func(ctx context.Context, path string) error {
+					return mockClient.MarkFilePublished(ctx, path)
 				}
 
-				return publishDistributionFilesTest(ctx, version, logData, getFileFn, markPublishedFn, authToken)
+				return publishDistributionFilesTest(ctx, version, logData, getFileFn, markPublishedFn)
 			}
 
 			err := testFunc()
@@ -3692,29 +3687,28 @@ func TestPublishDistributionFiles(t *testing.T) {
 		Convey("When publishDistributionFiles is called with a mocked files client that fails on GetFile", func() {
 			getFileCalls := 0
 			markPublishedCalls := 0
-			authToken := testAuthToken
 
 			mockClient := &mockFilesClient{
-				GetFileFunc: func(ctx context.Context, path string, token string) (files.FileMetaData, error) {
+				GetFileFunc: func(ctx context.Context, path string) (*filesAPIModels.StoredRegisteredMetaData, error) {
 					getFileCalls++
-					return files.FileMetaData{}, errors.New("get file error")
+					return &filesAPIModels.StoredRegisteredMetaData{}, errors.New("get file error")
 				},
-				MarkFilePublishedFunc: func(ctx context.Context, path string, etag string) error {
+				MarkFilePublishedFunc: func(ctx context.Context, path string) error {
 					markPublishedCalls++
 					return nil
 				},
 			}
 
 			testFunc := func() error {
-				getFileFn := func(ctx context.Context, path string, token string) (files.FileMetaData, error) {
-					return mockClient.GetFile(ctx, path, token)
+				getFileFn := func(ctx context.Context, path string) (*filesAPIModels.StoredRegisteredMetaData, error) {
+					return mockClient.GetFile(ctx, path)
 				}
 
-				markPublishedFn := func(ctx context.Context, path string, etag string) error {
-					return mockClient.MarkFilePublished(ctx, path, etag)
+				markPublishedFn := func(ctx context.Context, path string) error {
+					return mockClient.MarkFilePublished(ctx, path)
 				}
 
-				return publishDistributionFilesTest(ctx, version, logData, getFileFn, markPublishedFn, authToken)
+				return publishDistributionFilesTest(ctx, version, logData, getFileFn, markPublishedFn)
 			}
 
 			err := testFunc()
@@ -3730,32 +3724,28 @@ func TestPublishDistributionFiles(t *testing.T) {
 		Convey("When publishDistributionFiles is called with a mocked files client that fails on MarkFilePublished", func() {
 			getFileCalls := 0
 			markPublishedCalls := 0
-			authToken := testAuthToken
 
 			mockClient := &mockFilesClient{
-				GetFileFunc: func(ctx context.Context, path string, token string) (files.FileMetaData, error) {
+				GetFileFunc: func(ctx context.Context, path string) (*filesAPIModels.StoredRegisteredMetaData, error) {
 					getFileCalls++
-					return files.FileMetaData{
-						Path: path,
-						Etag: "etag-" + path,
-					}, nil
+					return &filesAPIModels.StoredRegisteredMetaData{}, nil
 				},
-				MarkFilePublishedFunc: func(ctx context.Context, path string, etag string) error {
+				MarkFilePublishedFunc: func(ctx context.Context, path string) error {
 					markPublishedCalls++
 					return errors.New("mark published error")
 				},
 			}
 
 			testFunc := func() error {
-				getFileFn := func(ctx context.Context, path string, token string) (files.FileMetaData, error) {
-					return mockClient.GetFile(ctx, path, token)
+				getFileFn := func(ctx context.Context, path string) (*filesAPIModels.StoredRegisteredMetaData, error) {
+					return mockClient.GetFile(ctx, path)
 				}
 
-				markPublishedFn := func(ctx context.Context, path string, etag string) error {
-					return mockClient.MarkFilePublished(ctx, path, etag)
+				markPublishedFn := func(ctx context.Context, path string) error {
+					return mockClient.MarkFilePublished(ctx, path)
 				}
 
-				return publishDistributionFilesTest(ctx, version, logData, getFileFn, markPublishedFn, authToken)
+				return publishDistributionFilesTest(ctx, version, logData, getFileFn, markPublishedFn)
 			}
 
 			err := testFunc()
@@ -3882,8 +3872,8 @@ func TestPutStatePublishDistributionFilesCondition(t *testing.T) {
 }
 
 func publishDistributionFilesTest(ctx context.Context, version *models.Version, logData log.Data,
-	getFileFn func(context.Context, string, string) (files.FileMetaData, error),
-	markPublishedFn func(context.Context, string, string) error, authToken string) error {
+	getFileFn func(context.Context, string) (*filesAPIModels.StoredRegisteredMetaData, error),
+	markPublishedFn func(context.Context, string) error) error {
 	if version.Distributions == nil || len(*version.Distributions) == 0 {
 		return nil
 	}
@@ -3909,14 +3899,14 @@ func publishDistributionFilesTest(ctx context.Context, version *models.Version, 
 			fileLogData[k] = v
 		}
 
-		fileMetadata, err := getFileFn(ctx, filepath, authToken)
+		_, err := getFileFn(ctx, filepath)
 		if err != nil {
 			log.Error(ctx, "failed to get file metadata", err, fileLogData)
 			lastError = err
 			continue
 		}
 
-		err = markPublishedFn(ctx, filepath, fileMetadata.Etag)
+		err = markPublishedFn(ctx, filepath)
 		if err != nil {
 			log.Error(ctx, "failed to publish file", err, fileLogData)
 			lastError = err
@@ -4015,12 +4005,11 @@ func TestPublishDistributionFilesErrorMapping(t *testing.T) {
 	t.Parallel()
 
 	Convey("When testing error mapping logic in publishDistributionFiles", t, func() {
-		Convey("Given files.ErrFileNotFound", func() {
-			err := files.ErrFileNotFound
+		Convey("Given ErrFileNotRegistered", func() {
+			err := filesAPIErrors.ErrFileNotRegistered
 			var filesAPIError error
 
-			if errors.Is(err, files.ErrFileNotFound) ||
-				strings.Contains(err.Error(), "FileNotRegistered") ||
+			if strings.Contains(err.Error(), "FileNotRegistered") ||
 				strings.Contains(err.Error(), "file not registered") ||
 				strings.Contains(err.Error(), "not found") {
 				filesAPIError = errs.ErrFileMetadataNotFound
@@ -4031,11 +4020,13 @@ func TestPublishDistributionFilesErrorMapping(t *testing.T) {
 			})
 		})
 
-		Convey("Given files.ErrInvalidState", func() {
-			err := files.ErrInvalidState
+		Convey("Given ErrFileNotInUploadedState", func() {
+			err := filesAPIErrors.ErrFileNotInUploadedState
 			var filesAPIError error
 
-			if errors.Is(err, files.ErrInvalidState) {
+			if strings.Contains(err.Error(), "FileStateError") ||
+				strings.Contains(err.Error(), "file is not set as publishable") ||
+				strings.Contains(err.Error(), "file state is not in state uploaded") {
 				filesAPIError = errs.ErrFileNotInCorrectState
 			}
 
@@ -4048,8 +4039,7 @@ func TestPublishDistributionFilesErrorMapping(t *testing.T) {
 			err := errors.New("FileNotRegistered: file not found")
 			var filesAPIError error
 
-			if errors.Is(err, files.ErrFileNotFound) ||
-				strings.Contains(err.Error(), "FileNotRegistered") ||
+			if strings.Contains(err.Error(), "FileNotRegistered") ||
 				strings.Contains(err.Error(), "file not registered") ||
 				strings.Contains(err.Error(), "not found") {
 				filesAPIError = errs.ErrFileMetadataNotFound
@@ -4064,8 +4054,7 @@ func TestPublishDistributionFilesErrorMapping(t *testing.T) {
 			err := errors.New("file not registered")
 			var filesAPIError error
 
-			if errors.Is(err, files.ErrFileNotFound) ||
-				strings.Contains(err.Error(), "FileNotRegistered") ||
+			if strings.Contains(err.Error(), "FileNotRegistered") ||
 				strings.Contains(err.Error(), "file not registered") ||
 				strings.Contains(err.Error(), "not found") {
 				filesAPIError = errs.ErrFileMetadataNotFound
@@ -4080,8 +4069,7 @@ func TestPublishDistributionFilesErrorMapping(t *testing.T) {
 			err := errors.New("resource not found")
 			var filesAPIError error
 
-			if errors.Is(err, files.ErrFileNotFound) ||
-				strings.Contains(err.Error(), "FileNotRegistered") ||
+			if strings.Contains(err.Error(), "FileNotRegistered") ||
 				strings.Contains(err.Error(), "file not registered") ||
 				strings.Contains(err.Error(), "not found") {
 				filesAPIError = errs.ErrFileMetadataNotFound
