@@ -19,6 +19,7 @@ import (
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
+	"github.com/pkg/errors"
 )
 
 var (

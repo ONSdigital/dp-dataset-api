@@ -436,7 +436,7 @@ Feature: Static Dataset Versions PUT API
             """
         Then the HTTP status code should be "200"
 
-Scenario: PUT succeeds when updating edition ID to unique value within series
+    Scenario: PUT succeeds when updating edition ID to unique value within series
         Given private endpoints are enabled
         And I am identified as "user@ons.gov.uk"
         And I am authorised
