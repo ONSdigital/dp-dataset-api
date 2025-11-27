@@ -6309,7 +6309,6 @@ func TestPurgeCache(t *testing.T) {
 			Convey("Then an error is returned", func() {
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldContainSubstring, "cloudflare API returned status 500")
-
 			})
 		})
 	})

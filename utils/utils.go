@@ -807,7 +807,7 @@ type HTTPClient interface {
 }
 
 func PurgeCache(ctx context.Context, datasetID, editionID, baseURL, zoneID, apiToken string, client HTTPClient) error {
-	url := fmt.Sprintf("%s/zones/%s/purge_cache", baseURL, zoneID)
+	cloudflareURL := fmt.Sprintf("%s/zones/%s/purge_cache", baseURL, zoneID)
 	webDatasetURL := fmt.Sprintf("www.ons.gov.uk/datasets/%s", datasetID)
 	webEditionsURL := fmt.Sprintf("www.ons.gov.uk/datasets/%s/editions", datasetID)
 	webVersionsURL := fmt.Sprintf("www.ons.gov.uk/datasets/%s/editions/%s/versions", datasetID, editionID)
@@ -832,7 +832,7 @@ func PurgeCache(ctx context.Context, datasetID, editionID, baseURL, zoneID, apiT
 		return fmt.Errorf("failed to marshal purge prefixes: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(payload))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, cloudflareURL, bytes.NewReader(payload))
 	if err != nil {
 		return fmt.Errorf("failed to create purge request: %w", err)
 	}
@@ -857,7 +857,6 @@ func PurgeCache(ctx context.Context, datasetID, editionID, baseURL, zoneID, apiT
 	})
 
 	return nil
-
 }
 
 func GenerateDistributionsDownloadURLs(datasetID, edition string, version int, distributions *[]models.Distribution) *[]models.Distribution {
