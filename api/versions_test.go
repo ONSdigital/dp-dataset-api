@@ -786,9 +786,9 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			isLocked := false
 			mockedDataStore := &storetest.StorerMock{
 				CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID, editionID, state string) error {
-				return errs.ErrEditionNotFound
-			},
-			CheckEditionTitleExistsStaticFunc: func(ctx context.Context, datasetID, editionTitle string) error {
+					return errs.ErrEditionNotFound
+				},
+				CheckEditionTitleExistsStaticFunc: func(ctx context.Context, datasetID, editionTitle string) error {
 					return nil
 				},
 				CheckEditionExistsFunc: func(context.Context, string, string, string) error {
