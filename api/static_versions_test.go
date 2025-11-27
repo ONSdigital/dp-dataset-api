@@ -922,6 +922,44 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 		So(response.Edition, ShouldEqual, "time-series")
 	})
 
+	Convey("When edition title already exists in another edition", t, func() {
+		b := `{
+				"release_date": "2025-01-15",
+				"edition_title": "Existing Edition Title",
+				"distributions": [{}]
+			}`
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/new-edition/versions", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID, editionID, state string) error {
+				return errs.ErrEditionNotFound
+			},
+			CheckEditionTitleExistsStaticFunc: func(ctx context.Context, datasetID, editionTitle string) error {
+				return errs.ErrEditionTitleAlreadyExists
+			},
+			GetLatestVersionStaticFunc: func(context.Context, string, string, string) (*models.Version, error) {
+				return nil, errs.ErrVersionNotFound
+			},
+		}
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
+
+		So(errorResponse.Status, ShouldEqual, http.StatusConflict)
+		So(successResponse, ShouldBeNil)
+		castErr := errorResponse.Errors[0]
+		So(castErr.Code, ShouldEqual, models.ErrEditionTitleAlreadyExists)
+		So(castErr.Description, ShouldEqual, models.ErrEditionTitleAlreadyExistsDescription)
+		So(mockedDataStore.CheckDatasetExistsCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.CheckEditionExistsStaticCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.CheckEditionTitleExistsStaticCalls(), ShouldHaveLength, 1)
+	})
+
 	Convey("When request body is not valid", t, func() {
 		b := `{"title":"test-dataset","description":"test dataset","type":"static","next_release":"2025-02-15"}`
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/time-series/versions", bytes.NewBufferString(b))
