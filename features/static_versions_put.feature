@@ -375,7 +375,7 @@ Feature: Static Dataset Versions PUT API
         Then the HTTP status code should be "409"
         And I should receive the following response:
             """
-            the edition-id already exists
+            the edition already exists
             """
 
     Scenario: PUT succeeds when updating edition-id to new edition for static dataset
@@ -481,7 +481,7 @@ Feature: Static Dataset Versions PUT API
         Then the HTTP status code should be "409"
         And I should receive the following response:
             """
-            the edition-id already exists
+            the edition already exists
             """
 
     Scenario: PUT succeeds when updating both edition ID and title to unique values within the series
@@ -513,7 +513,7 @@ Feature: Static Dataset Versions PUT API
         Then the HTTP status code should be "409"
         And I should receive the following response:
             """
-            the edition-id already exists
+            the edition already exists
             """
 
     Scenario: PUT fails when updating edition title to one that already exists but edition ID is unique
