@@ -449,7 +449,7 @@ Feature: Static Dataset Versions PUT API
             """
         Then the HTTP status code should be "200"
 
-    Scenario: PUT fails when updating edition title to exisiting value within same series
+    Scenario: PUT fails when updating edition title to existing value within same series
         Given private endpoints are enabled
         And I am identified as "user@ons.gov.uk"
         And I am authorised

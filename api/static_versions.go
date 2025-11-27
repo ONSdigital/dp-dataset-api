@@ -149,6 +149,7 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	versionRequest.Edition = edition
 
 	if errors.Is(err, errs.ErrVersionNotFound) {
+		log.Warn(ctx, "edition not found, defaulting to version 1", logData)
 		// Creating version 1 of a new edition - ensure title don't exist in other editions
 		checkErr := api.dataStore.Backend.CheckEditionTitleIDExistsStatic(ctx, datasetID, edition, versionRequest.EditionTitle)
 		if checkErr != nil {

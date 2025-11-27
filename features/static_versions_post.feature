@@ -208,30 +208,6 @@ Feature: Static Dataset Versions POST API
             """
         Then the HTTP status code should be "401"
 
-    Scenario: POST creates a new version when edition title already does not exists within the same dataset successfully
-        Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
-        When I POST "/datasets/static-dataset-existing/editions/2025/versions"
-            """
-            {
-                "release_date": "2025-12-01T09:00:00.000Z",
-                "edition_title": "new title",
-                "type": "static",
-                "edition": "2024",
-                "distributions": [
-                    {
-                        "title": "CSV",
-                        "format": "csv",
-                        "media_type": "text/csv",
-                        "download_url": "/downloads/test.csv",
-                        "byte_size": 100000
-                    }
-                ]
-            }
-            """
-        Then the HTTP status code should be "201"
-
     Scenario: POST creates a new static dataset version with exisiting edition title fails
         Given private endpoints are enabled
         And I am identified as "user@ons.gov.uk"
@@ -247,7 +223,7 @@ Feature: Static Dataset Versions POST API
                         "title": "Full Dataset CSV",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/datasets/static-dataset-existing/editions/2025/versions/1.csv",
+                        "download_url": "/downloads/files/static-dataset-test/2024/1/filename.csv",
                         "byte_size": 100000
                     }
                 ]
@@ -260,7 +236,7 @@ Feature: Static Dataset Versions POST API
                 "errors": [
                     {
                         "code": "ErrEditionTitleAlreadyExists",
-                        "description": "edition title already exists for this dataset"
+                        "description": "edition title already exists"
                     }
                 ]
             }

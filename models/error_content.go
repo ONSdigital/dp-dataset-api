@@ -16,7 +16,7 @@ const (
 	UnknownRequestTypeError      = "UnknownRequestType"
 	NotImplementedError          = "NotImplemented"
 	ErrInvalidTypeError          = "InvalidType"
-	ErrEditionAlreadyExists      = "ErrEditionTitleAlreadyExists"
+	ErrEditionAlreadyExists      = "ErrEditionAlreadyExists"
 	ErrEditionTitleAlreadyExists = "ErrEditionTitleAlreadyExists"
 )
 
@@ -37,6 +37,6 @@ const (
 	ErrUnpublishedVersionAlreadyExistsDescription = "an unpublished version of this dataset already exists"
 	ErrVersionAlreadyExistsDescription            = "version already exists"
 	ErrTypeNotStaticDescription                   = "version type should be static"
-	ErrEditionAlreadyExistsDescription            = "edition title already exists"
-	ErrEditionTitleAlreadyExistsDescription       = "edition title already exists for this dataset"
+	ErrEditionAlreadyExistsDescription            = "edition already exists"
+	ErrEditionTitleAlreadyExistsDescription       = "edition title already exists"
 )
