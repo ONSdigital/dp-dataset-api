@@ -65,8 +65,8 @@ github.com/ONSdigital/log.go v1.1.0/go.mod h1:0hOVuYR3bDUI30VRo48d5KHfJIoe+spuPX
 github.com/ONSdigital/log.go/v2 v2.0.0/go.mod h1:PR7vXrv9dZKUc7SI/0toxBbStk84snmybBnWpe+xY2o=
 github.com/ONSdigital/log.go/v2 v2.0.5/go.mod h1:PR7vXrv9dZKUc7SI/0toxBbStk84snmybBnWpe+xY2o=
 github.com/ONSdigital/log.go/v2 v2.0.9/go.mod h1:VyTDkL82FtiAkaNFaT+bURBhLbP7NsIx4rkVbdpiuEg=
-github.com/ONSdigital/log.go/v2 v2.5.0 h1:gFHAn6tLOzkhC9hiAFgFxzNBh5Uz06KyULQ9aQyM9tE=
-github.com/ONSdigital/log.go/v2 v2.5.0/go.mod h1:0ilpZzc5lVoBlXC/s5m8EaQETbe0yT8Z+p4QhKy0fpY=
+github.com/ONSdigital/log.go/v2 v2.5.1 h1:GCM270UHSP5+mv4OaQ2oHiWp0FiSgfnM6imW2zpAslw=
+github.com/ONSdigital/log.go/v2 v2.5.1/go.mod h1:KZNEweCUHD8dKwhlvoRvgd2Y2aUIuU3H9/MmbFyVzW8=
 github.com/Shopify/sarama v1.38.1 h1:lqqPUPQZ7zPqYlWpTh+LQ9bhYNu2xJL6k1SJN4WVe2A=
 github.com/Shopify/sarama v1.38.1/go.mod h1:iwv9a67Ha8VNa+TifujYoWGxWnu2kNVAQdSdZ4X2o5g=
 github.com/Shopify/toxiproxy/v2 v2.5.0 h1:i4LPT+qrSlKNtQf5QliVjdP08GyAH8+BUIc9gT0eahc=
