@@ -21,16 +21,7 @@ Feature: Dataset API
                         "dataset": {
                             "id": "population-estimates"
                         }
-                    },
-                    "distributions": [
-                        {
-                            "title": "Distribution 1",
-                            "format": "csv",
-                            "media_type": "text/csv",
-                            "download_url": "/datasets/population-estimates/editions/2019/versions/1.csv",
-                            "byte_size": 100000
-                        }
-                    ]
+                    }
                 }
             ]
             """
@@ -48,16 +39,7 @@ Feature: Dataset API
                             "dataset": {
                                 "id": "population-estimates"
                             }
-                        },
-                        "distributions": [
-                            {
-                                "title": "Distribution 1",
-                                "format": "csv",
-                                "media_type": "text/csv",
-                                "download_url": "/datasets/population-estimates/editions/2019/versions/1.csv",
-                                "byte_size": 100000
-                            }
-                        ]
+                        }
                     }
                 ],
                 "limit": 20,
@@ -87,16 +69,7 @@ Feature: Dataset API
                         "dataset": {
                             "id": "population-estimates"
                         }
-                    },
-                    "distributions": [
-                        {
-                            "title": "Distribution 1",
-                            "format": "csv",
-                            "media_type": "text/csv",
-                            "download_url": "/datasets/population-estimates/editions/2019/versions/1.csv",
-                            "byte_size": 100000
-                        }
-                    ]
+                    }
                 }
             ]
             """
@@ -115,16 +88,7 @@ Feature: Dataset API
                             "dataset": {
                                 "id": "population-estimates"
                             }
-                        },
-                        "distributions": [
-                            {
-                                "title": "Distribution 1",
-                                "format": "csv",
-                                "media_type": "text/csv",
-                                "download_url": "http://localhost:23600/downloads-new/datasets/population-estimates/editions/2019/versions/1.csv",
-                                "byte_size": 100000
-                            }
-                        ]
+                        }
                     }
                 ],
                 "limit": 20,
@@ -154,16 +118,7 @@ Feature: Dataset API
                         "dataset": {
                             "id": "population-estimates"
                         }
-                    },
-                    "distributions": [
-                        {
-                            "title": "Distribution 1",
-                            "format": "csv",
-                            "media_type": "text/csv",
-                            "download_url": "/datasets/population-estimates/editions/2019/versions/1.csv",
-                            "byte_size": 100000
-                        }
-                    ]
+                    }
                 }
             ]
             """
@@ -178,16 +133,7 @@ Feature: Dataset API
                     "dataset": {
                         "id": "population-estimates"
                     }
-                },
-                "distributions": [
-                    {
-                        "title": "Distribution 1",
-                        "format": "csv",
-                        "media_type": "text/csv",
-                        "download_url": "/datasets/population-estimates/editions/2019/versions/1.csv",
-                        "byte_size": 100000
-                    }
-                ]
+                }
             }
             """
 
@@ -212,16 +158,7 @@ Feature: Dataset API
                         "dataset": {
                             "id": "population-estimates"
                         }
-                    },
-                    "distributions": [
-                        {
-                            "title": "Distribution 1",
-                            "format": "csv",
-                            "media_type": "text/csv",
-                            "download_url": "/datasets/population-estimates/editions/2019/versions/1.csv",
-                            "byte_size": 100000
-                        }
-                    ]
+                    }
                 }
             ]
             """
@@ -237,16 +174,7 @@ Feature: Dataset API
                     "dataset": {
                         "id": "population-estimates"
                     }
-                },
-                "distributions": [
-                    {
-                        "title": "Distribution 1",
-                        "format": "csv",
-                        "media_type": "text/csv",
-                        "download_url": "http://localhost:23600/downloads-new/datasets/population-estimates/editions/2019/versions/1.csv",
-                        "byte_size": 100000
-                    }
-                ]
+                }
             }
             """
 
