@@ -9,6 +9,7 @@ import (
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-dataset-api/utils"
 	dpresponse "github.com/ONSdigital/dp-net/v3/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v3/http"
 	"github.com/ONSdigital/log.go/v2/log"
@@ -165,6 +166,7 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	versionRequest.Version = nextVersion
 	versionRequest.DatasetID = datasetID
 	versionRequest.Links = api.generateVersionLinks(datasetID, edition, nextVersion, versionRequest.Links)
+	versionRequest.Distributions = utils.GenerateDistributionsDownloadURLs(datasetID, edition, nextVersion, versionRequest.Distributions)
 	versionRequest.Type = models.Static.String()
 
 	// Store version in 'versions' collection
@@ -242,6 +244,7 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 	newVersion.Type = models.Static.String()
 	newVersion.State = models.AssociatedState
 	newVersion.Links = api.generateVersionLinks(datasetID, edition, versionNumber, nil)
+	newVersion.Distributions = utils.GenerateDistributionsDownloadURLs(datasetID, edition, versionNumber, newVersion.Distributions)
 
 	missingFields := validateVersionFields(newVersion)
 	if len(missingFields) > 0 {

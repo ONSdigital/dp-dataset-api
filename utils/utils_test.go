@@ -2626,14 +2626,14 @@ func TestRewriteEditionsWithAuth_Success(t *testing.T) {
 								Title:       "Distribution 1",
 								Format:      "CSV",
 								MediaType:   "text/csv",
-								DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.csv",
+								DownloadURL: "/cpih01/time-series/1/filename.csv",
 								ByteSize:    10000,
 							},
 							{
 								Title:       "Distribution 2",
 								Format:      "XLSX",
 								MediaType:   "text/xlsx",
-								DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.xlsx",
+								DownloadURL: "/cpih01/time-series/1/filename.xlsx",
 								ByteSize:    20000,
 							},
 						},
@@ -2662,14 +2662,14 @@ func TestRewriteEditionsWithAuth_Success(t *testing.T) {
 								Title:       "Distribution 1",
 								Format:      "CSV",
 								MediaType:   "text/csv",
-								DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.csv",
+								DownloadURL: "/cpih01/time-series/1/filename.csv",
 								ByteSize:    10000,
 							},
 							{
 								Title:       "Distribution 2",
 								Format:      "XLSX",
 								MediaType:   "text/xlsx",
-								DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.xlsx",
+								DownloadURL: "/cpih01/time-series/1/filename.xlsx",
 								ByteSize:    20000,
 							},
 						},
@@ -2688,16 +2688,16 @@ func TestRewriteEditionsWithAuth_Success(t *testing.T) {
 				So(items[0].Current.Links.LatestVersion.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 				So(items[0].Current.Links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
 				So(items[0].Current.Links.Versions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions")
-				So((*items[0].Current.Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv")
-				So((*items[0].Current.Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx")
+				So((*items[0].Current.Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv")
+				So((*items[0].Current.Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx")
 				So(items[0].Current.State, ShouldEqual, "edition-confirmed")
 				So(items[0].Next.Edition, ShouldEqual, "time-series")
 				So(items[0].Next.Links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
 				So(items[0].Next.Links.LatestVersion.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 				So(items[0].Next.Links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
 				So(items[0].Next.Links.Versions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions")
-				So((*items[0].Next.Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv")
-				So((*items[0].Next.Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx")
+				So((*items[0].Next.Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv")
+				So((*items[0].Next.Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx")
 				So(items[0].Next.State, ShouldEqual, "edition-confirmed")
 			})
 		})
@@ -2729,14 +2729,14 @@ func TestRewriteEditionsWithAuth_Success(t *testing.T) {
 								Title:       "Distribution 1",
 								Format:      "CSV",
 								MediaType:   "text/csv",
-								DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv",
+								DownloadURL: "http://localhost:23600/downloads/files/datasets/cpih01/editions/time-series/versions/1.csv",
 								ByteSize:    10000,
 							},
 							{
 								Title:       "Distribution 2",
 								Format:      "XLSX",
 								MediaType:   "text/xlsx",
-								DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx",
+								DownloadURL: "http://localhost:23600/downloads/files/datasets/cpih01/editions/time-series/versions/1.xlsx",
 								ByteSize:    20000,
 							},
 						},
@@ -2765,14 +2765,14 @@ func TestRewriteEditionsWithAuth_Success(t *testing.T) {
 								Title:       "Distribution 1",
 								Format:      "CSV",
 								MediaType:   "text/csv",
-								DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv",
+								DownloadURL: "http://localhost:23600/downloads/files/datasets/cpih01/editions/time-series/versions/1.csv",
 								ByteSize:    10000,
 							},
 							{
 								Title:       "Distribution 2",
 								Format:      "XLSX",
 								MediaType:   "text/xlsx",
-								DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx",
+								DownloadURL: "http://localhost:23600/downloads/files/datasets/cpih01/editions/time-series/versions/1.xlsx",
 								ByteSize:    20000,
 							},
 						},
@@ -2962,14 +2962,14 @@ func TestRewriteEditionsWithoutAuth_Success(t *testing.T) {
 								Title:       "Distribution 1",
 								Format:      "CSV",
 								MediaType:   "text/csv",
-								DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.csv",
+								DownloadURL: "/cpih01/time-series/1/filename.csv",
 								ByteSize:    10000,
 							},
 							{
 								Title:       "Distribution 2",
 								Format:      "XLSX",
 								MediaType:   "text/xlsx",
-								DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.xlsx",
+								DownloadURL: "/cpih01/time-series/1/filename.xlsx",
 								ByteSize:    20000,
 							},
 						},
@@ -2998,14 +2998,14 @@ func TestRewriteEditionsWithoutAuth_Success(t *testing.T) {
 								Title:       "Distribution 1",
 								Format:      "CSV",
 								MediaType:   "text/csv",
-								DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.csv",
+								DownloadURL: "/cpih01/time-series/1/filename.csv",
 								ByteSize:    10000,
 							},
 							{
 								Title:       "Distribution 2",
 								Format:      "XLSX",
 								MediaType:   "text/xlsx",
-								DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.xlsx",
+								DownloadURL: "/cpih01/time-series/1/filename.xlsx",
 								ByteSize:    20000,
 							},
 						},
@@ -3024,8 +3024,8 @@ func TestRewriteEditionsWithoutAuth_Success(t *testing.T) {
 				So(items[0].Links.LatestVersion.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 				So(items[0].Links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
 				So(items[0].Links.Versions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions")
-				So((*items[0].Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv")
-				So((*items[0].Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx")
+				So((*items[0].Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv")
+				So((*items[0].Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx")
 				So(items[0].State, ShouldEqual, "edition-confirmed")
 			})
 		})
@@ -3057,14 +3057,14 @@ func TestRewriteEditionsWithoutAuth_Success(t *testing.T) {
 								Title:       "Distribution 1",
 								Format:      "CSV",
 								MediaType:   "text/csv",
-								DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv",
+								DownloadURL: "http://localhost:23600/downloads/files/datasets/cpih01/editions/time-series/versions/1.csv",
 								ByteSize:    10000,
 							},
 							{
 								Title:       "Distribution 2",
 								Format:      "XLSX",
 								MediaType:   "text/xlsx",
-								DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx",
+								DownloadURL: "http://localhost:23600/downloads/files/datasets/cpih01/editions/time-series/versions/1.xlsx",
 								ByteSize:    20000,
 							},
 						},
@@ -3093,14 +3093,14 @@ func TestRewriteEditionsWithoutAuth_Success(t *testing.T) {
 								Title:       "Distribution 1",
 								Format:      "CSV",
 								MediaType:   "text/csv",
-								DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv",
+								DownloadURL: "http://localhost:23600/downloads/files/datasets/cpih01/editions/time-series/versions/1.csv",
 								ByteSize:    10000,
 							},
 							{
 								Title:       "Distribution 2",
 								Format:      "XLSX",
 								MediaType:   "text/xlsx",
-								DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx",
+								DownloadURL: "http://localhost:23600/downloads/files/datasets/cpih01/editions/time-series/versions/1.xlsx",
 								ByteSize:    20000,
 							},
 						},
@@ -3263,14 +3263,14 @@ func TestRewriteEditionWithAuth_Success(t *testing.T) {
 							Title:       "Distribution 1",
 							Format:      "CSV",
 							MediaType:   "text/csv",
-							DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.csv",
+							DownloadURL: "/cpih01/time-series/1/filename.csv",
 							ByteSize:    10000,
 						},
 						{
 							Title:       "Distribution 2",
 							Format:      "XLSX",
 							MediaType:   "text/xlsx",
-							DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.xlsx",
+							DownloadURL: "/cpih01/time-series/1/filename.xlsx",
 							ByteSize:    20000,
 						},
 					},
@@ -3299,14 +3299,14 @@ func TestRewriteEditionWithAuth_Success(t *testing.T) {
 							Title:       "Distribution 1",
 							Format:      "CSV",
 							MediaType:   "text/csv",
-							DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.csv",
+							DownloadURL: "/cpih01/time-series/1/filename.csv",
 							ByteSize:    10000,
 						},
 						{
 							Title:       "Distribution 2",
 							Format:      "XLSX",
 							MediaType:   "text/xlsx",
-							DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.xlsx",
+							DownloadURL: "/cpih01/time-series/1/filename.xlsx",
 							ByteSize:    20000,
 						},
 					},
@@ -3324,16 +3324,16 @@ func TestRewriteEditionWithAuth_Success(t *testing.T) {
 				So(item.Current.Links.LatestVersion.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 				So(item.Current.Links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
 				So(item.Current.Links.Versions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions")
-				So((*item.Current.Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv")
-				So((*item.Current.Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx")
+				So((*item.Current.Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv")
+				So((*item.Current.Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx")
 				So(item.Current.State, ShouldEqual, "edition-confirmed")
 				So(item.Next.Edition, ShouldEqual, "time-series")
 				So(item.Next.Links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
 				So(item.Next.Links.LatestVersion.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/2")
 				So(item.Next.Links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
 				So(item.Next.Links.Versions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions")
-				So((*item.Next.Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv")
-				So((*item.Next.Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx")
+				So((*item.Next.Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv")
+				So((*item.Next.Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx")
 				So(item.Next.State, ShouldEqual, "edition-confirmed")
 			})
 		})
@@ -3364,14 +3364,14 @@ func TestRewriteEditionWithAuth_Success(t *testing.T) {
 							Title:       "Distribution 1",
 							Format:      "CSV",
 							MediaType:   "text/csv",
-							DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv",
+							DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv",
 							ByteSize:    10000,
 						},
 						{
 							Title:       "Distribution 2",
 							Format:      "XLSX",
 							MediaType:   "text/xlsx",
-							DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx",
+							DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx",
 							ByteSize:    20000,
 						},
 					},
@@ -3400,14 +3400,14 @@ func TestRewriteEditionWithAuth_Success(t *testing.T) {
 							Title:       "Distribution 1",
 							Format:      "CSV",
 							MediaType:   "text/csv",
-							DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv",
+							DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv",
 							ByteSize:    10000,
 						},
 						{
 							Title:       "Distribution 2",
 							Format:      "XLSX",
 							MediaType:   "text/xlsx",
-							DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx",
+							DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx",
 							ByteSize:    20000,
 						},
 					},
@@ -3607,14 +3607,14 @@ func TestRewriteEditionWithoutAuth_Success(t *testing.T) {
 							Title:       "Distribution 1",
 							Format:      "CSV",
 							MediaType:   "text/csv",
-							DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.csv",
+							DownloadURL: "/cpih01/time-series/1/filename.csv",
 							ByteSize:    10000,
 						},
 						{
 							Title:       "Distribution 2",
 							Format:      "XLSX",
 							MediaType:   "text/xlsx",
-							DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.xlsx",
+							DownloadURL: "/cpih01/time-series/1/filename.xlsx",
 							ByteSize:    20000,
 						},
 					},
@@ -3643,14 +3643,14 @@ func TestRewriteEditionWithoutAuth_Success(t *testing.T) {
 							Title:       "Distribution 1",
 							Format:      "CSV",
 							MediaType:   "text/csv",
-							DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.csv",
+							DownloadURL: "/cpih01/time-series/1/filename.csv",
 							ByteSize:    10000,
 						},
 						{
 							Title:       "Distribution 2",
 							Format:      "XLSX",
 							MediaType:   "text/xlsx",
-							DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.xlsx",
+							DownloadURL: "/cpih01/time-series/1/filename.xlsx",
 							ByteSize:    20000,
 						},
 					},
@@ -3668,8 +3668,8 @@ func TestRewriteEditionWithoutAuth_Success(t *testing.T) {
 				So(item.Links.LatestVersion.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 				So(item.Links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
 				So(item.Links.Versions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions")
-				So((*item.Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv")
-				So((*item.Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx")
+				So((*item.Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv")
+				So((*item.Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx")
 				So(item.State, ShouldEqual, "edition-confirmed")
 			})
 		})
@@ -3700,14 +3700,14 @@ func TestRewriteEditionWithoutAuth_Success(t *testing.T) {
 							Title:       "Distribution 1",
 							Format:      "CSV",
 							MediaType:   "text/csv",
-							DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv",
+							DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv",
 							ByteSize:    10000,
 						},
 						{
 							Title:       "Distribution 2",
 							Format:      "XLSX",
 							MediaType:   "text/xlsx",
-							DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx",
+							DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx",
 							ByteSize:    20000,
 						},
 					},
@@ -3736,14 +3736,14 @@ func TestRewriteEditionWithoutAuth_Success(t *testing.T) {
 							Title:       "Distribution 1",
 							Format:      "CSV",
 							MediaType:   "text/csv",
-							DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv",
+							DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv",
 							ByteSize:    10000,
 						},
 						{
 							Title:       "Distribution 2",
 							Format:      "XLSX",
 							MediaType:   "text/xlsx",
-							DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx",
+							DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx",
 							ByteSize:    20000,
 						},
 					},
@@ -4252,14 +4252,14 @@ func TestRewriteVersions_Success(t *testing.T) {
 							Title:       "Distribution 1",
 							Format:      "CSV",
 							MediaType:   "text/csv",
-							DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.csv",
+							DownloadURL: "/cpih01/time-series/1/filename.csv",
 							ByteSize:    10000,
 						},
 						{
 							Title:       "Distribution 2",
 							Format:      "XLSX",
 							MediaType:   "text/xlsx",
-							DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.xlsx",
+							DownloadURL: "/cpih01/time-series/1/filename.xlsx",
 							ByteSize:    20000,
 						},
 					},
@@ -4345,14 +4345,14 @@ func TestRewriteVersions_Success(t *testing.T) {
 							Title:       "Distribution 1",
 							Format:      "CSV",
 							MediaType:   "text/csv",
-							DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.csv",
+							DownloadURL: "/cpih01/time-series/1/filename.csv",
 							ByteSize:    10000,
 						},
 						{
 							Title:       "Distribution 2",
 							Format:      "XLSX",
 							MediaType:   "text/xlsx",
-							DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.xlsx",
+							DownloadURL: "/cpih01/time-series/1/filename.xlsx",
 							ByteSize:    20000,
 						},
 					},
@@ -4387,8 +4387,8 @@ func TestRewriteVersions_Success(t *testing.T) {
 				So(items[0].Downloads.XLS.Size, ShouldEqual, "60000")
 				So(items[0].Downloads.XLSX.HRef, ShouldEqual, "http://localhost:23600/downloads/datasets/cpih01/editions/time-series/versions/1.xlsx")
 				So(items[0].Downloads.XLSX.Size, ShouldEqual, "75000")
-				So((*items[0].Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv")
-				So((*items[0].Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx")
+				So((*items[0].Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv")
+				So((*items[0].Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx")
 
 				So(items[1].ID, ShouldEqual, "74e4d2da-8fd6-4bb6-b4a2-b5cd573fb42b")
 				So(items[1].DatasetID, ShouldEqual, "cpih01")
@@ -4413,8 +4413,8 @@ func TestRewriteVersions_Success(t *testing.T) {
 				So(items[1].Downloads.XLS.Size, ShouldEqual, "60000")
 				So(items[1].Downloads.XLSX.HRef, ShouldEqual, "http://localhost:23600/downloads/datasets/cpih01/editions/time-series/versions/1.xlsx")
 				So(items[1].Downloads.XLSX.Size, ShouldEqual, "75000")
-				So((*items[1].Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv")
-				So((*items[1].Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx")
+				So((*items[1].Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv")
+				So((*items[1].Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx")
 			})
 		})
 
@@ -4501,14 +4501,14 @@ func TestRewriteVersions_Success(t *testing.T) {
 							Title:       "Distribution 1",
 							Format:      "CSV",
 							MediaType:   "text/csv",
-							DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv",
+							DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv",
 							ByteSize:    10000,
 						},
 						{
 							Title:       "Distribution 2",
 							Format:      "XLSX",
 							MediaType:   "text/xlsx",
-							DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx",
+							DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx",
 							ByteSize:    20000,
 						},
 					},
@@ -4594,14 +4594,14 @@ func TestRewriteVersions_Success(t *testing.T) {
 							Title:       "Distribution 1",
 							Format:      "CSV",
 							MediaType:   "text/csv",
-							DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv",
+							DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv",
 							ByteSize:    10000,
 						},
 						{
 							Title:       "Distribution 2",
 							Format:      "XLSX",
 							MediaType:   "text/xlsx",
-							DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx",
+							DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx",
 							ByteSize:    20000,
 						},
 					},
@@ -4905,7 +4905,7 @@ func TestRewriteVersions_Error(t *testing.T) {
 					Version:   53,
 					Distributions: &[]models.Distribution{
 						{
-							DownloadURL: "://oldhost:1000/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv",
+							DownloadURL: "://oldhost:1000/downloads/files/cpih01/time-series/1/filename.csv",
 						},
 					},
 				},
@@ -6131,36 +6131,22 @@ func TestRewriteDistributions_Success(t *testing.T) {
 					Title:       "Distribution 1",
 					Format:      "CSV",
 					MediaType:   "text/csv",
-					DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.csv",
+					DownloadURL: "/cpih01/time-series/1/filename.csv",
 					ByteSize:    10000,
 				},
 				{
 					Title:       "Distribution 2",
 					Format:      "XLSX",
 					MediaType:   "text/xlsx",
-					DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.xlsx",
+					DownloadURL: "/cpih01/time-series/1/filename.xlsx",
 					ByteSize:    20000,
 				},
 				{
 					Title:       "Distribution 3",
 					Format:      "XLS",
 					MediaType:   "text/xls",
-					DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.xls",
+					DownloadURL: "/cpih01/time-series/1/filename.xls",
 					ByteSize:    30000,
-				},
-				{
-					Title:       "Distribution 4",
-					Format:      "XLS",
-					MediaType:   "text/xls",
-					DownloadURL: "dataset-uploads/somefile.xls",
-					ByteSize:    40000,
-				},
-				{
-					Title:       "Distribution 5",
-					Format:      "XLSX",
-					MediaType:   "text/xlsx",
-					DownloadURL: "/dataset-uploads/somefile.xlsx",
-					ByteSize:    50000,
 				},
 			}
 
@@ -6168,11 +6154,9 @@ func TestRewriteDistributions_Success(t *testing.T) {
 
 			Convey("Then the DownloadURLs should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
-				So((*distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv")
-				So((*distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx")
-				So((*distributions)[2].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xls")
-				So((*distributions)[3].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/dataset-uploads/somefile.xls")
-				So((*distributions)[4].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/dataset-uploads/somefile.xlsx")
+				So((*distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv")
+				So((*distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx")
+				So((*distributions)[2].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xls")
 			})
 		})
 
@@ -6182,21 +6166,21 @@ func TestRewriteDistributions_Success(t *testing.T) {
 					Title:       "Distribution 1",
 					Format:      "CSV",
 					MediaType:   "text/csv",
-					DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv",
+					DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv",
 					ByteSize:    10000,
 				},
 				{
 					Title:       "Distribution 2",
 					Format:      "XLSX",
 					MediaType:   "text/xlsx",
-					DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx",
+					DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx",
 					ByteSize:    20000,
 				},
 				{
 					Title:       "Distribution 3",
 					Format:      "XLS",
 					MediaType:   "text/xls",
-					DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xls",
+					DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xls",
 					ByteSize:    30000,
 				},
 			}
@@ -6205,9 +6189,9 @@ func TestRewriteDistributions_Success(t *testing.T) {
 
 			Convey("Then the DownloadURLs should remain the same", func() {
 				So(err, ShouldBeNil)
-				So((*distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv")
-				So((*distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx")
-				So((*distributions)[2].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xls")
+				So((*distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv")
+				So((*distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx")
+				So((*distributions)[2].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xls")
 			})
 		})
 
@@ -6244,7 +6228,7 @@ func TestRewriteDistributions_Error(t *testing.T) {
 					Title:       "Distribution 1",
 					Format:      "CSV",
 					MediaType:   "text/csv",
-					DownloadURL: "://oldhost:1000/downloads/datasets/cpih01/editions/time-series/versions/1.csv",
+					DownloadURL: "://oldhost:1000/downloads/files/cpih01/time-series/1/filename.csv",
 					ByteSize:    10000,
 				},
 			}
@@ -6325,6 +6309,91 @@ func TestPurgeCache(t *testing.T) {
 			Convey("Then an error is returned", func() {
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldContainSubstring, "cloudflare API returned status 500")
+
+			})
+		})
+	})
+}
+
+func TestGenerateDistributionsDownloadURLs(t *testing.T) {
+	Convey("Given a set of distributions", t, func() {
+		distributions := &[]models.Distribution{
+			{
+				Title:       "Distribution 1",
+				Format:      "CSV",
+				MediaType:   "text/csv",
+				DownloadURL: "/cpih01/time-series/1/file1.csv",
+				ByteSize:    10000,
+			},
+			{
+				Title:       "Distribution 2",
+				Format:      "XLSX",
+				MediaType:   "text/xlsx",
+				DownloadURL: "/cpih01/time-series/1/file2.xlsx",
+				ByteSize:    20000,
+			},
+			{
+				Title:       "Distribution 3",
+				Format:      "XLS",
+				MediaType:   "text/xls",
+				DownloadURL: "/cpih01/time-series/1/file3.xls",
+				ByteSize:    30000,
+			},
+		}
+
+		datasetID := "new-dataset"
+		edition := "new-edition"
+		version := 2
+
+		Convey("When generating download URLs", func() {
+			updatedDistributions := GenerateDistributionsDownloadURLs(datasetID, edition, version, distributions)
+
+			expectedResults := &[]models.Distribution{
+				{
+					Title:       "Distribution 1",
+					Format:      "CSV",
+					MediaType:   "text/csv",
+					DownloadURL: "/new-dataset/new-edition/2/file1.csv",
+					ByteSize:    10000,
+				},
+				{
+					Title:       "Distribution 2",
+					Format:      "XLSX",
+					MediaType:   "text/xlsx",
+					DownloadURL: "/new-dataset/new-edition/2/file2.xlsx",
+					ByteSize:    20000,
+				},
+				{
+					Title:       "Distribution 3",
+					Format:      "XLS",
+					MediaType:   "text/xls",
+					DownloadURL: "/new-dataset/new-edition/2/file3.xls",
+					ByteSize:    30000,
+				},
+			}
+
+			Convey("Then the DownloadURLs should be generated correctly using the provided parameters", func() {
+				So(updatedDistributions, ShouldResemble, expectedResults)
+			})
+		})
+
+		Convey("When the distributions are empty", func() {
+			emptyDistributions := &[]models.Distribution{}
+
+			updatedDistributions := GenerateDistributionsDownloadURLs(datasetID, edition, version, emptyDistributions)
+
+			Convey("Then the distributions should remain empty", func() {
+				So(len(*updatedDistributions), ShouldEqual, 0)
+			})
+		})
+
+		Convey("When the distributions are nil", func() {
+			var nilDistributions *[]models.Distribution
+
+			updatedDistributions := GenerateDistributionsDownloadURLs(datasetID, edition, version, nilDistributions)
+
+			Convey("Then the distributions should remain nil", func() {
+				So(updatedDistributions, ShouldBeNil)
 			})
 		})
 	})

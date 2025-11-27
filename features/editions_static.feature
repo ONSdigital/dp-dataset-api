@@ -34,7 +34,7 @@ Feature: Dataset API
                             "title": "Distribution 1",
                             "format": "csv",
                             "media_type": "text/csv",
-                            "download_url": "/datasets/population-estimates/editions/2019/versions/1.csv",
+                            "download_url": "/population-estimates/2019/1/filename.csv",
                             "byte_size": 100000
                         }
                     ]
@@ -72,7 +72,7 @@ Feature: Dataset API
                                 "title": "Distribution 1",
                                 "format": "csv",
                                 "media_type": "text/csv",
-                                "download_url": "/datasets/population-estimates/editions/2019/versions/1.csv",
+                                "download_url": "/population-estimates/2019/1/filename.csv",
                                 "byte_size": 100000
                             }
                         ]
@@ -119,7 +119,7 @@ Feature: Dataset API
                             "title": "Distribution 1",
                             "format": "csv",
                             "media_type": "text/csv",
-                            "download_url": "/datasets/population-estimates/editions/2019/versions/1.csv",
+                            "download_url": "/downloads/files/population-estimates/2019/1/filename.csv",
                             "byte_size": 100000
                         }
                     ]
@@ -154,7 +154,7 @@ Feature: Dataset API
                         "title": "Distribution 1",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/datasets/population-estimates/editions/2019/versions/1.csv",
+                        "download_url": "/downloads/files/population-estimates/2019/1/filename.csv",
                         "byte_size": 100000
                     }
                 ]

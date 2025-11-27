@@ -43,7 +43,7 @@ Feature: Static Dataset Versions POST API
                             "title": "Published Dataset CSV",
                             "format": "csv",
                             "media_type": "text/csv",
-                            "download_url": "/downloads/datasets/static-dataset-existing/editions/2024/versions/1.csv",
+                            "download_url": "/static-dataset-existing/2024/1/filename.csv",
                             "byte_size": 150000
                         }
                     ]
@@ -66,7 +66,7 @@ Feature: Static Dataset Versions POST API
                         "title": "Full Dataset CSV",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/datasets/static-dataset-test/editions/2024/versions/1.csv",
+                        "download_url": "/downloads/files/static-dataset-test/2024/1/filename.csv",
                         "byte_size": 100000
                     }
                 ]
@@ -89,7 +89,7 @@ Feature: Static Dataset Versions POST API
                         "title": "Updated Dataset CSV",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/datasets/static-dataset-existing/editions/2024/versions/2.csv",
+                        "download_url": "/downloads/files/static-dataset-existing/2024/2/filename.csv",
                         "byte_size": 200000
                     }
                 ]
@@ -124,7 +124,7 @@ Feature: Static Dataset Versions POST API
                         "title": "Test CSV",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/test.csv",
+                        "download_url": "/downloads/files/non-existent-dataset/2024/1/filename.csv",
                         "byte_size": 100000
                     }
                 ]
@@ -158,7 +158,7 @@ Feature: Static Dataset Versions POST API
                             "title": "csv",
                             "format": "csv",
                             "media_type": "text/csv",
-                            "download_url": "/downloads/datasets/static-dataset-test/editions/2024/versions/1.csv",
+                            "download_url": "/downloads/files/static-dataset-test/2024/1/filename.csv",
                             "byte_size": 100000
                         }
                     ]
@@ -179,7 +179,7 @@ Feature: Static Dataset Versions POST API
                         "title": "csv",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/datasets/static-dataset-test/editions/2024/versions/2.csv",
+                        "download_url": "/downloads/files/static-dataset-test/2024/2/filename.csv",
                         "byte_size": 120000
                     }
                 ]
@@ -200,7 +200,7 @@ Feature: Static Dataset Versions POST API
                         "title": "Test CSV",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/test.csv",
+                        "download_url": "/downloads/files/static-dataset-test/2024/1/filename.csv",
                         "byte_size": 100000
                     }
                 ]

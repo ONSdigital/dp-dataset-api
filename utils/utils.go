@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"path"
 	"strconv"
 	"strings"
 
@@ -786,7 +787,7 @@ func RewriteDistributions(ctx context.Context, results *[]models.Distribution, d
 
 	for _, item := range *results {
 		if item.DownloadURL != "" {
-			item.DownloadURL, err = links.BuildDownloadNewLink(item.DownloadURL, downloadServiceURL)
+			item.DownloadURL, err = links.BuildDownloadFilesLink(item.DownloadURL, downloadServiceURL)
 			if err != nil {
 				log.Error(ctx, "failed to rewrite DownloadURL", err)
 				return nil, err
@@ -856,4 +857,21 @@ func PurgeCache(ctx context.Context, datasetID, editionID, baseURL, zoneID, apiT
 	})
 
 	return nil
+
+}
+
+func GenerateDistributionsDownloadURLs(datasetID, edition string, version int, distributions *[]models.Distribution) *[]models.Distribution {
+	if distributions == nil || len(*distributions) == 0 {
+		return distributions
+	}
+
+	updatedDistributions := &[]models.Distribution{}
+
+	for _, distribution := range *distributions {
+		filename := path.Base(distribution.DownloadURL)
+		distribution.DownloadURL = fmt.Sprintf("/%s/%s/%d/%s", datasetID, edition, version, filename)
+		*updatedDistributions = append(*updatedDistributions, distribution)
+	}
+
+	return updatedDistributions
 }
