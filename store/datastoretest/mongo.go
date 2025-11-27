@@ -49,8 +49,8 @@ var _ store.MongoDB = &MongoDBMock{}
 //			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID string, editionID string, state string) error {
 //				panic("mock out the CheckEditionExistsStatic method")
 //			},
-//			CheckEditionTitleIDExistsStaticFunc: func(ctx context.Context, datasetID string, editionID string, editionTitle string) error {
-//				panic("mock out the CheckEditionTitleIDExistsStatic method")
+//			CheckEditionTitleExistsStaticFunc: func(ctx context.Context, datasetID string, editionTitle string) error {
+//				panic("mock out the CheckEditionTitleExistsStatic method")
 //			},
 //			CheckVersionExistsStaticFunc: func(ctx context.Context, datasetID string, editionID string, version int) (bool, error) {
 //				panic("mock out the CheckVersionExistsStatic method")
@@ -233,8 +233,8 @@ type MongoDBMock struct {
 	// CheckEditionExistsStaticFunc mocks the CheckEditionExistsStatic method.
 	CheckEditionExistsStaticFunc func(ctx context.Context, datasetID string, editionID string, state string) error
 
-	// CheckEditionTitleIDExistsStaticFunc mocks the CheckEditionTitleIDExistsStatic method.
-	CheckEditionTitleIDExistsStaticFunc func(ctx context.Context, datasetID string, editionID string, editionTitle string) error
+	// CheckEditionTitleExistsStaticFunc mocks the CheckEditionTitleExistsStatic method.
+	CheckEditionTitleExistsStaticFunc func(ctx context.Context, datasetID string, editionTitle string) error
 
 	// CheckVersionExistsStaticFunc mocks the CheckVersionExistsStatic method.
 	CheckVersionExistsStaticFunc func(ctx context.Context, datasetID string, editionID string, version int) (bool, error)
@@ -462,14 +462,12 @@ type MongoDBMock struct {
 			// State is the state argument value.
 			State string
 		}
-		// CheckEditionTitleIDExistsStatic holds details about calls to the CheckEditionTitleIDExistsStatic method.
-		CheckEditionTitleIDExistsStatic []struct {
+		// CheckEditionTitleExistsStatic holds details about calls to the CheckEditionTitleExistsStatic method.
+		CheckEditionTitleExistsStatic []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// DatasetID is the datasetID argument value.
 			DatasetID string
-			// EditionID is the editionID argument value.
-			EditionID string
 			// EditionTitle is the editionTitle argument value.
 			EditionTitle string
 		}
@@ -996,7 +994,7 @@ type MongoDBMock struct {
 	lockCheckDatasetTitleExist              sync.RWMutex
 	lockCheckEditionExists                  sync.RWMutex
 	lockCheckEditionExistsStatic            sync.RWMutex
-	lockCheckEditionTitleIDExistsStatic     sync.RWMutex
+	lockCheckEditionTitleExistsStatic       sync.RWMutex
 	lockCheckVersionExistsStatic            sync.RWMutex
 	lockChecker                             sync.RWMutex
 	lockClose                               sync.RWMutex
@@ -1400,47 +1398,43 @@ func (mock *MongoDBMock) CheckEditionExistsStaticCalls() []struct {
 	return calls
 }
 
-// CheckEditionTitleIDExistsStatic calls CheckEditionTitleIDExistsStaticFunc.
-func (mock *MongoDBMock) CheckEditionTitleIDExistsStatic(ctx context.Context, datasetID string, editionID string, editionTitle string) error {
-	if mock.CheckEditionTitleIDExistsStaticFunc == nil {
-		panic("MongoDBMock.CheckEditionTitleIDExistsStaticFunc: method is nil but MongoDB.CheckEditionTitleIDExistsStatic was just called")
+// CheckEditionTitleExistsStatic calls CheckEditionTitleExistsStaticFunc.
+func (mock *MongoDBMock) CheckEditionTitleExistsStatic(ctx context.Context, datasetID string, editionTitle string) error {
+	if mock.CheckEditionTitleExistsStaticFunc == nil {
+		panic("MongoDBMock.CheckEditionTitleExistsStaticFunc: method is nil but MongoDB.CheckEditionTitleExistsStatic was just called")
 	}
 	callInfo := struct {
 		Ctx          context.Context
 		DatasetID    string
-		EditionID    string
 		EditionTitle string
 	}{
 		Ctx:          ctx,
 		DatasetID:    datasetID,
-		EditionID:    editionID,
 		EditionTitle: editionTitle,
 	}
-	mock.lockCheckEditionTitleIDExistsStatic.Lock()
-	mock.calls.CheckEditionTitleIDExistsStatic = append(mock.calls.CheckEditionTitleIDExistsStatic, callInfo)
-	mock.lockCheckEditionTitleIDExistsStatic.Unlock()
-	return mock.CheckEditionTitleIDExistsStaticFunc(ctx, datasetID, editionID, editionTitle)
+	mock.lockCheckEditionTitleExistsStatic.Lock()
+	mock.calls.CheckEditionTitleExistsStatic = append(mock.calls.CheckEditionTitleExistsStatic, callInfo)
+	mock.lockCheckEditionTitleExistsStatic.Unlock()
+	return mock.CheckEditionTitleExistsStaticFunc(ctx, datasetID, editionTitle)
 }
 
-// CheckEditionTitleIDExistsStaticCalls gets all the calls that were made to CheckEditionTitleIDExistsStatic.
+// CheckEditionTitleExistsStaticCalls gets all the calls that were made to CheckEditionTitleExistsStatic.
 // Check the length with:
 //
-//	len(mockedMongoDB.CheckEditionTitleIDExistsStaticCalls())
-func (mock *MongoDBMock) CheckEditionTitleIDExistsStaticCalls() []struct {
+//	len(mockedMongoDB.CheckEditionTitleExistsStaticCalls())
+func (mock *MongoDBMock) CheckEditionTitleExistsStaticCalls() []struct {
 	Ctx          context.Context
 	DatasetID    string
-	EditionID    string
 	EditionTitle string
 } {
 	var calls []struct {
 		Ctx          context.Context
 		DatasetID    string
-		EditionID    string
 		EditionTitle string
 	}
-	mock.lockCheckEditionTitleIDExistsStatic.RLock()
-	calls = mock.calls.CheckEditionTitleIDExistsStatic
-	mock.lockCheckEditionTitleIDExistsStatic.RUnlock()
+	mock.lockCheckEditionTitleExistsStatic.RLock()
+	calls = mock.calls.CheckEditionTitleExistsStatic
+	mock.lockCheckEditionTitleExistsStatic.RUnlock()
 	return calls
 }
 

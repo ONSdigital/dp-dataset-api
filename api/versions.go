@@ -326,14 +326,24 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 
 	// Only check for edition ID/title conflicts for static datasets
 	if version.Type == models.Static.String() {
-		checkErr := api.dataStore.Backend.CheckEditionTitleIDExistsStatic(ctx, version.DatasetID, version.Edition, version.EditionTitle)
+		// Check edition ID
+		checkErr := api.dataStore.Backend.CheckEditionExistsStatic(ctx, version.DatasetID, version.Edition, "")
+		if checkErr == nil {
+			log.Error(ctx, "edition ID already exists for this dataset", errs.ErrEditionAlreadyExists, data)
+			handleVersionAPIErr(ctx, errs.ErrEditionAlreadyExists, w, data)
+			return
+		} else if !errors.Is(checkErr, errs.ErrEditionNotFound) {
+			log.Error(ctx, "failed to check edition ID existence", checkErr, data)
+			handleVersionAPIErr(ctx, checkErr, w, data)
+			return
+		}
+		// Check edition title
+		checkErr = api.dataStore.Backend.CheckEditionTitleExistsStatic(ctx, version.DatasetID, version.EditionTitle)
 		if checkErr != nil {
-			if errors.Is(checkErr, errs.ErrEditionAlreadyExists) {
-				log.Error(ctx, "edition ID already exists for this dataset", checkErr, data)
-			} else if errors.Is(checkErr, errs.ErrEditionTitleAlreadyExists) {
+			if errors.Is(checkErr, errs.ErrEditionTitleAlreadyExists) {
 				log.Error(ctx, "edition title already exists for this dataset", checkErr, data)
 			} else {
-				log.Error(ctx, "failed to check edition ID and title existence", checkErr, data)
+				log.Error(ctx, "failed to check edition title existence", checkErr, data)
 			}
 			handleVersionAPIErr(ctx, checkErr, w, data)
 			return

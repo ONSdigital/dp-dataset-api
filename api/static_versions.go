@@ -150,15 +150,25 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 
 	if errors.Is(err, errs.ErrVersionNotFound) {
 		log.Warn(ctx, "edition not found, defaulting to version 1", logData)
-		// Creating version 1 of a new edition - ensure title don't exist in other editions
-		checkErr := api.dataStore.Backend.CheckEditionTitleIDExistsStatic(ctx, datasetID, edition, versionRequest.EditionTitle)
+		// Creating version 1 of a new edition
+		// Check edition ID
+		checkErr := api.dataStore.Backend.CheckEditionExistsStatic(ctx, datasetID, edition, "")
+		if checkErr == nil {
+			log.Error(ctx, "edition ID already exists", errs.ErrEditionAlreadyExists, logData)
+			return nil, models.NewErrorResponse(http.StatusConflict, nil, models.NewValidationError(models.ErrEditionAlreadyExists, models.ErrEditionAlreadyExistsDescription))
+		} else if !errors.Is(checkErr, errs.ErrEditionNotFound) {
+			log.Error(ctx, "failed to check edition ID existence", checkErr, logData)
+			return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(checkErr, "failed to check edition ID", "internal error"))
+		}
+		// Check edition title
+		checkErr = api.dataStore.Backend.CheckEditionTitleExistsStatic(ctx, datasetID, versionRequest.EditionTitle)
 		if checkErr != nil {
 			if errors.Is(checkErr, errs.ErrEditionTitleAlreadyExists) {
 				log.Error(ctx, "edition title already exists", checkErr, logData)
 				return nil, models.NewErrorResponse(http.StatusConflict, nil, models.NewValidationError(models.ErrEditionTitleAlreadyExists, models.ErrEditionTitleAlreadyExistsDescription))
 			}
-			log.Error(ctx, "failed to check edition ID and title existence", checkErr, logData)
-			return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(checkErr, "failed to check edition ID and title", "internal error"))
+			log.Error(ctx, "failed to check edition title existence", checkErr, logData)
+			return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(checkErr, "failed to check edition title", "internal error"))
 		}
 		nextVersion = 1
 	} else {
