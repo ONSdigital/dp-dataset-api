@@ -8,9 +8,11 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/ONSdigital/dp-api-clients-go/v2/headers"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
+	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/utils"
 	dpresponse "github.com/ONSdigital/dp-net/v3/handlers/response"
@@ -788,6 +790,22 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 			log.Error(ctx, "putState endpoint: failed to publish distribution files", err, logData)
 			handleVersionAPIErr(ctx, err, w, logData)
 			return
+		}
+		cfg, err := config.Get()
+		if err != nil {
+			log.Error(ctx, "failed to get config for cache purge", err, logData)
+		} else {
+			httpClient := &http.Client{Timeout: 10 * time.Second}
+			baseURL := cfg.CloudflareAPIURL
+			if baseURL == "" {
+				baseURL = "https://api.cloudflare.com/client/v4"
+			}
+			err = utils.PurgeCache(ctx, datasetID, edition, baseURL, cfg.CloudflareZoneID, cfg.CloudflareAPIToken, httpClient)
+			if err != nil {
+				log.Error(ctx, "failed to purge cloudflare cache", err, logData)
+			} else {
+				log.Info(ctx, "successfully triggered cloudflare cache purge", logData)
+			}
 		}
 	}
 

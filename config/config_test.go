@@ -61,6 +61,8 @@ func TestSpec(t *testing.T) {
 				So(cfg.IsWriteConcernMajorityEnabled, ShouldEqual, true)
 				So(cfg.DatasetAPIURL, ShouldEqual, "http://localhost:22000")
 				So(cfg.CodeListAPIURL, ShouldEqual, "http://localhost:22400")
+				So(cfg.CloudflareAPIToken, ShouldEqual, "test-token")
+				So(cfg.CloudflareZoneID, ShouldEqual, "9f1eec58caedd8e902395a065c120073")
 			})
 		})
 	})

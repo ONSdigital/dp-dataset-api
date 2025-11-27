@@ -1,6 +1,8 @@
 module github.com/ONSdigital/dp-dataset-api
 
-go 1.24
+go 1.24.0
+
+toolchain go1.24.1
 
 require (
 	github.com/ONSdigital/dp-api-clients-go v1.43.0
@@ -16,7 +18,7 @@ require (
 	github.com/ONSdigital/dp-mongodb/v3 v3.8.0
 	github.com/ONSdigital/dp-net/v3 v3.5.0
 	github.com/ONSdigital/dp-otel-go v0.0.8
-	github.com/ONSdigital/log.go/v2 v2.5.0
+	github.com/ONSdigital/log.go/v2 v2.5.1
 	github.com/cucumber/godog v0.15.1
 	github.com/golang/glog v1.2.5
 	github.com/google/go-cmp v0.7.0
