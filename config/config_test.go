@@ -63,6 +63,7 @@ func TestSpec(t *testing.T) {
 				So(cfg.CodeListAPIURL, ShouldEqual, "http://localhost:22400")
 				So(cfg.CloudflareAPIToken, ShouldEqual, "test-token")
 				So(cfg.CloudflareZoneID, ShouldEqual, "9f1eec58caedd8e902395a065c120073")
+				So(cfg.CloudflareAPIURL, ShouldEqual, "http://cloud-flare-stub:22500")
 			})
 		})
 	})
