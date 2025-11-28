@@ -123,7 +123,7 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, "failed to read request body", "failed to read request body"))
 	}
 
-	if err := validateDistributionsFromRequestBody(bodyBytes); err != nil {
+	if err := utils.ValidateDistributionsFromRequestBody(bodyBytes); err != nil {
 		log.Error(ctx, "invalid distributions format", err, logData)
 		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewValidationError(models.ErrMissingParameters, err.Error()))
 	}
@@ -139,13 +139,9 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewValidationError(models.ErrMissingParameters, models.ErrMissingParametersDescription+" "+strings.Join(missingFields, " ")))
 	}
 
-	if err := validateAndPopulateDistributions(versionRequest); err != nil {
-		log.Error(ctx, "invalid distributions", err, logData)
-		return nil, models.NewErrorResponse(
-			http.StatusBadRequest,
-			nil,
-			models.NewValidationError(models.ErrMissingParameters, err.Error()),
-		)
+	if err := utils.PopulateDistributions(versionRequest); err != nil {
+		log.Error(ctx, "failed to populate distributions", err, logData)
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewValidationError(models.ErrMissingParameters, err.Error()))
 	}
 
 	// validate versiontype
@@ -269,7 +265,7 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, "failed to read request body", "failed to read request body"))
 	}
 
-	if err := validateDistributionsFromRequestBody(bodyBytes); err != nil {
+	if err := utils.ValidateDistributionsFromRequestBody(bodyBytes); err != nil {
 		log.Error(ctx, "createVersion endpoint: invalid distributions format", err, logData)
 		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewValidationError(models.ErrMissingParameters, err.Error()))
 	}
@@ -280,12 +276,9 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, models.JSONUnmarshalError, "failed to unmarshal version"))
 	}
 
-	if err := validateAndPopulateDistributions(newVersion); err != nil {
-		return nil, models.NewErrorResponse(
-			http.StatusBadRequest,
-			nil,
-			models.NewValidationError(models.ErrMissingParameters, err.Error()),
-		)
+	if err := utils.PopulateDistributions(newVersion); err != nil {
+		log.Error(ctx, "createVersion endpoint: failed to populate distributions", err, logData)
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewValidationError(models.ErrMissingParameters, err.Error()))
 	}
 
 	versionNumber, err := strconv.Atoi(version)

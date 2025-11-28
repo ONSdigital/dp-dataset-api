@@ -328,7 +328,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := validateDistributionsFromRequestBody(bodyBytes); err != nil {
+	if err := utils.ValidateDistributionsFromRequestBody(bodyBytes); err != nil {
 		log.Error(ctx, "invalid distributions format", err, data)
 		handleVersionAPIErr(ctx, err, w, data)
 		return
@@ -340,9 +340,9 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate & populate distributions (static only)
+	// Populate distributions (static only)
 	if version.Type == models.Static.String() {
-		if err := validateAndPopulateDistributions(version); err != nil {
+		if err := utils.PopulateDistributions(version); err != nil {
 			handleVersionAPIErr(ctx, err, w, data)
 			return
 		}
@@ -920,91 +920,6 @@ func (api *DatasetAPI) publishDistributionFiles(ctx context.Context, version *mo
 
 	if lastError != nil {
 		return fmt.Errorf("one or more errors occurred while publishing files: %w", lastError)
-	}
-
-	return nil
-}
-
-func validateAndPopulateDistributions(v *models.Version) error {
-	if v.Distributions == nil {
-		return nil
-	}
-
-	distMediaTypeMap := map[models.DistributionFormat]models.DistributionMediaType{
-		models.DistributionFormatCSV:      models.DistributionMediaTypeCSV,
-		models.DistributionFormatSDMX:     models.DistributionMediaTypeSDMX,
-		models.DistributionFormatXLS:      models.DistributionMediaTypeXLS,
-		models.DistributionFormatXLSX:     models.DistributionMediaTypeXLSX,
-		models.DistributionFormatCSDB:     models.DistributionMediaTypeCSDB,
-		models.DistributionFormatCSVWMeta: models.DistributionMediaTypeCSVWMeta,
-	}
-
-	for i, dist := range *v.Distributions {
-		if dist.Format == "" {
-			return fmt.Errorf("distributions[%d].format field is missing", i)
-		}
-
-		if !dist.Format.IsValid() {
-			return fmt.Errorf("distributions[%d].format field is invalid", i)
-		}
-
-		mediaType, ok := distMediaTypeMap[dist.Format]
-		if !ok {
-			return fmt.Errorf("distributions[%d].format field is invalid", i)
-		}
-
-		(*v.Distributions)[i].MediaType = mediaType
-	}
-
-	return nil
-}
-
-// to provide detailed error messages with the index of invalid formats
-func validateDistributionsFromRequestBody(bodyBytes []byte) error {
-	// Parse just the distributions array from the raw JSON
-	var rawData map[string]interface{}
-	if err := json.Unmarshal(bodyBytes, &rawData); err != nil {
-		return nil // if we can't parse at all, let the main unmarshal handle it
-	}
-
-	distributions, ok := rawData["distributions"]
-	if !ok {
-		return nil // no distributions field, validation will be handled elsewhere
-	}
-
-	distArray, ok := distributions.([]interface{})
-	if !ok {
-		return nil // not an array, let the main unmarshal handle it
-	}
-
-	validFormats := map[string]bool{
-		"csv":           true,
-		"sdmx":          true,
-		"xls":           true,
-		"xlsx":          true,
-		"csdb":          true,
-		"csvw-metadata": true,
-	}
-
-	for i, dist := range distArray {
-		distMap, ok := dist.(map[string]interface{})
-		if !ok {
-			continue // not a map, skip validation
-		}
-
-		formatVal, ok := distMap["format"]
-		if !ok {
-			return fmt.Errorf("distributions[%d].format field is missing", i)
-		}
-
-		formatStr, ok := formatVal.(string)
-		if !ok {
-			return fmt.Errorf("distributions[%d].format field is invalid", i)
-		}
-
-		if !validFormats[formatStr] {
-			return fmt.Errorf("distributions[%d].format field is invalid", i)
-		}
 	}
 
 	return nil
