@@ -324,6 +324,14 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate & populate distributions (static only)
+	if version.Type == models.Static.String() {
+		if err := validateAndPopulateDistributions(version); err != nil {
+			handleVersionAPIErr(ctx, err, w, data)
+			return
+		}
+	}
+
 	// Only check for edition ID/title conflicts for static datasets
 	if version.Type == models.Static.String() {
 		// Check edition ID
@@ -704,6 +712,10 @@ func getVersionAPIErrStatusCode(err error) int {
 		status = http.StatusBadRequest
 	case strings.HasPrefix(err.Error(), "a published version cannot be deleted"):
 		status = http.StatusForbidden
+	case strings.Contains(err.Error(), "format field is missing"):
+		status = http.StatusBadRequest
+	case strings.Contains(err.Error(), "format field is invalid"):
+		status = http.StatusBadRequest
 	case errs.NotAllowedMap[err]:
 		status = http.StatusMethodNotAllowed
 	default:
@@ -892,6 +904,40 @@ func (api *DatasetAPI) publishDistributionFiles(ctx context.Context, version *mo
 
 	if lastError != nil {
 		return fmt.Errorf("one or more errors occurred while publishing files: %w", lastError)
+	}
+
+	return nil
+}
+
+func validateAndPopulateDistributions(v *models.Version) error {
+	if v.Distributions == nil {
+		return nil
+	}
+
+	distMediaTypeMap := map[models.DistributionFormat]models.DistributionMediaType{
+		models.DistributionFormatCSV:      models.DistributionMediaTypeCSV,
+		models.DistributionFormatSDMX:     models.DistributionMediaTypeSDMX,
+		models.DistributionFormatXLS:      models.DistributionMediaTypeXLS,
+		models.DistributionFormatXLSX:     models.DistributionMediaTypeXLSX,
+		models.DistributionFormatCSDB:     models.DistributionMediaTypeCSDB,
+		models.DistributionFormatCSVWMeta: models.DistributionMediaTypeCSVWMeta,
+	}
+
+	for i, dist := range *v.Distributions {
+		if dist.Format == "" {
+			return fmt.Errorf("distributions[%d].format field is missing", i)
+		}
+
+		if !dist.Format.IsValid() {
+			return fmt.Errorf("distributions[%d].format field is invalid", i)
+		}
+
+		mediaType, ok := distMediaTypeMap[dist.Format]
+		if !ok {
+			return fmt.Errorf("distributions[%d].format field is invalid", i)
+		}
+
+		(*v.Distributions)[i].MediaType = mediaType
 	}
 
 	return nil

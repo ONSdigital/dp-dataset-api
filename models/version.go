@@ -307,11 +307,7 @@ func (f *DistributionFormat) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &str); err != nil {
 		return err
 	}
-	converted := DistributionFormat(str)
-	if !converted.IsValid() {
-		return fmt.Errorf("invalid DistributionFormat: %s", str)
-	}
-	*f = converted
+	*f = DistributionFormat(str)
 	return nil
 }
 

@@ -126,6 +126,15 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewValidationError(models.ErrMissingParameters, models.ErrMissingParametersDescription+" "+strings.Join(missingFields, " ")))
 	}
 
+	if err := validateAndPopulateDistributions(versionRequest); err != nil {
+		log.Error(ctx, "invalid distributions", err, logData)
+		return nil, models.NewErrorResponse(
+			http.StatusBadRequest,
+			nil,
+			models.NewValidationError(models.ErrMissingParameters, err.Error()),
+		)
+	}
+
 	// validate versiontype
 	if versionRequest.Type != "" && versionRequest.Type != models.Static.String() {
 		log.Error(ctx, "addDatasetVersionCondensed endpoint: only allowed to create static type versions", errs.ErrInvalidBody, logData)
@@ -244,6 +253,14 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 	if err := json.NewDecoder(r.Body).Decode(newVersion); err != nil {
 		log.Error(ctx, "createVersion endpoint: failed to unmarshal version", err, logData)
 		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, models.JSONUnmarshalError, "failed to unmarshal version"))
+	}
+
+	if err := validateAndPopulateDistributions(newVersion); err != nil {
+		return nil, models.NewErrorResponse(
+			http.StatusBadRequest,
+			nil,
+			models.NewValidationError(models.ErrMissingParameters, err.Error()),
+		)
 	}
 
 	versionNumber, err := strconv.Atoi(version)
