@@ -241,3 +241,91 @@ Feature: Static Dataset Versions POST API
                 ]
             }
             """
+
+    Scenario: POST creates a static version and auto-populates media_type based on format
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I POST "/datasets/static-dataset-test/editions/2024/versions"
+            """
+            {
+                "release_date": "2024-12-01T09:00:00.000Z",
+                "edition_title": "2024",
+                "type": "static",
+                "distributions": [
+                    {
+                        "title": "Full Dataset CSV",
+                        "format": "csv",
+                        "download_url": "/downloads/files/static-dataset-test/2024/1/filename.csv",
+                        "byte_size": 100000
+                    }
+                ]
+            }
+            """
+        Then the HTTP status code should be "201"
+
+    Scenario: POST fails when the distribution format field is missing
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I POST "/datasets/static-dataset-test/editions/2024/versions"
+            """
+            {
+                "release_date": "2024-12-01T09:00:00.000Z",
+                "edition_title": "2024",
+                "type": "static",
+                "distributions": [
+                    {
+                        "title": "Full Dataset CSV",
+                        "download_url": "/downloads/files/static-dataset-test/2024/1/filename.csv",
+                        "byte_size": 100000
+                    }
+                ]
+            }
+            """
+        Then the HTTP status code should be "400"
+        And I should receive the following JSON response:
+            """
+            {
+                "errors": [
+                    {
+                        "code": "ErrMissingParameters",
+                        "description": "distributions[0].format field is missing"
+                    }
+                ]
+            }
+            """
+
+    Scenario: POST fails when the distribution format field is invalid
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I POST "/datasets/static-dataset-test/editions/2024/versions"
+            """
+            {
+                "release_date": "2024-12-01T09:00:00.000Z",
+                "edition_title": "2024",
+                "type": "static",
+                "distributions": [
+                    {
+                        "title": "Full Dataset CSV",
+                        "download_url": "/downloads/files/static-dataset-test/2024/1/filename.csv",
+                        "byte_size": 100000,
+                        "format": "WRONG"
+                    }
+                ]
+            }
+            """
+
+        Then the HTTP status code should be "400"
+        And I should receive the following JSON response:
+            """
+            {
+                "errors": [
+                    {
+                        "code": "ErrMissingParameters",
+                        "description": "distributions[0].format field is invalid"
+                    }
+                ]
+            }
+            """

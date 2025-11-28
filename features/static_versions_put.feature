@@ -533,3 +533,100 @@ Feature: Static Dataset Versions PUT API
             """
             the edition-title already exists
             """
+
+    Scenario: PUT succeeds when distributions contain valid formats
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
+            """
+            {
+                "distributions": [
+                    {
+                        "title": "Full Dataset (CSV)",
+                        "download_url": "https://download.ons.gov.uk/my-dataset-download.csv",
+                        "byte_size": 4300000,
+                        "format": "csv"
+                    }
+                ],
+                "quality_designation": "accredited-official",
+                "release_date": "2025-03-06T14:49:23.354Z",
+                "type": "static",
+                "edition": "march",
+                "dataset_id": "test-static-dataset",
+                "usage_notes": [
+                    {
+                        "title": "This dataset",
+                        "note": "Please use it wisely"
+                    }
+                ]
+            }
+            """
+        Then the HTTP status code should be "200"
+
+    Scenario: PUT fails when a distributions object is missing required field format
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
+            """
+            {
+                "distributions": [
+                    {
+                        "title": "Full Dataset (CSV)",
+                        "download_url": "https://download.ons.gov.uk/my-dataset-download.csv",
+                        "byte_size": 4300000
+                    }
+                ],
+                "quality_designation": "accredited-official",
+                "release_date": "2025-03-06T14:49:23.354Z",
+                "type": "static",
+                "edition": "march",
+                "dataset_id": "test-static-dataset",
+                "usage_notes": [
+                    {
+                        "title": "This dataset",
+                        "note": "Please use it wisely"
+                    }
+                ]
+            }
+            """
+        Then the HTTP status code should be "400"
+        And I should receive the following response:
+            """
+            distributions[0].format field is missing
+            """
+
+    Scenario: PUT fails when a distributions object is having inavalid field format
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
+            """
+            {
+                "distributions": [
+                    {
+                        "title": "Full Dataset (CSV)",
+                        "download_url": "https://download.ons.gov.uk/my-dataset-download.csv",
+                        "byte_size": 4300000,
+                        "format": "INVALID"
+                    }
+                ],
+                "quality_designation": "accredited-official",
+                "release_date": "2025-03-06T14:49:23.354Z",
+                "type": "static",
+                "edition": "march",
+                "dataset_id": "test-static-dataset",
+                "usage_notes": [
+                    {
+                        "title": "This dataset",
+                        "note": "Please use it wisely"
+                    }
+                ]
+            }
+            """
+        Then the HTTP status code should be "400"
+        And I should receive the following response:
+            """
+            distributions[0].format field is invalid
+            """

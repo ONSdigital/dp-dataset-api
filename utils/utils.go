@@ -2,6 +2,7 @@ package utils
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"path"
@@ -808,4 +809,85 @@ func GenerateDistributionsDownloadURLs(datasetID, edition string, version int, d
 	}
 
 	return updatedDistributions
+}
+
+// PopulateDistributions populates the MediaType field for each distribution based on its Format field
+func PopulateDistributions(v *models.Version) error {
+	if v.Distributions == nil {
+		return nil
+	}
+
+	distMediaTypeMap := map[models.DistributionFormat]models.DistributionMediaType{
+		models.DistributionFormatCSV:      models.DistributionMediaTypeCSV,
+		models.DistributionFormatSDMX:     models.DistributionMediaTypeSDMX,
+		models.DistributionFormatXLS:      models.DistributionMediaTypeXLS,
+		models.DistributionFormatXLSX:     models.DistributionMediaTypeXLSX,
+		models.DistributionFormatCSDB:     models.DistributionMediaTypeCSDB,
+		models.DistributionFormatCSVWMeta: models.DistributionMediaTypeCSVWMeta,
+	}
+
+	for i, dist := range *v.Distributions {
+		if dist.Format == "" {
+			return fmt.Errorf("distributions[%d].format field is missing", i)
+		}
+		mediaType, ok := distMediaTypeMap[dist.Format]
+		if !ok {
+			return fmt.Errorf("distributions[%d].format field is invalid", i)
+		}
+		(*v.Distributions)[i].MediaType = mediaType
+	}
+
+	return nil
+}
+
+// ValidateDistributionsFromRequestBody validates distributions in the raw JSON request body
+// to provide detailed error messages with the index of invalid formats
+func ValidateDistributionsFromRequestBody(bodyBytes []byte) error {
+	// Parse just the distributions array from the raw JSON
+	var rawData map[string]interface{}
+	if err := json.Unmarshal(bodyBytes, &rawData); err != nil {
+		return nil // if we can't parse at all, let the main unmarshal handle it
+	}
+
+	distributions, ok := rawData["distributions"]
+	if !ok {
+		return nil // no distributions field, let the main unmarshal handle it
+	}
+
+	distArray, ok := distributions.([]interface{})
+	if !ok {
+		return nil // not an array, let the main unmarshal handle it
+	}
+
+	validFormats := map[string]bool{
+		"csv":           true,
+		"sdmx":          true,
+		"xls":           true,
+		"xlsx":          true,
+		"csdb":          true,
+		"csvw-metadata": true,
+	}
+
+	for i, dist := range distArray {
+		distMap, ok := dist.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("distributions[%d] is not a valid object", i)
+		}
+
+		formatVal, ok := distMap["format"]
+		if !ok {
+			return fmt.Errorf("distributions[%d].format field is missing", i)
+		}
+
+		formatStr, ok := formatVal.(string)
+		if !ok {
+			return fmt.Errorf("distributions[%d].format field is invalid", i)
+		}
+
+		if !validFormats[formatStr] {
+			return fmt.Errorf("distributions[%d].format field is invalid", i)
+		}
+	}
+
+	return nil
 }

@@ -2428,6 +2428,88 @@ func TestPutVersionReturnsError(t *testing.T) {
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
+	Convey("Given PUT /versions/{id} with a distribution missing format", t, func() {
+		body := `{
+        "type": "static",
+        "distributions": [{
+            "title": "Dataset",
+            "download_url": "http://example.com/file.csv",
+            "byte_size": 100
+        }]
+    	}`
+
+		r := createRequestWithAuth(
+			"PUT",
+			"http://localhost:22000/datasets/123/editions/2017/versions/1",
+			bytes.NewBufferString(body),
+		)
+		w := httptest.NewRecorder()
+
+		mocked := &storetest.StorerMock{
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					ID:      "1",
+					Edition: "2017",
+					Type:    models.Static.String(),
+					State:   models.CreatedState,
+					ETag:    testETag,
+				}, nil
+			},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return errs.ErrEditionNotFound
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mocked, &mocks.DownloadsGeneratorMock{}, getAuthorisationHandlerMock(), getAuthorisationHandlerMock())
+		api.Router.ServeHTTP(w, r)
+
+		Convey("Then the API returns 400 with missing-format error", func() {
+			So(w.Code, ShouldEqual, http.StatusBadRequest)
+			So(w.Body.String(), ShouldContainSubstring, "distributions[0].format field is missing")
+		})
+	})
+
+	Convey("Given PUT /versions/{id} with a distribution containing invalid format", t, func() {
+		body := `{
+        "type": "static",
+        "distributions": [{
+            "title": "Dataset",
+            "download_url": "http://example.com/file.xxx",
+            "byte_size": 100,
+            "format": "INVALID"
+        }]
+    }`
+
+		r := createRequestWithAuth(
+			"PUT",
+			"http://localhost:22000/datasets/123/editions/2017/versions/1",
+			bytes.NewBufferString(body),
+		)
+		w := httptest.NewRecorder()
+
+		mocked := &storetest.StorerMock{
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					ID:      "1",
+					Edition: "2017",
+					Type:    models.Static.String(),
+					State:   models.CreatedState,
+					ETag:    testETag,
+				}, nil
+			},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return errs.ErrEditionNotFound
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mocked, &mocks.DownloadsGeneratorMock{}, getAuthorisationHandlerMock(), getAuthorisationHandlerMock())
+		api.Router.ServeHTTP(w, r)
+
+		Convey("Then API returns 400 with invalid-format error", func() {
+			So(w.Code, ShouldEqual, http.StatusBadRequest)
+			So(w.Body.String(), ShouldContainSubstring, "distributions[0].format field is invalid")
+		})
+	})
 }
 
 func TestCreateNewVersionDoc(t *testing.T) {
