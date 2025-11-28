@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -115,8 +116,20 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 
 	log.Info(ctx, "condensed endpoint called", logData)
 
+	// Read body once and validate distributions before unmarshaling
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Error(ctx, "failed to read request body", err, logData)
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, "failed to read request body", "failed to read request body"))
+	}
+
+	if err := validateDistributionsFromRequestBody(bodyBytes); err != nil {
+		log.Error(ctx, "invalid distributions format", err, logData)
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewValidationError(models.ErrMissingParameters, err.Error()))
+	}
+
 	versionRequest := &models.Version{}
-	if err := json.NewDecoder(r.Body).Decode(versionRequest); err != nil {
+	if err := json.Unmarshal(bodyBytes, versionRequest); err != nil {
 		log.Error(ctx, "failed to unmarshal version", err, logData)
 		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, models.JSONUnmarshalError, "failed to unmarshal version"))
 	}
@@ -249,8 +262,20 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 		"version":    version,
 	}
 
+	// Read body once and validate distributions before unmarshaling
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Error(ctx, "createVersion endpoint: failed to read request body", err, logData)
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, "failed to read request body", "failed to read request body"))
+	}
+
+	if err := validateDistributionsFromRequestBody(bodyBytes); err != nil {
+		log.Error(ctx, "createVersion endpoint: invalid distributions format", err, logData)
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewValidationError(models.ErrMissingParameters, err.Error()))
+	}
+
 	newVersion := &models.Version{}
-	if err := json.NewDecoder(r.Body).Decode(newVersion); err != nil {
+	if err := json.Unmarshal(bodyBytes, newVersion); err != nil {
 		log.Error(ctx, "createVersion endpoint: failed to unmarshal version", err, logData)
 		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, models.JSONUnmarshalError, "failed to unmarshal version"))
 	}

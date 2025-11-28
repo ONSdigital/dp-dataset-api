@@ -1,9 +1,11 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"maps"
 	"net/http"
 	"strconv"
@@ -318,7 +320,21 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		"version":   vars["version"],
 	}
 
-	version, err := models.CreateVersion(r.Body, vars["dataset_id"])
+	// Read body once and validate distributions before unmarshaling
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Error(ctx, "failed to read request body", err, data)
+		handleVersionAPIErr(ctx, errs.ErrUnableToReadMessage, w, data)
+		return
+	}
+
+	if err := validateDistributionsFromRequestBody(bodyBytes); err != nil {
+		log.Error(ctx, "invalid distributions format", err, data)
+		handleVersionAPIErr(ctx, err, w, data)
+		return
+	}
+
+	version, err := models.CreateVersion(bytes.NewReader(bodyBytes), vars["dataset_id"])
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, data)
 		return
@@ -938,6 +954,57 @@ func validateAndPopulateDistributions(v *models.Version) error {
 		}
 
 		(*v.Distributions)[i].MediaType = mediaType
+	}
+
+	return nil
+}
+
+// to provide detailed error messages with the index of invalid formats
+func validateDistributionsFromRequestBody(bodyBytes []byte) error {
+	// Parse just the distributions array from the raw JSON
+	var rawData map[string]interface{}
+	if err := json.Unmarshal(bodyBytes, &rawData); err != nil {
+		return nil // if we can't parse at all, let the main unmarshal handle it
+	}
+
+	distributions, ok := rawData["distributions"]
+	if !ok {
+		return nil // no distributions field, validation will be handled elsewhere
+	}
+
+	distArray, ok := distributions.([]interface{})
+	if !ok {
+		return nil // not an array, let the main unmarshal handle it
+	}
+
+	validFormats := map[string]bool{
+		"csv":           true,
+		"sdmx":          true,
+		"xls":           true,
+		"xlsx":          true,
+		"csdb":          true,
+		"csvw-metadata": true,
+	}
+
+	for i, dist := range distArray {
+		distMap, ok := dist.(map[string]interface{})
+		if !ok {
+			continue // not a map, skip validation
+		}
+
+		formatVal, ok := distMap["format"]
+		if !ok {
+			return fmt.Errorf("distributions[%d].format field is missing", i)
+		}
+
+		formatStr, ok := formatVal.(string)
+		if !ok {
+			return fmt.Errorf("distributions[%d].format field is invalid", i)
+		}
+
+		if !validFormats[formatStr] {
+			return fmt.Errorf("distributions[%d].format field is invalid", i)
+		}
 	}
 
 	return nil
