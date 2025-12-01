@@ -19,6 +19,16 @@ const (
 	StaticDatasetType = "static"
 )
 
+// DistributionMediaTypeMap maps distribution formats to their corresponding media types
+var DistributionMediaTypeMap = map[models.DistributionFormat]models.DistributionMediaType{
+	models.DistributionFormatCSV:      models.DistributionMediaTypeCSV,
+	models.DistributionFormatSDMX:     models.DistributionMediaTypeSDMX,
+	models.DistributionFormatXLS:      models.DistributionMediaTypeXLS,
+	models.DistributionFormatXLSX:     models.DistributionMediaTypeXLSX,
+	models.DistributionFormatCSDB:     models.DistributionMediaTypeCSDB,
+	models.DistributionFormatCSVWMeta: models.DistributionMediaTypeCSVWMeta,
+}
+
 // ValidatePositiveInt obtains the positive int value of query var defined by the provided varKey
 func ValidatePositiveInt(parameter string) (val int, err error) {
 	val, err = strconv.Atoi(parameter)
@@ -817,20 +827,11 @@ func PopulateDistributions(v *models.Version) error {
 		return nil
 	}
 
-	distMediaTypeMap := map[models.DistributionFormat]models.DistributionMediaType{
-		models.DistributionFormatCSV:      models.DistributionMediaTypeCSV,
-		models.DistributionFormatSDMX:     models.DistributionMediaTypeSDMX,
-		models.DistributionFormatXLS:      models.DistributionMediaTypeXLS,
-		models.DistributionFormatXLSX:     models.DistributionMediaTypeXLSX,
-		models.DistributionFormatCSDB:     models.DistributionMediaTypeCSDB,
-		models.DistributionFormatCSVWMeta: models.DistributionMediaTypeCSVWMeta,
-	}
-
 	for i, dist := range *v.Distributions {
 		if dist.Format == "" {
 			return fmt.Errorf("distributions[%d].format field is missing", i)
 		}
-		mediaType, ok := distMediaTypeMap[dist.Format]
+		mediaType, ok := DistributionMediaTypeMap[dist.Format]
 		if !ok {
 			return fmt.Errorf("distributions[%d].format field is invalid", i)
 		}
@@ -859,15 +860,6 @@ func ValidateDistributionsFromRequestBody(bodyBytes []byte) error {
 		return nil // not an array, let the main unmarshal handle it
 	}
 
-	validFormats := map[string]bool{
-		"csv":           true,
-		"sdmx":          true,
-		"xls":           true,
-		"xlsx":          true,
-		"csdb":          true,
-		"csvw-metadata": true,
-	}
-
 	for i, dist := range distArray {
 		distMap, ok := dist.(map[string]interface{})
 		if !ok {
@@ -884,7 +876,7 @@ func ValidateDistributionsFromRequestBody(bodyBytes []byte) error {
 			return fmt.Errorf("distributions[%d].format field is invalid", i)
 		}
 
-		if !validFormats[formatStr] {
+		if _, valid := DistributionMediaTypeMap[models.DistributionFormat(formatStr)]; !valid {
 			return fmt.Errorf("distributions[%d].format field is invalid", i)
 		}
 	}
