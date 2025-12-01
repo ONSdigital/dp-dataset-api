@@ -649,6 +649,12 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 
 		isLocked := false
 		mockedDataStore := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID, editionID, state string) error {
+				return errs.ErrEditionNotFound
+			},
+			CheckEditionTitleExistsStaticFunc: func(ctx context.Context, datasetID, editionTitle string) error {
+				return nil
+			},
 			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
@@ -761,6 +767,118 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		})
 	})
 
+	Convey("When updating to a new edition ID that already exists", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(context.Context, string, string, string, string) error {
+				return nil
+			},
+		}
+
+		b := `{"edition":"existing-edition","edition_title":"New Edition Title","release_date":"2017-04-04","type":"static"}`
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID, editionID, state string) error {
+				if editionID == "existing-edition" {
+					return nil
+				}
+				return errs.ErrEditionNotFound
+			},
+			CheckEditionTitleExistsStaticFunc: func(ctx context.Context, datasetID, editionTitle string) error {
+				return errs.ErrEditionNotFound
+			},
+			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					ID:      "789",
+					Edition: "2017",
+					State:   models.EditionConfirmedState,
+					ETag:    testETag,
+				}, nil
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
+		api.Router.ServeHTTP(w, r)
+
+		Convey("Then it returns a 409 Conflict status", func() {
+			So(w.Code, ShouldEqual, http.StatusConflict)
+			So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionAlreadyExists.Error())
+		})
+
+		Convey("And the version is not updated", func() {
+			So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
+		})
+
+		Convey("And no locks are acquired since the error occurs before locking", func() {
+			So(len(mockedDataStore.AcquireInstanceLockCalls()), ShouldEqual, 0)
+			So(len(mockedDataStore.AcquireVersionsLockCalls()), ShouldEqual, 0)
+		})
+	})
+
+	Convey("When updating to a new edition title that already exists", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(context.Context, string, string, string, string) error {
+				return nil
+			},
+		}
+
+		b := `{"edition":"new-unique-edition","edition_title":"Existing Edition Title","release_date":"2017-04-04","type":"static"}`
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID, editionID, state string) error {
+				if editionID == "new-unique-edition" {
+					return errs.ErrEditionNotFound
+				}
+				return nil
+			},
+			CheckEditionTitleExistsStaticFunc: func(ctx context.Context, datasetID, editionTitle string) error {
+				// Return ErrEditionTitleAlreadyExists for the edition title, indicating it already exists
+				if editionTitle == "Existing Edition Title" {
+					return errs.ErrEditionTitleAlreadyExists
+				}
+				return nil
+			},
+			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					ID:      "789",
+					Edition: "2017",
+					State:   models.EditionConfirmedState,
+					ETag:    testETag,
+				}, nil
+			},
+		}
+
+		datasetPermissions := getAuthorisationHandlerMock()
+		permissions := getAuthorisationHandlerMock()
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
+		api.Router.ServeHTTP(w, r)
+
+		Convey("Then it returns a 409 Conflict status", func() {
+			So(w.Code, ShouldEqual, http.StatusConflict)
+			So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionTitleAlreadyExists.Error())
+		})
+
+		Convey("And the version is not updated", func() {
+			So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
+		})
+
+		Convey("And no locks are acquired since the error occurs before locking", func() {
+			So(len(mockedDataStore.AcquireInstanceLockCalls()), ShouldEqual, 0)
+			So(len(mockedDataStore.AcquireVersionsLockCalls()), ShouldEqual, 0)
+		})
+	})
+
 	Convey("When state is set to associated", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
 			GenerateFunc: func(context.Context, string, string, string, string) error {
@@ -779,6 +897,12 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		Convey("put version with CMD type", func() {
 			isLocked := false
 			mockedDataStore := &storetest.StorerMock{
+				CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID, editionID, state string) error {
+					return errs.ErrEditionNotFound
+				},
+				CheckEditionTitleExistsStaticFunc: func(ctx context.Context, datasetID, editionTitle string) error {
+					return nil
+				},
 				CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 					return nil
 				},
@@ -1420,6 +1544,12 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 
 		isLocked := false
 		mockedDataStore := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID, editionID, state string) error {
+				return errs.ErrEditionNotFound
+			},
+			CheckEditionTitleExistsStaticFunc: func(ctx context.Context, datasetID, editionTitle string) error {
+				return nil
+			},
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return &v, nil
 			},
@@ -1521,6 +1651,12 @@ func TestPutEmptyVersion(t *testing.T) {
 		v := getVersionAssociatedModel(models.Filterable)
 		isLocked := false
 		mockedDataStore := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID, editionID, state string) error {
+				return errs.ErrEditionNotFound
+			},
+			CheckEditionTitleExistsStaticFunc: func(ctx context.Context, datasetID, editionTitle string) error {
+				return nil
+			},
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return &v, nil
 			},
@@ -1575,6 +1711,12 @@ func TestPutEmptyVersion(t *testing.T) {
 		v := getVersionAssociatedModel(models.Static)
 		isLocked := false
 		mockedDataStore := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID, editionID, state string) error {
+				return errs.ErrEditionNotFound
+			},
+			CheckEditionTitleExistsStaticFunc: func(ctx context.Context, datasetID, editionTitle string) error {
+				return nil
+			},
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				v.Downloads = xlsDownload
 				return &v, nil
@@ -1847,6 +1989,12 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID, editionID, state string) error {
+				return errs.ErrEditionNotFound
+			},
+			CheckEditionTitleExistsStaticFunc: func(ctx context.Context, datasetID, editionTitle string) error {
+				return nil
+			},
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return &models.Version{}, errs.ErrVersionNotFound
 			},
@@ -1894,6 +2042,12 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID, editionID, state string) error {
+				return errs.ErrEditionNotFound
+			},
+			CheckEditionTitleExistsStaticFunc: func(ctx context.Context, datasetID, editionTitle string) error {
+				return nil
+			},
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return &models.Version{}, errs.ErrVersionNotFound
 			},
@@ -1942,6 +2096,12 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID, editionID, state string) error {
+				return errs.ErrEditionNotFound
+			},
+			CheckEditionTitleExistsStaticFunc: func(ctx context.Context, datasetID, editionTitle string) error {
+				return nil
+			},
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return &models.Version{}, errs.ErrVersionNotFound
 			},
@@ -2073,6 +2233,12 @@ func TestPutVersionReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 		isLocked := false
 		mockedDataStore := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID, editionID, state string) error {
+				return errs.ErrEditionNotFound
+			},
+			CheckEditionTitleExistsStaticFunc: func(ctx context.Context, datasetID, editionTitle string) error {
+				return nil
+			},
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return &models.Version{
 					ID:      "789",
@@ -2139,6 +2305,12 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		isLocked := false
 		mockedDataStore := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID, editionID, state string) error {
+				return errs.ErrEditionNotFound
+			},
+			CheckEditionTitleExistsStaticFunc: func(ctx context.Context, datasetID, editionTitle string) error {
+				return nil
+			},
 			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return nil
 			},

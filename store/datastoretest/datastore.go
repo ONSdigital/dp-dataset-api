@@ -51,6 +51,9 @@ var _ store.Storer = &StorerMock{}
 //			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID string, editionID string, state string) error {
 //				panic("mock out the CheckEditionExistsStatic method")
 //			},
+//			CheckEditionTitleExistsStaticFunc: func(ctx context.Context, datasetID string, editionTitle string) error {
+//				panic("mock out the CheckEditionTitleExistsStatic method")
+//			},
 //			CheckVersionExistsStaticFunc: func(ctx context.Context, datasetID string, editionID string, version int) (bool, error) {
 //				panic("mock out the CheckVersionExistsStatic method")
 //			},
@@ -231,6 +234,9 @@ type StorerMock struct {
 
 	// CheckEditionExistsStaticFunc mocks the CheckEditionExistsStatic method.
 	CheckEditionExistsStaticFunc func(ctx context.Context, datasetID string, editionID string, state string) error
+
+	// CheckEditionTitleExistsStaticFunc mocks the CheckEditionTitleExistsStatic method.
+	CheckEditionTitleExistsStaticFunc func(ctx context.Context, datasetID string, editionTitle string) error
 
 	// CheckVersionExistsStaticFunc mocks the CheckVersionExistsStatic method.
 	CheckVersionExistsStaticFunc func(ctx context.Context, datasetID string, editionID string, version int) (bool, error)
@@ -467,6 +473,15 @@ type StorerMock struct {
 			EditionID string
 			// State is the state argument value.
 			State string
+		}
+		// CheckEditionTitleExistsStatic holds details about calls to the CheckEditionTitleExistsStatic method.
+		CheckEditionTitleExistsStatic []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// EditionTitle is the editionTitle argument value.
+			EditionTitle string
 		}
 		// CheckVersionExistsStatic holds details about calls to the CheckVersionExistsStatic method.
 		CheckVersionExistsStatic []struct {
@@ -987,6 +1002,7 @@ type StorerMock struct {
 	lockCheckDatasetTitleExist              sync.RWMutex
 	lockCheckEditionExists                  sync.RWMutex
 	lockCheckEditionExistsStatic            sync.RWMutex
+	lockCheckEditionTitleExistsStatic       sync.RWMutex
 	lockCheckVersionExistsStatic            sync.RWMutex
 	lockDeleteDataset                       sync.RWMutex
 	lockDeleteEdition                       sync.RWMutex
@@ -1434,6 +1450,46 @@ func (mock *StorerMock) CheckEditionExistsStaticCalls() []struct {
 	mock.lockCheckEditionExistsStatic.RLock()
 	calls = mock.calls.CheckEditionExistsStatic
 	mock.lockCheckEditionExistsStatic.RUnlock()
+	return calls
+}
+
+// CheckEditionTitleExistsStatic calls CheckEditionTitleExistsStaticFunc.
+func (mock *StorerMock) CheckEditionTitleExistsStatic(ctx context.Context, datasetID string, editionTitle string) error {
+	if mock.CheckEditionTitleExistsStaticFunc == nil {
+		panic("StorerMock.CheckEditionTitleExistsStaticFunc: method is nil but Storer.CheckEditionTitleExistsStatic was just called")
+	}
+	callInfo := struct {
+		Ctx          context.Context
+		DatasetID    string
+		EditionTitle string
+	}{
+		Ctx:          ctx,
+		DatasetID:    datasetID,
+		EditionTitle: editionTitle,
+	}
+	mock.lockCheckEditionTitleExistsStatic.Lock()
+	mock.calls.CheckEditionTitleExistsStatic = append(mock.calls.CheckEditionTitleExistsStatic, callInfo)
+	mock.lockCheckEditionTitleExistsStatic.Unlock()
+	return mock.CheckEditionTitleExistsStaticFunc(ctx, datasetID, editionTitle)
+}
+
+// CheckEditionTitleExistsStaticCalls gets all the calls that were made to CheckEditionTitleExistsStatic.
+// Check the length with:
+//
+//	len(mockedStorer.CheckEditionTitleExistsStaticCalls())
+func (mock *StorerMock) CheckEditionTitleExistsStaticCalls() []struct {
+	Ctx          context.Context
+	DatasetID    string
+	EditionTitle string
+} {
+	var calls []struct {
+		Ctx          context.Context
+		DatasetID    string
+		EditionTitle string
+	}
+	mock.lockCheckEditionTitleExistsStatic.RLock()
+	calls = mock.calls.CheckEditionTitleExistsStatic
+	mock.lockCheckEditionTitleExistsStatic.RUnlock()
 	return calls
 }
 

@@ -262,7 +262,7 @@ Feature: Static Dataset Versions PUT API
             }
             """
         Then the HTTP status code should be "200"
-    
+
     Scenario: PUT state fails with invalid state transition from associated to published
         Given private endpoints are enabled
         And I am identified as "user@ons.gov.uk"
@@ -296,8 +296,8 @@ Feature: Static Dataset Versions PUT API
             }
             """
         Then the HTTP status code should be "401"
-        
-Scenario: PUT fails when updating edition-id to existing edition for static dataset
+
+    Scenario: PUT fails when updating edition-id to existing edition for static dataset
         Given I have a static dataset with version:
             """
             {
@@ -375,7 +375,7 @@ Scenario: PUT fails when updating edition-id to existing edition for static data
         Then the HTTP status code should be "409"
         And I should receive the following response:
             """
-            the edition-id already exists
+            the edition already exists
             """
 
     Scenario: PUT succeeds when updating edition-id to new edition for static dataset
@@ -392,46 +392,144 @@ Scenario: PUT fails when updating edition-id to existing edition for static data
             """
         Then the HTTP status code should be "200"
 
-Scenario: PUT state handles idempotent transitions correctly
-    Given I have a static dataset with version:
-        """
-        {
-            "dataset": {
-                "id": "static-dataset-published",
-                "title": "Static Dataset Published Test",
-                "state": "published",
-                "type": "static"
-            },
-            "version": {
-                "id": "static-version-published",
-                "edition": "2025",
-                "edition_title": "2025 Edition",
-                "links": {
-                    "dataset": {
-                        "id": "static-dataset-published"
-                    },
-                    "edition": {
-                        "href": "/datasets/static-dataset-published/editions/2025",
-                        "id": "2025"
-                    },
-                    "self": {
-                        "href": "/datasets/static-dataset-published/editions/2025/versions/1"
-                    }
+    Scenario: PUT state handles idempotent transitions correctly
+        Given I have a static dataset with version:
+            """
+            {
+                "dataset": {
+                    "id": "static-dataset-published",
+                    "title": "Static Dataset Published Test",
+                    "state": "published",
+                    "type": "static"
                 },
-                "version": 1,
-                "release_date": "2025-01-01T09:00:00.000Z",
-                "state": "published",
+                "version": {
+                    "id": "static-version-published",
+                    "edition": "2025",
+                    "edition_title": "2025 Edition",
+                    "links": {
+                        "dataset": {
+                            "id": "static-dataset-published"
+                        },
+                        "edition": {
+                            "href": "/datasets/static-dataset-published/editions/2025",
+                            "id": "2025"
+                        },
+                        "self": {
+                            "href": "/datasets/static-dataset-published/editions/2025/versions/1"
+                        }
+                    },
+                    "version": 1,
+                    "release_date": "2025-01-01T09:00:00.000Z",
+                    "state": "published",
+                    "type": "static"
+                }
+            }
+            """
+        And private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I PUT "/datasets/static-dataset-published/editions/2025/versions/1/state"
+            """
+            {
+                "state": "published"
+            }
+            """
+        Then the HTTP status code should be "200"
+
+    Scenario: PUT succeeds when updating edition ID to unique value within series
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
+            """
+            {
+                "edition": "2026",
                 "type": "static"
             }
-        }
-        """
-    And private endpoints are enabled
-    And I am identified as "user@ons.gov.uk"
-    And I am authorised
-    When I PUT "/datasets/static-dataset-published/editions/2025/versions/1/state"
-        """
-        {
-            "state": "published"
-        }
-        """
-    Then the HTTP status code should be "200"
+            """
+        Then the HTTP status code should be "200"
+
+    Scenario: PUT fails when updating edition title to existing value within same series
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
+            """
+            {
+                "edition_title": "2025 Edition",
+                "type": "static"
+            }
+            """
+        Then the HTTP status code should be "409"
+        And I should receive the following response:
+            """
+            the edition-title already exists
+            """
+
+    Scenario: PUT fails when updating edition ID to duplicate value within same series
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
+            """
+            {
+                "edition": "2025",
+                "edition_title": "Different Title",
+                "type": "static"
+            }
+            """
+        Then the HTTP status code should be "409"
+        And I should receive the following response:
+            """
+            the edition already exists
+            """
+
+    Scenario: PUT succeeds when updating both edition ID and title to unique values within the series
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
+            """
+            {
+                "edition": "2026",
+                "edition_title": "Unique 2026 Edition",
+                "type": "static"
+            }
+            """
+        Then the HTTP status code should be "200"
+
+    Scenario: PUT fails when both edition ID and title already exist within the same series
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
+            """
+            {
+                "edition": "2025",
+                "edition_title": "2025 Edition",
+                "type": "static"
+            }
+            """
+        Then the HTTP status code should be "409"
+        And I should receive the following response:
+            """
+            the edition already exists
+            """
+
+    Scenario: PUT fails when updating edition title to one that already exists but edition ID is unique
+        Given private endpoints are enabled
+        And I am identified as "user@ons.gov.uk"
+        And I am authorised
+        When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
+            """
+            {
+                "edition": "2026",
+                "edition_title": "2025 Edition",
+                "type": "static"
+            }
+            """
+        Then the HTTP status code should be "409"
+        And I should receive the following response:
+            """
+            the edition-title already exists
+            """

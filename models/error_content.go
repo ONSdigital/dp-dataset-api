@@ -1,22 +1,23 @@
 package models
 
 const (
-	BodyReadError            = "RequestBodyReadError"
-	JSONMarshalError         = "JSONMarshalError"
-	JSONUnmarshalError       = "JSONUnmarshalError"
-	WriteResponseError       = "WriteResponseError"
-	ErrEditionNotFound       = "ErrEditionNotFound"
-	ErrDatasetNotFound       = "ErrDatasetNotFound"
-	ErrInvalidQueryParameter = "ErrInvalidQueryParameter"
-	ErrMissingParameters     = "ErrMissingParameters"
-	ErrVersionAlreadyExists  = "ErrVersionAlreadyExists"
-	InternalError            = "InternalServerError"
-	NotFoundError            = "NotFound"
-	MissingConfigError       = "MissingConfig"
-	UnknownRequestTypeError  = "UnknownRequestType"
-	NotImplementedError      = "NotImplemented"
-	BodyCloseError           = "BodyCloseError"
-	ErrInvalidTypeError      = "InvalidType"
+	BodyReadError                = "RequestBodyReadError"
+	JSONMarshalError             = "JSONMarshalError"
+	JSONUnmarshalError           = "JSONUnmarshalError"
+	WriteResponseError           = "WriteResponseError"
+	ErrEditionNotFound           = "ErrEditionNotFound"
+	ErrDatasetNotFound           = "ErrDatasetNotFound"
+	ErrInvalidQueryParameter     = "ErrInvalidQueryParameter"
+	ErrMissingParameters         = "ErrMissingParameters"
+	ErrVersionAlreadyExists      = "ErrVersionAlreadyExists"
+	InternalError                = "InternalServerError"
+	NotFoundError                = "NotFound"
+	MissingConfigError           = "MissingConfig"
+	UnknownRequestTypeError      = "UnknownRequestType"
+	NotImplementedError          = "NotImplemented"
+	ErrInvalidTypeError          = "InvalidType"
+	ErrEditionAlreadyExists      = "ErrEditionAlreadyExists"
+	ErrEditionTitleAlreadyExists = "ErrEditionTitleAlreadyExists"
 )
 
 // API error descriptions
@@ -36,4 +37,6 @@ const (
 	ErrUnpublishedVersionAlreadyExistsDescription = "an unpublished version of this dataset already exists"
 	ErrVersionAlreadyExistsDescription            = "version already exists"
 	ErrTypeNotStaticDescription                   = "version type should be static"
+	ErrEditionAlreadyExistsDescription            = "edition already exists"
+	ErrEditionTitleAlreadyExistsDescription       = "edition title already exists"
 )

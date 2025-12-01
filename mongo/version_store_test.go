@@ -225,3 +225,43 @@ func TestDeleteStaticDatasetVersion(t *testing.T) {
 		})
 	})
 }
+
+func TestCheckEditionTitleExistsStatic(t *testing.T) {
+	Convey("Given a MongoDB instance with static versions", t, func() {
+		ctx := context.Background()
+		mongo, server, err := getTestMongoDB(ctx)
+		So(err, ShouldBeNil)
+
+		defer func() {
+			server.Stop(ctx)
+		}()
+
+		versions, err := setupVersionsTestData(ctx, mongo)
+		So(err, ShouldBeNil)
+		So(versions, ShouldNotBeEmpty)
+
+		Convey("When CheckEditionTitleExistsStatic is called with an existing edition title", func() {
+			err := mongo.CheckEditionTitleExistsStatic(ctx, staticDatasetID, "First Edition")
+
+			Convey("Then it returns ErrEditionTitleAlreadyExists", func() {
+				So(err, ShouldEqual, errs.ErrEditionTitleAlreadyExists)
+			})
+		})
+
+		Convey("When CheckEditionTitleExistsStatic is called with non-existing edition title", func() {
+			err := mongo.CheckEditionTitleExistsStatic(ctx, staticDatasetID, "New Title")
+
+			Convey("Then it returns nil (no conflict)", func() {
+				So(err, ShouldBeNil)
+			})
+		})
+
+		Convey("When CheckEditionTitleExistsStatic is called with existing edition title but for a different dataset", func() {
+			err := mongo.CheckEditionTitleExistsStatic(ctx, "different-dataset-id", "First Edition")
+
+			Convey("Then it returns nil (no conflict across datasets)", func() {
+				So(err, ShouldBeNil)
+			})
+		})
+	})
+}

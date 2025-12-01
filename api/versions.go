@@ -21,6 +21,7 @@ import (
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -313,7 +314,6 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	vars := mux.Vars(r)
-
 	data := log.Data{
 		"datasetID": vars["dataset_id"],
 		"edition":   vars["edition"],
@@ -324,6 +324,32 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, data)
 		return
+	}
+
+	// Only check for edition ID/title conflicts for static datasets
+	if version.Type == models.Static.String() {
+		// Check edition ID
+		checkErr := api.dataStore.Backend.CheckEditionExistsStatic(ctx, version.DatasetID, version.Edition, "")
+		if checkErr == nil {
+			log.Error(ctx, "edition ID already exists for this dataset", errs.ErrEditionAlreadyExists, data)
+			handleVersionAPIErr(ctx, errs.ErrEditionAlreadyExists, w, data)
+			return
+		} else if !errors.Is(checkErr, errs.ErrEditionNotFound) {
+			log.Error(ctx, "failed to check edition ID existence", checkErr, data)
+			handleVersionAPIErr(ctx, checkErr, w, data)
+			return
+		}
+		// Check edition title
+		checkErr = api.dataStore.Backend.CheckEditionTitleExistsStatic(ctx, version.DatasetID, version.EditionTitle)
+		if checkErr != nil {
+			if errors.Is(checkErr, errs.ErrEditionTitleAlreadyExists) {
+				log.Error(ctx, "edition title already exists for this dataset", checkErr, data)
+			} else {
+				log.Error(ctx, "failed to check edition title existence", checkErr, data)
+			}
+			handleVersionAPIErr(ctx, checkErr, w, data)
+			return
+		}
 	}
 
 	var amendedVersion *models.Version

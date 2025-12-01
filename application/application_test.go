@@ -2947,7 +2947,7 @@ func TestPopulateVersionInfoEditionValidationStaticExists(t *testing.T) {
 		currentVersion, combinedVersionUpdate, err := smDS.PopulateVersionInfo(testContext, versionUpdateWithEdition, versionDetails)
 
 		So(err, ShouldNotBeNil)
-		So(err.Error(), ShouldContainSubstring, "the edition-id already exists")
+		So(err.Error(), ShouldContainSubstring, "the edition already exists")
 		So(currentVersion, ShouldBeNil)
 		So(combinedVersionUpdate, ShouldBeNil)
 		So(len(mockedDataStore.CheckEditionExistsStaticCalls()), ShouldEqual, 2)

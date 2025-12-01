@@ -294,3 +294,19 @@ func (m *Mongo) DeleteStaticDatasetVersion(ctx context.Context, datasetID, editi
 
 	return nil
 }
+
+func (m *Mongo) CheckEditionTitleExistsStatic(ctx context.Context, datasetID, editionTitle string) error {
+	// Check if edition title already exists
+	queryByTitle := bson.M{
+		"links.dataset.id": datasetID,
+		"edition_title":    editionTitle,
+	}
+	var d models.Version
+	if err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).FindOne(ctx, queryByTitle, &d, mongodriver.Projection(bson.M{"_id": 1})); err == nil {
+		return errs.ErrEditionTitleAlreadyExists
+	} else if !errors.Is(err, mongodriver.ErrNoDocumentFound) {
+		return err
+	}
+
+	return nil
+}
