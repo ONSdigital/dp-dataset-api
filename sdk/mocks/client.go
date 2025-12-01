@@ -27,6 +27,9 @@ var _ sdk.Clienter = &ClienterMock{}
 //			CheckerFunc: func(ctx context.Context, check *healthcheck.CheckState) error {
 //				panic("mock out the Checker method")
 //			},
+//			CreateDatasetFunc: func(ctx context.Context, headers sdk.Headers, dataset models.Dataset) (models.DatasetUpdate, error) {
+//				panic("mock out the CreateDataset method")
+//			},
 //			DoAuthenticatedGetRequestFunc: func(ctx context.Context, headers sdk.Headers, uri *url.URL) (*http.Response, error) {
 //				panic("mock out the DoAuthenticatedGetRequest method")
 //			},
@@ -82,6 +85,9 @@ type ClienterMock struct {
 	// CheckerFunc mocks the Checker method.
 	CheckerFunc func(ctx context.Context, check *healthcheck.CheckState) error
 
+	// CreateDatasetFunc mocks the CreateDataset method.
+	CreateDatasetFunc func(ctx context.Context, headers sdk.Headers, dataset models.Dataset) (models.DatasetUpdate, error)
+
 	// DoAuthenticatedGetRequestFunc mocks the DoAuthenticatedGetRequest method.
 	DoAuthenticatedGetRequestFunc func(ctx context.Context, headers sdk.Headers, uri *url.URL) (*http.Response, error)
 
@@ -135,6 +141,15 @@ type ClienterMock struct {
 			Ctx context.Context
 			// Check is the check argument value.
 			Check *healthcheck.CheckState
+		}
+		// CreateDataset holds details about calls to the CreateDataset method.
+		CreateDataset []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Headers is the headers argument value.
+			Headers sdk.Headers
+			// Dataset is the dataset argument value.
+			Dataset models.Dataset
 		}
 		// DoAuthenticatedGetRequest holds details about calls to the DoAuthenticatedGetRequest method.
 		DoAuthenticatedGetRequest []struct {
@@ -303,6 +318,7 @@ type ClienterMock struct {
 		}
 	}
 	lockChecker                    sync.RWMutex
+	lockCreateDataset              sync.RWMutex
 	lockDoAuthenticatedGetRequest  sync.RWMutex
 	lockGetDataset                 sync.RWMutex
 	lockGetDatasetByPath           sync.RWMutex
@@ -353,6 +369,46 @@ func (mock *ClienterMock) CheckerCalls() []struct {
 	mock.lockChecker.RLock()
 	calls = mock.calls.Checker
 	mock.lockChecker.RUnlock()
+	return calls
+}
+
+// CreateDataset calls CreateDatasetFunc.
+func (mock *ClienterMock) CreateDataset(ctx context.Context, headers sdk.Headers, dataset models.Dataset) (models.DatasetUpdate, error) {
+	if mock.CreateDatasetFunc == nil {
+		panic("ClienterMock.CreateDatasetFunc: method is nil but Clienter.CreateDataset was just called")
+	}
+	callInfo := struct {
+		Ctx     context.Context
+		Headers sdk.Headers
+		Dataset models.Dataset
+	}{
+		Ctx:     ctx,
+		Headers: headers,
+		Dataset: dataset,
+	}
+	mock.lockCreateDataset.Lock()
+	mock.calls.CreateDataset = append(mock.calls.CreateDataset, callInfo)
+	mock.lockCreateDataset.Unlock()
+	return mock.CreateDatasetFunc(ctx, headers, dataset)
+}
+
+// CreateDatasetCalls gets all the calls that were made to CreateDataset.
+// Check the length with:
+//
+//	len(mockedClienter.CreateDatasetCalls())
+func (mock *ClienterMock) CreateDatasetCalls() []struct {
+	Ctx     context.Context
+	Headers sdk.Headers
+	Dataset models.Dataset
+} {
+	var calls []struct {
+		Ctx     context.Context
+		Headers sdk.Headers
+		Dataset models.Dataset
+	}
+	mock.lockCreateDataset.RLock()
+	calls = mock.calls.CreateDataset
+	mock.lockCreateDataset.RUnlock()
 	return calls
 }
 
