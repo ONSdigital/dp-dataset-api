@@ -37,7 +37,7 @@ type Headers struct {
 }
 
 // Adds headers to the input request
-func (h *Headers) Add(request *http.Request) {
+func (h *Headers) add(request *http.Request) {
 	if h.CollectionID != "" {
 		request.Header.Add(dpNetRequest.CollectionIDHeaderKey, h.CollectionID)
 	}
@@ -46,13 +46,13 @@ func (h *Headers) Add(request *http.Request) {
 	dpNetRequest.AddServiceTokenHeader(request, h.ServiceToken)
 }
 
-// Checker calls topic api health endpoint and returns a check object to the caller
+// Checker calls the health.Client's Checker method
 func (c *Client) Checker(ctx context.Context, check *healthcheck.CheckState) error {
 	return c.hcCli.Checker(ctx, check)
 }
 
 // Creates new request object, executes a get request using the input `headers` and `uri` and returns the response
-func (c *Client) DoAuthenticatedGetRequest(ctx context.Context, headers Headers, uri *url.URL) (resp *http.Response, err error) {
+func (c *Client) doAuthenticatedGetRequest(ctx context.Context, headers Headers, uri *url.URL) (resp *http.Response, err error) {
 	resp = &http.Response{}
 	req, err := http.NewRequest(http.MethodGet, uri.RequestURI(), http.NoBody)
 	if err != nil {
@@ -60,30 +60,30 @@ func (c *Client) DoAuthenticatedGetRequest(ctx context.Context, headers Headers,
 	}
 
 	// Add auth headers to the request
-	headers.Add(req)
+	headers.add(req)
 
 	return c.hcCli.Client.Do(ctx, req)
 }
 
 // Creates new request object, executes a put request using the input `headers`, `uri`, and payload, and returns the response
-func (c *Client) DoAuthenticatedPutRequest(ctx context.Context, headers Headers, uri *url.URL, payload []byte) (*http.Response, error) {
+func (c *Client) doAuthenticatedPutRequest(ctx context.Context, headers Headers, uri *url.URL, payload []byte) (*http.Response, error) {
 	req, err := http.NewRequest(http.MethodPut, uri.RequestURI(), bytes.NewBuffer(payload))
 	if err != nil {
 		return nil, err
 	}
 
-	headers.Add(req)
+	headers.add(req)
 	return c.hcCli.Client.Do(ctx, req)
 }
 
 // Creates new request object, executes a post request using the input `headers`, `uri`, and payload, and returns the response
-func (c *Client) DoAuthenticatedPostRequest(ctx context.Context, headers Headers, uri *url.URL, payload []byte) (*http.Response, error) {
+func (c *Client) doAuthenticatedPostRequest(ctx context.Context, headers Headers, uri *url.URL, payload []byte) (*http.Response, error) {
 	req, err := http.NewRequest(http.MethodPost, uri.RequestURI(), bytes.NewBuffer(payload))
 	if err != nil {
 		return nil, err
 	}
 
-	headers.Add(req)
+	headers.add(req)
 	return c.hcCli.Client.Do(ctx, req)
 }
 

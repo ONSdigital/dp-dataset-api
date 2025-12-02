@@ -130,7 +130,7 @@ func TestClientDoAuthenticatedPutRequest(t *testing.T) {
 	Convey("Succeeds with valid values", t, func() {
 		uri, _ := url.Parse("https://not-a-real-domain-this-is-a-test.com/target-path")
 		payload := []byte(`{"testing_key":"testing_value"}`)
-		resp, err := client.DoAuthenticatedPutRequest(context.Background(), headers, uri, payload)
+		resp, err := client.doAuthenticatedPutRequest(context.Background(), headers, uri, payload)
 
 		So(err, ShouldBeNil)
 		So(resp, ShouldNotBeNil)
@@ -148,7 +148,7 @@ func TestClientDoAuthenticatedPostRequest(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			payload := []byte(`{"testing_key":"testing_value"}`)
-			resp, err := client.DoAuthenticatedPostRequest(context.Background(), headers, uri, payload)
+			resp, err := client.doAuthenticatedPostRequest(context.Background(), headers, uri, payload)
 
 			Convey("Then no error is returned", func() {
 				So(err, ShouldBeNil)
@@ -179,7 +179,7 @@ func TestHeaders(t *testing.T) {
 			Header: http.Header{},
 		}
 		Convey("Test that Add() method doesn't update request headers", func() {
-			headers.Add(&request)
+			headers.add(&request)
 			So(request.Header, ShouldBeEmpty)
 		})
 	})
@@ -190,7 +190,7 @@ func TestHeaders(t *testing.T) {
 		request := http.Request{
 			Header: http.Header{},
 		}
-		headers.Add(&request)
+		headers.add(&request)
 		Convey("Test that Add() method updates `DownloadServiceHeaderKey` key with the correct value", func() {
 			So(request.Header, ShouldContainKey, dpNetRequest.DownloadServiceHeaderKey)
 			So(request.Header.Get(dpNetRequest.DownloadServiceHeaderKey), ShouldEqual, downloadServiceToken)
@@ -208,7 +208,7 @@ func TestHeaders(t *testing.T) {
 		request := http.Request{
 			Header: http.Header{},
 		}
-		headers.Add(&request)
+		headers.add(&request)
 		Convey("Test that Add() method updates `CollectionIDHeaderKey` key with the correct value", func() {
 			So(request.Header, ShouldContainKey, dpNetRequest.CollectionIDHeaderKey)
 			So(request.Header.Get(dpNetRequest.CollectionIDHeaderKey), ShouldEqual, collectionID)
@@ -226,7 +226,7 @@ func TestHeaders(t *testing.T) {
 		request := http.Request{
 			Header: http.Header{},
 		}
-		headers.Add(&request)
+		headers.add(&request)
 		Convey("Test that Add() method updates `AuthHeaderKey` key with the correct value", func() {
 			So(request.Header, ShouldContainKey, dpNetRequest.AuthHeaderKey)
 			// Full value for `AuthHeaderKey` is "Bearer <serviceToken>"
@@ -245,7 +245,7 @@ func TestHeaders(t *testing.T) {
 		request := http.Request{
 			Header: http.Header{},
 		}
-		headers.Add(&request)
+		headers.add(&request)
 		Convey("Test that Add() method updates `FlorenceHeaderKey` key with the correct value", func() {
 			So(request.Header, ShouldContainKey, dpNetRequest.FlorenceHeaderKey)
 			So(request.Header.Get(dpNetRequest.FlorenceHeaderKey), ShouldEqual, userAccessToken)

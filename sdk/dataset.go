@@ -25,7 +25,7 @@ func (c *Client) GetDataset(ctx context.Context, headers Headers, datasetID stri
 	}
 
 	// Make request
-	resp, err := c.DoAuthenticatedGetRequest(ctx, headers, uri)
+	resp, err := c.doAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {
 		return dataset, err
 	}
@@ -73,7 +73,7 @@ func (c *Client) GetDatasetByPath(ctx context.Context, headers Headers, path str
 	}
 
 	// Make request
-	resp, err := c.DoAuthenticatedGetRequest(ctx, headers, uri)
+	resp, err := c.doAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {
 		return dataset, err
 	}
@@ -124,7 +124,7 @@ func (c *Client) GetDatasetEditions(ctx context.Context, headers Headers, queryP
 	}
 
 	// Make request
-	resp, err := c.DoAuthenticatedGetRequest(ctx, headers, uri)
+	resp, err := c.doAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {
 		return datasetEditionsList, err
 	}
@@ -156,7 +156,7 @@ func (c *Client) CreateDataset(ctx context.Context, headers Headers, dataset mod
 	}
 
 	// Make request
-	resp, err := c.DoAuthenticatedPostRequest(ctx, headers, uri, payload)
+	resp, err := c.doAuthenticatedPostRequest(ctx, headers, uri, payload)
 	if err != nil {
 		return datasetUpdate, err
 	}
