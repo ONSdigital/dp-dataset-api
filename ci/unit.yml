@@ -4,14 +4,19 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: golang
-    tag: 1.24.11-bookworm
+    repository: onsdigital/dp-concourse-tools-docker-go
+    tag: 1.24.11-dind-24
 
 inputs:
   - name: dp-dataset-api
 
 run:
-  path: dp-dataset-api/ci/scripts/unit.sh
+  path: bash
+  args:
+    - -exc 
+    - |
+      /start_docker.sh
+      dp-dataset-api/ci/scripts/unit.sh
 
 caches:
   - path: go/
