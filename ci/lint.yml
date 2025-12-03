@@ -14,4 +14,4 @@ run:
   path: dp-dataset-api/ci/scripts/lint.sh
 
 caches:
-  - path: /go
+  - path: go/

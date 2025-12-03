@@ -14,4 +14,4 @@ run:
   path: dp-dataset-api/ci/scripts/unit.sh
 
 caches:
-  - path: /go
+  - path: go/
