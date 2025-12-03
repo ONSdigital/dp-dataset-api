@@ -1,9 +1,11 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"maps"
 	"net/http"
 	"strconv"
@@ -318,10 +320,32 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		"version":   vars["version"],
 	}
 
-	version, err := models.CreateVersion(r.Body, vars["dataset_id"])
+	// Read body once and validate distributions before unmarshaling
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Error(ctx, "failed to read request body", err, data)
+		handleVersionAPIErr(ctx, errs.ErrUnableToReadMessage, w, data)
+		return
+	}
+
+	if err := utils.ValidateDistributionsFromRequestBody(bodyBytes); err != nil {
+		log.Error(ctx, "invalid distributions format", err, data)
+		handleVersionAPIErr(ctx, err, w, data)
+		return
+	}
+
+	version, err := models.CreateVersion(bytes.NewReader(bodyBytes), vars["dataset_id"])
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, data)
 		return
+	}
+
+	// Populate distributions (static only)
+	if version.Type == models.Static.String() {
+		if err := utils.PopulateDistributions(version); err != nil {
+			handleVersionAPIErr(ctx, err, w, data)
+			return
+		}
 	}
 
 	// Only check for edition ID/title conflicts for static datasets
@@ -704,6 +728,10 @@ func getVersionAPIErrStatusCode(err error) int {
 		status = http.StatusBadRequest
 	case strings.HasPrefix(err.Error(), "a published version cannot be deleted"):
 		status = http.StatusForbidden
+	case strings.Contains(err.Error(), "format field is missing"):
+		status = http.StatusBadRequest
+	case strings.Contains(err.Error(), "format field is invalid"):
+		status = http.StatusBadRequest
 	case errs.NotAllowedMap[err]:
 		status = http.StatusMethodNotAllowed
 	default:

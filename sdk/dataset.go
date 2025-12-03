@@ -136,3 +136,45 @@ func (c *Client) GetDatasetEditions(ctx context.Context, headers Headers, queryP
 
 	return datasetEditionsList, err
 }
+
+// CreateDataset creates a new dataset by posting to the POST /datasets endpoint
+func (c *Client) CreateDataset(ctx context.Context, headers Headers, dataset models.Dataset) (models.DatasetUpdate, error) {
+	var datasetUpdate models.DatasetUpdate
+
+	// Build URI
+	uri := &url.URL{}
+	var err error
+	uri.Path, err = url.JoinPath(c.hcCli.URL, "datasets")
+	if err != nil {
+		return datasetUpdate, err
+	}
+
+	// Marshal dataset to JSON
+	payload, err := json.Marshal(dataset)
+	if err != nil {
+		return datasetUpdate, err
+	}
+
+	// Make request
+	resp, err := c.DoAuthenticatedPostRequest(ctx, headers, uri, payload)
+	if err != nil {
+		return datasetUpdate, err
+	}
+
+	defer closeResponseBody(ctx, resp)
+
+	// If response got errors
+	if resp.StatusCode != http.StatusCreated {
+		err = unmarshalResponseBodyExpectingStringError(resp, &datasetUpdate)
+		return datasetUpdate, err
+	}
+
+	// Read and unmarshal the response body for successful creation
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return datasetUpdate, err
+	}
+
+	err = json.Unmarshal(b, &datasetUpdate)
+	return datasetUpdate, err
+}

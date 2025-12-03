@@ -17,6 +17,7 @@ type Clienter interface {
 	Health() *health.Client
 	URL() string
 	DoAuthenticatedGetRequest(ctx context.Context, headers Headers, uri *url.URL) (resp *http.Response, err error)
+	CreateDataset(ctx context.Context, headers Headers, dataset models.Dataset) (datasetUpdate models.DatasetUpdate, err error)
 	GetDataset(ctx context.Context, headers Headers, collectionID, datasetID string) (dataset models.Dataset, err error)
 	GetDatasetByPath(ctx context.Context, headers Headers, path string) (dataset models.Dataset, err error)
 	GetDatasetEditions(ctx context.Context, headers Headers, queryParams *QueryParams) (datasetEditionsList DatasetEditionsList, err error)
