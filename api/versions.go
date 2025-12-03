@@ -8,11 +8,9 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/ONSdigital/dp-api-clients-go/v2/headers"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
-	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/utils"
 	dpresponse "github.com/ONSdigital/dp-net/v3/handlers/response"
@@ -804,30 +802,22 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 		Type:  models.Static.String(),
 	}
 
-	updatedVersion, err := api.smDatasetAPI.AmendVersion(r.Context(), vars, versionUpdate)
+	_, err = api.smDatasetAPI.AmendVersion(r.Context(), vars, versionUpdate)
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, logData)
 		return
 	}
 
-	if stateUpdate.State == models.PublishedState && updatedVersion.Distributions != nil && len(*updatedVersion.Distributions) > 0 {
-		err = api.publishDistributionFiles(ctx, updatedVersion, logData)
+	if stateUpdate.State == models.PublishedState && currentVersion.Distributions != nil && len(*currentVersion.Distributions) > 0 {
+		err = api.publishDistributionFiles(ctx, currentVersion, logData)
 		if err != nil {
 			log.Error(ctx, "putState endpoint: failed to publish distribution files", err, logData)
 			handleVersionAPIErr(ctx, err, w, logData)
 			return
 		}
-		cfg, err := config.Get()
-		if err != nil {
-			log.Error(ctx, "failed to get config for cache purge", err, logData)
-		} else {
-			httpClient := &http.Client{Timeout: 10 * time.Second}
-			baseURL := cfg.CloudflareAPIURL
-			if baseURL == "" {
-				baseURL = "https://api.cloudflare.com/client/v4"
-			}
-			err = utils.PurgeCache(ctx, datasetID, edition, baseURL, cfg.CloudflareZoneID, cfg.CloudflareAPIToken, httpClient)
-			if err != nil {
+
+		if api.cloudflareClient != nil {
+			if err := api.cloudflareClient.PurgeCacheByPrefix(ctx, datasetID, edition); err != nil {
 				log.Error(ctx, "failed to purge cloudflare cache", err, logData)
 			} else {
 				log.Info(ctx, "successfully triggered cloudflare cache purge", logData)

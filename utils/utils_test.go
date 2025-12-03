@@ -2,10 +2,7 @@ package utils
 
 import (
 	"context"
-	"encoding/json"
-	"io"
 	"net/http"
-	"net/http/httptest"
 	neturl "net/url"
 	"testing"
 	"time"
@@ -6243,77 +6240,6 @@ func TestRewriteDistributions_Error(t *testing.T) {
 	})
 }
 
-func TestPurgeCache(t *testing.T) {
-	Convey("Given a dataset and edition", t, func() {
-		ctx := context.Background()
-		datasetID := "test-dataset"
-		editionID := "test-edition"
-		zoneID := "test-zone"
-		apiToken := "test-token"
-		baseURL := "http://base-url"
-
-		Convey("When cache purge succeeds", func() {
-			var capturedRequest *http.Request
-			var capturedBody []byte
-
-			mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				capturedRequest = r
-				capturedBody, _ = io.ReadAll(r.Body)
-				w.WriteHeader(http.StatusOK)
-				w.Write([]byte(`{"success": true}`))
-			}))
-			defer mockServer.Close()
-
-			mockClient := &http.Client{
-				Transport: &mockTransport{server: mockServer},
-			}
-
-			err := PurgeCache(ctx, datasetID, editionID, baseURL, zoneID, apiToken, mockClient)
-
-			Convey("Then no error is returned", func() {
-				So(err, ShouldBeNil)
-			})
-
-			Convey("And the request has correct headers", func() {
-				So(capturedRequest.Header.Get("Content-Type"), ShouldEqual, "application/json")
-				So(capturedRequest.Header.Get("Authorization"), ShouldEqual, "Bearer test-token")
-			})
-
-			Convey("And the request contains all 6 URL prefixes", func() {
-				var prefixes Prefixes
-				json.Unmarshal(capturedBody, &prefixes)
-
-				So(len(prefixes.Prefixes), ShouldEqual, 6)
-				So(prefixes.Prefixes[0], ShouldEqual, "www.ons.gov.uk/datasets/test-dataset")
-				So(prefixes.Prefixes[1], ShouldEqual, "www.ons.gov.uk/datasets/test-dataset/editions")
-				So(prefixes.Prefixes[2], ShouldEqual, "www.ons.gov.uk/datasets/test-dataset/editions/test-edition/versions")
-				So(prefixes.Prefixes[3], ShouldEqual, "api.beta.ons.gov.uk/v1/datasets/test-dataset")
-				So(prefixes.Prefixes[4], ShouldEqual, "api.beta.ons.gov.uk/v1/datasets/test-dataset/editions")
-				So(prefixes.Prefixes[5], ShouldEqual, "api.beta.ons.gov.uk/v1/datasets/test-dataset/editions/test-edition/versions")
-			})
-		})
-
-		Convey("When Cloudflare returns an error", func() {
-			mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte(`{"error": "something went wrong"}`))
-			}))
-			defer mockServer.Close()
-
-			mockClient := &http.Client{
-				Transport: &mockTransport{server: mockServer},
-			}
-
-			err := PurgeCache(ctx, datasetID, editionID, baseURL, zoneID, apiToken, mockClient)
-
-			Convey("Then an error is returned", func() {
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "cloudflare API returned status 500")
-			})
-		})
-	})
-}
-
 func TestGenerateDistributionsDownloadURLs(t *testing.T) {
 	Convey("Given a set of distributions", t, func() {
 		distributions := &[]models.Distribution{
@@ -6396,14 +6322,4 @@ func TestGenerateDistributionsDownloadURLs(t *testing.T) {
 			})
 		})
 	})
-}
-
-type mockTransport struct {
-	server *httptest.Server
-}
-
-func (m *mockTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	req.URL.Scheme = "http"
-	req.URL.Host = m.server.URL[7:]
-	return http.DefaultTransport.RoundTrip(req)
 }

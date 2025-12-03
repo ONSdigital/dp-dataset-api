@@ -47,6 +47,7 @@ type Configuration struct {
 	EnablePermissionsAuth          bool          `envconfig:"ENABLE_PERMISSIONS_AUTH"`
 	EnableObservationEndpoint      bool          `envconfig:"ENABLE_OBSERVATION_ENDPOINT"`
 	EnableURLRewriting             bool          `envconfig:"ENABLE_URL_REWRITING"`
+	EnableCloudflareSDK            bool          `envconfig:"ENABLE_CLOUDFLARE_SDK"`
 	DisableGraphDBDependency       bool          `envconfig:"DISABLE_GRAPH_DB_DEPENDENCY"`
 	KafkaVersion                   string        `envconfig:"KAFKA_VERSION"`
 	DefaultMaxLimit                int           `envconfig:"DEFAULT_MAXIMUM_LIMIT"`
@@ -112,6 +113,7 @@ func Get() (*Configuration, error) {
 		EnablePermissionsAuth:          false,
 		EnableObservationEndpoint:      true,
 		EnableURLRewriting:             false,
+		EnableCloudflareSDK:            false,
 		DisableGraphDBDependency:       false,
 		KafkaVersion:                   "1.0.2",
 		DefaultMaxLimit:                1000,

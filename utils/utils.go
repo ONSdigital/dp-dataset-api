@@ -1,12 +1,8 @@
 package utils
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"net/url"
 	"path"
 	"strconv"
@@ -796,67 +792,6 @@ func RewriteDistributions(ctx context.Context, results *[]models.Distribution, d
 		}
 	}
 	return items, nil
-}
-
-type Prefixes struct {
-	Prefixes []string `json:"prefixes,omitempty"`
-}
-
-type HTTPClient interface {
-	Do(req *http.Request) (*http.Response, error)
-}
-
-func PurgeCache(ctx context.Context, datasetID, editionID, baseURL, zoneID, apiToken string, client HTTPClient) error {
-	cloudflareURL := fmt.Sprintf("%s/zones/%s/purge_cache", baseURL, zoneID)
-	webDatasetURL := fmt.Sprintf("www.ons.gov.uk/datasets/%s", datasetID)
-	webEditionsURL := fmt.Sprintf("www.ons.gov.uk/datasets/%s/editions", datasetID)
-	webVersionsURL := fmt.Sprintf("www.ons.gov.uk/datasets/%s/editions/%s/versions", datasetID, editionID)
-
-	apiDatasetURL := fmt.Sprintf("api.beta.ons.gov.uk/v1/datasets/%s", datasetID)
-	apiEditionsURL := fmt.Sprintf("api.beta.ons.gov.uk/v1/datasets/%s/editions", datasetID)
-	apiVersionsURL := fmt.Sprintf("api.beta.ons.gov.uk/v1/datasets/%s/editions/%s/versions", datasetID, editionID)
-
-	prefixes := Prefixes{
-		Prefixes: []string{
-			webDatasetURL,
-			webEditionsURL,
-			webVersionsURL,
-			apiDatasetURL,
-			apiEditionsURL,
-			apiVersionsURL,
-		},
-	}
-
-	payload, err := json.Marshal(prefixes)
-	if err != nil {
-		return fmt.Errorf("failed to marshal purge prefixes: %w", err)
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, cloudflareURL, bytes.NewReader(payload))
-	if err != nil {
-		return fmt.Errorf("failed to create purge request: %w", err)
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", apiToken))
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("failed to send purge request to cloudflare: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("cloudflare API returned status %d: %s", resp.StatusCode, string(body))
-	}
-
-	log.Info(ctx, "successfully purged cloudflare cache", log.Data{
-		"dataset_id": datasetID,
-		"edition":    editionID,
-	})
-
-	return nil
 }
 
 func GenerateDistributionsDownloadURLs(datasetID, edition string, version int, distributions *[]models.Distribution) *[]models.Distribution {

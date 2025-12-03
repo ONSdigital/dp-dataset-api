@@ -55,6 +55,9 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the response header "([^"]*)" should not be empty$`, c.theResponseHeaderShouldNotBeEmpty)
 	ctx.Step(`^the dataset "([^"]*)" should have next equal to current$`, c.theDatasetShouldHaveNextEqualToCurrent)
 	ctx.Step(`^the "([^"]*)" feature flag is "([^"]*)"$`, c.theFeatureFlagIs)
+	ctx.Step(`^cloudflare cache purge should have been called for dataset "([^"]*)" and edition "([^"]*)"$`, c.cloudflareCachePurgeShouldHaveBeenCalled)
+	ctx.Step(`^cloudflare cache purge should not have been called$`, c.cloudflareCachePurgeShouldNotHaveBeenCalled)
+	ctx.Step(`^cloudflare cache purge is configured to fail$`, c.cloudflareCachePurgeIsConfiguredToFail)
 }
 
 func (c *DatasetComponent) theFeatureFlagIs(flagName, status string) error {
@@ -514,11 +517,9 @@ func (c *DatasetComponent) iHaveStaticDatasetWithVersion(jsonData *godog.DocStri
 		Dataset models.Dataset `json:"dataset"`
 		Version models.Version `json:"version"`
 	}
-
 	if err := json.Unmarshal([]byte(jsonData.Content), &data); err != nil {
 		return fmt.Errorf("failed to unmarshal static dataset data: %w", err)
 	}
-
 	datasetID := data.Dataset.ID
 	data.Dataset.Type = "static"
 	datasetUp := models.DatasetUpdate{
@@ -530,23 +531,30 @@ func (c *DatasetComponent) iHaveStaticDatasetWithVersion(jsonData *godog.DocStri
 	if err := c.putDocumentInDatabase(datasetUp, datasetID, datasetsCollection, 0); err != nil {
 		return fmt.Errorf("failed to insert static dataset: %w", err)
 	}
-
 	versionID := data.Version.ID
+
+	if data.Version.Links == nil {
+		data.Version.Links = &models.VersionLinks{}
+	}
+
+	if data.Version.Links.Self == nil {
+		data.Version.Links.Self = &models.LinkObject{
+			HRef: fmt.Sprintf("/datasets/%s/editions/%s/versions/%d", datasetID, data.Version.Edition, data.Version.Version),
+		}
+	}
 
 	if data.Version.Links.Version == nil {
 		data.Version.Links.Version = &models.LinkObject{
 			HRef: data.Version.Links.Self.HRef,
-			ID:   "1",
+			ID:   fmt.Sprintf("%d", data.Version.Version),
 		}
 	}
 
 	data.Version.ETag = "etag-" + versionID
-
 	versionsCollection := c.MongoClient.ActualCollectionName(config.VersionsCollection)
 	if err := c.putDocumentInDatabase(data.Version, versionID, versionsCollection, 0); err != nil {
 		return fmt.Errorf("failed to insert static version: %w", err)
 	}
-
 	return nil
 }
 
@@ -624,5 +632,29 @@ func (c *DatasetComponent) theResponseHeaderShouldNotBeEmpty(header string) erro
 	if value == "" {
 		return fmt.Errorf("expected non-empty header %q but got empty", header)
 	}
+	return nil
+}
+
+func (c *DatasetComponent) cloudflareCachePurgeShouldHaveBeenCalled(datasetID, editionID string) error {
+	for _, call := range c.CloudflarePurgeCalls {
+		if call.DatasetID == datasetID && call.EditionID == editionID {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("expected cloudflare cache purge to be called for dataset '%s' and edition '%s', but it was not. Calls made: %+v",
+		datasetID, editionID, c.CloudflarePurgeCalls)
+}
+
+func (c *DatasetComponent) cloudflareCachePurgeShouldNotHaveBeenCalled() error {
+	if len(c.CloudflarePurgeCalls) > 0 {
+		return fmt.Errorf("expected no cloudflare cache purge calls, but got %d calls: %+v",
+			len(c.CloudflarePurgeCalls), c.CloudflarePurgeCalls)
+	}
+	return nil
+}
+
+func (c *DatasetComponent) cloudflareCachePurgeIsConfiguredToFail() error {
+	c.MockCloudflare.ShouldFail = true
 	return nil
 }

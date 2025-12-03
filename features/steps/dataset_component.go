@@ -8,12 +8,14 @@ import (
 
 	componenttest "github.com/ONSdigital/dp-component-test"
 	"github.com/ONSdigital/dp-component-test/utils"
+	"github.com/ONSdigital/dp-dataset-api/cloudflare"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/service"
 	serviceMock "github.com/ONSdigital/dp-dataset-api/service/mock"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	storeMock "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	"github.com/ONSdigital/dp-files-api/files"
 	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	filesAPISDKMocks "github.com/ONSdigital/dp-files-api/sdk/mocks"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
@@ -24,17 +26,19 @@ import (
 )
 
 type DatasetComponent struct {
-	ErrorFeature   componenttest.ErrorFeature
-	apiFeature     *componenttest.APIFeature
-	svc            *service.Service
-	errorChan      chan error
-	MongoClient    *mongo.Mongo
-	Config         *config.Configuration
-	HTTPServer     *http.Server
-	ServiceRunning bool
-	consumer       kafka.IConsumerGroup
-	producer       kafka.IProducer
-	initialiser    service.Initialiser
+	ErrorFeature         componenttest.ErrorFeature
+	apiFeature           *componenttest.APIFeature
+	svc                  *service.Service
+	errorChan            chan error
+	MongoClient          *mongo.Mongo
+	Config               *config.Configuration
+	HTTPServer           *http.Server
+	ServiceRunning       bool
+	consumer             kafka.IConsumerGroup
+	producer             kafka.IProducer
+	initialiser          service.Initialiser
+	MockCloudflare       *MockCloudflareClient
+	CloudflarePurgeCalls []CloudflarePurgeCall
 }
 
 func NewDatasetComponent(mongoURI, zebedeeURL string) (*DatasetComponent, error) {
@@ -42,8 +46,14 @@ func NewDatasetComponent(mongoURI, zebedeeURL string) (*DatasetComponent, error)
 		HTTPServer: &http.Server{
 			ReadHeaderTimeout: 60 * time.Second,
 		},
-		errorChan:      make(chan error),
-		ServiceRunning: false,
+		errorChan:            make(chan error),
+		ServiceRunning:       false,
+		CloudflarePurgeCalls: []CloudflarePurgeCall{},
+	}
+
+	c.MockCloudflare = &MockCloudflareClient{
+		PurgeCalls: &c.CloudflarePurgeCalls,
+		ShouldFail: false,
 	}
 
 	var err error
@@ -92,6 +102,10 @@ func (c *DatasetComponent) Reset() error {
 
 	c.Config.EnablePrivateEndpoints = false
 	c.Config.EnableURLRewriting = false
+
+	c.CloudflarePurgeCalls = []CloudflarePurgeCall{}
+	c.MockCloudflare.ShouldFail = false
+
 	// Resets back to Mocked Kafka
 	c.setInitialiserMock()
 
@@ -237,6 +251,17 @@ func (c *DatasetComponent) DoGetGraphDBOk(context.Context) (store.GraphDB, servi
 
 func (c *DatasetComponent) DoGetFilesAPIClientOk(ctx context.Context, cfg *config.Configuration) (filesAPISDK.Clienter, error) {
 	return &filesAPISDKMocks.ClienterMock{
+		GetFileFunc: func(ctx context.Context, filePath string) (*files.StoredRegisteredMetaData, error) {
+			return &files.StoredRegisteredMetaData{
+				Path:          filePath,
+				IsPublishable: true,
+				State:         "UPLOADED",
+				SizeInBytes:   1000,
+			}, nil
+		},
+		MarkFilePublishedFunc: func(ctx context.Context, filePath string) error {
+			return nil
+		},
 		DeleteFileFunc: func(ctx context.Context, filePath string) error {
 			if filePath == "/fail/to/delete.csv" {
 				return fmt.Errorf("failed to delete file at path: %s", filePath)
@@ -246,23 +271,56 @@ func (c *DatasetComponent) DoGetFilesAPIClientOk(ctx context.Context, cfg *confi
 	}, nil
 }
 
+func (c *DatasetComponent) DoGetCloudflareClientOk(ctx context.Context, cfg *config.Configuration) (cloudflare.Clienter, error) {
+	return c.MockCloudflare, nil
+}
+
 func (c *DatasetComponent) setInitialiserMock() {
 	c.initialiser = &serviceMock.InitialiserMock{
-		DoGetMongoDBFunc:        c.DoGetMongoDB,
-		DoGetGraphDBFunc:        c.DoGetGraphDBOk,
-		DoGetFilesAPIClientFunc: c.DoGetFilesAPIClientOk,
-		DoGetKafkaProducerFunc:  c.DoGetMockedKafkaProducerOk,
-		DoGetHealthCheckFunc:    c.DoGetHealthcheckOk,
-		DoGetHTTPServerFunc:     c.DoGetHTTPServer,
+		DoGetMongoDBFunc:          c.DoGetMongoDB,
+		DoGetGraphDBFunc:          c.DoGetGraphDBOk,
+		DoGetFilesAPIClientFunc:   c.DoGetFilesAPIClientOk,
+		DoGetKafkaProducerFunc:    c.DoGetMockedKafkaProducerOk,
+		DoGetHealthCheckFunc:      c.DoGetHealthcheckOk,
+		DoGetHTTPServerFunc:       c.DoGetHTTPServer,
+		DoGetCloudflareClientFunc: c.DoGetCloudflareClientOk,
 	}
 }
 func (c *DatasetComponent) setInitialiserRealKafka() {
 	c.initialiser = &serviceMock.InitialiserMock{
-		DoGetMongoDBFunc:        c.DoGetMongoDB,
-		DoGetGraphDBFunc:        c.DoGetGraphDBOk,
-		DoGetFilesAPIClientFunc: c.DoGetFilesAPIClientOk,
-		DoGetKafkaProducerFunc:  c.DoGetKafkaProducer,
-		DoGetHealthCheckFunc:    c.DoGetHealthcheckOk,
-		DoGetHTTPServerFunc:     c.DoGetHTTPServer,
+		DoGetMongoDBFunc:          c.DoGetMongoDB,
+		DoGetGraphDBFunc:          c.DoGetGraphDBOk,
+		DoGetFilesAPIClientFunc:   c.DoGetFilesAPIClientOk,
+		DoGetKafkaProducerFunc:    c.DoGetKafkaProducer,
+		DoGetHealthCheckFunc:      c.DoGetHealthcheckOk,
+		DoGetHTTPServerFunc:       c.DoGetHTTPServer,
+		DoGetCloudflareClientFunc: c.DoGetCloudflareClientOk,
 	}
+}
+
+type CloudflarePurgeCall struct {
+	DatasetID string
+	EditionID string
+}
+
+type MockCloudflareClient struct {
+	PurgeCalls *[]CloudflarePurgeCall
+	ShouldFail bool
+}
+
+func (m *MockCloudflareClient) PurgeCacheByPrefix(ctx context.Context, datasetID, editionID string) error {
+	if m.ShouldFail {
+		return fmt.Errorf("mock cloudflare purge failed")
+	}
+
+	*m.PurgeCalls = append(*m.PurgeCalls, CloudflarePurgeCall{
+		DatasetID: datasetID,
+		EditionID: editionID,
+	})
+
+	log.Info(ctx, "mock cloudflare cache purge called", log.Data{
+		"dataset_id": datasetID,
+		"edition_id": editionID,
+	})
+	return nil
 }
