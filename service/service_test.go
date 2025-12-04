@@ -135,7 +135,7 @@ func TestRun(t *testing.T) {
 				So(svcList.MongoDB, ShouldBeFalse)
 				So(svcList.Graph, ShouldBeFalse)
 				So(svcList.FilesAPIClient, ShouldBeFalse)
-				So(svcList.GenerateDownloadsProducer, ShouldBeFalse)
+				So(svcList.KafkaProducer, ShouldBeFalse)
 				So(svcList.HealthCheck, ShouldBeFalse)
 			})
 		})
@@ -155,7 +155,7 @@ func TestRun(t *testing.T) {
 				So(svcList.MongoDB, ShouldBeTrue)
 				So(svcList.Graph, ShouldBeFalse)
 				So(svcList.FilesAPIClient, ShouldBeFalse)
-				So(svcList.GenerateDownloadsProducer, ShouldBeFalse)
+				So(svcList.KafkaProducer, ShouldBeFalse)
 				So(svcList.HealthCheck, ShouldBeFalse)
 			})
 		})
@@ -176,7 +176,7 @@ func TestRun(t *testing.T) {
 				So(svcList.MongoDB, ShouldBeTrue)
 				So(svcList.Graph, ShouldBeTrue)
 				So(svcList.FilesAPIClient, ShouldBeFalse)
-				So(svcList.GenerateDownloadsProducer, ShouldBeFalse)
+				So(svcList.KafkaProducer, ShouldBeFalse)
 				So(svcList.HealthCheck, ShouldBeFalse)
 			})
 		})
@@ -198,7 +198,7 @@ func TestRun(t *testing.T) {
 				So(svcList.MongoDB, ShouldBeTrue)
 				So(svcList.Graph, ShouldBeTrue)
 				So(svcList.FilesAPIClient, ShouldBeTrue)
-				So(svcList.GenerateDownloadsProducer, ShouldBeFalse)
+				So(svcList.KafkaProducer, ShouldBeFalse)
 				So(svcList.HealthCheck, ShouldBeFalse)
 			})
 		})
@@ -221,7 +221,7 @@ func TestRun(t *testing.T) {
 				So(svcList.MongoDB, ShouldBeTrue)
 				So(svcList.Graph, ShouldBeTrue)
 				So(svcList.FilesAPIClient, ShouldBeTrue)
-				So(svcList.GenerateDownloadsProducer, ShouldBeTrue)
+				So(svcList.KafkaProducer, ShouldBeTrue)
 				So(svcList.HealthCheck, ShouldBeFalse)
 			})
 		})
@@ -252,16 +252,17 @@ func TestRun(t *testing.T) {
 				So(err.Error(), ShouldResemble, fmt.Sprintf("unable to register checkers: %s", errAddheckFail.Error()))
 				So(svcList.MongoDB, ShouldBeTrue)
 				So(svcList.Graph, ShouldBeTrue)
-				So(svcList.GenerateDownloadsProducer, ShouldBeTrue)
+				So(svcList.KafkaProducer, ShouldBeTrue)
 				So(svcList.FilesAPIClient, ShouldBeTrue)
 				So(svcList.HealthCheck, ShouldBeTrue)
-				So(len(hcMockAddFail.AddCheckCalls()), ShouldEqual, 6)
+				So(len(hcMockAddFail.AddCheckCalls()), ShouldEqual, 7)
 				So(hcMockAddFail.AddCheckCalls()[0].Name, ShouldResemble, "Zebedee")
 				So(hcMockAddFail.AddCheckCalls()[1].Name, ShouldResemble, "Kafka Generate Downloads Producer")
 				So(hcMockAddFail.AddCheckCalls()[2].Name, ShouldResemble, "Kafka Generate Cantabular Downloads Producer")
-				So(hcMockAddFail.AddCheckCalls()[3].Name, ShouldResemble, "Files API Client")
-				So(hcMockAddFail.AddCheckCalls()[4].Name, ShouldResemble, "Graph DB")
-				So(hcMockAddFail.AddCheckCalls()[5].Name, ShouldResemble, "Mongo DB")
+				So(hcMockAddFail.AddCheckCalls()[3].Name, ShouldResemble, "Kafka Search Content Updated Producer")
+				So(hcMockAddFail.AddCheckCalls()[4].Name, ShouldResemble, "Files API Client")
+				So(hcMockAddFail.AddCheckCalls()[5].Name, ShouldResemble, "Graph DB")
+				So(hcMockAddFail.AddCheckCalls()[6].Name, ShouldResemble, "Mongo DB")
 			})
 		})
 
@@ -285,18 +286,19 @@ func TestRun(t *testing.T) {
 				So(svcList.MongoDB, ShouldBeTrue)
 				So(svcList.Graph, ShouldBeTrue)
 				So(svcList.FilesAPIClient, ShouldBeTrue)
-				So(svcList.GenerateDownloadsProducer, ShouldBeTrue)
+				So(svcList.KafkaProducer, ShouldBeTrue)
 				So(svcList.HealthCheck, ShouldBeTrue)
 			})
 
 			Convey("The checkers are registered and the healthcheck and http server started", func() {
-				So(len(hcMock.AddCheckCalls()), ShouldEqual, 6)
+				So(len(hcMock.AddCheckCalls()), ShouldEqual, 7)
 				So(hcMock.AddCheckCalls()[0].Name, ShouldResemble, "Zebedee")
 				So(hcMock.AddCheckCalls()[1].Name, ShouldResemble, "Kafka Generate Downloads Producer")
 				So(hcMock.AddCheckCalls()[2].Name, ShouldResemble, "Kafka Generate Cantabular Downloads Producer")
-				So(hcMock.AddCheckCalls()[3].Name, ShouldResemble, "Files API Client")
-				So(hcMock.AddCheckCalls()[4].Name, ShouldResemble, "Graph DB")
-				So(hcMock.AddCheckCalls()[5].Name, ShouldResemble, "Mongo DB")
+				So(hcMock.AddCheckCalls()[3].Name, ShouldResemble, "Kafka Search Content Updated Producer")
+				So(hcMock.AddCheckCalls()[4].Name, ShouldResemble, "Files API Client")
+				So(hcMock.AddCheckCalls()[5].Name, ShouldResemble, "Graph DB")
+				So(hcMock.AddCheckCalls()[6].Name, ShouldResemble, "Mongo DB")
 				So(len(initMock.DoGetHTTPServerCalls()), ShouldEqual, 1)
 				So(initMock.DoGetHTTPServerCalls()[0].BindAddr, ShouldEqual, ":22000")
 				So(len(hcMock.StartCalls()), ShouldEqual, 1)
@@ -324,7 +326,7 @@ func TestRun(t *testing.T) {
 				So(svcList.MongoDB, ShouldBeTrue)
 				So(svcList.Graph, ShouldBeFalse)
 				So(svcList.FilesAPIClient, ShouldBeFalse)
-				So(svcList.GenerateDownloadsProducer, ShouldBeFalse)
+				So(svcList.KafkaProducer, ShouldBeFalse)
 				So(svcList.HealthCheck, ShouldBeTrue)
 			})
 
@@ -439,12 +441,12 @@ func TestClose(t *testing.T) {
 		})
 
 		fullSvcList := &service.ExternalServiceList{
-			GenerateDownloadsProducer: true,
-			Graph:                     true,
-			HealthCheck:               true,
-			MongoDB:                   true,
-			FilesAPIClient:            true,
-			Init:                      nil,
+			KafkaProducer:  true,
+			Graph:          true,
+			HealthCheck:    true,
+			MongoDB:        true,
+			FilesAPIClient: true,
+			Init:           nil,
 		}
 
 		Convey("Closing the service results in all the initialised dependencies being closed in the expected order", func() {

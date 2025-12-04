@@ -13,6 +13,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/utils"
+	kafka "github.com/ONSdigital/dp-kafka/v4"
 	dpresponse "github.com/ONSdigital/dp-net/v3/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v3/http"
 	"github.com/ONSdigital/dp-net/v3/links"
@@ -46,6 +47,10 @@ var (
 		errs.ErrResourceState: true,
 	}
 )
+
+type SearchContentUpdated struct {
+	Producer KafkaProducer
+}
 
 // getVersions returns a list of versions, the total count of versions that match the query parameters and an error
 // TODO: Refactor this to reduce the complexity
@@ -789,6 +794,27 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 			handleVersionAPIErr(ctx, err, w, logData)
 			return
 		}
+	}
+
+	if updatedVersion.State == models.PublishedState {
+		searchContentUpdatedEvent := map[string]interface{}{
+			"uri":          updatedVersion.Links.Version.HRef,
+			"title":        updatedVersion.Edition,
+			"content_type": updatedVersion.Type,
+		}
+		jsonBytes, err := json.Marshal(searchContentUpdatedEvent)
+		if err != nil {
+			log.Error(ctx, "failed to marshal searchContentUpdatedEvent for kafka: %w", err, logData)
+		}
+
+		api.searchContentUpdated.Producer.Output() <- kafka.BytesMessage{Value: jsonBytes, Context: ctx}
+		if err != nil {
+			log.Error(ctx, "putState endpoint: failed to send search content update", err, logData)
+			handleVersionAPIErr(ctx, err, w, logData)
+			return
+		}
+		log.Info(ctx, "putState endpoint: sent search content update to kafka", logData)
+
 	}
 
 	setJSONContentType(w)
