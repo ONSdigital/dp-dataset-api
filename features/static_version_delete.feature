@@ -89,7 +89,7 @@ Feature: Static Dataset Version DELETE API
                             "title": "Published Dataset CSV",
                             "format": "csv",
                             "media_type": "text/csv",
-                            "download_url": "/downloads/datasets/static-dataset-test/editions/2024/versions/1.csv",
+                            "download_url": "/uuid/filename.csv",
                             "byte_size": 150000
                         }
                     ]
@@ -116,7 +116,7 @@ Feature: Static Dataset Version DELETE API
                             "title": "Published Dataset CSV",
                             "format": "csv",
                             "media_type": "text/csv",
-                            "download_url": "/downloads/datasets/static-dataset-published/editions/2025/versions/1.csv",
+                            "download_url": "/uuid/filename.csv",
                             "byte_size": 150000
                         }
                     ]

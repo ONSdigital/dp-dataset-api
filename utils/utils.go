@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"path"
 	"strconv"
 	"strings"
 
@@ -803,22 +802,6 @@ func RewriteDistributions(ctx context.Context, results *[]models.Distribution, d
 		}
 	}
 	return items, nil
-}
-
-func GenerateDistributionsDownloadURLs(datasetID, edition string, version int, distributions *[]models.Distribution) *[]models.Distribution {
-	if distributions == nil || len(*distributions) == 0 {
-		return distributions
-	}
-
-	updatedDistributions := &[]models.Distribution{}
-
-	for _, distribution := range *distributions {
-		filename := path.Base(distribution.DownloadURL)
-		distribution.DownloadURL = fmt.Sprintf("/%s/%s/%d/%s", datasetID, edition, version, filename)
-		*updatedDistributions = append(*updatedDistributions, distribution)
-	}
-
-	return updatedDistributions
 }
 
 // PopulateDistributions populates the MediaType field for each distribution based on its Format field

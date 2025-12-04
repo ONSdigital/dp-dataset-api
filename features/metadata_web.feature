@@ -54,7 +54,7 @@ Scenario: GET metadata for a published static dataset
                         "title": "Distribution 1",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/static-dataset/time-series/1/filename.csv",
+                        "download_url": "/uuid/filename.csv",
                         "byte_size": 100000
                     }
                 ]
@@ -109,7 +109,7 @@ Scenario: GET metadata for a published static dataset
                     "title": "Distribution 1",
                     "format": "csv",
                     "media_type": "text/csv",
-                    "download_url": "/static-dataset/time-series/1/filename.csv",
+                    "download_url": "/uuid/filename.csv",
                     "byte_size": 100000
                 }
             ]
@@ -170,7 +170,7 @@ Scenario: GET metadata for an unpublished static dataset
                         "title": "Distribution 1",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/files/static-dataset/time-series/1/filename.csv",
+                        "download_url": "/uuid/filename.csv",
                         "byte_size": 100000
                     }
                 ]
