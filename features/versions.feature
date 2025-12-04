@@ -23,17 +23,6 @@ Feature: Dataset API
                 {
                     "id": "population-estimates",
                     "state": "published"
-                },
-                {
-                    "id": "test-static",
-                    "state": "created",
-                    "type": "static",
-                    "links": {
-                      "latest_version": {
-                        "id": "1",
-                        "href": "/datasets/test-static/editions/test-edition-static/versions/1"
-                      }
-                    }
                 }
             ]
             """
@@ -197,69 +186,6 @@ Feature: Dataset API
                 }
             ]
             """
-    And I have these static versions:
-        """
-        [
-            {
-                "id": "test-static-version",
-                "version": 1,
-                "state": "created",
-                "type": "static",
-                "links": {
-                    "dataset": {
-                        "id": "test-static"
-                    },
-                    "edition": {
-                        "href": "/datasets/test-static/editions/test-edition-static",
-                        "id": "test-edition-static"
-                    },
-                    "self": {
-                        "href": "/datasets/test-static/editions/test-edition-static/versions/1"
-                    }
-                },
-                "edition": "test-edition-static",
-                "edition_title": "Test Edition Static Title",
-                "distributions": [
-                    {
-                        "title": "Distribution 1",
-                        "format": "csv",
-                        "media_type": "text/csv",
-                        "download_url": "/uuid/filename.csv",
-                        "byte_size": 100000
-                    }
-                ]
-            },
-            {
-                "id": "test-static-version-approved",
-                "version": 1,
-                "state": "approved",
-                "type": "static",
-                "links": {
-                    "dataset": {
-                        "id": "test-static"
-                    },
-                    "edition": {
-                        "href": "/datasets/test-static/editions/test-edition-static-approved",
-                        "id": "test-edition-static-approved"
-                    },
-                    "self": {
-                        "href": "/datasets/test-static/editions/test-edition-static-approved/versions/1"
-                    }
-                },
-                "edition": "test-edition-static-approved",
-                "edition_title": "Test Edition Static Approved Title",
-                "distributions": [
-                    {
-                        "title": "Distribution 1",
-                        "format": "csv",
-                        "media_type": "text/csv",
-                        "download_url": "/uuid/filename.csv",
-                        "byte_size": 100000
-                    }
-                ]
-            }
-        ]
-        """
 
   Scenario: GET /datasets/{id}/editions/{edition}/versions in public mode returns published versions
     And URL rewriting is enabled
@@ -490,54 +416,6 @@ Feature: Dataset API
                 "limit": 20,
                 "offset": 0,
                 "total_count": 3
-            }
-            """
-
-  Scenario: GET /datasets/test-static/editions/test-edition-static-approved/versions in private mode returns all versions
-    Given private endpoints are enabled
-    And I am identified as "user@ons.gov.uk"
-    And I am authorised
-    When I GET "/datasets/test-static/editions/test-edition-static-approved/versions"
-    Then I should receive the following JSON response with status "200":
-            """
-            {
-                "count": 1,
-                "items": [
-                    {
-                        "dataset_id": "test-static",
-                        "id": "test-static-version-approved",
-                        "last_updated":"2021-01-01T00:00:01Z",
-                        "type":"static",
-                        "version": 1,
-                        "state": "approved",
-                        "links": {
-                            "dataset": {
-                                "id": "test-static"
-                            },
-                            "edition": {
-                                "href": "/datasets/test-static/editions/test-edition-static-approved",
-                                "id": "test-edition-static-approved"
-                            },
-                            "self": {
-                                "href": "/datasets/test-static/editions/test-edition-static-approved/versions/test-static-version-approved"
-                            }
-                        },
-                        "edition": "test-edition-static-approved",
-                        "edition_title": "Test Edition Static Approved Title",
-                        "distributions": [
-                            {
-                                "title": "Distribution 1",
-                                "format": "csv",
-                                "media_type": "text/csv",
-                                "download_url": "/uuid/filename.csv",
-                                "byte_size": 100000
-                            }
-                        ]
-                    }
-                ],
-                "limit": 20,
-                "offset": 0,
-                "total_count": 1
             }
             """
 
