@@ -5,6 +5,7 @@ package mock
 
 import (
 	"context"
+	"github.com/ONSdigital/dp-dataset-api/cloudflare"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/service"
 	"github.com/ONSdigital/dp-dataset-api/store"
@@ -24,6 +25,9 @@ var _ service.Initialiser = &InitialiserMock{}
 //
 //		// make and configure a mocked service.Initialiser
 //		mockedInitialiser := &InitialiserMock{
+//			DoGetCloudflareClientFunc: func(ctx context.Context, cfg *config.Configuration) (cloudflare.Clienter, error) {
+//				panic("mock out the DoGetCloudflareClient method")
+//			},
 //			DoGetFilesAPIClientFunc: func(ctx context.Context, cfg *config.Configuration) (filesAPISDK.Clienter, error) {
 //				panic("mock out the DoGetFilesAPIClient method")
 //			},
@@ -49,6 +53,9 @@ var _ service.Initialiser = &InitialiserMock{}
 //
 //	}
 type InitialiserMock struct {
+	// DoGetCloudflareClientFunc mocks the DoGetCloudflareClient method.
+	DoGetCloudflareClientFunc func(ctx context.Context, cfg *config.Configuration) (cloudflare.Clienter, error)
+
 	// DoGetFilesAPIClientFunc mocks the DoGetFilesAPIClient method.
 	DoGetFilesAPIClientFunc func(ctx context.Context, cfg *config.Configuration) (filesAPISDK.Clienter, error)
 
@@ -69,6 +76,13 @@ type InitialiserMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// DoGetCloudflareClient holds details about calls to the DoGetCloudflareClient method.
+		DoGetCloudflareClient []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Cfg is the cfg argument value.
+			Cfg *config.Configuration
+		}
 		// DoGetFilesAPIClient holds details about calls to the DoGetFilesAPIClient method.
 		DoGetFilesAPIClient []struct {
 			// Ctx is the ctx argument value.
@@ -116,12 +130,49 @@ type InitialiserMock struct {
 			Cfg config.MongoConfig
 		}
 	}
-	lockDoGetFilesAPIClient sync.RWMutex
-	lockDoGetGraphDB        sync.RWMutex
-	lockDoGetHTTPServer     sync.RWMutex
-	lockDoGetHealthCheck    sync.RWMutex
-	lockDoGetKafkaProducer  sync.RWMutex
-	lockDoGetMongoDB        sync.RWMutex
+	lockDoGetCloudflareClient sync.RWMutex
+	lockDoGetFilesAPIClient   sync.RWMutex
+	lockDoGetGraphDB          sync.RWMutex
+	lockDoGetHTTPServer       sync.RWMutex
+	lockDoGetHealthCheck      sync.RWMutex
+	lockDoGetKafkaProducer    sync.RWMutex
+	lockDoGetMongoDB          sync.RWMutex
+}
+
+// DoGetCloudflareClient calls DoGetCloudflareClientFunc.
+func (mock *InitialiserMock) DoGetCloudflareClient(ctx context.Context, cfg *config.Configuration) (cloudflare.Clienter, error) {
+	if mock.DoGetCloudflareClientFunc == nil {
+		panic("InitialiserMock.DoGetCloudflareClientFunc: method is nil but Initialiser.DoGetCloudflareClient was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+		Cfg *config.Configuration
+	}{
+		Ctx: ctx,
+		Cfg: cfg,
+	}
+	mock.lockDoGetCloudflareClient.Lock()
+	mock.calls.DoGetCloudflareClient = append(mock.calls.DoGetCloudflareClient, callInfo)
+	mock.lockDoGetCloudflareClient.Unlock()
+	return mock.DoGetCloudflareClientFunc(ctx, cfg)
+}
+
+// DoGetCloudflareClientCalls gets all the calls that were made to DoGetCloudflareClient.
+// Check the length with:
+//
+//	len(mockedInitialiser.DoGetCloudflareClientCalls())
+func (mock *InitialiserMock) DoGetCloudflareClientCalls() []struct {
+	Ctx context.Context
+	Cfg *config.Configuration
+} {
+	var calls []struct {
+		Ctx context.Context
+		Cfg *config.Configuration
+	}
+	mock.lockDoGetCloudflareClient.RLock()
+	calls = mock.calls.DoGetCloudflareClient
+	mock.lockDoGetCloudflareClient.RUnlock()
+	return calls
 }
 
 // DoGetFilesAPIClient calls DoGetFilesAPIClientFunc.

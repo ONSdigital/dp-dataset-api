@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/ONSdigital/dp-dataset-api/cloudflare"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
@@ -24,6 +25,7 @@ type Initialiser interface {
 	DoGetGraphDB(ctx context.Context) (store.GraphDB, Closer, error)
 	DoGetMongoDB(ctx context.Context, cfg config.MongoConfig) (store.MongoDB, error)
 	DoGetFilesAPIClient(ctx context.Context, cfg *config.Configuration) (filesAPISDK.Clienter, error)
+	DoGetCloudflareClient(ctx context.Context, cfg *config.Configuration) (cloudflare.Clienter, error)
 }
 
 // HTTPServer defines the required methods from the HTTP server

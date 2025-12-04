@@ -47,6 +47,7 @@ type Configuration struct {
 	EnablePermissionsAuth          bool          `envconfig:"ENABLE_PERMISSIONS_AUTH"`
 	EnableObservationEndpoint      bool          `envconfig:"ENABLE_OBSERVATION_ENDPOINT"`
 	EnableURLRewriting             bool          `envconfig:"ENABLE_URL_REWRITING"`
+	EnableCloudflareSDK            bool          `envconfig:"ENABLE_CLOUDFLARE_SDK"`
 	DisableGraphDBDependency       bool          `envconfig:"DISABLE_GRAPH_DB_DEPENDENCY"`
 	KafkaVersion                   string        `envconfig:"KAFKA_VERSION"`
 	DefaultMaxLimit                int           `envconfig:"DEFAULT_MAXIMUM_LIMIT"`
@@ -59,6 +60,9 @@ type Configuration struct {
 	OTServiceName                  string        `envconfig:"OTEL_SERVICE_NAME"`
 	OTBatchTimeout                 time.Duration `envconfig:"OTEL_BATCH_TIMEOUT"`
 	OtelEnabled                    bool          `envconfig:"OTEL_ENABLED"`
+	CloudflareZoneID               string        `envconfig:"CLOUDFLARE_ZONE_ID"`
+	CloudflareAPIToken             string        `envconfig:"CLOUDFLARE_API_TOKEN"             json:"-"`
+	CloudflareAPIURL               string        `envconfig:"CLOUDFLARE_API_URL"`
 	MongoConfig
 }
 
@@ -109,12 +113,17 @@ func Get() (*Configuration, error) {
 		EnablePermissionsAuth:          false,
 		EnableObservationEndpoint:      true,
 		EnableURLRewriting:             false,
+		EnableCloudflareSDK:            false,
 		DisableGraphDBDependency:       false,
 		KafkaVersion:                   "1.0.2",
 		DefaultMaxLimit:                1000,
 		DefaultLimit:                   20,
 		DefaultOffset:                  0,
-		MaxRequestOptions:              100, // Maximum number of options acceptable in an incoming Patch request. Compromise between one option per call (inefficient) and an order of 100k options per call, for census data (memory and computationally expensive)
+		MaxRequestOptions:              100,                                // Maximum number of options acceptable in an incoming Patch request. Compromise between one option per call (inefficient) and an order of 100k options per call, for census data (memory and computationally expensive)
+		CloudflareZoneID:               "9f1eec58caedd8e902395a065c120073", // this is not a real zone id, purely for local testing purposes as any 32 character length alphanumeric string will work
+		CloudflareAPIToken:             "test-token",
+		CloudflareAPIURL:               "http://cloud-flare-stub:22500",
+
 		MongoConfig: MongoConfig{
 			MongoDriverConfig: mongodriver.MongoDriverConfig{
 				ClusterEndpoint:               "localhost:27017",

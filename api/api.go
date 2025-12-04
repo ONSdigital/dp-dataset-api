@@ -10,6 +10,7 @@ import (
 
 	"github.com/ONSdigital/dp-authorisation/auth"
 	"github.com/ONSdigital/dp-dataset-api/application"
+	"github.com/ONSdigital/dp-dataset-api/cloudflare"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/dimension"
 	"github.com/ONSdigital/dp-dataset-api/instance"
@@ -77,10 +78,11 @@ type DatasetAPI struct {
 	smDatasetAPI              *application.StateMachineDatasetAPI
 	filesAPIClient            filesAPISDK.Clienter
 	authToken                 string
+	cloudflareClient          cloudflare.Clienter
 }
 
 // Setup creates a new Dataset API instance and register the API routes based on the application configuration.
-func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerators map[models.DatasetType]DownloadsGenerator, datasetPermissions, permissions AuthHandler, enableURLRewriting bool, smDatasetAPI *application.StateMachineDatasetAPI) *DatasetAPI {
+func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerators map[models.DatasetType]DownloadsGenerator, datasetPermissions, permissions AuthHandler, enableURLRewriting bool, smDatasetAPI *application.StateMachineDatasetAPI, cloudflareClient cloudflare.Clienter) *DatasetAPI {
 	api := &DatasetAPI{
 		dataStore:                 dataStore,
 		host:                      cfg.DatasetAPIURL,
@@ -100,6 +102,7 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		MaxRequestOptions:         cfg.MaxRequestOptions,
 		defaultLimit:              cfg.DefaultLimit,
 		smDatasetAPI:              smDatasetAPI,
+		cloudflareClient:          cloudflareClient,
 	}
 
 	paginator := pagination.NewPaginator(cfg.DefaultLimit, cfg.DefaultOffset, cfg.DefaultMaxLimit)

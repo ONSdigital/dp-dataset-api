@@ -3,12 +3,13 @@ package mongo
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	mim "github.com/ONSdigital/dp-mongodb-in-memory"
 	mongoDriver "github.com/ONSdigital/dp-mongodb/v3/mongodb"
+	testMongoContainer "github.com/testcontainers/testcontainers-go/modules/mongodb"
 )
 
 var (
@@ -19,8 +20,8 @@ var (
 	unpublishedStaticID  = "unpublished-static-id"
 )
 
-// getTestMongoDB initializes a MongoDB connection for use in tests
-func getTestMongoDB(ctx context.Context) (*Mongo, *mim.Server, error) {
+// getTestMongoDB initializes a MongoDB connection for use in tests using testcontainers
+func getTestMongoDB(ctx context.Context) (*Mongo, *testMongoContainer.MongoDBContainer, error) {
 	mongoVersion := "4.4.8"
 
 	cfg, err := config.Get()
@@ -28,28 +29,39 @@ func getTestMongoDB(ctx context.Context) (*Mongo, *mim.Server, error) {
 		return nil, nil, err
 	}
 
-	mongoServer, err := mim.Start(ctx, mongoVersion)
+	mongoContainer, err := testMongoContainer.Run(ctx, fmt.Sprintf("mongo:%s", mongoVersion))
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to start mongo container: %w", err)
 	}
-	mongoConfig := getTestMongoDriverConfig(mongoServer, cfg.Database, cfg.Collections)
+
+	mongoConfig := getTestMongoDriverConfig(mongoContainer, cfg.Database, cfg.Collections)
 	conn, err := mongoDriver.Open(mongoConfig)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to open mongo connection: %w", err)
 	}
 
 	return &Mongo{
 		MongoConfig: cfg.MongoConfig,
 		Connection:  conn,
-	}, mongoServer, nil
+	}, mongoContainer, nil
 }
 
-// Custom config to work with mongo in memory
-func getTestMongoDriverConfig(mongoServer *mim.Server, database string, collections map[string]string) *mongoDriver.MongoDriverConfig {
+// Custom config to work with testcontainers
+func getTestMongoDriverConfig(mongoContainer *testMongoContainer.MongoDBContainer, database string, collections map[string]string) *mongoDriver.MongoDriverConfig {
+	connectionString, err := mongoContainer.ConnectionString(context.Background())
+	if err != nil {
+		panic(fmt.Sprintf("failed to get connection string: %v", err))
+	}
+
+	connStringURL, err := url.Parse(connectionString)
+	if err != nil {
+		panic(fmt.Sprintf("failed to parse connection string: %v", err))
+	}
+
 	return &mongoDriver.MongoDriverConfig{
 		ConnectTimeout:  5 * time.Second,
 		QueryTimeout:    5 * time.Second,
-		ClusterEndpoint: mongoServer.URI(),
+		ClusterEndpoint: connStringURL.Host,
 		Database:        database,
 		Collections:     collections,
 	}

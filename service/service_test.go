@@ -7,6 +7,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/ONSdigital/dp-dataset-api/cloudflare"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/service"
 	serviceMock "github.com/ONSdigital/dp-dataset-api/service/mock"
@@ -124,6 +125,9 @@ func TestRun(t *testing.T) {
 		Convey("Given that initialising MongoDB returns an error", func() {
 			initMock := &serviceMock.InitialiserMock{
 				DoGetMongoDBFunc: funcDoGetMongoDBErr,
+				DoGetCloudflareClientFunc: func(ctx context.Context, cfg *config.Configuration) (cloudflare.Clienter, error) {
+					return nil, nil
+				},
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
@@ -144,6 +148,9 @@ func TestRun(t *testing.T) {
 			initMock := &serviceMock.InitialiserMock{
 				DoGetMongoDBFunc: funcDoGetMongoDBOk,
 				DoGetGraphDBFunc: funcDoGetGraphDBErr,
+				DoGetCloudflareClientFunc: func(ctx context.Context, cfg *config.Configuration) (cloudflare.Clienter, error) {
+					return nil, nil
+				},
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
@@ -165,6 +172,9 @@ func TestRun(t *testing.T) {
 				DoGetMongoDBFunc:        funcDoGetMongoDBOk,
 				DoGetGraphDBFunc:        funcDoGetGraphDBOk,
 				DoGetFilesAPIClientFunc: funcDoGetFilesAPIClientErr,
+				DoGetCloudflareClientFunc: func(ctx context.Context, cfg *config.Configuration) (cloudflare.Clienter, error) {
+					return nil, nil
+				},
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
@@ -187,6 +197,9 @@ func TestRun(t *testing.T) {
 				DoGetGraphDBFunc:        funcDoGetGraphDBOk,
 				DoGetFilesAPIClientFunc: funcDoGetFilesAPIClientOk,
 				DoGetKafkaProducerFunc:  funcDoGetKafkaProducerErr,
+				DoGetCloudflareClientFunc: func(ctx context.Context, cfg *config.Configuration) (cloudflare.Clienter, error) {
+					return nil, nil
+				},
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
@@ -210,6 +223,9 @@ func TestRun(t *testing.T) {
 				DoGetFilesAPIClientFunc: funcDoGetFilesAPIClientOk,
 				DoGetKafkaProducerFunc:  funcDoGetKafkaProducerOk,
 				DoGetHealthCheckFunc:    funcDoGetHealthcheckErr,
+				DoGetCloudflareClientFunc: func(ctx context.Context, cfg *config.Configuration) (cloudflare.Clienter, error) {
+					return nil, nil
+				},
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
@@ -240,6 +256,9 @@ func TestRun(t *testing.T) {
 				DoGetKafkaProducerFunc:  funcDoGetKafkaProducerOk,
 				DoGetHealthCheckFunc: func(*config.Configuration, string, string, string) (service.HealthChecker, error) {
 					return hcMockAddFail, nil
+				},
+				DoGetCloudflareClientFunc: func(ctx context.Context, cfg *config.Configuration) (cloudflare.Clienter, error) {
+					return nil, nil
 				},
 			}
 			svcErrors := make(chan error, 1)
@@ -273,6 +292,9 @@ func TestRun(t *testing.T) {
 				DoGetKafkaProducerFunc:  funcDoGetKafkaProducerOk,
 				DoGetHealthCheckFunc:    funcDoGetHealthcheckOk,
 				DoGetHTTPServerFunc:     funcDoGetHTTPServer,
+				DoGetCloudflareClientFunc: func(ctx context.Context, cfg *config.Configuration) (cloudflare.Clienter, error) {
+					return nil, nil
+				},
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
@@ -312,6 +334,9 @@ func TestRun(t *testing.T) {
 				DoGetKafkaProducerFunc: funcDoGetKafkaProducerOk,
 				DoGetHealthCheckFunc:   funcDoGetHealthcheckOk,
 				DoGetHTTPServerFunc:    funcDoGetHTTPServer,
+				DoGetCloudflareClientFunc: func(ctx context.Context, cfg *config.Configuration) (cloudflare.Clienter, error) {
+					return nil, nil
+				},
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
@@ -347,6 +372,9 @@ func TestRun(t *testing.T) {
 				DoGetKafkaProducerFunc:  funcDoGetKafkaProducerOk,
 				DoGetHealthCheckFunc:    funcDoGetHealthcheckOk,
 				DoGetHTTPServerFunc:     funcDoGetFailingHTTPServer,
+				DoGetCloudflareClientFunc: func(ctx context.Context, cfg *config.Configuration) (cloudflare.Clienter, error) {
+					return nil, nil
+				},
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)

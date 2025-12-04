@@ -113,7 +113,7 @@ func TestGetAllStaticVersions(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		defer func() {
-			server.Stop(ctx)
+			server.Terminate(ctx)
 		}()
 
 		versions, err := setupVersionsTestData(ctx, mongoStore)
@@ -205,7 +205,7 @@ func TestDeleteStaticDatasetVersion(t *testing.T) {
 			mongoStore, server, err := getTestMongoDB(ctx)
 			So(err, ShouldBeNil)
 			defer func() {
-				server.Stop(ctx)
+				server.Terminate(ctx)
 			}()
 
 			versions, err := setupVersionsTestData(ctx, mongoStore)
@@ -233,7 +233,7 @@ func TestCheckEditionTitleExistsStatic(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		defer func() {
-			server.Stop(ctx)
+			server.Terminate(ctx)
 		}()
 
 		versions, err := setupVersionsTestData(ctx, mongo)

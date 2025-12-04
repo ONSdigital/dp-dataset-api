@@ -11,6 +11,7 @@ import (
 	"github.com/ONSdigital/dp-authorisation/auth"
 	"github.com/ONSdigital/dp-dataset-api/api"
 	"github.com/ONSdigital/dp-dataset-api/application"
+	"github.com/ONSdigital/dp-dataset-api/cloudflare"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/download"
 	adapter "github.com/ONSdigital/dp-dataset-api/kafka"
@@ -51,6 +52,7 @@ type Service struct {
 	generateCantabularDownloadsProducer kafka.IProducer
 	identityClient                      *clientsidentity.Client
 	filesAPIClient                      filesAPISDK.Clienter
+	cloudflareClient                    cloudflare.Clienter
 	server                              HTTPServer
 	healthCheck                         HealthChecker
 	api                                 *api.DatasetAPI
@@ -232,6 +234,10 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		return err
 	}
 
+	if err := svc.initCloudflareClient(ctx); err != nil {
+		log.Error(ctx, "failed to initialise cloudflare client, continuing without cache purging", err)
+	}
+
 	ds := store.DataStore{Backend: DatsetAPIStore{svc.mongoDB, svc.graphDB}}
 
 	// Get GenerateDownloads Kafka Producer
@@ -319,7 +325,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	datasetPermissions, permissions := getAuthorisationHandlers(ctx, svc.config)
 	sm := GetStateMachine(ctx, ds)
 	svc.smDS = application.Setup(ds, smDownloadGenerators, sm)
-	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions, enableURLRewriting, svc.smDS)
+	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions, enableURLRewriting, svc.smDS, svc.cloudflareClient)
 
 	// Set the files API client on the DatasetAPI after initialisation
 	if svc.config.EnablePrivateEndpoints && svc.filesAPIClient != nil {
@@ -378,6 +384,30 @@ func (svc *Service) initFilesAPIClient(ctx context.Context) error {
 	var err error
 	svc.filesAPIClient, err = svc.serviceList.GetFilesAPIClient(ctx, svc.config)
 	return err
+}
+
+func (svc *Service) initCloudflareClient(ctx context.Context) error {
+	if svc.config.CloudflareAPIToken == "" || svc.config.CloudflareZoneID == "" {
+		log.Info(ctx, "cloudflare integration disabled: missing API token or zone ID")
+		svc.cloudflareClient = nil
+		return nil
+	}
+
+	log.Info(ctx, "initialising cloudflare client", log.Data{
+		"api_url": svc.config.CloudflareAPIURL,
+		"zone_id": svc.config.CloudflareZoneID,
+	})
+
+	var err error
+	svc.cloudflareClient, err = svc.serviceList.GetCloudflareClient(ctx, svc.config)
+
+	if err != nil {
+		log.Error(ctx, "failed to create cloudflare client", err)
+		return err
+	}
+
+	log.Info(ctx, "cloudflare client initialised successfully")
+	return nil
 }
 
 func createURLBuilder(cfg *config.Configuration) (*url.Builder, error) {

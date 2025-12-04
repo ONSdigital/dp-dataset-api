@@ -500,7 +500,7 @@ func TestIsStaticDataset(t *testing.T) {
 		mongo, server, err := getTestMongoDB(ctx)
 		So(err, ShouldBeNil)
 		defer func() {
-			server.Stop(ctx)
+			server.Terminate(ctx)
 		}()
 
 		Convey("When IsStaticDataset is called with a static dataset ID", func() {
