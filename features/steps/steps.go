@@ -55,6 +55,7 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the response header "([^"]*)" should not be empty$`, c.theResponseHeaderShouldNotBeEmpty)
 	ctx.Step(`^the dataset "([^"]*)" should have next equal to current$`, c.theDatasetShouldHaveNextEqualToCurrent)
 	ctx.Step(`^the "([^"]*)" feature flag is "([^"]*)"$`, c.theFeatureFlagIs)
+	ctx.Step(`^these kafka messages are produced:$`, c.theseKafkaMessagesAreProduced)
 }
 
 func (c *DatasetComponent) theFeatureFlagIs(flagName, status string) error {
@@ -271,6 +272,32 @@ func (c *DatasetComponent) theseCantabularGeneratorDownloadsEventsAreProduced(ev
 		return fmt.Errorf("-got +expected)\n%s", diff)
 	}
 
+	return nil
+}
+
+func (c *DatasetComponent) theseKafkaMessagesAreProduced(events *godog.Table) error {
+	messages := []string{}
+	listen := true
+
+	for listen {
+		select {
+		case <-time.After(10 * time.Second):
+			listen = false
+		case <-c.consumer.Channels().Closer:
+			return errors.New("closer channel closed")
+		case msg, ok := <-c.consumer.Channels().Upstream:
+			if !ok {
+				return errors.New("upstream channel closed")
+			}
+			messages = append(messages, string(msg.GetData()))
+			msg.Commit()
+			msg.Release()
+		}
+	}
+
+	if diff := cmp.Diff(messages, events); diff != "" {
+		return fmt.Errorf("-got +expected)\n%s", diff)
+	}
 	return nil
 }
 
