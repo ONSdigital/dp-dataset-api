@@ -4,7 +4,7 @@
 
 This SDK provides a client for interacting with the dp-dataset-api. It is intended to be consumed by services that require endpoints from the dp-dataset-api. It also provides healthcheck functionality, mocks and structs for easy integration and testing.
 
-## Available client command
+## Available client methods
 
 | Name | Description |
 |------|-------------|
