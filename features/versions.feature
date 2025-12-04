@@ -467,8 +467,7 @@ Feature: Dataset API
     And URL rewriting is enabled
     And I set the "X-Forwarded-Host" header to "api.example.com"
     And I set the "X-Forwarded-Path-Prefix" header to "v1"
-    And I am identified as "user@ons.gov.uk"
-    And I am authorised
+    And I am an admin user
     When I GET "/datasets/population-estimates/editions/hello/versions"
     Then I should receive the following JSON response with status "200":
             """
@@ -560,8 +559,7 @@ Feature: Dataset API
 
   Scenario: GET /datasets/{id}/editions/{edition}/versions in private mode returns all versions
     Given private endpoints are enabled
-    And I am identified as "user@ons.gov.uk"
-    And I am authorised
+    And I am an admin user
     When I GET "/datasets/population-estimates/editions/hello/versions"
     Then I should receive the following JSON response with status "200":
             """
@@ -653,8 +651,7 @@ Feature: Dataset API
 
   Scenario: GET /datasets/test-static/editions/test-edition-static-approved/versions in private mode returns all versions
     Given private endpoints are enabled
-    And I am identified as "user@ons.gov.uk"
-    And I am authorised
+    And I am an admin user
     When I GET "/datasets/test-static/editions/test-edition-static-approved/versions"
     Then I should receive the following JSON response with status "200":
             """
@@ -790,8 +787,7 @@ Feature: Dataset API
     And URL rewriting is enabled
     And I set the "X-Forwarded-Host" header to "api.example.com"
     And I set the "X-Forwarded-Path-Prefix" header to "v1"
-    And I am identified as "user@ons.gov.uk"
-    And I am authorised
+    And I am an admin user
     When I GET "/datasets/population-estimates/editions/hello/versions/2"
     Then I should receive the following JSON response with status "200":
         """
@@ -824,8 +820,7 @@ Feature: Dataset API
 
   Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} in private mode returns the version
     Given private endpoints are enabled
-    And I am identified as "user@ons.gov.uk"
-    And I am authorised
+    And I am an admin user
     When I GET "/datasets/population-estimates/editions/hello/versions/2"
     Then I should receive the following JSON response with status "200":
         """
@@ -858,8 +853,7 @@ Feature: Dataset API
 
   Scenario: PUT versions for CMD dataset produces Kafka event and returns OK
     Given private endpoints are enabled
-    And I am identified as "user@ons.gov.uk"
-    And I am authorised
+    And I am an admin user
     And I have a real kafka container with topic "filter-job-submitted"
     When I PUT "/datasets/population-estimates/editions/hellov2/versions/3"
             """
@@ -898,8 +892,7 @@ Feature: Dataset API
 
   Scenario: PUT versions for Cantabular dataset produces Kafka event and returns OK
     Given private endpoints are enabled
-    And I am identified as "user@ons.gov.uk"
-    And I am authorised
+    And I am an admin user
     And I have a real kafka container with topic "cantabular-export-start"
     When I PUT "/datasets/test-cantabular-dataset-1/editions/2021/versions/1"
             """
@@ -938,8 +931,7 @@ Feature: Dataset API
 
   Scenario: PUT published version for Cantabular dataset produces Kafka event and returns OK
     Given private endpoints are enabled
-    And I am identified as "user@ons.gov.uk"
-    And I am authorised
+    And I am an admin user
     And I have a real kafka container with topic "cantabular-export-start"
     And these versions need to be published:
             """
@@ -996,8 +988,7 @@ Feature: Dataset API
         """
     Scenario: PUT version fails when trying to update edition-id on cantabular dataset
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I PUT "/datasets/test-cantabular-dataset-1/editions/2021/versions/1"
             """
             {
@@ -1014,8 +1005,7 @@ Feature: Dataset API
 
     Scenario: PUT version fails when trying to update edition-id on filterable dataset
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I PUT "/datasets/population-estimates/editions/hello/versions/2"
             """
             {

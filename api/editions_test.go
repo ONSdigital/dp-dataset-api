@@ -8,11 +8,13 @@ import (
 
 	"time"
 
+	authMock "github.com/ONSdigital/dp-authorisation/v2/authorisation/mock"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/dp-dataset-api/utils"
+	"github.com/ONSdigital/dp-permissions-api/sdk"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -42,6 +44,58 @@ var exampleStaticVersion = &models.Version{
 	State:       models.AssociatedState,
 }
 
+func TestGetEditionsForbidden(t *testing.T) {
+	t.Parallel()
+	Convey("When a request to get editions is forbidden, then no expected database calls are made", t, func() {
+
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", http.NoBody)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusForbidden)
+				}
+
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusForbidden)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
+	})
+}
+
+func TestGetEditionsUnauthorised(t *testing.T) {
+	t.Parallel()
+	Convey("When a request to get editions is unauthorised, then no expected database calls are made", t, func() {
+
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", http.NoBody)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusUnauthorized)
+				}
+
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
+	})
+}
+
 func TestGetEditionsReturnsOK(t *testing.T) {
 	t.Parallel()
 	Convey("get editions delegates offset and limit to db func and returns results list", t, func() {
@@ -62,8 +116,16 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			},
 		}
 
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*sdk.EntityData, error) {
+				return nil, sdk.ErrFailedToParsePermissionsResponse
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		list, totalCount, err := api.getEditions(w, r, 20, 0)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -254,8 +316,16 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			},
 		}
 
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*sdk.EntityData, error) {
+				return &sdk.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		_, totalCount, _ := api.getEditions(w, r, 20, 0)
 
 		editions, err := utils.MapVersionsToEditionUpdate(publishedLatestVersion, nil)
@@ -474,8 +544,16 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			},
 		}
 
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*sdk.EntityData, error) {
+				return &sdk.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		_, totalCount, _ := api.getEditions(w, r, 20, 0)
 
 		editions, err := utils.MapVersionsToEditionUpdate(publishedLatestVersion, unpublishedLatestVersion)
@@ -503,14 +581,19 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*sdk.EntityData, error) {
+				return &sdk.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
@@ -529,14 +612,19 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*sdk.EntityData, error) {
+				return &sdk.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
@@ -558,14 +646,19 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*sdk.EntityData, error) {
+				return &sdk.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
@@ -586,14 +679,19 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*sdk.EntityData, error) {
+				return &sdk.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
@@ -614,17 +712,74 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*sdk.EntityData, error) {
+				return &sdk.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionsNotFound.Error())
 		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetAllStaticVersionsCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestGetEditionForbidden(t *testing.T) {
+	t.Parallel()
+	Convey("A request to get edition is forbidden, then no expected database calls are made", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678", http.NoBody)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusForbidden)
+				}
+
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusForbidden)
+		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetLatestVersionStaticCalls()), ShouldEqual, 0)
+	})
+}
+
+func TestGetEditionUnauthorised(t *testing.T) {
+	t.Parallel()
+	Convey("A request to get edition is not authorised, then no expected database calls are made", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678", http.NoBody)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusUnauthorized)
+				}
+
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetLatestVersionStaticCalls()), ShouldEqual, 0)
 	})
 }
 
@@ -642,14 +797,19 @@ func TestGetEditionReturnsOK(t *testing.T) {
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*sdk.EntityData, error) {
+				return &sdk.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetLatestVersionStaticCalls()), ShouldEqual, 0)
@@ -667,14 +827,19 @@ func TestGetEditionReturnsOK(t *testing.T) {
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*sdk.EntityData, error) {
+				return nil, sdk.ErrFailedToParsePermissionsResponse
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetLatestVersionStaticCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
@@ -692,14 +857,19 @@ func TestGetEditionReturnsError(t *testing.T) {
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*sdk.EntityData, error) {
+				return &sdk.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
@@ -716,14 +886,19 @@ func TestGetEditionReturnsError(t *testing.T) {
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*sdk.EntityData, error) {
+				return &sdk.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
 		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
@@ -743,14 +918,19 @@ func TestGetEditionReturnsError(t *testing.T) {
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*sdk.EntityData, error) {
+				return &sdk.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
 		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
@@ -769,14 +949,19 @@ func TestGetEditionReturnsError(t *testing.T) {
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*sdk.EntityData, error) {
+				return nil, sdk.ErrFailedToParsePermissionsResponse
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
 		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
@@ -795,14 +980,19 @@ func TestGetEditionReturnsError(t *testing.T) {
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*sdk.EntityData, error) {
+				return nil, sdk.ErrFailedToParsePermissionsResponse
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
 		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)

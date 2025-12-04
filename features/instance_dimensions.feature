@@ -112,8 +112,7 @@ Feature: Dataset API
 
     Scenario: GET /instances/test-item-1/dimensions in private mode returns first page of 20 instance dimensions
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         And I set the "X-Forwarded-Host" header to "api.example.com"
         And I set the "X-Forwarded-Path-Prefix" header to "v1"
         When I GET "/instances/test-item-1/dimensions"
@@ -203,8 +202,7 @@ Feature: Dataset API
 
     Scenario: GET /instances/test-item-1/dimensions?offset=3&limit=7 in private mode returns the paginated instance dimensions values according to offset and limit
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         And I set the "X-Forwarded-Host" header to "api.example.com"
         And I set the "X-Forwarded-Path-Prefix" header to "v1"
         When I GET "/instances/test-item-1/dimensions?offset=3&limit=7"
@@ -240,8 +238,7 @@ Feature: Dataset API
 
     Scenario: GET /instances/inexistent/dimensions in private mode returns a notFound status code
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I GET "/instances/inexistent/dimensions"
         Then the HTTP status code should be "404"
         And I should receive the following response:
@@ -251,16 +248,14 @@ Feature: Dataset API
 
     Scenario: GET /instances/test-item-1/dimensions in private mode with the wrong If-Match header value returns conflict
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         And I set the "If-Match" header to "wrongValue"
         When I GET "/instances/test-item-1/dimensions"
         Then the HTTP status code should be "409"
 
     Scenario: GET /instances/test-item-1/dimensions/time/options in private mode returns the first page of 20 instance dimensions options
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I GET "/instances/test-item-1/dimensions/time/options"
         Then I should receive the following JSON response with status "200":
             """
@@ -279,8 +274,7 @@ Feature: Dataset API
 
     Scenario: GET /instances/test-item-1/dimensions/time/options?offset=1&limit=1 in private mode returns the paginated instance dimensions options according to the provided offset and limit
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I GET "/instances/test-item-1/dimensions/time/options?offset=1&limit=1"
         Then I should receive the following JSON response with status "200":
             """
@@ -297,8 +291,7 @@ Feature: Dataset API
 
     Scenario: GET /instances/inexistent/dimensions/time/options in private mode returns a notFound status code
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I GET "/instances/inexistent/dimensions/time/options"
         Then the HTTP status code should be "404"
         And I should receive the following response:
@@ -308,8 +301,7 @@ Feature: Dataset API
 
     Scenario: GET /instances/test-item-1/dimensions/inexistent/options in private mode returns a notFound status code
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I GET "/instances/test-item-1/dimensions/inexistent/options"
         Then the HTTP status code should be "404"
         And I should receive the following response:
@@ -319,8 +311,7 @@ Feature: Dataset API
 
     Scenario: GET /instances/test-item-1/dimensions/time/options in private mode with the wrong If-Match header value returns conflict
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         And I set the "If-Match" header to "wrongValue"
         When I GET "/instances/test-item-1/dimensions/time/options"
         Then the HTTP status code should be "409"

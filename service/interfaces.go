@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/ONSdigital/dp-authorisation/v2/authorisation"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
@@ -22,6 +23,7 @@ type Initialiser interface {
 	DoGetKafkaProducer(ctx context.Context, cfg *config.Configuration, topic string) (kafka.IProducer, error)
 	DoGetGraphDB(ctx context.Context) (store.GraphDB, Closer, error)
 	DoGetMongoDB(ctx context.Context, cfg config.MongoConfig) (store.MongoDB, error)
+	DoGetAuthorisationMiddleware(ctx context.Context, authorisationConfig *authorisation.Config) (authorisation.Middleware, error)
 }
 
 // HTTPServer defines the required methods from the HTTP server

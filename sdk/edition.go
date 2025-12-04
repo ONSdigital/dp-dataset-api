@@ -91,7 +91,7 @@ func (c *Client) GetEditions(ctx context.Context, headers Headers, datasetID str
 	}
 
 	if body["items"] != nil {
-		if _, ok := body["items"].([]interface{})[0].(map[string]interface{})["next"]; ok && headers.UserAccessToken != "" || headers.ServiceToken != "" {
+		if _, ok := body["items"].([]interface{})[0].(map[string]interface{})["next"]; ok && headers.AccessToken != "" {
 			var items []map[string]interface{}
 			for _, item := range body["items"].([]interface{}) {
 				items = append(items, item.(map[string]interface{})["next"].(map[string]interface{}))

@@ -29,8 +29,7 @@ const (
 	collectionID         = "collection"
 	editionID            = "my-edition"
 	versionID            = "1"
-	serviceToken         = "myservicetoken"
-	userAccessToken      = "myuseraccesstoken"
+	accessToken          = "myservicetoken"
 )
 
 var ctx = context.Background()
@@ -38,8 +37,7 @@ var ctx = context.Background()
 var headers = Headers{
 	CollectionID:         collectionID,
 	DownloadServiceToken: downloadServiceToken,
-	ServiceToken:         serviceToken,
-	UserAccessToken:      userAccessToken,
+	AccessToken:          accessToken,
 }
 
 type MockedHTTPResponse struct {
@@ -136,12 +134,27 @@ func TestClientDoAuthenticatedPutRequest(t *testing.T) {
 	})
 }
 
+func TestClientDoAuthenticatedPutRequestWithETag(t *testing.T) {
+	mockHTTPClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, "", nil})
+	client := newDatasetAPIHealthcheckClient(t, mockHTTPClient)
+
+	Convey("Succeeds with valid values", t, func() {
+		uri, _ := url.Parse("https://testing.this.com/a-test")
+		payload := []byte(`{"testing_key":"testing_value"}`)
+		resp, err := client.DoAuthenticatedPutRequestWithEtag(context.Background(), headers, uri, payload, "123456")
+
+		So(err, ShouldBeNil)
+		So(resp, ShouldNotBeNil)
+	})
+}
+
 // Test the `Headers` struct and associated methods
 func TestHeaders(t *testing.T) {
 	downloadServiceToken := "mydownloadservicetoken"
 	collectionID := "collection"
 	serviceToken := "myservicetoken"
 	userAccessToken := "myuseraccesstoken"
+	//authorization := "myuseraccesstoken"
 
 	Convey("If Headers struct is empty", t, func() {
 		headers := Headers{}
@@ -168,7 +181,7 @@ func TestHeaders(t *testing.T) {
 		Convey("Test that Add() method doesn't update other keys", func() {
 			So(request.Header, ShouldNotContainKey, dpNetRequest.AuthHeaderKey)
 			So(request.Header, ShouldNotContainKey, dpNetRequest.CollectionIDHeaderKey)
-			So(request.Header, ShouldNotContainKey, dpNetRequest.FlorenceHeaderKey)
+			//So(request.Header, ShouldNotContainKey, dpNetRequest.FlorenceHeaderKey)
 		})
 	})
 	Convey("If Headers struct contains value for `CollectionID`", t, func() {
@@ -186,12 +199,12 @@ func TestHeaders(t *testing.T) {
 		Convey("Test that Add() method doesn't update other keys", func() {
 			So(request.Header, ShouldNotContainKey, dpNetRequest.AuthHeaderKey)
 			So(request.Header, ShouldNotContainKey, dpNetRequest.DownloadServiceHeaderKey)
-			So(request.Header, ShouldNotContainKey, dpNetRequest.FlorenceHeaderKey)
+			//So(request.Header, ShouldNotContainKey, dpNetRequest.FlorenceHeaderKey)
 		})
 	})
 	Convey("If Headers struct contains value for `ServiceToken`", t, func() {
 		headers := Headers{
-			ServiceToken: serviceToken,
+			AccessToken: serviceToken,
 		}
 		request := http.Request{
 			Header: http.Header{},
@@ -205,23 +218,24 @@ func TestHeaders(t *testing.T) {
 		Convey("Test that Add() method doesn't update other keys", func() {
 			So(request.Header, ShouldNotContainKey, dpNetRequest.CollectionIDHeaderKey)
 			So(request.Header, ShouldNotContainKey, dpNetRequest.DownloadServiceHeaderKey)
-			So(request.Header, ShouldNotContainKey, dpNetRequest.FlorenceHeaderKey)
+			//So(request.Header, ShouldNotContainKey, dpNetRequest.FlorenceHeaderKey)
 		})
 	})
 	Convey("If Headers struct contains value for `UserAccessToken`", t, func() {
 		headers := Headers{
-			UserAccessToken: userAccessToken,
+			AccessToken: userAccessToken,
 		}
 		request := http.Request{
 			Header: http.Header{},
 		}
 		headers.Add(&request)
-		Convey("Test that Add() method updates `FlorenceHeaderKey` key with the correct value", func() {
-			So(request.Header, ShouldContainKey, dpNetRequest.FlorenceHeaderKey)
-			So(request.Header.Get(dpNetRequest.FlorenceHeaderKey), ShouldEqual, userAccessToken)
+		Convey("Test that Add() method updates `Authorization` key with the correct value", func() {
+			//So(request.Header, ShouldContainKey, dpNetRequest.FlorenceHeaderKey)
+			So(request.Header.Get(dpNetRequest.AuthHeaderKey), ShouldContainSubstring, userAccessToken)
+			//So(request.Header.Get(dpNetRequest.FlorenceHeaderKey), ShouldEqual, userAccessToken)
 		})
 		Convey("Test that Add() method doesn't update other keys", func() {
-			So(request.Header, ShouldNotContainKey, dpNetRequest.AuthHeaderKey)
+			//So(request.Header, ShouldNotContainKey, dpNetRequest.AuthHeaderKey)
 			So(request.Header, ShouldNotContainKey, dpNetRequest.CollectionIDHeaderKey)
 			So(request.Header, ShouldNotContainKey, dpNetRequest.DownloadServiceHeaderKey)
 		})

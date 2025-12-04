@@ -6,6 +6,10 @@ import (
 	"net/http"
 	"time"
 
+	permissionsSDK "github.com/ONSdigital/dp-permissions-api/sdk"
+
+	"github.com/ONSdigital/dp-authorisation/v2/authorisation"
+	"github.com/ONSdigital/dp-authorisation/v2/authorisationtest"
 	componenttest "github.com/ONSdigital/dp-component-test"
 	"github.com/ONSdigital/dp-component-test/utils"
 	"github.com/ONSdigital/dp-dataset-api/config"
@@ -22,17 +26,18 @@ import (
 )
 
 type DatasetComponent struct {
-	ErrorFeature   componenttest.ErrorFeature
-	apiFeature     *componenttest.APIFeature
-	svc            *service.Service
-	errorChan      chan error
-	MongoClient    *mongo.Mongo
-	Config         *config.Configuration
-	HTTPServer     *http.Server
-	ServiceRunning bool
-	consumer       kafka.IConsumerGroup
-	producer       kafka.IProducer
-	initialiser    service.Initialiser
+	ErrorFeature            componenttest.ErrorFeature
+	apiFeature              *componenttest.APIFeature
+	svc                     *service.Service
+	errorChan               chan error
+	MongoClient             *mongo.Mongo
+	Config                  *config.Configuration
+	HTTPServer              *http.Server
+	ServiceRunning          bool
+	consumer                kafka.IConsumerGroup
+	producer                kafka.IProducer
+	initialiser             service.Initialiser
+	AuthorisationMiddleware authorisation.Middleware
 }
 
 func NewDatasetComponent(mongoURI, zebedeeURL string) (*DatasetComponent, error) {
@@ -53,9 +58,10 @@ func NewDatasetComponent(mongoURI, zebedeeURL string) (*DatasetComponent, error)
 
 	log.Info(context.Background(), "configuration for component test", log.Data{"config": c.Config})
 
-	c.Config.ZebedeeURL = zebedeeURL
+	fakePermissionsAPI := setupFakePermissionsAPI()
+	c.Config.AuthConfig.PermissionsAPIURL = fakePermissionsAPI.URL()
 
-	c.Config.EnablePermissionsAuth = false
+	c.Config.ZebedeeURL = zebedeeURL
 
 	mongodb := &mongo.Mongo{
 		MongoConfig: config.MongoConfig{
@@ -233,21 +239,125 @@ func (c *DatasetComponent) DoGetGraphDBOk(context.Context) (store.GraphDB, servi
 		nil
 }
 
+func (c *DatasetComponent) DoGetAuthorisationMiddleware(ctx context.Context, cfg *authorisation.Config) (authorisation.Middleware, error) {
+	middleware, err := authorisation.NewMiddlewareFromConfig(ctx, cfg, cfg.JWTVerificationPublicKeys)
+	if err != nil {
+		return nil, err
+	}
+
+	c.AuthorisationMiddleware = middleware
+	return c.AuthorisationMiddleware, nil
+}
+
 func (c *DatasetComponent) setInitialiserMock() {
 	c.initialiser = &serviceMock.InitialiserMock{
-		DoGetMongoDBFunc:       c.DoGetMongoDB,
-		DoGetGraphDBFunc:       c.DoGetGraphDBOk,
-		DoGetKafkaProducerFunc: c.DoGetMockedKafkaProducerOk,
-		DoGetHealthCheckFunc:   c.DoGetHealthcheckOk,
-		DoGetHTTPServerFunc:    c.DoGetHTTPServer,
+		DoGetMongoDBFunc:                 c.DoGetMongoDB,
+		DoGetGraphDBFunc:                 c.DoGetGraphDBOk,
+		DoGetKafkaProducerFunc:           c.DoGetMockedKafkaProducerOk,
+		DoGetHealthCheckFunc:             c.DoGetHealthcheckOk,
+		DoGetHTTPServerFunc:              c.DoGetHTTPServer,
+		DoGetAuthorisationMiddlewareFunc: c.DoGetAuthorisationMiddleware,
 	}
 }
 func (c *DatasetComponent) setInitialiserRealKafka() {
 	c.initialiser = &serviceMock.InitialiserMock{
-		DoGetMongoDBFunc:       c.DoGetMongoDB,
-		DoGetGraphDBFunc:       c.DoGetGraphDBOk,
-		DoGetKafkaProducerFunc: c.DoGetKafkaProducer,
-		DoGetHealthCheckFunc:   c.DoGetHealthcheckOk,
-		DoGetHTTPServerFunc:    c.DoGetHTTPServer,
+		DoGetMongoDBFunc:                 c.DoGetMongoDB,
+		DoGetGraphDBFunc:                 c.DoGetGraphDBOk,
+		DoGetKafkaProducerFunc:           c.DoGetKafkaProducer,
+		DoGetHealthCheckFunc:             c.DoGetHealthcheckOk,
+		DoGetHTTPServerFunc:              c.DoGetHTTPServer,
+		DoGetAuthorisationMiddlewareFunc: c.DoGetAuthorisationMiddleware,
+	}
+}
+
+func setupFakePermissionsAPI() *authorisationtest.FakePermissionsAPI {
+	fakePermissionsAPI := authorisationtest.NewFakePermissionsAPI()
+	dataset := getPermissionsDataset()
+	fakePermissionsAPI.Reset()
+	if err := fakePermissionsAPI.UpdatePermissionsBundleResponse(dataset); err != nil {
+		log.Error(context.Background(), "failed to update permissions bundle response", err)
+	}
+	return fakePermissionsAPI
+}
+
+func getPermissionsDataset() *permissionsSDK.Bundle {
+	return &permissionsSDK.Bundle{
+		"datasets:read": { // role
+			"groups/role-admin": { // group
+				{
+					ID: "1", // policy
+				},
+			},
+		},
+		"datasets:create": {
+			"groups/role-admin": {
+				{
+					ID: "1",
+				},
+			},
+		},
+		"datasets:update": {
+			"groups/role-admin": {
+				{
+					ID: "1",
+				},
+			},
+		},
+		"datasets:delete": {
+			"groups/role-admin": {
+				{
+					ID: "1",
+				},
+			},
+		},
+		"dataset-editions-versions:delete": {
+			"groups/role-admin": {
+				{
+					ID: "1",
+				},
+			},
+		},
+		"dataset-editions-versions:create": {
+			"groups/role-admin": {
+				{
+					ID: "1",
+				},
+			},
+		},
+		"dataset-editions-versions:read": {
+			"groups/role-admin": {
+				{
+					ID: "1",
+				},
+			},
+		},
+		"dataset-editions-versions:update": {
+			"groups/role-admin": {
+				{
+					ID: "1",
+				},
+			},
+		},
+		"dataset-instances:create": {
+			"groups/role-admin": {
+				{
+					ID: "1",
+				},
+			},
+		},
+		"dataset-instances:read": {
+			"groups/role-admin": {
+				{
+					ID: "1",
+				},
+			},
+		},
+		"dataset-instances:update": {
+			"groups/role-admin": {
+				{
+					ID: "1",
+				},
+			},
+		},
 	}
 }

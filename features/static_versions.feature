@@ -150,8 +150,7 @@ Feature: Dataset API
         
     Scenario: GET /dataset-editions returns all versions and returns 200
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I GET "/dataset-editions"
         Then I should receive the following JSON response with status "200":
             """
@@ -245,8 +244,7 @@ Feature: Dataset API
 
     Scenario: GET /dataset-editions?state=associated returns all associated versions and returns 200
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I GET "/dataset-editions?state=associated"
         Then I should receive the following JSON response with status "200":
             """
@@ -288,8 +286,7 @@ Feature: Dataset API
     
     Scenario: GET /dataset-editions?published=true returns published versions only and returns 200
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I GET "/dataset-editions?published=true"
         Then I should receive the following JSON response with status "200":
             """
@@ -318,8 +315,7 @@ Feature: Dataset API
 
     Scenario: GET /dataset-editions?published=false returns no published versions only and returns 200
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I GET "/dataset-editions?published=false"
         Then I should receive the following JSON response with status "200":
             """
@@ -400,8 +396,7 @@ Feature: Dataset API
 
     Scenario: GET /dataset-editions invalid published parameter
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I GET "/dataset-editions?published=123"
         Then the HTTP status code should be "400"
         And I should receive the following response:
@@ -411,8 +406,7 @@ Feature: Dataset API
     
     Scenario: GET /dataset-editions with state and published parameters
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I GET "/dataset-editions?published=true&state=associated"
         Then the HTTP status code should be "400"
         And I should receive the following response:
@@ -422,8 +416,7 @@ Feature: Dataset API
     
     Scenario: GET /dataset-editions returns 404 when there are no editions of static datasets
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         And there are no datasets
         When I GET "/dataset-editions"
         Then the HTTP status code should be "404"
@@ -434,8 +427,7 @@ Feature: Dataset API
     
     Scenario: GET /dataset-editions?state=associated returns 404 when there are no editions of static datasets that match the given state
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         And there are no datasets
         And I have these static versions:
             """

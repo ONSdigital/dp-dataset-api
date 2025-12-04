@@ -7,9 +7,10 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/ONSdigital/dp-api-clients-go/v2/files"
-	"github.com/ONSdigital/dp-authorisation/auth"
+	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
 	"github.com/ONSdigital/dp-dataset-api/application"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/dimension"
@@ -18,10 +19,12 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/pagination"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/url"
-	dphandlers "github.com/ONSdigital/dp-net/v3/handlers"
 	dprequest "github.com/ONSdigital/dp-net/v3/request"
+	"github.com/ONSdigital/dp-permissions-api/sdk"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
+
+	auth "github.com/ONSdigital/dp-authorisation/v2/authorisation"
 )
 
 const (
@@ -34,10 +37,19 @@ const (
 var (
 	trueStringified = strconv.FormatBool(true)
 
-	createPermission = auth.Permissions{Create: true}
-	readPermission   = auth.Permissions{Read: true}
-	updatePermission = auth.Permissions{Update: true}
-	deletePermission = auth.Permissions{Delete: true}
+	datasetCreatePermission = "datasets:create"
+	datasetReadPermission   = "datasets:read"
+	datasetUpdatePermission = "datasets:update"
+	datasetDeletePermission = "datasets:delete"
+
+	datasetEditionVersionCreatePermission = "dataset-editions-versions:create"
+	datasetEditionVersionReadPermission   = "dataset-editions-versions:read"
+	datasetEditionVersionUpdatePermission = "dataset-editions-versions:update"
+	datasetEditionVersionDeletePermission = "dataset-editions-versions:delete"
+
+	datasetInstanceCreatePermission = "dataset-instances:create"
+	datasetInstanceReadPermission   = "dataset-instances:read"
+	datasetInstanceUpdatePermission = "dataset-instances:update"
 )
 
 // API provides an interface for the routes
@@ -48,11 +60,6 @@ type API interface {
 // DownloadsGenerator pre generates full file downloads for the specified dataset/edition/version
 type DownloadsGenerator interface {
 	Generate(ctx context.Context, datasetID, instanceID, edition, version string) error
-}
-
-// AuthHandler provides authorisation checks on requests
-type AuthHandler interface {
-	Require(required auth.Permissions, handler http.HandlerFunc) http.HandlerFunc
 }
 
 // DatasetAPI manages importing filters against a dataset
@@ -68,18 +75,19 @@ type DatasetAPI struct {
 	enablePrivateEndpoints    bool
 	enableDetachDataset       bool
 	enableDeleteStaticVersion bool
-	datasetPermissions        AuthHandler
-	permissions               AuthHandler
+	authMiddleware            auth.Middleware
 	instancePublishedChecker  *instance.PublishCheck
 	versionPublishedChecker   *PublishCheck
 	MaxRequestOptions         int
 	smDatasetAPI              *application.StateMachineDatasetAPI
 	filesAPIClient            *files.Client
 	authToken                 string
+	permissionsChecker        auth.PermissionsChecker
+	idClient                  *clientsidentity.Client
 }
 
 // Setup creates a new Dataset API instance and register the API routes based on the application configuration.
-func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerators map[models.DatasetType]DownloadsGenerator, datasetPermissions, permissions AuthHandler, enableURLRewriting bool, smDatasetAPI *application.StateMachineDatasetAPI) *DatasetAPI {
+func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerators map[models.DatasetType]DownloadsGenerator, authMiddleware auth.Middleware, enableURLRewriting bool, smDatasetAPI *application.StateMachineDatasetAPI, permissionsChecker auth.PermissionsChecker, idClient *clientsidentity.Client) *DatasetAPI {
 	api := &DatasetAPI{
 		dataStore:                 dataStore,
 		host:                      cfg.DatasetAPIURL,
@@ -92,12 +100,13 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		enablePrivateEndpoints:    cfg.EnablePrivateEndpoints,
 		enableDetachDataset:       cfg.EnableDetachDataset,
 		enableDeleteStaticVersion: cfg.EnableDeleteStaticVersion,
-		datasetPermissions:        datasetPermissions,
-		permissions:               permissions,
+		authMiddleware:            authMiddleware,
 		versionPublishedChecker:   nil,
 		instancePublishedChecker:  nil,
 		MaxRequestOptions:         cfg.MaxRequestOptions,
 		smDatasetAPI:              smDatasetAPI,
+		permissionsChecker:        permissionsChecker,
+		idClient:                  idClient,
 	}
 
 	paginator := pagination.NewPaginator(cfg.DefaultLimit, cfg.DefaultOffset, cfg.DefaultMaxLimit)
@@ -230,133 +239,105 @@ func contextAndErrors(h baseHandler) http.HandlerFunc {
 // enablePrivateDatasetEndpoints register the datasets endpoints with the appropriate authentication and authorisation
 // checks required when running the dataset API in publishing (private) mode.
 func (api *DatasetAPI) enablePrivateDatasetEndpoints(paginator *pagination.Paginator) {
+
 	api.get(
 		"/datasets",
-		api.isAuthorised(readPermission, paginator.Paginate(api.getDatasets)),
+		api.authMiddleware.Require(datasetReadPermission, paginator.Paginate(api.getDatasets)),
 	)
 
 	api.get(
 		"/datasets/{dataset_id}",
-		api.isAuthorisedForDatasets(readPermission,
-			api.getDataset),
+		api.authMiddleware.Require(datasetReadPermission, api.getDataset),
 	)
 
 	api.get(
 		"/datasets/{dataset_id}/editions",
-		api.isAuthorisedForDatasets(readPermission, paginator.Paginate(api.getEditions)),
+		api.authMiddleware.Require(datasetEditionVersionReadPermission, paginator.Paginate(api.getEditions)),
 	)
 
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}",
-		api.isAuthorisedForDatasets(readPermission,
-			api.getEdition),
+		api.authMiddleware.Require(datasetEditionVersionReadPermission, api.getEdition),
 	)
 
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}/versions",
-		api.isAuthorisedForDatasets(readPermission,
-			paginator.Paginate(api.getVersions)),
+		api.authMiddleware.Require(datasetEditionVersionReadPermission, paginator.Paginate(api.getVersions)),
 	)
 
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}",
-		api.isAuthorisedForDatasets(readPermission,
-			contextAndErrors(api.getVersion)),
+		api.authMiddleware.Require(datasetEditionVersionReadPermission, contextAndErrors(api.getVersion)),
 	)
 
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}/metadata",
-		api.isAuthorisedForDatasets(readPermission,
-			api.getMetadata),
+		api.authMiddleware.Require(datasetEditionVersionReadPermission, api.getMetadata),
 	)
 
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions",
-		api.isAuthorisedForDatasets(readPermission,
-			paginator.Paginate(api.getDimensions)),
+		api.authMiddleware.Require(datasetEditionVersionReadPermission, paginator.Paginate(api.getDimensions)),
 	)
 
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options",
-		api.isAuthorisedForDatasets(readPermission,
-			paginator.Paginate(api.getDimensionOptions)),
+		api.authMiddleware.Require(datasetEditionVersionReadPermission, paginator.Paginate(api.getDimensionOptions)),
 	)
 
 	api.get(
 		"/dataset-editions",
-		api.isAuthorisedForDatasets(readPermission,
-			paginator.Paginate(api.getDatasetEditions)),
+		api.authMiddleware.Require(datasetEditionVersionReadPermission, paginator.Paginate(api.getDatasetEditions)),
 	)
 
 	api.post(
 		"/datasets/{dataset_id}",
-		api.isAuthenticated(
-			api.isAuthorisedForDatasets(createPermission,
-				api.addDataset)),
+		api.authMiddleware.Require(datasetCreatePermission, api.addDataset),
 	)
 
 	api.post(
 		"/datasets",
-		api.isAuthenticated(
-			api.isAuthorisedForDatasets(createPermission,
-				api.addDatasetNew)),
+		api.authMiddleware.Require(datasetCreatePermission, api.addDatasetNew),
 	)
 
 	api.put(
 		"/datasets/{dataset_id}",
-		api.isAuthenticated(
-			api.isAuthorisedForDatasets(updatePermission,
-				api.putDataset)),
+		api.authMiddleware.Require(datasetUpdatePermission, api.putDataset),
 	)
 
 	api.delete(
 		"/datasets/{dataset_id}",
-		api.isAuthenticated(
-			api.isAuthorisedForDatasets(deletePermission,
-				api.deleteDataset)),
+		api.authMiddleware.Require(datasetDeletePermission, api.deleteDataset),
 	)
 
 	api.put(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}",
-		api.isAuthenticated(
-			api.isAuthorisedForDatasets(updatePermission,
-				api.isVersionPublished(updateVersionAction,
-					api.putVersion))),
+		api.authMiddleware.Require(datasetEditionVersionUpdatePermission, api.isVersionPublished(updateVersionAction, api.putVersion)),
 	)
 
 	api.put(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}/metadata",
-		api.isAuthenticated(
-			api.isAuthorisedForDatasets(updatePermission,
-				api.putMetadata)),
+		api.authMiddleware.Require(datasetEditionVersionUpdatePermission, api.putMetadata),
 	)
 
 	api.put(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}/state",
-		api.isAuthenticated(
-			api.isAuthorisedForDatasets(updatePermission,
-				api.putState)),
+		api.authMiddleware.Require(datasetEditionVersionUpdatePermission, api.putState),
 	)
 
 	api.post(
 		"/datasets/{dataset_id}/editions/{edition}/versions",
-		api.isAuthenticated(
-			api.isAuthorisedForDatasets(createPermission,
-				contextAndErrors(api.addDatasetVersionCondensed))),
+		api.authMiddleware.Require(datasetEditionVersionCreatePermission, contextAndErrors(api.addDatasetVersionCondensed)),
 	)
 
 	api.post(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}",
-		api.isAuthenticated(
-			api.isAuthorisedForDatasets(createPermission,
-				contextAndErrors(api.createVersion))),
+		api.authMiddleware.Require(datasetEditionVersionCreatePermission, contextAndErrors(api.createVersion)),
 	)
 
 	api.delete(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}",
-		api.isAuthenticated(
-			api.isAuthorisedForDatasets(deletePermission,
-				api.deleteVersion)),
+		api.authMiddleware.Require(datasetEditionVersionDeletePermission, api.deleteVersion),
 	)
 }
 
@@ -365,58 +346,42 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(paginator *pagination.Pagin
 func (api *DatasetAPI) enablePrivateInstancesEndpoints(instanceAPI *instance.Store, paginator *pagination.Paginator) {
 	api.get(
 		"/instances",
-		api.isAuthenticated(
-			api.isAuthorised(readPermission,
-				paginator.Paginate(instanceAPI.GetList))),
+		api.authMiddleware.Require(datasetInstanceReadPermission, paginator.Paginate(instanceAPI.GetList)),
 	)
 
 	api.post(
 		"/instances",
-		api.isAuthenticated(
-			api.isAuthorised(createPermission,
-				instanceAPI.Add)),
+		api.authMiddleware.Require(datasetInstanceCreatePermission, instanceAPI.Add),
 	)
 
 	api.get(
 		"/instances/{instance_id}",
-		api.isAuthenticated(
-			api.isAuthorised(readPermission,
-				instanceAPI.Get)),
+		api.authMiddleware.Require(datasetInstanceReadPermission, instanceAPI.Get),
 	)
 
 	api.put(
 		"/instances/{instance_id}",
-		api.isAuthenticated(
-			api.isAuthorised(updatePermission,
-				api.isInstancePublished(instanceAPI.Update))),
+		api.authMiddleware.Require(datasetInstanceUpdatePermission, api.isInstancePublished(instanceAPI.Update)),
 	)
 
 	api.put(
 		"/instances/{instance_id}/dimensions/{dimension}",
-		api.isAuthenticated(
-			api.isAuthorised(updatePermission,
-				api.isInstancePublished(instanceAPI.UpdateDimension))),
+		api.authMiddleware.Require(datasetInstanceUpdatePermission, api.isInstancePublished(instanceAPI.UpdateDimension)),
 	)
 
 	api.post(
 		"/instances/{instance_id}/events",
-		api.isAuthenticated(
-			api.isAuthorised(createPermission,
-				instanceAPI.AddEvent)),
+		api.authMiddleware.Require(datasetInstanceCreatePermission, instanceAPI.AddEvent),
 	)
 
 	api.put(
 		"/instances/{instance_id}/inserted_observations/{inserted_observations}",
-		api.isAuthenticated(
-			api.isAuthorised(updatePermission,
-				api.isInstancePublished(instanceAPI.UpdateObservations))),
+		api.authMiddleware.Require(datasetInstanceUpdatePermission, api.isInstancePublished(instanceAPI.UpdateObservations)),
 	)
 
 	api.put(
 		"/instances/{instance_id}/import_tasks",
-		api.isAuthenticated(
-			api.isAuthorised(updatePermission,
-				api.isInstancePublished(instanceAPI.UpdateImportTask))),
+		api.authMiddleware.Require(datasetInstanceUpdatePermission, api.isInstancePublished(instanceAPI.UpdateImportTask)),
 	)
 }
 
@@ -425,69 +390,35 @@ func (api *DatasetAPI) enablePrivateInstancesEndpoints(instanceAPI *instance.Sto
 func (api *DatasetAPI) enablePrivateDimensionsEndpoints(dimensionAPI *dimension.Store, paginator *pagination.Paginator) {
 	api.get(
 		"/instances/{instance_id}/dimensions",
-		api.isAuthenticated(
-			api.isAuthorised(readPermission,
-				paginator.Paginate(dimensionAPI.GetDimensionsHandler))),
+		api.authMiddleware.Require(datasetInstanceReadPermission, paginator.Paginate(dimensionAPI.GetDimensionsHandler)),
 	)
 
 	// Deprecated (use patch /instances/{instance_id}/dimensions instead)
 	api.post(
 		"/instances/{instance_id}/dimensions",
-		api.isAuthenticated(
-			api.isAuthorised(createPermission,
-				api.isInstancePublished(dimensionAPI.AddHandler))),
+		api.authMiddleware.Require(datasetInstanceCreatePermission, api.isInstancePublished(dimensionAPI.AddHandler)),
 	)
 
 	api.patch(
 		"/instances/{instance_id}/dimensions",
-		api.isAuthenticated(
-			api.isAuthorised(createPermission,
-				api.isInstancePublished(dimensionAPI.PatchDimensionsHandler))),
+		api.authMiddleware.Require(datasetInstanceUpdatePermission, api.isInstancePublished(dimensionAPI.PatchDimensionsHandler)),
 	)
 
 	api.get(
 		"/instances/{instance_id}/dimensions/{dimension}/options",
-		api.isAuthenticated(
-			api.isAuthorised(readPermission,
-				paginator.Paginate(dimensionAPI.GetUniqueDimensionAndOptionsHandler))),
+		api.authMiddleware.Require(datasetInstanceReadPermission, paginator.Paginate(dimensionAPI.GetUniqueDimensionAndOptionsHandler)),
 	)
 
 	api.patch(
 		"/instances/{instance_id}/dimensions/{dimension}/options/{option}",
-		api.isAuthenticated(
-			api.isAuthorised(updatePermission,
-				api.isInstancePublished(dimensionAPI.PatchOptionHandler))),
+		api.authMiddleware.Require(datasetInstanceUpdatePermission, api.isInstancePublished(dimensionAPI.PatchOptionHandler)),
 	)
 
 	// Deprecated (use patch /instances/{instance_id}/dimensions/{dimension}/options/{option} instead)
 	api.put(
 		"/instances/{instance_id}/dimensions/{dimension}/options/{option}/node_id/{node_id}",
-		api.isAuthenticated(
-			api.isAuthorised(updatePermission,
-				api.isInstancePublished(dimensionAPI.AddNodeIDHandler))),
+		api.authMiddleware.Require(datasetInstanceUpdatePermission, api.isInstancePublished(dimensionAPI.AddNodeIDHandler)),
 	)
-}
-
-// isAuthenticated wraps a http handler func in another http handler func that checks the caller is authenticated to
-// perform the requested action. handler is the http.HandlerFunc to wrap in an
-// authentication check. The wrapped handler is only called if the caller is authenticated
-func (api *DatasetAPI) isAuthenticated(handler http.HandlerFunc) http.HandlerFunc {
-	return dphandlers.CheckIdentity(handler)
-}
-
-// isAuthorised wraps a http.HandlerFunc another http.HandlerFunc that checks the caller is authorised to perform the
-// requested action. required is the permissions required to perform the action, handler is the http.HandlerFunc to
-// apply the check to. The wrapped handler is only called if the caller has the required permissions.
-func (api *DatasetAPI) isAuthorised(required auth.Permissions, handler http.HandlerFunc) http.HandlerFunc {
-	return api.permissions.Require(required, handler)
-}
-
-// isAuthorised wraps a http.HandlerFunc another http.HandlerFunc that checks the caller is authorised to perform the
-// requested datasets action. This authorisation check is specific to datasets. required is the permissions required to
-// perform the action, handler is the http.HandlerFunc to apply the check to. The wrapped handler is only called if the
-// caller has the required dataset permissions.
-func (api *DatasetAPI) isAuthorisedForDatasets(required auth.Permissions, handler http.HandlerFunc) http.HandlerFunc {
-	return api.datasetPermissions.Require(required, handler)
 }
 
 // isInstancePublished wraps a http.HandlerFunc checking the instance state. The wrapped handler is only invoked if the
@@ -527,28 +458,35 @@ func (api *DatasetAPI) delete(path string, handler http.HandlerFunc) {
 	api.Router.HandleFunc(path, handler).Methods(http.MethodDelete)
 }
 
-func (api *DatasetAPI) authenticate(r *http.Request, logData log.Data) bool {
+// checks the user permission within a function to determine access to pre-publish data
+func (api *DatasetAPI) checkUserPermission(r *http.Request, logData log.Data, permission string) bool {
 	var authorised bool
 
 	if api.EnablePrePublishView {
-		var hasCallerIdentity, hasUserIdentity bool
 
-		callerIdentity := dprequest.Caller(r.Context())
-		if callerIdentity != "" {
-			logData["caller_identity"] = callerIdentity
-			hasCallerIdentity = true
+		bearerToken := strings.TrimPrefix(r.Header.Get(dprequest.AuthHeaderKey), dprequest.BearerPrefix)
+
+		entityData, err := api.authMiddleware.Parse(bearerToken)
+		if err != nil {
+			// check service id token is valid
+			resp, err := api.idClient.CheckTokenIdentity(r.Context(), bearerToken, clientsidentity.TokenTypeService)
+			if err != nil {
+				return false
+			} else {
+				// valid
+				entityData = &sdk.EntityData{UserID: resp.Identifier}
+			}
+		}
+		logData["entity_data"] = entityData
+
+		hasPermission, err := api.permissionsChecker.HasPermission(r.Context(), *entityData, permission, nil)
+		if err != nil {
+			return false
 		}
 
-		userIdentity := dprequest.User(r.Context())
-		if userIdentity != "" {
-			logData["user_identity"] = userIdentity
-			hasUserIdentity = true
-		}
-
-		if hasCallerIdentity || hasUserIdentity {
+		if hasPermission {
 			authorised = true
 		}
-		logData["authenticated"] = authorised
 
 		return authorised
 	}

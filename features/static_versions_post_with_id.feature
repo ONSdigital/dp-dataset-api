@@ -88,8 +88,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
     
     Scenario: Successfully creating a new version
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I POST "/datasets/static-dataset-1/editions/2024/versions/2"
             """
             {
@@ -167,8 +166,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
     
     Scenario: Request with a dataset that doesn't exist returns 404
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I POST "/datasets/missing/editions/2024/versions/2"
             """
             {
@@ -200,8 +198,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
     
     Scenario: Request with an edition that doesn't exist returns 404
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I POST "/datasets/static-dataset-1/editions/0/versions/2"
             """
             {
@@ -233,8 +230,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
     
     Scenario: Request with a version that already exists returns 409
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I POST "/datasets/static-dataset-1/editions/2024/versions/1"
             """
             {
@@ -266,8 +262,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
     
     Scenario: Request with an invalid version returns 400
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I POST "/datasets/static-dataset-1/editions/2024/versions/invalid"
             """
             {
@@ -299,8 +294,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
 
     Scenario: Request with a type that isn't static returns 400
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I POST "/datasets/static-dataset-1/editions/2024/versions/2"
             """
             {
@@ -332,8 +326,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
     
     Scenario: Request with all mandatory fields missing returns 400
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I POST "/datasets/missing/editions/2024/versions/2"
             """
             {

@@ -22,6 +22,9 @@ import (
 
 const (
 	service = "dp-dataset-api"
+
+	// ifMatchHeader is the If-Match header name
+	ifMatchHeader = "If-Match"
 )
 
 type Client struct {
@@ -32,8 +35,7 @@ type Client struct {
 type Headers struct {
 	CollectionID         string
 	DownloadServiceToken string
-	ServiceToken         string
-	UserAccessToken      string
+	AccessToken          string //could be user or service token for auth v2
 }
 
 // Adds headers to the input request
@@ -42,8 +44,30 @@ func (h *Headers) Add(request *http.Request) {
 		request.Header.Add(dpNetRequest.CollectionIDHeaderKey, h.CollectionID)
 	}
 	dpNetRequest.AddDownloadServiceTokenHeader(request, h.DownloadServiceToken)
-	dpNetRequest.AddFlorenceHeader(request, h.UserAccessToken)
-	dpNetRequest.AddServiceTokenHeader(request, h.ServiceToken)
+	dpNetRequest.AddServiceTokenHeader(request, h.AccessToken)
+}
+
+// SetIfMatch set the If-Match header on the provided request. If this header is already present it
+// will be overwritten by the new value. Empty values are allowed for this header.
+func (h *Headers) SetIfMatch(req *http.Request, headerValue string) error {
+	err := setRequestHeader(req, ifMatchHeader, headerValue)
+	if err != nil && err != ErrValueEmpty {
+		return err
+	}
+	return nil
+}
+
+func setRequestHeader(req *http.Request, headerName string, headerValue string) error {
+	if req == nil {
+		return ErrRequestNil
+	}
+
+	if len(headerValue) == 0 {
+		return ErrValueEmpty
+	}
+
+	req.Header.Set(headerName, headerValue)
+	return nil
 }
 
 // Checker calls topic api health endpoint and returns a check object to the caller
@@ -73,6 +97,18 @@ func (c *Client) DoAuthenticatedPutRequest(ctx context.Context, headers Headers,
 	}
 
 	headers.Add(req)
+	return c.hcCli.Client.Do(ctx, req)
+}
+
+// Creates new request object, executes a put request using the input `headers`, `uri`, and payload, and returns the response including an IfMatch header
+func (c *Client) DoAuthenticatedPutRequestWithEtag(ctx context.Context, headers Headers, uri *url.URL, payload []byte, ifMatch string) (*http.Response, error) {
+	req, err := http.NewRequest(http.MethodPut, uri.RequestURI(), bytes.NewBuffer(payload))
+	if err != nil {
+		return nil, err
+	}
+
+	headers.Add(req)
+	headers.SetIfMatch(req, ifMatch)
 	return c.hcCli.Client.Do(ctx, req)
 }
 
@@ -181,6 +217,9 @@ func unmarshalResponseBodyExpectingErrorResponseV2(response *http.Response, targ
 	if err != nil {
 		return err
 	}
+
+	fmt.Println("THE BODY IS")
+	fmt.Println(string(b))
 
 	return json.Unmarshal(b, &target)
 }

@@ -58,7 +58,7 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 
 		isStaticDataset := (datasetType == models.Static)
 
-		authorised := api.authenticate(r, logData)
+		authorised := api.checkUserPermission(r, logData, datasetEditionVersionReadPermission)
 
 		if isStaticDataset {
 			versionDoc, err = api.dataStore.Backend.GetVersionStatic(ctx, datasetID, edition, versionID, "")

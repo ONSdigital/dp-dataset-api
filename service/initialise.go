@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/ONSdigital/dp-authorisation/v2/authorisation"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/store"
@@ -17,6 +18,7 @@ import (
 // ExternalServiceList holds the initialiser and initialisation state of external services.
 type ExternalServiceList struct {
 	GenerateDownloadsProducer bool
+	AuthorisationMiddleware   bool
 	Graph                     bool
 	HealthCheck               bool
 	MongoDB                   bool
@@ -140,4 +142,19 @@ func (e *Init) DoGetMongoDB(ctx context.Context, cfg config.MongoConfig) (store.
 	}
 	log.Info(ctx, "listening to mongo db session", log.Data{"URI": mongodb.ClusterEndpoint})
 	return mongodb, nil
+}
+
+// func (e *ExternalServiceList) GetAuthorisationMiddleware(ctx context.Context, authorisationConfig *authorisation.Config) (authorisation.Middleware, error) {
+// 	return e.Init.DoGetAuthorisationMiddleware(ctx, authorisationConfig)
+// }
+
+// GetAuthorisationMiddleware creates a new instance of authorisation.Middlware
+func (e *ExternalServiceList) GetAuthorisationMiddleware(ctx context.Context, authorisationConfig *authorisation.Config) (authorisation.Middleware, error) {
+	e.AuthorisationMiddleware = true
+	return e.Init.DoGetAuthorisationMiddleware(ctx, authorisationConfig)
+}
+
+// DoGetAuthorisationMiddleware creates authorisation middleware for the given config
+func (e *Init) DoGetAuthorisationMiddleware(ctx context.Context, authorisationConfig *authorisation.Config) (authorisation.Middleware, error) {
+	return authorisation.NewFeatureFlaggedMiddleware(ctx, authorisationConfig, nil)
 }

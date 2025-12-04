@@ -1,6 +1,7 @@
 package sdk
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -9,6 +10,8 @@ import (
 
 	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	dphttp "github.com/ONSdigital/dp-net/v3/http"
+	dprequest "github.com/ONSdigital/dp-net/v3/request"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -477,7 +480,7 @@ func TestGetVersions(t *testing.T) {
 		_, err := datasetAPIClient.GetVersions(ctx, headers, datasetID, editionID, &queryParams)
 		Convey("Test that an error is raised and should contain status code", func() {
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldEqual, apierrors.ErrVersionNotFound.Error())
+			So(err.(*ErrInvalidDatasetAPIResponse).body, ShouldContainSubstring, apierrors.ErrVersionNotFound.Error())
 		})
 	})
 }
@@ -506,7 +509,7 @@ func TestPutVersion(t *testing.T) {
 				call := httpClient.DoCalls()[0]
 				So(call.Req.Method, ShouldEqual, http.MethodPut)
 				So(call.Req.URL.RequestURI(), ShouldEqual, fmt.Sprintf("/datasets/%s/editions/%s/versions/%s", datasetID, editionID, versionID))
-				So(call.Req.Header.Get("Authorization"), ShouldEqual, fmt.Sprintf("Bearer %s", headers.ServiceToken))
+				So(call.Req.Header.Get("Authorization"), ShouldEqual, fmt.Sprintf("Bearer %s", headers.AccessToken))
 
 				var sentVersion models.Version
 				err := json.NewDecoder(call.Req.Body).Decode(&sentVersion)
@@ -575,7 +578,7 @@ func TestPutVersionState(t *testing.T) {
 			So(call.Req.Method, ShouldEqual, http.MethodPut)
 			expectedURI := "/datasets/dataset-123/editions/edition-456/versions/1/state"
 			So(call.Req.URL.RequestURI(), ShouldResemble, expectedURI)
-			So(call.Req.Header.Get("Authorization"), ShouldResemble, fmt.Sprintf("Bearer %s", headers.ServiceToken))
+			So(call.Req.Header.Get("Authorization"), ShouldResemble, fmt.Sprintf("Bearer %s", headers.AccessToken))
 			var stateUpdate models.StateUpdate
 			err = json.NewDecoder(call.Req.Body).Decode(&stateUpdate)
 			So(err, ShouldBeNil)
@@ -632,4 +635,207 @@ func TestPutVersionState(t *testing.T) {
 			So(err.Error(), ShouldContainSubstring, mockedErrorResponse)
 		})
 	})
+}
+
+func Test_GetVersionsInBatches(t *testing.T) {
+
+	datasetID := "test-dataset"
+	edition := "test-edition"
+
+	versionsResponse1 := VersionsList{
+		Items:      []models.Version{{ID: "test-version-1"}},
+		TotalCount: 2, // Total count is read from the first response to determine how many batches are required
+		Offset:     0,
+		Count:      1,
+	}
+
+	versionsResponse2 := VersionsList{
+		Items:      []models.Version{{ID: "test-version-2"}},
+		TotalCount: 2,
+		Offset:     1,
+		Count:      1,
+	}
+
+	expectedDatasets := VersionsList{
+		Items: []models.Version{
+			versionsResponse1.Items[0],
+			versionsResponse2.Items[0],
+		},
+		Count:      2,
+		TotalCount: 2,
+	}
+
+	batchSize := 1
+	maxWorkers := 1
+
+	Convey("When a 200 OK status is returned in 2 consecutive calls", t, func() {
+
+		httpClient := createHTTPClientMock(
+			MockedHTTPResponse{http.StatusOK, versionsResponse1, nil},
+			MockedHTTPResponse{http.StatusOK, versionsResponse2, nil})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+
+		processedBatches := []VersionsList{}
+		var testProcess VersionsBatchProcessor = func(batch VersionsList) (abort bool, err error) {
+			processedBatches = append(processedBatches, batch)
+			return false, nil
+		}
+
+		Convey("then GetDatasetsInBatches succeeds and returns the accumulated items from all the batches", func() {
+			datasets, err := datasetAPIClient.GetVersionsInBatches(ctx, headers, datasetID, edition, batchSize, maxWorkers)
+
+			So(err, ShouldBeNil)
+			So(datasets, ShouldResemble, expectedDatasets)
+		})
+
+		Convey("then GetDatasetsBatchProcess calls the batchProcessor function twice, with the expected batches", func() {
+			err := datasetAPIClient.GetVersionsBatchProcess(ctx, headers, datasetID, edition, testProcess, batchSize, maxWorkers)
+			So(err, ShouldBeNil)
+			So(processedBatches, ShouldResemble, []VersionsList{versionsResponse1, versionsResponse2})
+			So(httpClient.DoCalls(), ShouldHaveLength, 2)
+			So(httpClient.DoCalls()[0].Req.URL.String(), ShouldResemble,
+				"http://localhost:22000/datasets/test-dataset/editions/test-edition/versions?limit=1&offset=0")
+			So(httpClient.DoCalls()[1].Req.URL.String(), ShouldResemble,
+				"http://localhost:22000/datasets/test-dataset/editions/test-edition/versions?limit=1&offset=1")
+		})
+	})
+
+	Convey("When a 400 error status is returned in the first call", t, func() {
+		httpClient := createHTTPClientMock(
+			MockedHTTPResponse{http.StatusBadRequest, "", nil})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+
+		processedBatches := []VersionsList{}
+		var testProcess VersionsBatchProcessor = func(batch VersionsList) (abort bool, err error) {
+			processedBatches = append(processedBatches, batch)
+			return false, nil
+		}
+
+		Convey("then GetOptionsInBatches fails with the expected error and the process is aborted", func() {
+			_, err := datasetAPIClient.GetVersionsInBatches(ctx, headers, datasetID, edition, batchSize, maxWorkers)
+			// So(err.Error(), ShouldContainSubstring, "did not receive success response")
+			So(err.(*ErrInvalidDatasetAPIResponse).actualCode, ShouldEqual, http.StatusBadRequest)
+			So(err.(*ErrInvalidDatasetAPIResponse).uri, ShouldResemble, "http://localhost:22000/datasets/test-dataset/editions/test-edition/versions?limit=1&offset=0")
+		})
+
+		Convey("then GetDatasetsBatchProcess fails with the expected error and doesn't call the batchProcessor", func() {
+			err := datasetAPIClient.GetVersionsBatchProcess(ctx, headers, datasetID, edition, testProcess, batchSize, maxWorkers)
+			So(err.(*ErrInvalidDatasetAPIResponse).actualCode, ShouldEqual, http.StatusBadRequest)
+			So(err.(*ErrInvalidDatasetAPIResponse).uri, ShouldResemble, "http://localhost:22000/datasets/test-dataset/editions/test-edition/versions?limit=1&offset=0")
+			So(processedBatches, ShouldResemble, []VersionsList{})
+		})
+	})
+
+	Convey("When a 200 error status is returned in the first call and 400 error is returned in the second call", t, func() {
+		httpClient := createHTTPClientMock(
+			MockedHTTPResponse{http.StatusOK, versionsResponse1, nil},
+			MockedHTTPResponse{http.StatusBadRequest, "", nil})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+
+		// testProcess is a generic batch processor for testing
+		processedBatches := []VersionsList{}
+		var testProcess VersionsBatchProcessor = func(batch VersionsList) (abort bool, err error) {
+			processedBatches = append(processedBatches, batch)
+			return false, nil
+		}
+
+		Convey("then GetDatasetsInBatches fails with the expected error, corresponding to the second batch, and the process is aborted", func() {
+			_, err := datasetAPIClient.GetVersionsInBatches(ctx, headers, datasetID, edition, batchSize, maxWorkers)
+			So(err.(*ErrInvalidDatasetAPIResponse).actualCode, ShouldEqual, http.StatusBadRequest)
+			So(err.(*ErrInvalidDatasetAPIResponse).uri, ShouldResemble, "http://localhost:22000/datasets/test-dataset/editions/test-edition/versions?limit=1&offset=1")
+		})
+
+		Convey("then GetDatasetsBatchProcess fails with the expected error and calls the batchProcessor for the first batch only", func() {
+			err := datasetAPIClient.GetVersionsBatchProcess(ctx, headers, datasetID, edition, testProcess, batchSize, maxWorkers)
+			So(err.(*ErrInvalidDatasetAPIResponse).actualCode, ShouldEqual, http.StatusBadRequest)
+			So(err.(*ErrInvalidDatasetAPIResponse).uri, ShouldResemble, "http://localhost:22000/datasets/test-dataset/editions/test-edition/versions?limit=1&offset=1")
+			So(processedBatches, ShouldResemble, []VersionsList{versionsResponse1})
+		})
+	})
+
+}
+
+func Test_GetVersionWithHeaders(t *testing.T) {
+	ctx := context.Background()
+
+	Convey("Given dataset api has a version", t, func() {
+
+		datasetId := "dataset-id"
+		edition := "2023"
+		versionString := "1"
+		versionNumber, _ := strconv.Atoi(versionString)
+		etag := "version-etag"
+
+		version := models.Version{
+			ID:           "version-id",
+			CollectionID: collectionID,
+			Edition:      edition,
+			Version:      versionNumber,
+			Dimensions: []models.Dimension{
+				{
+					Name:  "geography",
+					ID:    "city",
+					Label: "City",
+				},
+				{
+					Name:  "siblings",
+					ID:    "number_of_siblings_3",
+					Label: "Number Of Siblings (3 Mappings)",
+				},
+			},
+			ReleaseDate:     "today",
+			LowestGeography: "lowest",
+			State:           "published",
+		}
+
+		Convey("when GetVersionWithHeaders is called with a successful response", func() {
+			httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, version, map[string]string{"Etag": etag}})
+			datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+			got, h, err := datasetAPIClient.GetVersionWithHeaders(ctx, headers, datasetId, edition, versionString)
+
+			Convey("Then it returns the right values", func() {
+				So(err, ShouldBeNil)
+				So(got, ShouldResemble, version)
+				So(h, ShouldNotBeNil)
+				So(h.ETag, ShouldEqual, etag)
+				// And the relevant api call has been made
+				expectedUrl := fmt.Sprintf("/datasets/%s/editions/%s/versions/%s", datasetId, edition, versionString)
+				expectedHeaders := Headers{
+					AccessToken:          headers.AccessToken,
+					CollectionID:         headers.CollectionID,
+					DownloadServiceToken: headers.DownloadServiceToken,
+				}
+				checkRequestBase(httpClient, http.MethodGet, expectedUrl, expectedHeaders)
+			})
+		})
+
+		Convey("when GetVersionWithHeaders is called and the version parameter is invalid", func() {
+			httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusBadRequest, version, map[string]string{"Etag": etag}})
+			datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+			got, h, err := datasetAPIClient.GetVersionWithHeaders(ctx, headers, datasetId, edition, "test")
+
+			Convey("Then an error is returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.(*ErrInvalidDatasetAPIResponse).actualCode, ShouldEqual, http.StatusBadRequest)
+				So(err.(*ErrInvalidDatasetAPIResponse).uri, ShouldResemble, "http://localhost:22000/datasets/dataset-id/editions/2023/versions/test")
+				So(got, ShouldEqual, models.Version{})
+				So(h, ShouldNotBeNil)
+
+			})
+		})
+
+	})
+}
+
+var checkRequestBase = func(httpClient *dphttp.ClienterMock, expectedMethod, expectedUri string, expectedHeaders Headers) {
+	So(len(httpClient.DoCalls()), ShouldEqual, 1)
+	So(httpClient.DoCalls()[0].Req.URL.RequestURI(), ShouldResemble, expectedUri)
+	So(httpClient.DoCalls()[0].Req.Method, ShouldEqual, expectedMethod)
+	if expectedHeaders.AccessToken != "" {
+		So(httpClient.DoCalls()[0].Req.Header.Get(dprequest.AuthHeaderKey), ShouldEqual, "Bearer "+expectedHeaders.AccessToken)
+	}
+	//So(httpClient.DoCalls()[0].Req.Header.Get("If-Match"), ShouldEqual, expectedHeaders.IfMatch)
+	So(httpClient.DoCalls()[0].Req.Header.Get("Collection-Id"), ShouldEqual, expectedHeaders.CollectionID)
+	//So(httpClient.DoCalls()[0].Req.Header.Get("Authorization"), ShouldEqual, expectedHeaders.ServiceToken)
+	So(httpClient.DoCalls()[0].Req.Header.Get("X-Download-Service-Token"), ShouldEqual, expectedHeaders.DownloadServiceToken)
 }

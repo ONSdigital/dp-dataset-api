@@ -53,8 +53,7 @@ Feature: Static Dataset Versions POST API
 
     Scenario: POST creates a new static dataset version successfully
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I POST "/datasets/static-dataset-test/editions/2024/versions"
             """
             {
@@ -76,8 +75,7 @@ Feature: Static Dataset Versions POST API
 
     Scenario: POST creates version 2 when version 1 is published
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I POST "/datasets/static-dataset-existing/editions/2024/versions"
             """
             {
@@ -99,8 +97,7 @@ Feature: Static Dataset Versions POST API
 
     Scenario: POST fails with missing mandatory fields
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I POST "/datasets/static-dataset-test/editions/2024/versions"
             """
             {
@@ -111,8 +108,7 @@ Feature: Static Dataset Versions POST API
 
     Scenario: POST fails for non-existent dataset
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I POST "/datasets/non-existent-dataset/editions/2024/versions"
             """
             {
@@ -166,8 +162,7 @@ Feature: Static Dataset Versions POST API
             ]
             """
         And private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I POST "/datasets/static-dataset-test/editions/2024/versions"
             """
             {

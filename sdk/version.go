@@ -6,8 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -25,6 +28,25 @@ type QueryParams struct {
 	State     string
 	Limit     int
 	Offset    int
+}
+
+// NewDatasetAPIResponse creates an error response, optionally adding body to e when status is 404
+func NewDatasetAPIResponse(resp *http.Response, uri string) (e *ErrInvalidDatasetAPIResponse) {
+	e = &ErrInvalidDatasetAPIResponse{
+		actualCode: resp.StatusCode,
+		uri:        uri,
+	}
+	if resp.StatusCode == http.StatusNotFound {
+		b, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			e.body = "Client failed to read DatasetAPI body"
+			return
+		}
+		defer closeResponseBody(nil, resp)
+
+		e.body = string(b)
+	}
+	return
 }
 
 // Validate validates tht no negative values are provided for limit or offset, and that the length of
@@ -241,10 +263,124 @@ func (c *Client) GetVersions(ctx context.Context, headers Headers, datasetID, ed
 
 	defer closeResponseBody(ctx, resp)
 
+	if resp.StatusCode != http.StatusOK {
+		err = NewDatasetAPIResponse(resp, uri.RequestURI())
+		return
+	}
+
 	// Unmarshal the response body to target
-	err = unmarshalResponseBodyExpectingStringError(resp, &versionsList)
+	//err = unmarshalResponseBodyExpectingStringError(resp, &versionsList)
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return
+	}
+
+	if err = json.Unmarshal(b, &versionsList); err != nil {
+		return
+	}
 
 	return versionsList, err
+}
+
+// GetVersionsInBatches retrieves a list of datasets in concurrent batches and accumulates the results
+func (c *Client) GetVersionsInBatches(ctx context.Context, headers Headers, datasetID, edition string, batchSize, maxWorkers int) (versions VersionsList, err error) {
+
+	// Function to aggregate items.
+	// For the first received batch, as we have the total count information, will initialise the final structure of items with a fixed size equal to TotalCount.
+	// This serves two purposes:
+	//   - We can guarantee, even with concurrent calls, that values are returned in the same order that the API defines, by offsetting the index.
+	//   - We do a single memory allocation for the final array, making the code more memory efficient.
+	var processBatch VersionsBatchProcessor = func(b VersionsList) (abort bool, err error) {
+		if len(versions.Items) == 0 { // first batch response being handled
+			versions.TotalCount = b.TotalCount
+			versions.Items = make([]models.Version, b.TotalCount)
+			versions.Count = b.TotalCount
+		}
+		if len(versions.Items) < len(b.Items)+b.Offset {
+			return false, fmt.Errorf("versions.Items offset index out of bounds error. Expected length: %d, actual length: %d", len(b.Items)+b.Offset, len(versions.Items))
+		}
+		for i := 0; i < len(b.Items); i++ {
+			versions.Items[i+b.Offset] = b.Items[i]
+		}
+		return false, nil
+	}
+
+	// call dataset API GetOptions in batches and aggregate the responses
+	if err = c.GetVersionsBatchProcess(ctx, headers, datasetID, edition, processBatch, batchSize, maxWorkers); err != nil {
+		return
+	}
+
+	return versions, nil
+}
+
+// GetVersionsBatchProcess gets the datasets from the dataset API in batches, calling the provided function for each batch.
+func (c *Client) GetVersionsBatchProcess(ctx context.Context, headers Headers, datasetID, edition string, processBatch VersionsBatchProcessor, batchSize, maxWorkers int) error {
+
+	// for each batch, obtain the dimensions starting at the provided offset, with a batch size limit,
+	// or the subset of IDs according to the provided offset, if a list of optionIDs was provided
+	batchGetter := func(offset int) (interface{}, int, string, error) {
+		b, err := c.GetVersions(ctx, headers, datasetID, edition, &QueryParams{Offset: offset, Limit: batchSize})
+		return b, b.TotalCount, "", err
+	}
+
+	// cast and process the batch according to the provided method
+	batchProcessor := func(b interface{}, batchETag string) (abort bool, err error) {
+		v, ok := b.(VersionsList)
+		if !ok {
+			t := reflect.TypeOf(b)
+			errMsg := fmt.Sprintf("version batch processor error wrong type received expected VersionList but was %v", t)
+			return true, errors.New(errMsg)
+		}
+		return processBatch(v)
+	}
+
+	return ProcessInConcurrentBatches(batchGetter, batchProcessor, batchSize, maxWorkers)
+}
+
+// GetVersionWithHeaders gets a specific version for an edition from the dataset api and additional response headers
+func (c *Client) GetVersionWithHeaders(ctx context.Context, headers Headers, datasetID, edition, version string) (v models.Version, h ResponseHeaders, err error) {
+	v, resp, err := c.GetVersionWithResponse(ctx, headers, datasetID, edition, version)
+	h.ETag, _ = GetResponseETag(resp)
+	return
+}
+
+// Returns the full response so the etag in the header can be processed and returned
+func (c *Client) GetVersionWithResponse(ctx context.Context, headers Headers, datasetID, edition, versionID string) (v models.Version, resp *http.Response, err error) {
+
+	version := models.Version{}
+	// Build uri
+	uri := &url.URL{}
+	uri.Path, err = url.JoinPath(c.hcCli.URL, "datasets", datasetID, "editions", edition, "versions", versionID)
+	if err != nil {
+		return version, nil, err
+	}
+	//uri := fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s", c.hcCli.URL, datasetID, edition, version)
+
+	// resp, err = c.doGetWithAuthHeadersAndWithDownloadToken(ctx, userAuthToken, serviceAuthToken, downloadServiceAuthToken, collectionID, uri)
+	// if err != nil {
+	// 	return
+	// }
+
+	// Make request
+	resp, err = c.DoAuthenticatedGetRequest(ctx, headers, uri)
+	if err != nil {
+		return version, nil, err
+	}
+	defer closeResponseBody(ctx, resp)
+
+	if resp.StatusCode != http.StatusOK {
+		err = NewDatasetAPIResponse(resp, uri.RequestURI())
+		return
+	}
+
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(b, &v)
+
+	return v, resp, err
 }
 
 func (c *Client) PutVersion(ctx context.Context, headers Headers, datasetID, editionID, versionID string, version models.Version) (updatedVersion models.Version, err error) {

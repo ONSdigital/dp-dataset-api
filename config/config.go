@@ -6,6 +6,7 @@ import (
 
 	"github.com/kelseyhightower/envconfig"
 
+	"github.com/ONSdigital/dp-authorisation/v2/authorisation"
 	mongodriver "github.com/ONSdigital/dp-mongodb/v3/mongodb"
 )
 
@@ -36,6 +37,7 @@ type Configuration struct {
 	ImportAPIURL                   string        `envconfig:"IMPORT_API_URL"`
 	WebsiteURL                     string        `envconfig:"WEBSITE_URL"`
 	ZebedeeURL                     string        `envconfig:"ZEBEDEE_URL"`
+	ZebedeeClientTimeout           time.Duration `envconfig:"ZEBEDEE_CLIENT_TIMEOUT"`
 	DownloadServiceSecretKey       string        `envconfig:"DOWNLOAD_SERVICE_SECRET_KEY"      json:"-"`
 	ServiceAuthToken               string        `envconfig:"SERVICE_AUTH_TOKEN"               json:"-"`
 	GracefulShutdownTimeout        time.Duration `envconfig:"GRACEFUL_SHUTDOWN_TIMEOUT"`
@@ -60,6 +62,7 @@ type Configuration struct {
 	OTBatchTimeout                 time.Duration `envconfig:"OTEL_BATCH_TIMEOUT"`
 	OtelEnabled                    bool          `envconfig:"OTEL_ENABLED"`
 	MongoConfig
+	AuthConfig *authorisation.Config
 }
 
 var cfg *Configuration
@@ -94,6 +97,7 @@ func Get() (*Configuration, error) {
 		ImportAPIURL:                   "http://localhost:21800",
 		WebsiteURL:                     "http://localhost:20000",
 		ZebedeeURL:                     "http://localhost:8082",
+		ZebedeeClientTimeout:           30 * time.Second,
 		ServiceAuthToken:               "FD0108EA-825D-411C-9B1D-41EF7727F465",
 		DownloadServiceSecretKey:       "QB0108EZ-825D-412C-9B1D-41EF7747F462",
 		GracefulShutdownTimeout:        5 * time.Second,
@@ -106,7 +110,6 @@ func Get() (*Configuration, error) {
 		EnablePrivateEndpoints:         false,
 		EnableDetachDataset:            false,
 		EnableDeleteStaticVersion:      false,
-		EnablePermissionsAuth:          false,
 		EnableObservationEndpoint:      true,
 		EnableURLRewriting:             false,
 		DisableGraphDBDependency:       false,
@@ -135,6 +138,7 @@ func Get() (*Configuration, error) {
 			DatasetAPIURL:  "http://localhost:22000",
 		},
 		ComponentTestUseLogFile: false,
+		AuthConfig:              authorisation.NewDefaultConfig(),
 	}
 
 	return cfg, envconfig.Process("", cfg)
