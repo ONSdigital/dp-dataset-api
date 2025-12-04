@@ -18,6 +18,7 @@ Feature: Dataset API
                     "id": "population-estimates",
                     "edition": "2019",
                     "state": "published",
+                    "version": 1,
                     "links": {
                         "dataset": {
                             "href": "/datasets/population-estimates",
@@ -49,6 +50,7 @@ Feature: Dataset API
                 "items": [
                     {
                         "edition": "2019",
+                        "version": 1,
                         "state": "published",
                         "links": {
                             "dataset": {
@@ -56,8 +58,8 @@ Feature: Dataset API
                                 "id": "population-estimates"
                             },
                             "latest_version": {
-                                "href": "/datasets/population-estimates/editions/2019/versions/population-estimates",
-                                "id": "population-estimates"
+                                "href": "/datasets/population-estimates/editions/2019/versions/1",
+                                "id": "1"
                             },
                             "self": {
                                 "href": "/datasets/population-estimates/editions/2019",
@@ -84,7 +86,6 @@ Feature: Dataset API
             }
             """
 
-
     Scenario: GET /datasets/{id}/editions/{edition_id} with type static
         Given I have these datasets:
             """
@@ -102,6 +103,7 @@ Feature: Dataset API
                 {
                     "id": "population-estimates",
                     "edition": "2019",
+                    "version": 1,
                     "state": "published",
                     "links": {
                         "dataset": {
@@ -131,6 +133,7 @@ Feature: Dataset API
             """
             {
                 "edition": "2019",
+                "version": 1,
                 "state": "published",
                 "links": {
                     "dataset": {
@@ -138,8 +141,8 @@ Feature: Dataset API
                         "id": "population-estimates"
                     },
                     "latest_version": {
-                        "href": "/datasets/population-estimates/editions/2019/versions/population-estimates",
-                        "id": "population-estimates"
+                        "href": "/datasets/population-estimates/editions/2019/versions/1",
+                        "id": "1"
                     },
                     "self": {
                         "href": "/datasets/population-estimates/editions/2019",
