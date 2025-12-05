@@ -74,8 +74,6 @@ func DatasetAPIResponse(resp *http.Response, uri string) (e *ErrInvalidDatasetAP
 func (c *Client) GetDataset(ctx context.Context, headers Headers, datasetID string) (dataset models.Dataset, err error) {
 	dataset = models.Dataset{}
 
-	fmt.Println("GETTING DATASET")
-
 	// Build URI
 	uri := &url.URL{}
 	uri.Path, err = url.JoinPath(c.hcCli.URL, "datasets", datasetID)

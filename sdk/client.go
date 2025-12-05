@@ -86,9 +86,6 @@ func (c *Client) doAuthenticatedGetRequest(ctx context.Context, headers Headers,
 	// Add auth headers to the request
 	headers.add(req)
 
-	fmt.Println("THE HEADERS ARE")
-	fmt.Println(headers)
-
 	return c.hcCli.Client.Do(ctx, req)
 }
 
@@ -234,9 +231,6 @@ func unmarshalResponseBodyExpectingErrorResponseV2(response *http.Response, targ
 	if err != nil {
 		return err
 	}
-
-	fmt.Println("THE BODY IS")
-	fmt.Println(string(b))
 
 	return json.Unmarshal(b, &target)
 }

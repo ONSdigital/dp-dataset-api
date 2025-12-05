@@ -72,8 +72,6 @@ func (c *Client) GetVersion(ctx context.Context, headers Headers, datasetID, edi
 		return version, err
 	}
 
-	fmt.Println("THE HEADERS ARE")
-	fmt.Println(headers)
 	// Make request
 	resp, err := c.doAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {

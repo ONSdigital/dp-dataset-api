@@ -135,8 +135,7 @@ Feature: Static Dataset Versions DELETE API
 
     Scenario: DELETE /datasets/{id} fails due to bad files-api client response
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I DELETE "/datasets/static-dataset-bad-version-download-url"
         Then the HTTP status code should be "500"
         And the dataset "static-dataset-bad-version-download-url" should exist

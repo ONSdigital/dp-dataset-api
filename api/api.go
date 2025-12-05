@@ -488,6 +488,8 @@ func (api *DatasetAPI) checkUserPermission(r *http.Request, logData log.Data, pe
 			authorised = true
 		}
 
+		logData["authenticated"] = authorised
+
 		return authorised
 	}
 	return authorised
