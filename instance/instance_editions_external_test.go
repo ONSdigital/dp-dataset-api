@@ -20,7 +20,6 @@ const testLockID = "testLock"
 
 func Test_UpdateInstanceToEditionConfirmedUnauthorised(t *testing.T) {
 	Convey("Given a dataset API with auth and a successful store mock with a 'completed' generic instance", t, func() {
-
 		mockedDataStore := &storetest.StorerMock{}
 
 		authorisationMock := &authMock.MiddlewareMock{
@@ -28,7 +27,6 @@ func Test_UpdateInstanceToEditionConfirmedUnauthorised(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusUnauthorized)
 				}
-
 			},
 		}
 
@@ -63,7 +61,6 @@ func Test_UpdateInstanceToEditionConfirmedUnauthorised(t *testing.T) {
 
 func Test_UpdateInstanceToEditionConfirmedForbidden(t *testing.T) {
 	Convey("Given a dataset API with auth that returns forbidden and a successful store mock with a 'completed' generic instance", t, func() {
-
 		mockedDataStore := &storetest.StorerMock{}
 
 		authorisationMock := &authMock.MiddlewareMock{
@@ -71,7 +68,6 @@ func Test_UpdateInstanceToEditionConfirmedForbidden(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusForbidden)
 				}
-
 			},
 		}
 

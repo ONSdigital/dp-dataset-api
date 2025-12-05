@@ -19,22 +19,20 @@ const (
 	testIfMatch = "testIfMatch"
 	testETag    = "testETag"
 	AnyETag     = "*"
+
+	bodyStr = `{"label":"ages", "description": "A range of ages between 18 and 60"}`
 )
 
 func Test_UpdateDimensionUnauthorised(t *testing.T) {
 	t.Parallel()
 
-	bodyStr := `{"label":"ages", "description": "A range of ages between 18 and 60"}`
-
 	Convey("Given a dataset API with a successful store mock with auth that returns unauthorised", t, func() {
-
 		mockedDataStore := &storetest.StorerMock{}
 		authorisationMock := &authMock.MiddlewareMock{
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusUnauthorized)
 				}
-
 			},
 		}
 
@@ -63,10 +61,7 @@ func Test_UpdateDimensionUnauthorised(t *testing.T) {
 func Test_UpdateDimensionForbidden(t *testing.T) {
 	t.Parallel()
 
-	bodyStr := `{"label":"ages", "description": "A range of ages between 18 and 60"}`
-
 	Convey("Given a dataset API with a successful store mock with auth that returns forbidden", t, func() {
-
 		mockedDataStore := &storetest.StorerMock{}
 
 		authorisationMock := &authMock.MiddlewareMock{
@@ -74,7 +69,6 @@ func Test_UpdateDimensionForbidden(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusForbidden)
 				}
-
 			},
 		}
 
@@ -103,7 +97,6 @@ func Test_UpdateDimensionForbidden(t *testing.T) {
 func Test_UpdateDimensionReturnsOk(t *testing.T) {
 	t.Parallel()
 
-	bodyStr := `{"label":"ages", "description": "A range of ages between 18 and 60"}`
 	expectedUpdate := &models.Instance{
 		Dimensions: []models.Dimension{
 			{

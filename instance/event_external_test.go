@@ -16,13 +16,14 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+var (
+	eventBodyStr = `{"message": "321", "type": "error", "message_offset":"00", "time":"2017-08-25T15:09:11.829Z" }`
+)
+
 func TestAddEventUnauthorised(t *testing.T) {
 	t.Parallel()
 
-	bodyStr := `{"message": "321", "type": "error", "message_offset":"00", "time":"2017-08-25T15:09:11.829Z" }`
-
 	Convey("Given a dataset API with a successful store mock and auth that returns unauthorised", t, func() {
-
 		mockedDataStore := &storetest.StorerMock{}
 
 		authorisationMock := &authMock.MiddlewareMock{
@@ -30,14 +31,13 @@ func TestAddEventUnauthorised(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusUnauthorized)
 				}
-
 			},
 		}
 
 		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		Convey("When a POST request to create an event for an instance resource is made, with a valid If-Match header", func() {
-			body := strings.NewReader(bodyStr)
+			body := strings.NewReader(eventBodyStr)
 			r, err := createRequestWithNoToken("POST", "http://localhost:21800/instances/123/events", body)
 			r.Header.Set("If-Match", testIfMatch)
 			So(err, ShouldBeNil)
@@ -58,11 +58,7 @@ func TestAddEventUnauthorised(t *testing.T) {
 
 func TestAddEventForbidden(t *testing.T) {
 	t.Parallel()
-
-	bodyStr := `{"message": "321", "type": "error", "message_offset":"00", "time":"2017-08-25T15:09:11.829Z" }`
-
 	Convey("Given a dataset API with a successful store mock and auth that returns forbidden", t, func() {
-
 		mockedDataStore := &storetest.StorerMock{}
 
 		authorisationMock := &authMock.MiddlewareMock{
@@ -70,14 +66,13 @@ func TestAddEventForbidden(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusForbidden)
 				}
-
 			},
 		}
 
 		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		Convey("When a POST request to create an event for an instance resource is made, with a valid If-Match header", func() {
-			body := strings.NewReader(bodyStr)
+			body := strings.NewReader(eventBodyStr)
 			r, err := createRequestWithToken("POST", "http://localhost:21800/instances/123/events", body)
 			r.Header.Set("If-Match", testIfMatch)
 			So(err, ShouldBeNil)
@@ -99,7 +94,6 @@ func TestAddEventForbidden(t *testing.T) {
 func TestAddEventReturnsOk(t *testing.T) {
 	t.Parallel()
 
-	bodyStr := `{"message": "321", "type": "error", "message_offset":"00", "time":"2017-08-25T15:09:11.829Z" }`
 	layout := "2006-01-02T15:04:05.000Z"
 	str := "2017-08-25T15:09:11.829Z"
 	testTime, _ := time.Parse(layout, str)
@@ -134,7 +128,7 @@ func TestAddEventReturnsOk(t *testing.T) {
 		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		Convey("When a POST request to create an event for an instance resource is made, with a valid If-Match header", func() {
-			body := strings.NewReader(bodyStr)
+			body := strings.NewReader(eventBodyStr)
 			r, err := createRequestWithToken("POST", "http://localhost:21800/instances/123/events", body)
 			r.Header.Set("If-Match", testIfMatch)
 			So(err, ShouldBeNil)
@@ -163,7 +157,7 @@ func TestAddEventReturnsOk(t *testing.T) {
 		})
 
 		Convey("When a POST request to create an event for an instance resource is made, without an If-Match header", func() {
-			body := strings.NewReader(bodyStr)
+			body := strings.NewReader(eventBodyStr)
 			r, err := createRequestWithToken("POST", "http://localhost:21800/instances/123/events", body)
 			So(err, ShouldBeNil)
 			w := httptest.NewRecorder()

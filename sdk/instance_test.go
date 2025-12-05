@@ -8,7 +8,6 @@ import (
 )
 
 func Test_PutInstance(t *testing.T) {
-
 	Convey("Given a valid instance", t, func() {
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, "", map[string]string{"ETag": "1234"}})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
@@ -30,7 +29,6 @@ func Test_PutInstance(t *testing.T) {
 	Convey("Given no auth token has been configured so the request is unauthorized", t, func() {
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusUnauthorized, "", map[string]string{"ETag": "1234"}})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
-		// 	datasetClient := newDatasetClient(httpClient)
 
 		Convey("when put instance is called", func() {
 			instance := UpdateInstance{ID: "1234"}
@@ -44,8 +42,6 @@ func Test_PutInstance(t *testing.T) {
 			Convey("and the etag should be empty", func() {
 				So(str, ShouldEqual, "")
 			})
-
 		})
 	})
-
 }

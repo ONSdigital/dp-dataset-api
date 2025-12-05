@@ -54,7 +54,8 @@ var (
 	ErrVersionAlreadyExists               = errors.New("an unpublished version of this dataset already exists")
 	ErrNotFound                           = errors.New("not found")
 	ErrMissingDatasetID                   = errors.New("invalid fields: missing dataset id in request body")
-	ErrEditionAlreadyExists               = errors.New("the edition-id already exists")
+	ErrEditionAlreadyExists               = errors.New("the edition already exists")
+	ErrEditionTitleAlreadyExists          = errors.New("the edition-title already exists")
 	ErrInvalidDatasetTypeForEditionUpdate = errors.New("unable to update edition-id, invalid dataset type")
 	ErrFileMetadataNotFound               = errors.New("file metadata not found")
 	ErrFileNotInCorrectState              = errors.New("file not in correct state")
@@ -96,10 +97,11 @@ var (
 	}
 
 	ConflictRequestMap = map[error]bool{
-		ErrConflictUpdatingInstance: true,
-		ErrInstanceConflict:         true,
-		ErrEditionAlreadyExists:     true,
-		ErrFileNotInCorrectState:    true,
+		ErrConflictUpdatingInstance:  true,
+		ErrInstanceConflict:          true,
+		ErrEditionAlreadyExists:      true,
+		ErrEditionTitleAlreadyExists: true,
+		ErrFileNotInCorrectState:     true,
 	}
 
 	ForbiddenMap = map[error]bool{

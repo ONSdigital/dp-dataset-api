@@ -8,7 +8,7 @@ import (
 	"net/url"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/golang-neo4j-bolt-driver/errors"
+	"github.com/pkg/errors"
 )
 
 // EditableMetadata represents the metadata fields that can be edited
@@ -39,8 +39,6 @@ type EditableMetadata struct {
 
 // PutMetadata updates the dataset and the version metadata
 func (c *Client) PutMetadata(ctx context.Context, headers Headers, datasetID, edition, version string, metadata EditableMetadata, versionEtag string) error {
-	//uri := fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s/metadata", c.hcCli.URL, datasetID, edition, version)
-
 	var err error
 	uri := &url.URL{}
 	uri.Path, err = url.JoinPath(c.hcCli.URL, "datasets", datasetID, "editions", edition, "versions", version, "metadata")

@@ -43,7 +43,7 @@ Feature: Static Dataset Versions POST API
                             "title": "Published Dataset CSV",
                             "format": "csv",
                             "media_type": "text/csv",
-                            "download_url": "/downloads/datasets/static-dataset-existing/editions/2024/versions/1.csv",
+                            "download_url": "/static-dataset-existing/2024/1/filename.csv",
                             "byte_size": 150000
                         }
                     ]
@@ -65,7 +65,7 @@ Feature: Static Dataset Versions POST API
                         "title": "Full Dataset CSV",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/datasets/static-dataset-test/editions/2024/versions/1.csv",
+                        "download_url": "/downloads/files/static-dataset-test/2024/1/filename.csv",
                         "byte_size": 100000
                     }
                 ]
@@ -87,7 +87,7 @@ Feature: Static Dataset Versions POST API
                         "title": "Updated Dataset CSV",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/datasets/static-dataset-existing/editions/2024/versions/2.csv",
+                        "download_url": "/downloads/files/static-dataset-existing/2024/2/filename.csv",
                         "byte_size": 200000
                     }
                 ]
@@ -120,7 +120,7 @@ Feature: Static Dataset Versions POST API
                         "title": "Test CSV",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/test.csv",
+                        "download_url": "/downloads/files/non-existent-dataset/2024/1/filename.csv",
                         "byte_size": 100000
                     }
                 ]
@@ -154,7 +154,7 @@ Feature: Static Dataset Versions POST API
                             "title": "csv",
                             "format": "csv",
                             "media_type": "text/csv",
-                            "download_url": "/downloads/datasets/static-dataset-test/editions/2024/versions/1.csv",
+                            "download_url": "/downloads/files/static-dataset-test/2024/1/filename.csv",
                             "byte_size": 100000
                         }
                     ]
@@ -174,7 +174,7 @@ Feature: Static Dataset Versions POST API
                         "title": "csv",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/datasets/static-dataset-test/editions/2024/versions/2.csv",
+                        "download_url": "/downloads/files/static-dataset-test/2024/2/filename.csv",
                         "byte_size": 120000
                     }
                 ]
@@ -195,10 +195,128 @@ Feature: Static Dataset Versions POST API
                         "title": "Test CSV",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/test.csv",
+                        "download_url": "/downloads/files/static-dataset-test/2024/1/filename.csv",
                         "byte_size": 100000
                     }
                 ]
             }
             """
         Then the HTTP status code should be "401"
+
+    Scenario: POST creates a new static dataset version with exisiting edition title fails
+        Given private endpoints are enabled
+        And I am an admin user
+        When I POST "/datasets/static-dataset-existing/editions/2025/versions"
+            """
+            {
+                "release_date": "2024-12-01T09:00:00.000Z",
+                "edition_title": "2024 Edition",
+                "type": "static",
+                "distributions": [
+                    {
+                        "title": "Full Dataset CSV",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "download_url": "/downloads/files/static-dataset-test/2024/1/filename.csv",
+                        "byte_size": 100000
+                    }
+                ]
+            }
+            """
+        Then the HTTP status code should be "409"
+        And I should receive the following JSON response:
+            """
+            {
+                "errors": [
+                    {
+                        "code": "ErrEditionTitleAlreadyExists",
+                        "description": "edition title already exists"
+                    }
+                ]
+            }
+            """
+
+    Scenario: POST creates a static version and auto-populates media_type based on format
+        Given private endpoints are enabled
+        And I am an admin user
+        When I POST "/datasets/static-dataset-test/editions/2024/versions"
+            """
+            {
+                "release_date": "2024-12-01T09:00:00.000Z",
+                "edition_title": "2024",
+                "type": "static",
+                "distributions": [
+                    {
+                        "title": "Full Dataset CSV",
+                        "format": "csv",
+                        "download_url": "/downloads/files/static-dataset-test/2024/1/filename.csv",
+                        "byte_size": 100000
+                    }
+                ]
+            }
+            """
+        Then the HTTP status code should be "201"
+
+    Scenario: POST fails when the distribution format field is missing
+        Given private endpoints are enabled
+        And I am an admin user
+        When I POST "/datasets/static-dataset-test/editions/2024/versions"
+            """
+            {
+                "release_date": "2024-12-01T09:00:00.000Z",
+                "edition_title": "2024",
+                "type": "static",
+                "distributions": [
+                    {
+                        "title": "Full Dataset CSV",
+                        "download_url": "/downloads/files/static-dataset-test/2024/1/filename.csv",
+                        "byte_size": 100000
+                    }
+                ]
+            }
+            """
+        Then the HTTP status code should be "400"
+        And I should receive the following JSON response:
+            """
+            {
+                "errors": [
+                    {
+                        "code": "ErrMissingParameters",
+                        "description": "distributions[0].format field is missing"
+                    }
+                ]
+            }
+            """
+
+    Scenario: POST fails when the distribution format field is invalid
+        Given private endpoints are enabled
+        And I am an admin user
+        When I POST "/datasets/static-dataset-test/editions/2024/versions"
+            """
+            {
+                "release_date": "2024-12-01T09:00:00.000Z",
+                "edition_title": "2024",
+                "type": "static",
+                "distributions": [
+                    {
+                        "title": "Full Dataset CSV",
+                        "download_url": "/downloads/files/static-dataset-test/2024/1/filename.csv",
+                        "byte_size": 100000,
+                        "format": "WRONG"
+                    }
+                ]
+            }
+            """
+
+        Then the HTTP status code should be "400"
+        And I should receive the following JSON response:
+            """
+            {
+                "errors": [
+                    {
+                        "code": "ErrMissingParameters",
+                        "description": "distributions[0].format field is invalid"
+                    }
+                ]
+            }
+            """

@@ -31,7 +31,6 @@ func TestGetDatasetEditionsForbidden(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusForbidden)
 				}
-
 			},
 		}
 
@@ -62,7 +61,6 @@ func TestGetDatasetEditionsUnauthorised(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusUnauthorized)
 				}
-
 			},
 		}
 
@@ -108,7 +106,8 @@ func TestGetDatasetEditions_WithQueryParam_Success(t *testing.T) {
 				}, 2, nil
 			},
 			GetDatasetFunc: func(ctx context.Context, id string) (*models.DatasetUpdate, error) {
-				if id == "Dataset1" {
+				switch id {
+				case "Dataset1":
 					return &models.DatasetUpdate{
 						ID: "Dataset1",
 						Next: &models.Dataset{
@@ -116,7 +115,7 @@ func TestGetDatasetEditions_WithQueryParam_Success(t *testing.T) {
 							Description: "Test dataset 1 description",
 						},
 					}, nil
-				} else if id == "Dataset2" {
+				case "Dataset2":
 					return &models.DatasetUpdate{
 						ID: "Dataset2",
 						Next: &models.Dataset{
@@ -124,8 +123,9 @@ func TestGetDatasetEditions_WithQueryParam_Success(t *testing.T) {
 							Description: "Test dataset 2 description",
 						},
 					}, nil
+				default:
+					return nil, errs.ErrDatasetNotFound
 				}
-				return nil, errs.ErrDatasetNotFound
 			},
 		}
 
@@ -612,9 +612,12 @@ func TestAddDatasetVersionCondensed_Success(t *testing.T) {
 				"frequency": "Monthly"
 				}
 			],
-			"distributions": [
-				{}
-			],
+			"distributions": [{
+					"title": "Full Dataset (CSV)",
+					"download_url": "https://download.ons.gov.uk/my-dataset-download.csv",
+					"byte_size": 4300000,
+					"format": "csv"
+      		}],
 			"usage_notes": [
 				{
 				"title": "Data usage guide",
@@ -684,9 +687,12 @@ func TestAddDatasetVersionCondensed_Success(t *testing.T) {
 					"frequency": "Monthly"
 					}
 				],
-				"distributions": [
-					{}
-				],
+				"distributions": [{
+					"title": "Full Dataset (CSV)",
+					"download_url": "https://download.ons.gov.uk/my-dataset-download.csv",
+					"byte_size": 4300000,
+					"format": "csv"
+      			}],
 				"usage_notes": [
 					{
 					"title": "Data usage guide",
@@ -738,6 +744,67 @@ func TestAddDatasetVersionCondensed_Success(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(response.Version, ShouldEqual, 2)
 	})
+
+	Convey("When distribution format is valid, media_type is populated", t, func() {
+		b := `{
+        "edition_title": "Edition Title 2025",
+        "release_date": "2025-01-15",
+        "distributions": [
+            { "title": "CSV", "format": "csv" }
+        ]
+    	}`
+
+		r := createRequestWithAuth("POST",
+			"http://localhost:22000/datasets/123/editions/time-series/versions",
+			bytes.NewBufferString(b),
+		)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error { return nil },
+			GetLatestVersionStaticFunc: func(context.Context, string, string, string) (*models.Version, error) {
+				return &models.Version{State: models.PublishedState}, nil
+			},
+			AddVersionStaticFunc: func(context.Context, *models.Version) (*models.Version, error) {
+				return &models.Version{
+					Edition: "time-series",
+					Type:    models.Static.String(),
+					Distributions: &[]models.Distribution{
+						{
+							Title:     "CSV",
+							Format:    "csv",
+							MediaType: "text/csv",
+						},
+					},
+				}, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					Next: &models.Dataset{State: "associated"},
+				}, nil
+			},
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error { return nil },
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{},
+			authorisationMock)
+
+		success, failure := api.addDatasetVersionCondensed(w, r)
+
+		So(failure, ShouldBeNil)
+		So(success.Status, ShouldEqual, http.StatusCreated)
+
+		var version models.Version
+		json.Unmarshal(success.Body, &version)
+
+		So((*version.Distributions)[0].MediaType, ShouldEqual, models.DistributionMediaTypeCSV)
+	})
 }
 
 func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
@@ -746,7 +813,12 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 		b := `{
 				"release_date": "2025-01-15",
 				"edition_title": "test-edition",
-				"distributions": [{}]
+				"distributions": [{
+					"title": "Full Dataset (CSV)",
+					"download_url": "https://download.ons.gov.uk/my-dataset-download.csv",
+					"byte_size": 4300000,
+					"format": "csv"
+      			}]
 			}`
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/time-series/versions", bytes.NewBufferString(b))
 		w := httptest.NewRecorder()
@@ -784,7 +856,12 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 		b := `{
 				"release_date": "2025-01-15",
 				"edition_title": "Edition Title 2025",
-				"distributions": [{}]
+				"distributions": [{
+					"title": "Full Dataset (CSV)",
+					"download_url": "https://download.ons.gov.uk/my-dataset-download.csv",
+					"byte_size": 4300000,
+					"format": "csv"
+      			}]
 			}`
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/time-series/versions", bytes.NewBufferString(b))
 		w := httptest.NewRecorder()
@@ -830,7 +907,12 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 		b := `{
 				"release_date": "2025-01-15",
 				"edition_title": "Edition Title 2025",
-				"distributions": [{}]
+				"distributions": [{
+					"title": "Full Dataset (CSV)",
+					"download_url": "https://download.ons.gov.uk/my-dataset-download.csv",
+					"byte_size": 4300000,
+					"format": "csv"
+      			}]
 			}`
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/time-series/versions", bytes.NewBufferString(b))
 		w := httptest.NewRecorder()
@@ -913,9 +995,12 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 					"frequency": "Monthly"
 					}
 				],
-				"distributions": [
-					{}
-				],
+				"distributions": [{
+					"title": "Full Dataset (CSV)",
+					"download_url": "https://download.ons.gov.uk/my-dataset-download.csv",
+					"byte_size": 4300000,
+					"format": "csv"
+      			}],
 				"usage_notes": [
 					{
 					"title": "Data usage guide",
@@ -998,9 +1083,12 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 					"frequency": "Monthly"
 					}
 				],
-				"distributions": [
-					{}
-				],
+				"distributions": [{
+					"title": "Full Dataset (CSV)",
+					"download_url": "https://download.ons.gov.uk/my-dataset-download.csv",
+					"byte_size": 4300000,
+					"format": "csv"
+      			}],
 				"usage_notes": [
 					{
 					"title": "Data usage guide",
@@ -1053,6 +1141,54 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(response.Version, ShouldEqual, 1)
 		So(response.Edition, ShouldEqual, "time-series")
+	})
+
+	Convey("When edition title already exists in another edition", t, func() {
+		b := `{
+				"release_date": "2025-01-15",
+				"edition_title": "Existing Edition Title",
+				"distributions": [{
+					"title": "Full Dataset (CSV)",
+					"download_url": "https://download.ons.gov.uk/my-dataset-download.csv",
+					"byte_size": 4300000,
+					"format": "csv"
+      			}]
+			}`
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/new-edition/versions", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID, editionID, state string) error {
+				return errs.ErrEditionNotFound
+			},
+			CheckEditionTitleExistsStaticFunc: func(ctx context.Context, datasetID, editionTitle string) error {
+				return errs.ErrEditionTitleAlreadyExists
+			},
+			GetLatestVersionStaticFunc: func(context.Context, string, string, string) (*models.Version, error) {
+				return nil, errs.ErrVersionNotFound
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
+
+		So(errorResponse.Status, ShouldEqual, http.StatusConflict)
+		So(successResponse, ShouldBeNil)
+		castErr := errorResponse.Errors[0]
+		So(castErr.Code, ShouldEqual, models.ErrEditionTitleAlreadyExists)
+		So(castErr.Description, ShouldEqual, models.ErrEditionTitleAlreadyExistsDescription)
+		So(mockedDataStore.CheckDatasetExistsCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.CheckEditionExistsStaticCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.CheckEditionTitleExistsStaticCalls(), ShouldHaveLength, 1)
 	})
 
 	Convey("When request body is not valid", t, func() {
@@ -1116,7 +1252,12 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 				}
 			],
 			"distributions": [
-				{}
+				{
+					"title": "Full Dataset (CSV)",
+					"download_url": "https://download.ons.gov.uk/my-dataset-download.csv",
+					"byte_size": 4300000,
+					"format": "csv"
+      			}
 			],
 			"usage_notes": [
 				{
@@ -1163,6 +1304,83 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 		So(err.Code, ShouldEqual, models.ErrInvalidTypeError)
 		So(err.Description, ShouldEqual, models.ErrTypeNotStaticDescription)
 		So(successResponse, ShouldBeNil)
+	})
+
+	Convey("When given format is missing, return 400 with missing field error", t, func() {
+		b := `{
+        "release_date": "2025-01-15",
+        "edition_title": "test-edition",
+        "distributions": [{
+            "title": "Full Dataset",
+            "download_url": "https://example.com/data",
+            "byte_size": 1234
+        }]
+    	}`
+
+		r := createRequestWithAuth("POST",
+			"http://localhost:22000/datasets/123/editions/time-series/versions",
+			bytes.NewBufferString(b),
+		)
+		w := httptest.NewRecorder()
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(
+			&storetest.StorerMock{
+				CheckDatasetExistsFunc: func(context.Context, string, string) error { return nil },
+			},
+			&mocks.DownloadsGeneratorMock{},
+			authorisationMock,
+		)
+
+		success, errResp := api.addDatasetVersionCondensed(w, r)
+
+		So(success, ShouldBeNil)
+		So(errResp.Status, ShouldEqual, http.StatusBadRequest)
+		So(errResp.Errors[0].Description, ShouldContainSubstring, "distributions[0].format field is missing")
+	})
+
+	Convey("Given invalid format is provided, return 400 with invalid field message", t, func() {
+		b := `{
+        "release_date": "2025-01-15",
+        "edition_title": "test-edition",
+        "distributions": [{
+            "title": "Full Dataset",
+            "download_url": "https://example.com/data",
+            "byte_size": 1234,
+            "format": "WRONG"
+        }]
+    	}`
+
+		r := createRequestWithAuth("POST",
+			"http://localhost:22000/datasets/123/editions/time-series/versions",
+			bytes.NewBufferString(b),
+		)
+		w := httptest.NewRecorder()
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(
+			&storetest.StorerMock{
+				CheckDatasetExistsFunc: func(context.Context, string, string) error { return nil },
+			},
+			&mocks.DownloadsGeneratorMock{},
+			authorisationMock,
+		)
+
+		success, errResp := api.addDatasetVersionCondensed(w, r)
+
+		So(success, ShouldBeNil)
+		So(errResp.Status, ShouldEqual, http.StatusBadRequest)
+		So(errResp.Errors[0].Description, ShouldContainSubstring, "distributions[0].format field is invalid")
 	})
 }
 
@@ -1766,5 +1984,109 @@ func TestCreateVersion_Failure(t *testing.T) {
 				So(errorResponse.Errors[0].Description, ShouldEqual, models.InternalErrorDescription)
 			})
 		})
+	})
+
+	Convey("When the distribution format field is missing", t, func() {
+		b := `{
+        "edition_title": "Test Edition Title",
+        "release_date": "2025-01-01",
+        "type": "static",
+        "distributions": [
+            {
+                "title": "Dataset CSV",
+                "download_url": "path/to/download",
+                "byte_size": 1000
+            }
+        ]
+    }`
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error { return nil },
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{},
+			authorisationMock)
+
+		r := createRequestWithAuth(
+			"POST",
+			"http://localhost:22000/datasets/123/editions/2024/versions/1",
+			bytes.NewBufferString(b),
+		)
+
+		r = mux.SetURLVars(r, map[string]string{
+			"dataset_id": "123",
+			"edition":    "2024",
+			"version":    "1",
+		})
+
+		w := httptest.NewRecorder()
+
+		success, errResp := api.createVersion(w, r)
+
+		// Assertions
+		So(success, ShouldBeNil)
+		So(errResp.Status, ShouldEqual, http.StatusBadRequest)
+		So(errResp.Errors[0].Code, ShouldEqual, models.ErrMissingParameters)
+		So(errResp.Errors[0].Description, ShouldEqual, "distributions[0].format field is missing")
+	})
+
+	Convey("When the distribution format field is invalid", t, func() {
+		b := `{
+        "edition_title": "test-edition",
+        "release_date": "2025-01-15",
+        "type": "static",
+        "distributions": [
+            {
+                "title": "Dataset CSV",
+                "download_url": "path/to/download",
+                "byte_size": 1000,
+                "format": "WRONG"
+            }
+        ]
+    }`
+
+		r := createRequestWithAuth("POST",
+			"http://localhost:22000/datasets/123/editions/2024/versions/1",
+			bytes.NewBufferString(b),
+		)
+		r = mux.SetURLVars(r, map[string]string{
+			"dataset_id": "123",
+			"edition":    "2024",
+			"version":    "1",
+		})
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc:       func(context.Context, string, string) error { return nil },
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error { return nil },
+			CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
+				return false, nil
+			},
+			AddVersionStaticFunc: func(context.Context, *models.Version) (*models.Version, error) {
+				return &models.Version{}, nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{},
+			authorisationMock)
+
+		success, errResp := api.createVersion(w, r)
+
+		So(success, ShouldBeNil)
+		So(errResp.Status, ShouldEqual, http.StatusBadRequest)
+		So(errResp.Errors[0].Code, ShouldEqual, models.ErrMissingParameters)
+		So(errResp.Errors[0].Description, ShouldEqual, "distributions[0].format field is invalid")
 	})
 }

@@ -16,6 +16,7 @@ const (
 	validURI    = "http://localhost:22000/datasets/123"
 	validHref   = "http://localhost:22000/datasets/href"
 	invalidHref = ":invalid"
+	invalidURI  = ":invalid"
 )
 
 func createDataset() Dataset {
@@ -351,7 +352,7 @@ func TestValidateDataset(t *testing.T) {
 	Convey("Unsuccessful validation (false) returned", t, func() {
 		Convey("when dataset.URI is unable to be parsed into url format", func() {
 			dataset := createDataset()
-			dataset.URI = ":foo"
+			dataset.URI = invalidURI
 			validationErr := ValidateDataset(&dataset)
 			So(validationErr, ShouldNotBeNil)
 			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [URI]").Error())
@@ -375,7 +376,7 @@ func TestValidateDataset(t *testing.T) {
 
 		Convey("when dataset.QMI.Href is unable to be parsed into url format", func() {
 			dataset := createDataset()
-			dataset.QMI.HRef = ":foo"
+			dataset.QMI.HRef = invalidURI
 			validationErr := ValidateDataset(&dataset)
 			So(validationErr, ShouldNotBeNil)
 			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [QMI]").Error())
@@ -383,7 +384,7 @@ func TestValidateDataset(t *testing.T) {
 
 		Convey("when dataset.Publisher.Href is unable to be parsed into url format", func() {
 			dataset := createDataset()
-			dataset.Publisher.HRef = ":foo"
+			dataset.Publisher.HRef = invalidURI
 			validationErr := ValidateDataset(&dataset)
 			So(validationErr, ShouldNotBeNil)
 			So(validationErr.Error(), ShouldResemble, errors.New("invalid fields: [Publisher]").Error())

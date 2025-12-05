@@ -16,6 +16,10 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+const (
+	observationsMessageBodyStr = `{"import_observations":{"state":"completed"}}`
+)
+
 func Test_InsertedObservationsUnauthorised(t *testing.T) {
 	t.Parallel()
 
@@ -27,7 +31,6 @@ func Test_InsertedObservationsUnauthorised(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusUnauthorized)
 				}
-
 			},
 		}
 
@@ -63,7 +66,6 @@ func Test_InsertedObservationsForbidden(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusForbidden)
 				}
-
 			},
 		}
 
@@ -311,8 +313,6 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 func Test_UpdateImportTask_UpdateImportObservationsUnauthorised(t *testing.T) {
 	t.Parallel()
 
-	bodyStr := `{"import_observations":{"state":"completed"}}`
-
 	Convey("Given a dataset API with a successful store mock and auth that returns unauthorised", t, func() {
 		mockedDataStore := &storetest.StorerMock{}
 
@@ -321,14 +321,13 @@ func Test_UpdateImportTask_UpdateImportObservationsUnauthorised(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusUnauthorized)
 				}
-
 			},
 		}
 
 		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		Convey("When a PUT request to update the import_observations value for an import task of an instance resource is made, with a valid If-Match header", func() {
-			body := strings.NewReader(bodyStr)
+			body := strings.NewReader(observationsMessageBodyStr)
 			r, err := createRequestWithNoToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
 			r.Header.Set("If-Match", testIfMatch)
 			So(err, ShouldBeNil)
@@ -350,8 +349,6 @@ func Test_UpdateImportTask_UpdateImportObservationsUnauthorised(t *testing.T) {
 func Test_UpdateImportTask_UpdateImportObservationsForbidden(t *testing.T) {
 	t.Parallel()
 
-	bodyStr := `{"import_observations":{"state":"completed"}}`
-
 	Convey("Given a dataset API with a successful store mock and auth that returns forbidden", t, func() {
 		mockedDataStore := &storetest.StorerMock{}
 
@@ -360,14 +357,13 @@ func Test_UpdateImportTask_UpdateImportObservationsForbidden(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusForbidden)
 				}
-
 			},
 		}
 
 		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		Convey("When a PUT request to update the import_observations value for an import task of an instance resource is made, with a valid If-Match header", func() {
-			body := strings.NewReader(bodyStr)
+			body := strings.NewReader(observationsMessageBodyStr)
 			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
 			r.Header.Set("If-Match", testIfMatch)
 			So(err, ShouldBeNil)
@@ -388,8 +384,6 @@ func Test_UpdateImportTask_UpdateImportObservationsForbidden(t *testing.T) {
 
 func Test_UpdateImportTask_UpdateImportObservationsReturnsOk(t *testing.T) {
 	t.Parallel()
-
-	bodyStr := `{"import_observations":{"state":"completed"}}`
 
 	Convey("Given a dataset API with a successful store mock and auth", t, func() {
 		instance := &models.Instance{
@@ -416,7 +410,7 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsOk(t *testing.T) {
 		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		Convey("When a PUT request to update the import_observations value for an import task of an instance resource is made, with a valid If-Match header", func() {
-			body := strings.NewReader(bodyStr)
+			body := strings.NewReader(observationsMessageBodyStr)
 			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
 			r.Header.Set("If-Match", testIfMatch)
 			So(err, ShouldBeNil)
@@ -445,7 +439,7 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsOk(t *testing.T) {
 		})
 
 		Convey("When a PUT request to retrieve an instance resource is made, without an If-Match header", func() {
-			body := strings.NewReader(bodyStr)
+			body := strings.NewReader(observationsMessageBodyStr)
 			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
 			So(err, ShouldBeNil)
 			w := httptest.NewRecorder()
@@ -457,8 +451,6 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsOk(t *testing.T) {
 			})
 
 			Convey("Then the expected functions are called", func() {
-				// So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				// So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
 				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, AnyETag)
@@ -708,8 +700,7 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 
 		Convey("When the service loses connection to datastore whilst updating observations", func() {
 			Convey("Then return status internal server error (500)", func() {
-				body := strings.NewReader(`{"import_observations":{"state":"completed"}}`)
-				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", strings.NewReader(observationsMessageBodyStr))
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 

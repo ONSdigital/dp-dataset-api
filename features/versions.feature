@@ -360,7 +360,7 @@ Feature: Dataset API
                                 "title": "Distribution 4",
                                 "format": "csv",
                                 "media_type": "text/csv",
-                                "download_url": "http://localhost:23600/downloads-new/datasets/population-estimates/editions/hello/versions/4.csv",
+                                "download_url": "http://localhost:23600/downloads/files/datasets/population-estimates/editions/hello/versions/4.csv",
                                 "byte_size": 100000
                             }
                         ]
@@ -385,7 +385,7 @@ Feature: Dataset API
                                 "title": "Distribution 1",
                                 "format": "csv",
                                 "media_type": "text/csv",
-                                "download_url": "http://localhost:23600/downloads-new/datasets/population-estimates/editions/hello/versions/1.csv",
+                                "download_url": "http://localhost:23600/downloads/files/datasets/population-estimates/editions/hello/versions/1.csv",
                                 "byte_size": 100000
                             }
                         ]
@@ -495,7 +495,7 @@ Feature: Dataset API
                                 "title": "Distribution 4",
                                 "format": "csv",
                                 "media_type": "text/csv",
-                                "download_url": "http://localhost:23600/downloads-new/datasets/population-estimates/editions/hello/versions/4.csv",
+                                "download_url": "http://localhost:23600/downloads/files/datasets/population-estimates/editions/hello/versions/4.csv",
                                 "byte_size": 100000
                             }
                         ]
@@ -520,7 +520,7 @@ Feature: Dataset API
                                 "title": "Distribution 2",
                                 "format": "csv",
                                 "media_type": "text/csv",
-                                "download_url": "http://localhost:23600/downloads-new/datasets/population-estimates/editions/hello/versions/2.csv",
+                                "download_url": "http://localhost:23600/downloads/files/datasets/population-estimates/editions/hello/versions/2.csv",
                                 "byte_size": 100000
                             }
                         ]
@@ -545,7 +545,7 @@ Feature: Dataset API
                                 "title": "Distribution 1",
                                 "format": "csv",
                                 "media_type": "text/csv",
-                                "download_url": "http://localhost:23600/downloads-new/datasets/population-estimates/editions/hello/versions/1.csv",
+                                "download_url": "http://localhost:23600/downloads/files/datasets/population-estimates/editions/hello/versions/1.csv",
                                 "byte_size": 100000
                             }
                         ]
@@ -742,7 +742,7 @@ Feature: Dataset API
                     "title": "Distribution 4",
                     "format": "csv",
                     "media_type": "text/csv",
-                    "download_url": "http://localhost:23600/downloads-new/datasets/population-estimates/editions/hello/versions/4.csv",
+                    "download_url": "http://localhost:23600/downloads/files/datasets/population-estimates/editions/hello/versions/4.csv",
                     "byte_size": 100000
                 }
             ]
@@ -810,7 +810,7 @@ Feature: Dataset API
                     "title": "Distribution 2",
                     "format": "csv",
                     "media_type": "text/csv",
-                    "download_url": "http://localhost:23600/downloads-new/datasets/population-estimates/editions/hello/versions/2.csv",
+                    "download_url": "http://localhost:23600/downloads/files/datasets/population-estimates/editions/hello/versions/2.csv",
                     "byte_size": 100000
                 }
             ]

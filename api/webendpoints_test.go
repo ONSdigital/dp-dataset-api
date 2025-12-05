@@ -356,7 +356,7 @@ func TestPublishedSubnetEndpointsAreDisabled(t *testing.T) {
 	})
 }
 
-func GetWebAPIWithMocks(ctx context.Context, mockedDataStore store.Storer, mockedGeneratedDownloads DownloadsGenerator, authorisationMock *authMock.MiddlewareMock, permissionsMock *authMock.PermissionsCheckerMock, testIdClient *clientsidentity.Client) *DatasetAPI {
+func GetWebAPIWithMocks(ctx context.Context, mockedDataStore store.Storer, mockedGeneratedDownloads DownloadsGenerator, authorisationMock *authMock.MiddlewareMock, permissionsMock *authMock.PermissionsCheckerMock, testIDClient *clientsidentity.Client) *DatasetAPI {
 	mockedMapDownloadGenerators := map[models.DatasetType]DownloadsGenerator{
 		models.Filterable: mockedGeneratedDownloads,
 	}
@@ -376,5 +376,5 @@ func GetWebAPIWithMocks(ctx context.Context, mockedDataStore store.Storer, mocke
 	cfg.DatasetAPIURL = host
 	cfg.EnablePrivateEndpoints = false
 
-	return Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapDownloadGenerators, authorisationMock, enableURLRewriting, &mockStatemachineDatasetAPI, permissionsMock, testIdClient)
+	return Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapDownloadGenerators, authorisationMock, enableURLRewriting, &mockStatemachineDatasetAPI, permissionsMock, testIDClient)
 }

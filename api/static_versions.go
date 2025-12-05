@@ -3,12 +3,14 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-dataset-api/utils"
 	dpresponse "github.com/ONSdigital/dp-net/v3/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v3/http"
 	"github.com/ONSdigital/log.go/v2/log"
@@ -56,11 +58,10 @@ func (api *DatasetAPI) getDatasetEditions(w http.ResponseWriter, r *http.Request
 			log.Error(ctx, "getDatasetEditions endpoint: no versions found", err, logData)
 			handleVersionAPIErr(ctx, errs.ErrVersionsNotFound, w, logData)
 			return nil, 0, errs.ErrVersionsNotFound
-		} else {
-			log.Error(ctx, "getDatasetEditions endpoint: failed to get versions", err, logData)
-			handleVersionAPIErr(ctx, errs.ErrInternalServer, w, logData)
-			return nil, 0, errs.ErrInternalServer
 		}
+		log.Error(ctx, "getDatasetEditions endpoint: failed to get versions", err, logData)
+		handleVersionAPIErr(ctx, errs.ErrInternalServer, w, logData)
+		return nil, 0, errs.ErrInternalServer
 	}
 
 	results := make([]*models.DatasetEdition, 0, len(versions))
@@ -76,11 +77,10 @@ func (api *DatasetAPI) getDatasetEditions(w http.ResponseWriter, r *http.Request
 				log.Error(ctx, "getDatasetEditions endpoint: dataset not found", err, logData)
 				handleVersionAPIErr(ctx, errs.ErrDatasetNotFound, w, logData)
 				return nil, 0, errs.ErrDatasetNotFound
-			} else {
-				log.Error(ctx, "getDatasetEditions endpoint: failed to get dataset", err, logData)
-				handleVersionAPIErr(ctx, errs.ErrInternalServer, w, logData)
-				return nil, 0, errs.ErrInternalServer
 			}
+			log.Error(ctx, "getDatasetEditions endpoint: failed to get dataset", err, logData)
+			handleVersionAPIErr(ctx, errs.ErrInternalServer, w, logData)
+			return nil, 0, errs.ErrInternalServer
 		}
 
 		results = append(results, &models.DatasetEdition{
@@ -116,8 +116,20 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 
 	log.Info(ctx, "condensed endpoint called", logData)
 
+	// Read body once and validate distributions before unmarshaling
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Error(ctx, "failed to read request body", err, logData)
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, "failed to read request body", "failed to read request body"))
+	}
+
+	if err := utils.ValidateDistributionsFromRequestBody(bodyBytes); err != nil {
+		log.Error(ctx, "invalid distributions format", err, logData)
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewValidationError(models.ErrMissingParameters, err.Error()))
+	}
+
 	versionRequest := &models.Version{}
-	if err := json.NewDecoder(r.Body).Decode(versionRequest); err != nil {
+	if err := json.Unmarshal(bodyBytes, versionRequest); err != nil {
 		log.Error(ctx, "failed to unmarshal version", err, logData)
 		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, models.JSONUnmarshalError, "failed to unmarshal version"))
 	}
@@ -125,6 +137,11 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	if missingFields := validateVersionFields(versionRequest); len(missingFields) > 0 {
 		log.Error(ctx, "failed validation check for version update", fmt.Errorf("missing mandatory version fields"), logData)
 		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewValidationError(models.ErrMissingParameters, models.ErrMissingParametersDescription+" "+strings.Join(missingFields, " ")))
+	}
+
+	if err := utils.PopulateDistributions(versionRequest); err != nil {
+		log.Error(ctx, "failed to populate distributions", err, logData)
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewValidationError(models.ErrMissingParameters, err.Error()))
 	}
 
 	// validate versiontype
@@ -151,6 +168,26 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 
 	if errors.Is(err, errs.ErrVersionNotFound) {
 		log.Warn(ctx, "edition not found, defaulting to version 1", logData)
+		// Creating version 1 of a new edition
+		// Check edition ID
+		checkErr := api.dataStore.Backend.CheckEditionExistsStatic(ctx, datasetID, edition, "")
+		if checkErr == nil {
+			log.Error(ctx, "edition ID already exists", errs.ErrEditionAlreadyExists, logData)
+			return nil, models.NewErrorResponse(http.StatusConflict, nil, models.NewValidationError(models.ErrEditionAlreadyExists, models.ErrEditionAlreadyExistsDescription))
+		} else if !errors.Is(checkErr, errs.ErrEditionNotFound) {
+			log.Error(ctx, "failed to check edition ID existence", checkErr, logData)
+			return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(checkErr, "failed to check edition ID", "internal error"))
+		}
+		// Check edition title
+		checkErr = api.dataStore.Backend.CheckEditionTitleExistsStatic(ctx, datasetID, versionRequest.EditionTitle)
+		if checkErr != nil {
+			if errors.Is(checkErr, errs.ErrEditionTitleAlreadyExists) {
+				log.Error(ctx, "edition title already exists", checkErr, logData)
+				return nil, models.NewErrorResponse(http.StatusConflict, nil, models.NewValidationError(models.ErrEditionTitleAlreadyExists, models.ErrEditionTitleAlreadyExistsDescription))
+			}
+			log.Error(ctx, "failed to check edition title existence", checkErr, logData)
+			return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(checkErr, "failed to check edition title", "internal error"))
+		}
 		nextVersion = 1
 	} else {
 		nextVersion = latestVersion.Version + 1
@@ -167,6 +204,7 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	versionRequest.Version = nextVersion
 	versionRequest.DatasetID = datasetID
 	versionRequest.Links = api.generateVersionLinks(datasetID, edition, nextVersion, versionRequest.Links)
+	versionRequest.Distributions = utils.GenerateDistributionsDownloadURLs(datasetID, edition, nextVersion, versionRequest.Distributions)
 	versionRequest.Type = models.Static.String()
 
 	// Store version in 'versions' collection
@@ -220,10 +258,27 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 		"version":    version,
 	}
 
+	// Read body once and validate distributions before unmarshaling
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Error(ctx, "createVersion endpoint: failed to read request body", err, logData)
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, "failed to read request body", "failed to read request body"))
+	}
+
+	if err := utils.ValidateDistributionsFromRequestBody(bodyBytes); err != nil {
+		log.Error(ctx, "createVersion endpoint: invalid distributions format", err, logData)
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewValidationError(models.ErrMissingParameters, err.Error()))
+	}
+
 	newVersion := &models.Version{}
-	if err := json.NewDecoder(r.Body).Decode(newVersion); err != nil {
+	if err := json.Unmarshal(bodyBytes, newVersion); err != nil {
 		log.Error(ctx, "createVersion endpoint: failed to unmarshal version", err, logData)
 		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, models.JSONUnmarshalError, "failed to unmarshal version"))
+	}
+
+	if err := utils.PopulateDistributions(newVersion); err != nil {
+		log.Error(ctx, "createVersion endpoint: failed to populate distributions", err, logData)
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewValidationError(models.ErrMissingParameters, err.Error()))
 	}
 
 	versionNumber, err := strconv.Atoi(version)
@@ -244,6 +299,7 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 	newVersion.Type = models.Static.String()
 	newVersion.State = models.AssociatedState
 	newVersion.Links = api.generateVersionLinks(datasetID, edition, versionNumber, nil)
+	newVersion.Distributions = utils.GenerateDistributionsDownloadURLs(datasetID, edition, versionNumber, newVersion.Distributions)
 
 	missingFields := validateVersionFields(newVersion)
 	if len(missingFields) > 0 {

@@ -276,24 +276,19 @@ func (api *DatasetAPI) putMetadata(w http.ResponseWriter, r *http.Request) {
 func handleMetadataErr(w http.ResponseWriter, err error) {
 	var responseStatus int
 
-	switch {
-	case err == errs.ErrUnauthorised:
+	switch err {
+	case errs.ErrUnauthorised,
+		errs.ErrEditionNotFound,
+		errs.ErrMetadataVersionNotFound,
+		errs.ErrDatasetNotFound:
 		responseStatus = http.StatusNotFound
-	case err == errs.ErrEditionNotFound:
-		responseStatus = http.StatusNotFound
-	case err == errs.ErrMetadataVersionNotFound:
-		responseStatus = http.StatusNotFound
-	case err == errs.ErrDatasetNotFound:
-		responseStatus = http.StatusNotFound
-	case err == errs.ErrInvalidVersion:
+	case errs.ErrInvalidVersion,
+		errs.ErrUnableToParseJSON,
+		errs.ErrUnableToReadMessage:
 		responseStatus = http.StatusBadRequest
-	case err == errs.ErrUnableToParseJSON:
-		responseStatus = http.StatusBadRequest
-	case err == errs.ErrUnableToReadMessage:
-		responseStatus = http.StatusBadRequest
-	case err == errs.ErrExpectedResourceStateOfAssociated:
+	case errs.ErrExpectedResourceStateOfAssociated:
 		responseStatus = http.StatusForbidden
-	case err == errs.ErrInstanceConflict:
+	case errs.ErrInstanceConflict:
 		responseStatus = http.StatusConflict
 	default:
 		err = errs.ErrInternalServer

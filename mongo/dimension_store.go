@@ -60,8 +60,8 @@ func (m *Mongo) UpsertDimensionsToInstance(ctx context.Context, opts []*models.C
 	for _, opt := range opts {
 		option := models.DimensionOption{InstanceID: opt.InstanceID, Option: opt.Option, Name: opt.Name, Label: opt.Label}
 		option.Order = opt.Order
-		option.Links.CodeList = models.LinkObject{ID: opt.CodeList, HRef: fmt.Sprintf("%s/code-lists/%s", m.MongoConfig.CodeListAPIURL, opt.CodeList)}
-		option.Links.Code = models.LinkObject{ID: opt.Code, HRef: fmt.Sprintf("%s/code-lists/%s/codes/%s", m.MongoConfig.CodeListAPIURL, opt.CodeList, opt.Code)}
+		option.Links.CodeList = models.LinkObject{ID: opt.CodeList, HRef: fmt.Sprintf("%s/code-lists/%s", m.CodeListAPIURL, opt.CodeList)}
+		option.Links.Code = models.LinkObject{ID: opt.Code, HRef: fmt.Sprintf("%s/code-lists/%s/codes/%s", m.CodeListAPIURL, opt.CodeList, opt.Code)}
 		option.LastUpdated = now
 		if _, err := m.Connection.Collection(m.ActualCollectionName(config.DimensionOptionsCollection)).Upsert(ctx,
 			bson.M{"instance_id": option.InstanceID, "name": option.Name, "option": option.Option},

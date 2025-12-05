@@ -51,6 +51,12 @@ Feature: Static Dataset Version DELETE API
                         "state": "edition-confirmed",
                         "type": "filterable"
                     }
+                },
+                {
+                    "id": "static-dataset-bad-version-download-url",
+                    "title": "static dataset with bad version download_url",
+                    "state": "created",
+                    "type": "static"
                 }
             ]
             """
@@ -111,6 +117,33 @@ Feature: Static Dataset Version DELETE API
                             "format": "csv",
                             "media_type": "text/csv",
                             "download_url": "/downloads/datasets/static-dataset-published/editions/2025/versions/1.csv",
+                            "byte_size": 150000
+                        }
+                    ]
+                },
+                {
+                    "id": "static-version-bad-download-url",
+                    "edition": "January",
+                    "edition_title": "January Edition Title",
+                    "links": {
+                        "dataset": {
+                            "id": "static-dataset-bad-version-download-url"
+                        },
+                        "edition": {
+                            "href": "/datasets/static-dataset-bad-version-download-url/editions/January",
+                            "id": "January"
+                        }
+                    },
+                    "version": 1,
+                    "release_date": "2026-01-01T09:00:00.000Z",
+                    "state": "associated",
+                    "type": "static",
+                    "distributions": [
+                        {
+                            "title": "Files API expected to fail",
+                            "format": "csv",
+                            "media_type": "text/csv",
+                            "download_url": "/fail/to/delete.csv",
                             "byte_size": 150000
                         }
                     ]
@@ -204,5 +237,16 @@ Feature: Static Dataset Version DELETE API
         And I should receive the following response:
             """
             method not allowed
+            """
+    
+    Scenario: DELETE /datasets/{id}/editions/{edition}/versions/{version} fails due to bad files-api client response
+        Given private endpoints are enabled
+        And I am an admin user
+        And the "ENABLE_DELETE_STATIC_VERSION" feature flag is "true"
+        When I DELETE "/datasets/static-dataset-bad-version-download-url/editions/January/versions/1"
+        Then the HTTP status code should be "500"
+        And I should receive the following response:
+            """
+            internal error: failed to delete file at path: /fail/to/delete.csv
             """
 

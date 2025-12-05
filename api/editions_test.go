@@ -47,7 +47,6 @@ var exampleStaticVersion = &models.Version{
 func TestGetEditionsForbidden(t *testing.T) {
 	t.Parallel()
 	Convey("When a request to get editions is forbidden, then no expected database calls are made", t, func() {
-
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{}
@@ -57,7 +56,6 @@ func TestGetEditionsForbidden(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusForbidden)
 				}
-
 			},
 		}
 
@@ -73,7 +71,6 @@ func TestGetEditionsForbidden(t *testing.T) {
 func TestGetEditionsUnauthorised(t *testing.T) {
 	t.Parallel()
 	Convey("When a request to get editions is unauthorised, then no expected database calls are made", t, func() {
-
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{}
@@ -83,7 +80,6 @@ func TestGetEditionsUnauthorised(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusUnauthorized)
 				}
-
 			},
 		}
 
@@ -708,7 +704,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 				return models.Static.String(), nil
 			},
 			GetAllStaticVersionsFunc: func(ctx context.Context, ID, state string, offset, limit int) ([]*models.Version, int, error) {
-				return nil, 0, errs.ErrVersionNotFound
+				return nil, 0, errs.ErrVersionsNotFound
 			},
 		}
 
@@ -743,7 +739,6 @@ func TestGetEditionForbidden(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusForbidden)
 				}
-
 			},
 		}
 
@@ -769,7 +764,6 @@ func TestGetEditionUnauthorised(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusUnauthorized)
 				}
-
 			},
 		}
 

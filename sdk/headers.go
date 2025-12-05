@@ -39,7 +39,7 @@ func getResponseHeader(resp *http.Response, headerName string) (string, error) {
 	}
 
 	headerValue := resp.Header.Get(headerName)
-	if len(headerValue) == 0 {
+	if headerValue == "" {
 		return "", ErrHeaderNotFound
 	}
 

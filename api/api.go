@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ONSdigital/dp-api-clients-go/v2/files"
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
 	"github.com/ONSdigital/dp-dataset-api/application"
 	"github.com/ONSdigital/dp-dataset-api/config"
@@ -19,6 +18,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/pagination"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-dataset-api/url"
+	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	dprequest "github.com/ONSdigital/dp-net/v3/request"
 	"github.com/ONSdigital/dp-permissions-api/sdk"
 	"github.com/ONSdigital/log.go/v2/log"
@@ -79,8 +79,9 @@ type DatasetAPI struct {
 	instancePublishedChecker  *instance.PublishCheck
 	versionPublishedChecker   *PublishCheck
 	MaxRequestOptions         int
+	defaultLimit              int
 	smDatasetAPI              *application.StateMachineDatasetAPI
-	filesAPIClient            *files.Client
+	filesAPIClient            filesAPISDK.Clienter
 	authToken                 string
 	permissionsChecker        auth.PermissionsChecker
 	idClient                  *clientsidentity.Client
@@ -104,6 +105,7 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		versionPublishedChecker:   nil,
 		instancePublishedChecker:  nil,
 		MaxRequestOptions:         cfg.MaxRequestOptions,
+		defaultLimit:              cfg.DefaultLimit,
 		smDatasetAPI:              smDatasetAPI,
 		permissionsChecker:        permissionsChecker,
 		idClient:                  idClient,
@@ -149,7 +151,7 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 }
 
 // SetFilesAPIClient sets the files API client and auth token for the API
-func (api *DatasetAPI) SetFilesAPIClient(client *files.Client, authToken string) {
+func (api *DatasetAPI) SetFilesAPIClient(client filesAPISDK.Clienter, authToken string) {
 	api.filesAPIClient = client
 	api.authToken = authToken
 }
@@ -239,7 +241,6 @@ func contextAndErrors(h baseHandler) http.HandlerFunc {
 // enablePrivateDatasetEndpoints register the datasets endpoints with the appropriate authentication and authorisation
 // checks required when running the dataset API in publishing (private) mode.
 func (api *DatasetAPI) enablePrivateDatasetEndpoints(paginator *pagination.Paginator) {
-
 	api.get(
 		"/datasets",
 		api.authMiddleware.Require(datasetReadPermission, paginator.Paginate(api.getDatasets)),
@@ -415,6 +416,7 @@ func (api *DatasetAPI) enablePrivateDimensionsEndpoints(dimensionAPI *dimension.
 	)
 
 	// Deprecated (use patch /instances/{instance_id}/dimensions/{dimension}/options/{option} instead)
+	//nolint:staticcheck // Accept deprecated AddNodeIDHandler for legacy support
 	api.put(
 		"/instances/{instance_id}/dimensions/{dimension}/options/{option}/node_id/{node_id}",
 		api.authMiddleware.Require(datasetInstanceUpdatePermission, api.isInstancePublished(dimensionAPI.AddNodeIDHandler)),
@@ -463,7 +465,6 @@ func (api *DatasetAPI) checkUserPermission(r *http.Request, logData log.Data, pe
 	var authorised bool
 
 	if api.EnablePrePublishView {
-
 		bearerToken := strings.TrimPrefix(r.Header.Get(dprequest.AuthHeaderKey), dprequest.BearerPrefix)
 
 		entityData, err := api.authMiddleware.Parse(bearerToken)
@@ -472,10 +473,9 @@ func (api *DatasetAPI) checkUserPermission(r *http.Request, logData log.Data, pe
 			resp, err := api.idClient.CheckTokenIdentity(r.Context(), bearerToken, clientsidentity.TokenTypeService)
 			if err != nil {
 				return false
-			} else {
-				// valid
-				entityData = &sdk.EntityData{UserID: resp.Identifier}
 			}
+			// valid
+			entityData = &sdk.EntityData{UserID: resp.Identifier}
 		}
 		logData["entity_data"] = entityData
 

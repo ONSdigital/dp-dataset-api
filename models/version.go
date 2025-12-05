@@ -545,7 +545,7 @@ func ParseAndValidateVersionNumber(ctx context.Context, version string) (int, er
 		return versionNumber, errs.ErrInvalidVersion
 	}
 
-	if !(versionNumber > 0) {
+	if versionNumber <= 0 {
 		log.Error(ctx, "version is not a positive integer", errs.ErrInvalidVersion, log.Data{"version": version})
 		return versionNumber, errs.ErrInvalidVersion
 	}

@@ -12,7 +12,6 @@ import (
 	"testing"
 
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
-	"github.com/ONSdigital/dp-authorisation/v2/authorisation/mock"
 	authMock "github.com/ONSdigital/dp-authorisation/v2/authorisation/mock"
 	"github.com/ONSdigital/dp-permissions-api/sdk"
 
@@ -759,7 +758,6 @@ func TestAddNodeIDToDimensionReturnsUnauthorized(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusUnauthorized)
 				}
-
 			},
 		}
 
@@ -785,7 +783,6 @@ func TestAddNodeIDToDimensionReturnsAuthForbidden(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusForbidden)
 				}
-
 			},
 		}
 
@@ -820,7 +817,6 @@ func TestPatchOptionReturnsUnauthorized(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusUnauthorized)
 				}
-
 			},
 		}
 
@@ -1031,7 +1027,6 @@ func TestAddDimensionToInstanceReturnsUnauthorized(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusUnauthorized)
 				}
-
 			},
 		}
 
@@ -1063,7 +1058,6 @@ func TestAddDimensionToInstanceAuthForbidden(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusForbidden)
 				}
-
 			},
 		}
 
@@ -1151,7 +1145,6 @@ func TestGetDimensionsUnauthorised(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusUnauthorized)
 				}
-
 			},
 		}
 
@@ -1187,7 +1180,6 @@ func TestGetDimensionsForbidden(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusForbidden)
 				}
-
 			},
 		}
 
@@ -1424,7 +1416,6 @@ func TestGetUniqueDimensionAndOptionsUnauthorised(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusUnauthorized)
 				}
-
 			},
 		}
 
@@ -1460,7 +1451,6 @@ func TestGetUniqueDimensionAndOptionsForbidden(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusForbidden)
 				}
-
 			},
 		}
 
@@ -1690,7 +1680,6 @@ func TestPatchDimensionsUnauthorised(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusUnauthorized)
 				}
-
 			},
 		}
 
@@ -1732,7 +1721,6 @@ func TestPatchDimensionsForbidden(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusForbidden)
 				}
-
 			},
 		}
 
@@ -2047,7 +2035,7 @@ func getAPIWithCMDMocks(ctx context.Context, mockedDataStore store.Storer, mocke
 		DownloadGenerators: mockedMapSMGeneratedDownloads,
 	}
 
-	permissionsChecker := &mock.PermissionsCheckerMock{
+	permissionsChecker := &authMock.PermissionsCheckerMock{
 		HasPermissionFunc: func(ctx context.Context, entityData sdk.EntityData, permission string, attributes map[string]string) (bool, error) {
 			return true, nil
 		},

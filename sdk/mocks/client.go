@@ -9,8 +9,6 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/sdk"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
-	"net/http"
-	"net/url"
 	"sync"
 )
 
@@ -27,8 +25,8 @@ var _ sdk.Clienter = &ClienterMock{}
 //			CheckerFunc: func(ctx context.Context, check *healthcheck.CheckState) error {
 //				panic("mock out the Checker method")
 //			},
-//			DoAuthenticatedGetRequestFunc: func(ctx context.Context, headers sdk.Headers, uri *url.URL) (*http.Response, error) {
-//				panic("mock out the DoAuthenticatedGetRequest method")
+//			CreateDatasetFunc: func(ctx context.Context, headers sdk.Headers, dataset models.Dataset) (models.DatasetUpdate, error) {
+//				panic("mock out the CreateDataset method")
 //			},
 //			GetDatasetFunc: func(ctx context.Context, headers sdk.Headers, collectionID string, datasetID string) (models.Dataset, error) {
 //				panic("mock out the GetDataset method")
@@ -82,8 +80,8 @@ type ClienterMock struct {
 	// CheckerFunc mocks the Checker method.
 	CheckerFunc func(ctx context.Context, check *healthcheck.CheckState) error
 
-	// DoAuthenticatedGetRequestFunc mocks the DoAuthenticatedGetRequest method.
-	DoAuthenticatedGetRequestFunc func(ctx context.Context, headers sdk.Headers, uri *url.URL) (*http.Response, error)
+	// CreateDatasetFunc mocks the CreateDataset method.
+	CreateDatasetFunc func(ctx context.Context, headers sdk.Headers, dataset models.Dataset) (models.DatasetUpdate, error)
 
 	// GetDatasetFunc mocks the GetDataset method.
 	GetDatasetFunc func(ctx context.Context, headers sdk.Headers, collectionID string, datasetID string) (models.Dataset, error)
@@ -136,14 +134,14 @@ type ClienterMock struct {
 			// Check is the check argument value.
 			Check *healthcheck.CheckState
 		}
-		// DoAuthenticatedGetRequest holds details about calls to the DoAuthenticatedGetRequest method.
-		DoAuthenticatedGetRequest []struct {
+		// CreateDataset holds details about calls to the CreateDataset method.
+		CreateDataset []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// Headers is the headers argument value.
 			Headers sdk.Headers
-			// URI is the uri argument value.
-			URI *url.URL
+			// Dataset is the dataset argument value.
+			Dataset models.Dataset
 		}
 		// GetDataset holds details about calls to the GetDataset method.
 		GetDataset []struct {
@@ -303,7 +301,7 @@ type ClienterMock struct {
 		}
 	}
 	lockChecker                    sync.RWMutex
-	lockDoAuthenticatedGetRequest  sync.RWMutex
+	lockCreateDataset              sync.RWMutex
 	lockGetDataset                 sync.RWMutex
 	lockGetDatasetByPath           sync.RWMutex
 	lockGetDatasetEditions         sync.RWMutex
@@ -356,43 +354,43 @@ func (mock *ClienterMock) CheckerCalls() []struct {
 	return calls
 }
 
-// DoAuthenticatedGetRequest calls DoAuthenticatedGetRequestFunc.
-func (mock *ClienterMock) DoAuthenticatedGetRequest(ctx context.Context, headers sdk.Headers, uri *url.URL) (*http.Response, error) {
-	if mock.DoAuthenticatedGetRequestFunc == nil {
-		panic("ClienterMock.DoAuthenticatedGetRequestFunc: method is nil but Clienter.DoAuthenticatedGetRequest was just called")
+// CreateDataset calls CreateDatasetFunc.
+func (mock *ClienterMock) CreateDataset(ctx context.Context, headers sdk.Headers, dataset models.Dataset) (models.DatasetUpdate, error) {
+	if mock.CreateDatasetFunc == nil {
+		panic("ClienterMock.CreateDatasetFunc: method is nil but Clienter.CreateDataset was just called")
 	}
 	callInfo := struct {
 		Ctx     context.Context
 		Headers sdk.Headers
-		URI     *url.URL
+		Dataset models.Dataset
 	}{
 		Ctx:     ctx,
 		Headers: headers,
-		URI:     uri,
+		Dataset: dataset,
 	}
-	mock.lockDoAuthenticatedGetRequest.Lock()
-	mock.calls.DoAuthenticatedGetRequest = append(mock.calls.DoAuthenticatedGetRequest, callInfo)
-	mock.lockDoAuthenticatedGetRequest.Unlock()
-	return mock.DoAuthenticatedGetRequestFunc(ctx, headers, uri)
+	mock.lockCreateDataset.Lock()
+	mock.calls.CreateDataset = append(mock.calls.CreateDataset, callInfo)
+	mock.lockCreateDataset.Unlock()
+	return mock.CreateDatasetFunc(ctx, headers, dataset)
 }
 
-// DoAuthenticatedGetRequestCalls gets all the calls that were made to DoAuthenticatedGetRequest.
+// CreateDatasetCalls gets all the calls that were made to CreateDataset.
 // Check the length with:
 //
-//	len(mockedClienter.DoAuthenticatedGetRequestCalls())
-func (mock *ClienterMock) DoAuthenticatedGetRequestCalls() []struct {
+//	len(mockedClienter.CreateDatasetCalls())
+func (mock *ClienterMock) CreateDatasetCalls() []struct {
 	Ctx     context.Context
 	Headers sdk.Headers
-	URI     *url.URL
+	Dataset models.Dataset
 } {
 	var calls []struct {
 		Ctx     context.Context
 		Headers sdk.Headers
-		URI     *url.URL
+		Dataset models.Dataset
 	}
-	mock.lockDoAuthenticatedGetRequest.RLock()
-	calls = mock.calls.DoAuthenticatedGetRequest
-	mock.lockDoAuthenticatedGetRequest.RUnlock()
+	mock.lockCreateDataset.RLock()
+	calls = mock.calls.CreateDataset
+	mock.lockCreateDataset.RUnlock()
 	return calls
 }
 

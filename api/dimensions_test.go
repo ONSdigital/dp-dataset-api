@@ -35,7 +35,6 @@ func TestGetDimensionsForbidden(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusForbidden)
 				}
-
 			},
 		}
 
@@ -61,7 +60,6 @@ func TestGetDimensionsUnauthorised(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusUnauthorized)
 				}
-
 			},
 		}
 
@@ -410,7 +408,6 @@ func TestGetDimensionOptionsUnauthorised(t *testing.T) {
 					return func(w http.ResponseWriter, r *http.Request) {
 						w.WriteHeader(http.StatusUnauthorized)
 					}
-
 				},
 			}
 
@@ -438,7 +435,6 @@ func TestGetDimensionOptionsForbidden(t *testing.T) {
 					return func(w http.ResponseWriter, r *http.Request) {
 						w.WriteHeader(http.StatusForbidden)
 					}
-
 				},
 			}
 

@@ -1320,7 +1320,7 @@ func TestRewriteDatasetLinks_Success(t *testing.T) {
 	Convey("Given a set of dataset links", t, func() {
 		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		Convey("When the dataset links need rewriting", func() {
-			links := &models.DatasetLinks{
+			datasetLinks := &models.DatasetLinks{
 				AccessRights: &models.LinkObject{
 					HRef: "https://oldhost:1000/accessrights",
 				},
@@ -1339,20 +1339,20 @@ func TestRewriteDatasetLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteDatasetLinks(ctx, links, datasetLinksBuilder)
+			err := RewriteDatasetLinks(ctx, datasetLinks, datasetLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
-				So(links.AccessRights.HRef, ShouldEqual, "https://oldhost:1000/accessrights")
-				So(links.Editions.HRef, ShouldEqual, "http://localhost:22000/datasets/123/editions")
-				So(links.LatestVersion.HRef, ShouldEqual, "http://localhost:22000/datasets/123/editions/time-series/versions/1")
-				So(links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/123")
-				So(links.Taxonomy.HRef, ShouldEqual, "http://localhost:22000/economy/inflationandpriceindices")
+				So(datasetLinks.AccessRights.HRef, ShouldEqual, "https://oldhost:1000/accessrights")
+				So(datasetLinks.Editions.HRef, ShouldEqual, "http://localhost:22000/datasets/123/editions")
+				So(datasetLinks.LatestVersion.HRef, ShouldEqual, "http://localhost:22000/datasets/123/editions/time-series/versions/1")
+				So(datasetLinks.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/123")
+				So(datasetLinks.Taxonomy.HRef, ShouldEqual, "http://localhost:22000/economy/inflationandpriceindices")
 			})
 		})
 
 		Convey("When the dataset links do not need rewriting", func() {
-			links := &models.DatasetLinks{
+			datasetLinks := &models.DatasetLinks{
 				AccessRights: &models.LinkObject{
 					HRef: "https://oldhost:1000/accessrights",
 				},
@@ -1371,26 +1371,26 @@ func TestRewriteDatasetLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteDatasetLinks(ctx, links, datasetLinksBuilder)
+			err := RewriteDatasetLinks(ctx, datasetLinks, datasetLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
-				So(links.AccessRights.HRef, ShouldEqual, "https://oldhost:1000/accessrights")
-				So(links.Editions.HRef, ShouldEqual, "http://localhost:22000/datasets/123/editions")
-				So(links.LatestVersion.HRef, ShouldEqual, "http://localhost:22000/datasets/123/editions/time-series/versions/1")
-				So(links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/123")
-				So(links.Taxonomy.HRef, ShouldEqual, "http://localhost:22000/economy/inflationandpriceindices")
+				So(datasetLinks.AccessRights.HRef, ShouldEqual, "https://oldhost:1000/accessrights")
+				So(datasetLinks.Editions.HRef, ShouldEqual, "http://localhost:22000/datasets/123/editions")
+				So(datasetLinks.LatestVersion.HRef, ShouldEqual, "http://localhost:22000/datasets/123/editions/time-series/versions/1")
+				So(datasetLinks.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/123")
+				So(datasetLinks.Taxonomy.HRef, ShouldEqual, "http://localhost:22000/economy/inflationandpriceindices")
 			})
 		})
 
 		Convey("When the dataset links are empty", func() {
-			links := &models.DatasetLinks{}
+			datasetLinks := &models.DatasetLinks{}
 
-			err := RewriteDatasetLinks(ctx, links, datasetLinksBuilder)
+			err := RewriteDatasetLinks(ctx, datasetLinks, datasetLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
-				So(links, ShouldResemble, &models.DatasetLinks{})
+				So(datasetLinks, ShouldResemble, &models.DatasetLinks{})
 			})
 		})
 
@@ -1408,7 +1408,7 @@ func TestRewriteDatasetLinks_Error(t *testing.T) {
 	ctx := context.Background()
 	Convey("Given a set of dataset links", t, func() {
 		Convey("When the dataset links are unable to be parsed", func() {
-			links := &models.DatasetLinks{
+			datasetLinks := &models.DatasetLinks{
 				AccessRights: &models.LinkObject{
 					HRef: "://oldhost:1000/accessrights",
 				},
@@ -1427,7 +1427,7 @@ func TestRewriteDatasetLinks_Error(t *testing.T) {
 				},
 			}
 
-			err := RewriteDatasetLinks(ctx, links, nil)
+			err := RewriteDatasetLinks(ctx, datasetLinks, nil)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -1745,7 +1745,7 @@ func TestRewriteDimensionLinks_Success(t *testing.T) {
 		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, codeListAPIURL)
 		Convey("When the dimension links need rewriting", func() {
-			links := models.DimensionLink{
+			dimensionLinks := models.DimensionLink{
 				CodeList: models.LinkObject{
 					HRef: "https://oldhost:1000/code-lists/cpih1dim1aggid",
 					ID:   "cpih1dim1aggid",
@@ -1759,18 +1759,18 @@ func TestRewriteDimensionLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteDimensionLinks(ctx, &links, datasetLinksBuilder, codeListLinksBuilder)
+			err := RewriteDimensionLinks(ctx, &dimensionLinks, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
-				So(links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid")
-				So(links.Options.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/aggregate/options")
-				So(links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(dimensionLinks.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid")
+				So(dimensionLinks.Options.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/aggregate/options")
+				So(dimensionLinks.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 			})
 		})
 
 		Convey("When the dimension links do not need rewriting", func() {
-			links := models.DimensionLink{
+			dimensionLinks := models.DimensionLink{
 				CodeList: models.LinkObject{
 					HRef: "http://localhost:22400/code-lists/cpih1dim1aggid",
 					ID:   "cpih1dim1aggid",
@@ -1784,24 +1784,24 @@ func TestRewriteDimensionLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteDimensionLinks(ctx, &links, datasetLinksBuilder, codeListLinksBuilder)
+			err := RewriteDimensionLinks(ctx, &dimensionLinks, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
-				So(links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid")
-				So(links.Options.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/aggregate/options")
-				So(links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(dimensionLinks.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid")
+				So(dimensionLinks.Options.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/aggregate/options")
+				So(dimensionLinks.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 			})
 		})
 
 		Convey("When the dimension links are empty", func() {
-			links := models.DimensionLink{}
+			dimensionLinks := models.DimensionLink{}
 
-			err := RewriteDimensionLinks(ctx, &links, datasetLinksBuilder, codeListLinksBuilder)
+			err := RewriteDimensionLinks(ctx, &dimensionLinks, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
-				So(links, ShouldResemble, models.DimensionLink{})
+				So(dimensionLinks, ShouldResemble, models.DimensionLink{})
 			})
 		})
 
@@ -1821,7 +1821,7 @@ func TestRewriteDimensionLinks_Error(t *testing.T) {
 		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, codeListAPIURL)
 		Convey("When the Code List link is unable to be parsed", func() {
-			links := models.DimensionLink{
+			dimensionLinks := models.DimensionLink{
 				CodeList: models.LinkObject{
 					HRef: "://oldhost:1000/code-lists/cpih1dim1aggid",
 					ID:   "cpih1dim1aggid",
@@ -1835,7 +1835,7 @@ func TestRewriteDimensionLinks_Error(t *testing.T) {
 				},
 			}
 
-			err := RewriteDimensionLinks(ctx, &links, datasetLinksBuilder, codeListLinksBuilder)
+			err := RewriteDimensionLinks(ctx, &dimensionLinks, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -1844,7 +1844,7 @@ func TestRewriteDimensionLinks_Error(t *testing.T) {
 		})
 
 		Convey("When the Options link is unable to be parsed", func() {
-			links := models.DimensionLink{
+			dimensionLinks := models.DimensionLink{
 				CodeList: models.LinkObject{
 					HRef: "http://localhost:22400/code-lists/cpih1dim1aggid",
 					ID:   "cpih1dim1aggid",
@@ -1858,7 +1858,7 @@ func TestRewriteDimensionLinks_Error(t *testing.T) {
 				},
 			}
 
-			err := RewriteDimensionLinks(ctx, &links, datasetLinksBuilder, codeListLinksBuilder)
+			err := RewriteDimensionLinks(ctx, &dimensionLinks, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -1867,7 +1867,7 @@ func TestRewriteDimensionLinks_Error(t *testing.T) {
 		})
 
 		Convey("When the Version link is unable to be parsed", func() {
-			links := models.DimensionLink{
+			dimensionLinks := models.DimensionLink{
 				CodeList: models.LinkObject{
 					HRef: "http://localhost:22400/code-lists/cpih1dim1aggid",
 					ID:   "cpih1dim1aggid",
@@ -1881,7 +1881,7 @@ func TestRewriteDimensionLinks_Error(t *testing.T) {
 				},
 			}
 
-			err := RewriteDimensionLinks(ctx, &links, datasetLinksBuilder, codeListLinksBuilder)
+			err := RewriteDimensionLinks(ctx, &dimensionLinks, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -2446,7 +2446,7 @@ func TestRewriteDimensionOptionLinks_Success(t *testing.T) {
 		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, codeListAPIURL)
 		Convey("When the dimension option links need rewriting", func() {
-			links := models.DimensionOptionLinks{
+			dimensionOptionLinks := models.DimensionOptionLinks{
 				Code: models.LinkObject{
 					HRef: "https://oldhost:1000/code-lists/cpih1dim1aggid/codes/cpih1dim1G10100",
 					ID:   "cpih1dim1G10100",
@@ -2460,18 +2460,18 @@ func TestRewriteDimensionOptionLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteDimensionOptionLinks(ctx, &links, datasetLinksBuilder, codeListLinksBuilder)
+			err := RewriteDimensionOptionLinks(ctx, &dimensionOptionLinks, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
-				So(links.Code.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid/codes/cpih1dim1G10100")
-				So(links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid")
-				So(links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(dimensionOptionLinks.Code.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid/codes/cpih1dim1G10100")
+				So(dimensionOptionLinks.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid")
+				So(dimensionOptionLinks.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 			})
 		})
 
 		Convey("When the dimension option links do not need rewriting", func() {
-			links := models.DimensionOptionLinks{
+			dimensionOptionLinks := models.DimensionOptionLinks{
 				Code: models.LinkObject{
 					HRef: "http://localhost:22400/code-lists/cpih1dim1aggid/codes/cpih1dim1G10100",
 					ID:   "cpih1dim1G10100",
@@ -2485,24 +2485,24 @@ func TestRewriteDimensionOptionLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteDimensionOptionLinks(ctx, &links, datasetLinksBuilder, codeListLinksBuilder)
+			err := RewriteDimensionOptionLinks(ctx, &dimensionOptionLinks, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
-				So(links.Code.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid/codes/cpih1dim1G10100")
-				So(links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid")
-				So(links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(dimensionOptionLinks.Code.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid/codes/cpih1dim1G10100")
+				So(dimensionOptionLinks.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid")
+				So(dimensionOptionLinks.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 			})
 		})
 
 		Convey("When the dimension option links are empty", func() {
-			links := models.DimensionOptionLinks{}
+			dimensionOptionLinks := models.DimensionOptionLinks{}
 
-			err := RewriteDimensionOptionLinks(ctx, &links, datasetLinksBuilder, codeListLinksBuilder)
+			err := RewriteDimensionOptionLinks(ctx, &dimensionOptionLinks, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
-				So(links, ShouldResemble, models.DimensionOptionLinks{})
+				So(dimensionOptionLinks, ShouldResemble, models.DimensionOptionLinks{})
 			})
 		})
 
@@ -2522,7 +2522,7 @@ func TestRewriteDimensionOptionLinks_Error(t *testing.T) {
 		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, codeListAPIURL)
 		Convey("When the Code link is unable to be parsed", func() {
-			links := models.DimensionOptionLinks{
+			dimensionOptionLinks := models.DimensionOptionLinks{
 				Code: models.LinkObject{
 					HRef: "://oldhost:1000/code-lists/cpih1dim1aggid/codes/cpih1dim1G10100",
 					ID:   "cpih1dim1G10100",
@@ -2536,7 +2536,7 @@ func TestRewriteDimensionOptionLinks_Error(t *testing.T) {
 				},
 			}
 
-			err := RewriteDimensionOptionLinks(ctx, &links, datasetLinksBuilder, codeListLinksBuilder)
+			err := RewriteDimensionOptionLinks(ctx, &dimensionOptionLinks, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -2545,7 +2545,7 @@ func TestRewriteDimensionOptionLinks_Error(t *testing.T) {
 		})
 
 		Convey("When the CodeList link is unable to be parsed", func() {
-			links := models.DimensionOptionLinks{
+			dimensionOptionLinks := models.DimensionOptionLinks{
 				Code: models.LinkObject{
 					HRef: "http://localhost:22400/code-lists/cpih1dim1aggid/codes/cpih1dim1G10100",
 					ID:   "cpih1dim1G10100",
@@ -2559,7 +2559,7 @@ func TestRewriteDimensionOptionLinks_Error(t *testing.T) {
 				},
 			}
 
-			err := RewriteDimensionOptionLinks(ctx, &links, datasetLinksBuilder, codeListLinksBuilder)
+			err := RewriteDimensionOptionLinks(ctx, &dimensionOptionLinks, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -2568,7 +2568,7 @@ func TestRewriteDimensionOptionLinks_Error(t *testing.T) {
 		})
 
 		Convey("When the Version link is unable to be parsed", func() {
-			links := models.DimensionOptionLinks{
+			dimensionOptionLinks := models.DimensionOptionLinks{
 				Code: models.LinkObject{
 					HRef: "http://localhost:22400/code-lists/cpih1dim1aggid/codes/cpih1dim1G10100",
 					ID:   "cpih1dim1G10100",
@@ -2582,7 +2582,7 @@ func TestRewriteDimensionOptionLinks_Error(t *testing.T) {
 				},
 			}
 
-			err := RewriteDimensionOptionLinks(ctx, &links, datasetLinksBuilder, codeListLinksBuilder)
+			err := RewriteDimensionOptionLinks(ctx, &dimensionOptionLinks, datasetLinksBuilder, codeListLinksBuilder)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -2623,14 +2623,14 @@ func TestRewriteEditionsWithAuth_Success(t *testing.T) {
 								Title:       "Distribution 1",
 								Format:      "CSV",
 								MediaType:   "text/csv",
-								DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.csv",
+								DownloadURL: "/cpih01/time-series/1/filename.csv",
 								ByteSize:    10000,
 							},
 							{
 								Title:       "Distribution 2",
 								Format:      "XLSX",
 								MediaType:   "text/xlsx",
-								DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.xlsx",
+								DownloadURL: "/cpih01/time-series/1/filename.xlsx",
 								ByteSize:    20000,
 							},
 						},
@@ -2659,14 +2659,14 @@ func TestRewriteEditionsWithAuth_Success(t *testing.T) {
 								Title:       "Distribution 1",
 								Format:      "CSV",
 								MediaType:   "text/csv",
-								DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.csv",
+								DownloadURL: "/cpih01/time-series/1/filename.csv",
 								ByteSize:    10000,
 							},
 							{
 								Title:       "Distribution 2",
 								Format:      "XLSX",
 								MediaType:   "text/xlsx",
-								DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.xlsx",
+								DownloadURL: "/cpih01/time-series/1/filename.xlsx",
 								ByteSize:    20000,
 							},
 						},
@@ -2685,16 +2685,16 @@ func TestRewriteEditionsWithAuth_Success(t *testing.T) {
 				So(items[0].Current.Links.LatestVersion.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 				So(items[0].Current.Links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
 				So(items[0].Current.Links.Versions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions")
-				So((*items[0].Current.Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv")
-				So((*items[0].Current.Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx")
+				So((*items[0].Current.Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv")
+				So((*items[0].Current.Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx")
 				So(items[0].Current.State, ShouldEqual, "edition-confirmed")
 				So(items[0].Next.Edition, ShouldEqual, "time-series")
 				So(items[0].Next.Links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
 				So(items[0].Next.Links.LatestVersion.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 				So(items[0].Next.Links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
 				So(items[0].Next.Links.Versions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions")
-				So((*items[0].Next.Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv")
-				So((*items[0].Next.Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx")
+				So((*items[0].Next.Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv")
+				So((*items[0].Next.Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx")
 				So(items[0].Next.State, ShouldEqual, "edition-confirmed")
 			})
 		})
@@ -2726,14 +2726,14 @@ func TestRewriteEditionsWithAuth_Success(t *testing.T) {
 								Title:       "Distribution 1",
 								Format:      "CSV",
 								MediaType:   "text/csv",
-								DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv",
+								DownloadURL: "http://localhost:23600/downloads/files/datasets/cpih01/editions/time-series/versions/1.csv",
 								ByteSize:    10000,
 							},
 							{
 								Title:       "Distribution 2",
 								Format:      "XLSX",
 								MediaType:   "text/xlsx",
-								DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx",
+								DownloadURL: "http://localhost:23600/downloads/files/datasets/cpih01/editions/time-series/versions/1.xlsx",
 								ByteSize:    20000,
 							},
 						},
@@ -2762,14 +2762,14 @@ func TestRewriteEditionsWithAuth_Success(t *testing.T) {
 								Title:       "Distribution 1",
 								Format:      "CSV",
 								MediaType:   "text/csv",
-								DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv",
+								DownloadURL: "http://localhost:23600/downloads/files/datasets/cpih01/editions/time-series/versions/1.csv",
 								ByteSize:    10000,
 							},
 							{
 								Title:       "Distribution 2",
 								Format:      "XLSX",
 								MediaType:   "text/xlsx",
-								DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx",
+								DownloadURL: "http://localhost:23600/downloads/files/datasets/cpih01/editions/time-series/versions/1.xlsx",
 								ByteSize:    20000,
 							},
 						},
@@ -2959,14 +2959,14 @@ func TestRewriteEditionsWithoutAuth_Success(t *testing.T) {
 								Title:       "Distribution 1",
 								Format:      "CSV",
 								MediaType:   "text/csv",
-								DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.csv",
+								DownloadURL: "/cpih01/time-series/1/filename.csv",
 								ByteSize:    10000,
 							},
 							{
 								Title:       "Distribution 2",
 								Format:      "XLSX",
 								MediaType:   "text/xlsx",
-								DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.xlsx",
+								DownloadURL: "/cpih01/time-series/1/filename.xlsx",
 								ByteSize:    20000,
 							},
 						},
@@ -2995,14 +2995,14 @@ func TestRewriteEditionsWithoutAuth_Success(t *testing.T) {
 								Title:       "Distribution 1",
 								Format:      "CSV",
 								MediaType:   "text/csv",
-								DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.csv",
+								DownloadURL: "/cpih01/time-series/1/filename.csv",
 								ByteSize:    10000,
 							},
 							{
 								Title:       "Distribution 2",
 								Format:      "XLSX",
 								MediaType:   "text/xlsx",
-								DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.xlsx",
+								DownloadURL: "/cpih01/time-series/1/filename.xlsx",
 								ByteSize:    20000,
 							},
 						},
@@ -3021,8 +3021,8 @@ func TestRewriteEditionsWithoutAuth_Success(t *testing.T) {
 				So(items[0].Links.LatestVersion.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 				So(items[0].Links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
 				So(items[0].Links.Versions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions")
-				So((*items[0].Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv")
-				So((*items[0].Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx")
+				So((*items[0].Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv")
+				So((*items[0].Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx")
 				So(items[0].State, ShouldEqual, "edition-confirmed")
 			})
 		})
@@ -3054,14 +3054,14 @@ func TestRewriteEditionsWithoutAuth_Success(t *testing.T) {
 								Title:       "Distribution 1",
 								Format:      "CSV",
 								MediaType:   "text/csv",
-								DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv",
+								DownloadURL: "http://localhost:23600/downloads/files/datasets/cpih01/editions/time-series/versions/1.csv",
 								ByteSize:    10000,
 							},
 							{
 								Title:       "Distribution 2",
 								Format:      "XLSX",
 								MediaType:   "text/xlsx",
-								DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx",
+								DownloadURL: "http://localhost:23600/downloads/files/datasets/cpih01/editions/time-series/versions/1.xlsx",
 								ByteSize:    20000,
 							},
 						},
@@ -3090,14 +3090,14 @@ func TestRewriteEditionsWithoutAuth_Success(t *testing.T) {
 								Title:       "Distribution 1",
 								Format:      "CSV",
 								MediaType:   "text/csv",
-								DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv",
+								DownloadURL: "http://localhost:23600/downloads/files/datasets/cpih01/editions/time-series/versions/1.csv",
 								ByteSize:    10000,
 							},
 							{
 								Title:       "Distribution 2",
 								Format:      "XLSX",
 								MediaType:   "text/xlsx",
-								DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx",
+								DownloadURL: "http://localhost:23600/downloads/files/datasets/cpih01/editions/time-series/versions/1.xlsx",
 								ByteSize:    20000,
 							},
 						},
@@ -3260,14 +3260,14 @@ func TestRewriteEditionWithAuth_Success(t *testing.T) {
 							Title:       "Distribution 1",
 							Format:      "CSV",
 							MediaType:   "text/csv",
-							DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.csv",
+							DownloadURL: "/cpih01/time-series/1/filename.csv",
 							ByteSize:    10000,
 						},
 						{
 							Title:       "Distribution 2",
 							Format:      "XLSX",
 							MediaType:   "text/xlsx",
-							DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.xlsx",
+							DownloadURL: "/cpih01/time-series/1/filename.xlsx",
 							ByteSize:    20000,
 						},
 					},
@@ -3296,14 +3296,14 @@ func TestRewriteEditionWithAuth_Success(t *testing.T) {
 							Title:       "Distribution 1",
 							Format:      "CSV",
 							MediaType:   "text/csv",
-							DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.csv",
+							DownloadURL: "/cpih01/time-series/1/filename.csv",
 							ByteSize:    10000,
 						},
 						{
 							Title:       "Distribution 2",
 							Format:      "XLSX",
 							MediaType:   "text/xlsx",
-							DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.xlsx",
+							DownloadURL: "/cpih01/time-series/1/filename.xlsx",
 							ByteSize:    20000,
 						},
 					},
@@ -3321,16 +3321,16 @@ func TestRewriteEditionWithAuth_Success(t *testing.T) {
 				So(item.Current.Links.LatestVersion.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 				So(item.Current.Links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
 				So(item.Current.Links.Versions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions")
-				So((*item.Current.Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv")
-				So((*item.Current.Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx")
+				So((*item.Current.Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv")
+				So((*item.Current.Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx")
 				So(item.Current.State, ShouldEqual, "edition-confirmed")
 				So(item.Next.Edition, ShouldEqual, "time-series")
 				So(item.Next.Links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
 				So(item.Next.Links.LatestVersion.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/2")
 				So(item.Next.Links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
 				So(item.Next.Links.Versions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions")
-				So((*item.Next.Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv")
-				So((*item.Next.Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx")
+				So((*item.Next.Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv")
+				So((*item.Next.Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx")
 				So(item.Next.State, ShouldEqual, "edition-confirmed")
 			})
 		})
@@ -3361,14 +3361,14 @@ func TestRewriteEditionWithAuth_Success(t *testing.T) {
 							Title:       "Distribution 1",
 							Format:      "CSV",
 							MediaType:   "text/csv",
-							DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv",
+							DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv",
 							ByteSize:    10000,
 						},
 						{
 							Title:       "Distribution 2",
 							Format:      "XLSX",
 							MediaType:   "text/xlsx",
-							DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx",
+							DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx",
 							ByteSize:    20000,
 						},
 					},
@@ -3397,14 +3397,14 @@ func TestRewriteEditionWithAuth_Success(t *testing.T) {
 							Title:       "Distribution 1",
 							Format:      "CSV",
 							MediaType:   "text/csv",
-							DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv",
+							DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv",
 							ByteSize:    10000,
 						},
 						{
 							Title:       "Distribution 2",
 							Format:      "XLSX",
 							MediaType:   "text/xlsx",
-							DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx",
+							DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx",
 							ByteSize:    20000,
 						},
 					},
@@ -3604,14 +3604,14 @@ func TestRewriteEditionWithoutAuth_Success(t *testing.T) {
 							Title:       "Distribution 1",
 							Format:      "CSV",
 							MediaType:   "text/csv",
-							DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.csv",
+							DownloadURL: "/cpih01/time-series/1/filename.csv",
 							ByteSize:    10000,
 						},
 						{
 							Title:       "Distribution 2",
 							Format:      "XLSX",
 							MediaType:   "text/xlsx",
-							DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.xlsx",
+							DownloadURL: "/cpih01/time-series/1/filename.xlsx",
 							ByteSize:    20000,
 						},
 					},
@@ -3640,14 +3640,14 @@ func TestRewriteEditionWithoutAuth_Success(t *testing.T) {
 							Title:       "Distribution 1",
 							Format:      "CSV",
 							MediaType:   "text/csv",
-							DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.csv",
+							DownloadURL: "/cpih01/time-series/1/filename.csv",
 							ByteSize:    10000,
 						},
 						{
 							Title:       "Distribution 2",
 							Format:      "XLSX",
 							MediaType:   "text/xlsx",
-							DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.xlsx",
+							DownloadURL: "/cpih01/time-series/1/filename.xlsx",
 							ByteSize:    20000,
 						},
 					},
@@ -3665,8 +3665,8 @@ func TestRewriteEditionWithoutAuth_Success(t *testing.T) {
 				So(item.Links.LatestVersion.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 				So(item.Links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
 				So(item.Links.Versions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions")
-				So((*item.Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv")
-				So((*item.Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx")
+				So((*item.Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv")
+				So((*item.Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx")
 				So(item.State, ShouldEqual, "edition-confirmed")
 			})
 		})
@@ -3697,14 +3697,14 @@ func TestRewriteEditionWithoutAuth_Success(t *testing.T) {
 							Title:       "Distribution 1",
 							Format:      "CSV",
 							MediaType:   "text/csv",
-							DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv",
+							DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv",
 							ByteSize:    10000,
 						},
 						{
 							Title:       "Distribution 2",
 							Format:      "XLSX",
 							MediaType:   "text/xlsx",
-							DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx",
+							DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx",
 							ByteSize:    20000,
 						},
 					},
@@ -3733,14 +3733,14 @@ func TestRewriteEditionWithoutAuth_Success(t *testing.T) {
 							Title:       "Distribution 1",
 							Format:      "CSV",
 							MediaType:   "text/csv",
-							DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv",
+							DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv",
 							ByteSize:    10000,
 						},
 						{
 							Title:       "Distribution 2",
 							Format:      "XLSX",
 							MediaType:   "text/xlsx",
-							DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx",
+							DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx",
 							ByteSize:    20000,
 						},
 					},
@@ -3910,7 +3910,7 @@ func TestRewriteEditionLinks_Success(t *testing.T) {
 	Convey("Given a set of edition update links", t, func() {
 		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		Convey("When the edition update links need rewriting", func() {
-			links := &models.EditionUpdateLinks{
+			editionUpdateLinks := &models.EditionUpdateLinks{
 				Dataset: &models.LinkObject{
 					HRef: "https://oldhost:1000/datasets/cpih01",
 					ID:   "cpih01",
@@ -3927,19 +3927,19 @@ func TestRewriteEditionLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteEditionLinks(ctx, links, datasetLinksBuilder)
+			err := RewriteEditionLinks(ctx, editionUpdateLinks, datasetLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
-				So(links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
-				So(links.LatestVersion.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
-				So(links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
-				So(links.Versions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions")
+				So(editionUpdateLinks.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
+				So(editionUpdateLinks.LatestVersion.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(editionUpdateLinks.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
+				So(editionUpdateLinks.Versions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions")
 			})
 		})
 
 		Convey("When the edition update links do not need rewriting", func() {
-			links := &models.EditionUpdateLinks{
+			editionUpdateLinks := &models.EditionUpdateLinks{
 				Dataset: &models.LinkObject{
 					HRef: "http://localhost:22000/datasets/cpih01",
 					ID:   "cpih01",
@@ -3956,25 +3956,25 @@ func TestRewriteEditionLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteEditionLinks(ctx, links, datasetLinksBuilder)
+			err := RewriteEditionLinks(ctx, editionUpdateLinks, datasetLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
-				So(links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
-				So(links.LatestVersion.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
-				So(links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
-				So(links.Versions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions")
+				So(editionUpdateLinks.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
+				So(editionUpdateLinks.LatestVersion.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(editionUpdateLinks.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
+				So(editionUpdateLinks.Versions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions")
 			})
 		})
 
 		Convey("When the edition update links are empty", func() {
-			links := &models.EditionUpdateLinks{}
+			editionUpdateLinks := &models.EditionUpdateLinks{}
 
-			err := RewriteEditionLinks(ctx, links, datasetLinksBuilder)
+			err := RewriteEditionLinks(ctx, editionUpdateLinks, datasetLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
-				So(links, ShouldResemble, &models.EditionUpdateLinks{})
+				So(editionUpdateLinks, ShouldResemble, &models.EditionUpdateLinks{})
 			})
 		})
 
@@ -3992,7 +3992,7 @@ func TestRewriteEditionLinks_Error(t *testing.T) {
 	ctx := context.Background()
 	Convey("Given a set of edition update links", t, func() {
 		Convey("When the edition update links are unable to be parsed", func() {
-			links := &models.EditionUpdateLinks{
+			editionUpdateLinks := &models.EditionUpdateLinks{
 				Dataset: &models.LinkObject{
 					HRef: "://oldhost:1000/datasets/cpih01",
 					ID:   "cpih01",
@@ -4009,7 +4009,7 @@ func TestRewriteEditionLinks_Error(t *testing.T) {
 				},
 			}
 
-			err := RewriteEditionLinks(ctx, links, nil)
+			err := RewriteEditionLinks(ctx, editionUpdateLinks, nil)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -4024,7 +4024,7 @@ func TestRewriteMetadataLinks_Success(t *testing.T) {
 	Convey("Given a set of metadata links", t, func() {
 		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		Convey("When the metadata links need rewriting", func() {
-			links := &models.MetadataLinks{
+			metadataLinks := &models.MetadataLinks{
 				AccessRights: &models.LinkObject{
 					HRef: "https://oldhost:1000/accessrights",
 				},
@@ -4040,20 +4040,20 @@ func TestRewriteMetadataLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteMetadataLinks(ctx, links, datasetLinksBuilder)
+			err := RewriteMetadataLinks(ctx, metadataLinks, datasetLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
-				So(links.AccessRights.HRef, ShouldEqual, "https://oldhost:1000/accessrights")
-				So(links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/metadata")
-				So(links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
-				So(links.Version.ID, ShouldEqual, "1")
-				So(links.WebsiteVersion.HRef, ShouldEqual, "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1")
+				So(metadataLinks.AccessRights.HRef, ShouldEqual, "https://oldhost:1000/accessrights")
+				So(metadataLinks.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/metadata")
+				So(metadataLinks.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(metadataLinks.Version.ID, ShouldEqual, "1")
+				So(metadataLinks.WebsiteVersion.HRef, ShouldEqual, "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1")
 			})
 		})
 
 		Convey("When the metadata links do not need rewriting", func() {
-			links := &models.MetadataLinks{
+			metadataLinks := &models.MetadataLinks{
 				AccessRights: &models.LinkObject{
 					HRef: "http://localhost:22000/accessrights",
 				},
@@ -4069,26 +4069,26 @@ func TestRewriteMetadataLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteMetadataLinks(ctx, links, datasetLinksBuilder)
+			err := RewriteMetadataLinks(ctx, metadataLinks, datasetLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
-				So(links.AccessRights.HRef, ShouldEqual, "http://localhost:22000/accessrights")
-				So(links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/metadata")
-				So(links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
-				So(links.Version.ID, ShouldEqual, "1")
-				So(links.WebsiteVersion.HRef, ShouldEqual, "http://localhost:20000/datasets/cpih01/editions/time-series/versions/1")
+				So(metadataLinks.AccessRights.HRef, ShouldEqual, "http://localhost:22000/accessrights")
+				So(metadataLinks.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/metadata")
+				So(metadataLinks.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(metadataLinks.Version.ID, ShouldEqual, "1")
+				So(metadataLinks.WebsiteVersion.HRef, ShouldEqual, "http://localhost:20000/datasets/cpih01/editions/time-series/versions/1")
 			})
 		})
 
 		Convey("When the metadata links are empty", func() {
-			links := &models.MetadataLinks{}
+			metadataLinks := &models.MetadataLinks{}
 
-			err := RewriteMetadataLinks(ctx, links, datasetLinksBuilder)
+			err := RewriteMetadataLinks(ctx, metadataLinks, datasetLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
-				So(links, ShouldResemble, &models.MetadataLinks{})
+				So(metadataLinks, ShouldResemble, &models.MetadataLinks{})
 			})
 		})
 
@@ -4115,7 +4115,7 @@ func TestRewriteMetadataLinks_Error(t *testing.T) {
 	Convey("Given a set of metadata links", t, func() {
 		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		Convey("When the Self link is unable to be parsed", func() {
-			links := &models.MetadataLinks{
+			metadataLinks := &models.MetadataLinks{
 				Self: &models.LinkObject{
 					HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/1/metadata",
 				},
@@ -4128,7 +4128,7 @@ func TestRewriteMetadataLinks_Error(t *testing.T) {
 				},
 			}
 
-			err := RewriteMetadataLinks(ctx, links, datasetLinksBuilder)
+			err := RewriteMetadataLinks(ctx, metadataLinks, datasetLinksBuilder)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -4137,7 +4137,7 @@ func TestRewriteMetadataLinks_Error(t *testing.T) {
 		})
 
 		Convey("When the Version link is unable to be parsed", func() {
-			links := &models.MetadataLinks{
+			metadataLinks := &models.MetadataLinks{
 				Self: &models.LinkObject{
 					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/metadata",
 				},
@@ -4150,7 +4150,7 @@ func TestRewriteMetadataLinks_Error(t *testing.T) {
 				},
 			}
 
-			err := RewriteMetadataLinks(ctx, links, datasetLinksBuilder)
+			err := RewriteMetadataLinks(ctx, metadataLinks, datasetLinksBuilder)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -4249,14 +4249,14 @@ func TestRewriteVersions_Success(t *testing.T) {
 							Title:       "Distribution 1",
 							Format:      "CSV",
 							MediaType:   "text/csv",
-							DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.csv",
+							DownloadURL: "/cpih01/time-series/1/filename.csv",
 							ByteSize:    10000,
 						},
 						{
 							Title:       "Distribution 2",
 							Format:      "XLSX",
 							MediaType:   "text/xlsx",
-							DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.xlsx",
+							DownloadURL: "/cpih01/time-series/1/filename.xlsx",
 							ByteSize:    20000,
 						},
 					},
@@ -4342,14 +4342,14 @@ func TestRewriteVersions_Success(t *testing.T) {
 							Title:       "Distribution 1",
 							Format:      "CSV",
 							MediaType:   "text/csv",
-							DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.csv",
+							DownloadURL: "/cpih01/time-series/1/filename.csv",
 							ByteSize:    10000,
 						},
 						{
 							Title:       "Distribution 2",
 							Format:      "XLSX",
 							MediaType:   "text/xlsx",
-							DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.xlsx",
+							DownloadURL: "/cpih01/time-series/1/filename.xlsx",
 							ByteSize:    20000,
 						},
 					},
@@ -4384,8 +4384,8 @@ func TestRewriteVersions_Success(t *testing.T) {
 				So(items[0].Downloads.XLS.Size, ShouldEqual, "60000")
 				So(items[0].Downloads.XLSX.HRef, ShouldEqual, "http://localhost:23600/downloads/datasets/cpih01/editions/time-series/versions/1.xlsx")
 				So(items[0].Downloads.XLSX.Size, ShouldEqual, "75000")
-				So((*items[0].Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv")
-				So((*items[0].Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx")
+				So((*items[0].Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv")
+				So((*items[0].Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx")
 
 				So(items[1].ID, ShouldEqual, "74e4d2da-8fd6-4bb6-b4a2-b5cd573fb42b")
 				So(items[1].DatasetID, ShouldEqual, "cpih01")
@@ -4410,8 +4410,8 @@ func TestRewriteVersions_Success(t *testing.T) {
 				So(items[1].Downloads.XLS.Size, ShouldEqual, "60000")
 				So(items[1].Downloads.XLSX.HRef, ShouldEqual, "http://localhost:23600/downloads/datasets/cpih01/editions/time-series/versions/1.xlsx")
 				So(items[1].Downloads.XLSX.Size, ShouldEqual, "75000")
-				So((*items[1].Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv")
-				So((*items[1].Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx")
+				So((*items[1].Distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv")
+				So((*items[1].Distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx")
 			})
 		})
 
@@ -4498,14 +4498,14 @@ func TestRewriteVersions_Success(t *testing.T) {
 							Title:       "Distribution 1",
 							Format:      "CSV",
 							MediaType:   "text/csv",
-							DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv",
+							DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv",
 							ByteSize:    10000,
 						},
 						{
 							Title:       "Distribution 2",
 							Format:      "XLSX",
 							MediaType:   "text/xlsx",
-							DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx",
+							DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx",
 							ByteSize:    20000,
 						},
 					},
@@ -4591,14 +4591,14 @@ func TestRewriteVersions_Success(t *testing.T) {
 							Title:       "Distribution 1",
 							Format:      "CSV",
 							MediaType:   "text/csv",
-							DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv",
+							DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv",
 							ByteSize:    10000,
 						},
 						{
 							Title:       "Distribution 2",
 							Format:      "XLSX",
 							MediaType:   "text/xlsx",
-							DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx",
+							DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx",
 							ByteSize:    20000,
 						},
 					},
@@ -4902,7 +4902,7 @@ func TestRewriteVersions_Error(t *testing.T) {
 					Version:   53,
 					Distributions: &[]models.Distribution{
 						{
-							DownloadURL: "://oldhost:1000/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv",
+							DownloadURL: "://oldhost:1000/downloads/files/cpih01/time-series/1/filename.csv",
 						},
 					},
 				},
@@ -4924,7 +4924,7 @@ func TestRewriteVersionLinks_Success(t *testing.T) {
 	Convey("Given a set of version links", t, func() {
 		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		Convey("When the version links need rewriting", func() {
-			links := &models.VersionLinks{
+			versionLinks := &models.VersionLinks{
 				Dataset: &models.LinkObject{
 					HRef: "https://oldhost:1000/datasets/cpih01",
 					ID:   "cpih01",
@@ -4948,22 +4948,22 @@ func TestRewriteVersionLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteVersionLinks(ctx, links, datasetLinksBuilder)
+			err := RewriteVersionLinks(ctx, versionLinks, datasetLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
-				So(links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
-				So(links.Dimensions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions")
-				So(links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
-				So(links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
-				So(links.Spatial.HRef, ShouldEqual, "https://oldhost:1000/spatial")
-				So(links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
-				So(links.Version.ID, ShouldEqual, "1")
+				So(versionLinks.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
+				So(versionLinks.Dimensions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions")
+				So(versionLinks.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
+				So(versionLinks.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(versionLinks.Spatial.HRef, ShouldEqual, "https://oldhost:1000/spatial")
+				So(versionLinks.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(versionLinks.Version.ID, ShouldEqual, "1")
 			})
 		})
 
 		Convey("When the version links do not need rewriting", func() {
-			links := &models.VersionLinks{
+			versionLinks := &models.VersionLinks{
 				Dataset: &models.LinkObject{
 					HRef: "http://localhost:22000/datasets/cpih01",
 					ID:   "cpih01",
@@ -4987,28 +4987,28 @@ func TestRewriteVersionLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteVersionLinks(ctx, links, datasetLinksBuilder)
+			err := RewriteVersionLinks(ctx, versionLinks, datasetLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
-				So(links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
-				So(links.Dimensions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions")
-				So(links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
-				So(links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
-				So(links.Spatial.HRef, ShouldEqual, "http://oldhost:1000/spatial")
-				So(links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
-				So(links.Version.ID, ShouldEqual, "1")
+				So(versionLinks.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
+				So(versionLinks.Dimensions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions")
+				So(versionLinks.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
+				So(versionLinks.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(versionLinks.Spatial.HRef, ShouldEqual, "http://oldhost:1000/spatial")
+				So(versionLinks.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(versionLinks.Version.ID, ShouldEqual, "1")
 			})
 		})
 
 		Convey("When the version links are empty", func() {
-			links := &models.VersionLinks{}
+			versionLinks := &models.VersionLinks{}
 
-			err := RewriteVersionLinks(ctx, links, datasetLinksBuilder)
+			err := RewriteVersionLinks(ctx, versionLinks, datasetLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
-				So(links, ShouldResemble, &models.VersionLinks{})
+				So(versionLinks, ShouldResemble, &models.VersionLinks{})
 			})
 		})
 
@@ -5026,7 +5026,7 @@ func TestRewriteVersionLinks_Error(t *testing.T) {
 	ctx := context.Background()
 	Convey("Given a set of version links", t, func() {
 		Convey("When the version links are unable to be parsed", func() {
-			links := &models.VersionLinks{
+			versionLinks := &models.VersionLinks{
 				Dataset: &models.LinkObject{
 					HRef: "://oldhost:1000/datasets/cpih01",
 					ID:   "cpih01",
@@ -5050,7 +5050,7 @@ func TestRewriteVersionLinks_Error(t *testing.T) {
 				},
 			}
 
-			err := RewriteVersionLinks(ctx, links, nil)
+			err := RewriteVersionLinks(ctx, versionLinks, nil)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -5805,7 +5805,7 @@ func TestRewriteInstanceLinks_Success(t *testing.T) {
 		importLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, importAPIURL)
 		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		Convey("When the instance links need rewriting", func() {
-			links := &models.InstanceLinks{
+			instanceLinks := &models.InstanceLinks{
 				Dataset: &models.LinkObject{
 					HRef: "https://oldhost:1000/datasets/cpih01",
 				},
@@ -5829,22 +5829,22 @@ func TestRewriteInstanceLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteInstanceLinks(ctx, links, datasetLinksBuilder, importLinksBuilder)
+			err := RewriteInstanceLinks(ctx, instanceLinks, datasetLinksBuilder, importLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
-				So(links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
-				So(links.Dimensions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions")
-				So(links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
-				So(links.Job.HRef, ShouldEqual, "http://localhost:21800/jobs/1")
-				So(links.Self.HRef, ShouldEqual, "http://localhost:22000/instances/1")
-				So(links.Spatial.HRef, ShouldEqual, "http://oldhost:1000/spatial")
-				So(links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(instanceLinks.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
+				So(instanceLinks.Dimensions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions")
+				So(instanceLinks.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
+				So(instanceLinks.Job.HRef, ShouldEqual, "http://localhost:21800/jobs/1")
+				So(instanceLinks.Self.HRef, ShouldEqual, "http://localhost:22000/instances/1")
+				So(instanceLinks.Spatial.HRef, ShouldEqual, "http://oldhost:1000/spatial")
+				So(instanceLinks.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 			})
 		})
 
 		Convey("When the instance links do not need rewriting", func() {
-			links := &models.InstanceLinks{
+			instanceLinks := &models.InstanceLinks{
 				Dataset: &models.LinkObject{
 					HRef: "http://localhost:22000/datasets/cpih01",
 				},
@@ -5868,28 +5868,28 @@ func TestRewriteInstanceLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteInstanceLinks(ctx, links, datasetLinksBuilder, importLinksBuilder)
+			err := RewriteInstanceLinks(ctx, instanceLinks, datasetLinksBuilder, importLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
-				So(links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
-				So(links.Dimensions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions")
-				So(links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
-				So(links.Job.HRef, ShouldEqual, "http://localhost:21800/jobs/1")
-				So(links.Self.HRef, ShouldEqual, "http://localhost:22000/instances/1")
-				So(links.Spatial.HRef, ShouldEqual, "http://oldhost:1000/spatial")
-				So(links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
+				So(instanceLinks.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
+				So(instanceLinks.Dimensions.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions")
+				So(instanceLinks.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
+				So(instanceLinks.Job.HRef, ShouldEqual, "http://localhost:21800/jobs/1")
+				So(instanceLinks.Self.HRef, ShouldEqual, "http://localhost:22000/instances/1")
+				So(instanceLinks.Spatial.HRef, ShouldEqual, "http://oldhost:1000/spatial")
+				So(instanceLinks.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 			})
 		})
 
 		Convey("When the instance links are empty", func() {
-			links := &models.InstanceLinks{}
+			instanceLinks := &models.InstanceLinks{}
 
-			err := RewriteInstanceLinks(ctx, links, datasetLinksBuilder, importLinksBuilder)
+			err := RewriteInstanceLinks(ctx, instanceLinks, datasetLinksBuilder, importLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
-				So(links, ShouldResemble, &models.InstanceLinks{})
+				So(instanceLinks, ShouldResemble, &models.InstanceLinks{})
 			})
 		})
 
@@ -5909,7 +5909,7 @@ func TestRewriteInstanceLinks_Error(t *testing.T) {
 		importLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, importAPIURL)
 		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		Convey("When the instance links are unable to be parsed", func() {
-			links := &models.InstanceLinks{
+			instanceLinks := &models.InstanceLinks{
 				Dataset: &models.LinkObject{
 					HRef: "://oldhost:1000/datasets/cpih01",
 				},
@@ -5933,7 +5933,7 @@ func TestRewriteInstanceLinks_Error(t *testing.T) {
 				},
 			}
 
-			err := RewriteInstanceLinks(ctx, links, nil, nil)
+			err := RewriteInstanceLinks(ctx, instanceLinks, nil, nil)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -5942,7 +5942,7 @@ func TestRewriteInstanceLinks_Error(t *testing.T) {
 		})
 
 		Convey("When the Job link is unable to be parsed", func() {
-			links := &models.InstanceLinks{
+			instanceLinks := &models.InstanceLinks{
 				Dataset: &models.LinkObject{
 					HRef: "http://localhost:22000/datasets/cpih01",
 				},
@@ -5966,7 +5966,7 @@ func TestRewriteInstanceLinks_Error(t *testing.T) {
 				},
 			}
 
-			err := RewriteInstanceLinks(ctx, links, datasetLinksBuilder, importLinksBuilder)
+			err := RewriteInstanceLinks(ctx, instanceLinks, datasetLinksBuilder, importLinksBuilder)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -5980,7 +5980,7 @@ func TestRewriteDownloadLinks_Success(t *testing.T) {
 	ctx := context.Background()
 	Convey("Given a set of download links", t, func() {
 		Convey("When the download links need rewriting", func() {
-			links := &models.DownloadList{
+			downloadLinks := &models.DownloadList{
 				CSV: &models.DownloadObject{
 					HRef: "https://oldhost:1000/downloads/datasets/cpih01/editions/time-series/versions/1.csv",
 					Size: "15000",
@@ -6003,25 +6003,25 @@ func TestRewriteDownloadLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteDownloadLinks(ctx, links, downloadServiceURL)
+			err := RewriteDownloadLinks(ctx, downloadLinks, downloadServiceURL)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
-				So(links.CSV.HRef, ShouldEqual, "http://localhost:23600/downloads/datasets/cpih01/editions/time-series/versions/1.csv")
-				So(links.CSV.Size, ShouldEqual, "15000")
-				So(links.CSVW.HRef, ShouldEqual, "http://localhost:23600/downloads/datasets/cpih01/editions/time-series/versions/1.csv-metadata.json")
-				So(links.CSVW.Size, ShouldEqual, "30000")
-				So(links.TXT.HRef, ShouldEqual, "http://localhost:23600/downloads/datasets/cpih01/editions/time-series/versions/1.txt")
-				So(links.TXT.Size, ShouldEqual, "45000")
-				So(links.XLS.HRef, ShouldEqual, "http://localhost:23600/downloads/datasets/cpih01/editions/time-series/versions/1.xls")
-				So(links.XLS.Size, ShouldEqual, "60000")
-				So(links.XLSX.HRef, ShouldEqual, "http://localhost:23600/downloads/datasets/cpih01/editions/time-series/versions/1.xlsx")
-				So(links.XLSX.Size, ShouldEqual, "75000")
+				So(downloadLinks.CSV.HRef, ShouldEqual, "http://localhost:23600/downloads/datasets/cpih01/editions/time-series/versions/1.csv")
+				So(downloadLinks.CSV.Size, ShouldEqual, "15000")
+				So(downloadLinks.CSVW.HRef, ShouldEqual, "http://localhost:23600/downloads/datasets/cpih01/editions/time-series/versions/1.csv-metadata.json")
+				So(downloadLinks.CSVW.Size, ShouldEqual, "30000")
+				So(downloadLinks.TXT.HRef, ShouldEqual, "http://localhost:23600/downloads/datasets/cpih01/editions/time-series/versions/1.txt")
+				So(downloadLinks.TXT.Size, ShouldEqual, "45000")
+				So(downloadLinks.XLS.HRef, ShouldEqual, "http://localhost:23600/downloads/datasets/cpih01/editions/time-series/versions/1.xls")
+				So(downloadLinks.XLS.Size, ShouldEqual, "60000")
+				So(downloadLinks.XLSX.HRef, ShouldEqual, "http://localhost:23600/downloads/datasets/cpih01/editions/time-series/versions/1.xlsx")
+				So(downloadLinks.XLSX.Size, ShouldEqual, "75000")
 			})
 		})
 
 		Convey("When the download links do not need rewriting", func() {
-			links := &models.DownloadList{
+			downloadLinks := &models.DownloadList{
 				CSV: &models.DownloadObject{
 					HRef: "http://localhost:23600/downloads/datasets/cpih01/editions/time-series/versions/1.csv",
 					Size: "15000",
@@ -6044,31 +6044,31 @@ func TestRewriteDownloadLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteDownloadLinks(ctx, links, downloadServiceURL)
+			err := RewriteDownloadLinks(ctx, downloadLinks, downloadServiceURL)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
-				So(links.CSV.HRef, ShouldEqual, "http://localhost:23600/downloads/datasets/cpih01/editions/time-series/versions/1.csv")
-				So(links.CSV.Size, ShouldEqual, "15000")
-				So(links.CSVW.HRef, ShouldEqual, "http://localhost:23600/downloads/datasets/cpih01/editions/time-series/versions/1.csv-metadata.json")
-				So(links.CSVW.Size, ShouldEqual, "30000")
-				So(links.TXT.HRef, ShouldEqual, "http://localhost:23600/downloads/datasets/cpih01/editions/time-series/versions/1.txt")
-				So(links.TXT.Size, ShouldEqual, "45000")
-				So(links.XLS.HRef, ShouldEqual, "http://localhost:23600/downloads/datasets/cpih01/editions/time-series/versions/1.xls")
-				So(links.XLS.Size, ShouldEqual, "60000")
-				So(links.XLSX.HRef, ShouldEqual, "http://localhost:23600/downloads/datasets/cpih01/editions/time-series/versions/1.xlsx")
-				So(links.XLSX.Size, ShouldEqual, "75000")
+				So(downloadLinks.CSV.HRef, ShouldEqual, "http://localhost:23600/downloads/datasets/cpih01/editions/time-series/versions/1.csv")
+				So(downloadLinks.CSV.Size, ShouldEqual, "15000")
+				So(downloadLinks.CSVW.HRef, ShouldEqual, "http://localhost:23600/downloads/datasets/cpih01/editions/time-series/versions/1.csv-metadata.json")
+				So(downloadLinks.CSVW.Size, ShouldEqual, "30000")
+				So(downloadLinks.TXT.HRef, ShouldEqual, "http://localhost:23600/downloads/datasets/cpih01/editions/time-series/versions/1.txt")
+				So(downloadLinks.TXT.Size, ShouldEqual, "45000")
+				So(downloadLinks.XLS.HRef, ShouldEqual, "http://localhost:23600/downloads/datasets/cpih01/editions/time-series/versions/1.xls")
+				So(downloadLinks.XLS.Size, ShouldEqual, "60000")
+				So(downloadLinks.XLSX.HRef, ShouldEqual, "http://localhost:23600/downloads/datasets/cpih01/editions/time-series/versions/1.xlsx")
+				So(downloadLinks.XLSX.Size, ShouldEqual, "75000")
 			})
 		})
 
 		Convey("When the download links are empty", func() {
-			links := &models.DownloadList{}
+			downloadLinks := &models.DownloadList{}
 
-			err := RewriteDownloadLinks(ctx, links, downloadServiceURL)
+			err := RewriteDownloadLinks(ctx, downloadLinks, downloadServiceURL)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
-				So(links, ShouldResemble, &models.DownloadList{})
+				So(downloadLinks, ShouldResemble, &models.DownloadList{})
 			})
 		})
 
@@ -6086,7 +6086,7 @@ func TestRewriteDownloadLinks_Error(t *testing.T) {
 	ctx := context.Background()
 	Convey("Given a set of download links", t, func() {
 		Convey("When the download links are unable to be parsed", func() {
-			links := &models.DownloadList{
+			downloadLinks := &models.DownloadList{
 				CSV: &models.DownloadObject{
 					HRef: "://oldhost:1000/downloads/datasets/cpih01/editions/time-series/versions/1.csv",
 					Size: "15000",
@@ -6109,7 +6109,7 @@ func TestRewriteDownloadLinks_Error(t *testing.T) {
 				},
 			}
 
-			err := RewriteDownloadLinks(ctx, links, downloadServiceURL)
+			err := RewriteDownloadLinks(ctx, downloadLinks, downloadServiceURL)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -6128,36 +6128,22 @@ func TestRewriteDistributions_Success(t *testing.T) {
 					Title:       "Distribution 1",
 					Format:      "CSV",
 					MediaType:   "text/csv",
-					DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.csv",
+					DownloadURL: "/cpih01/time-series/1/filename.csv",
 					ByteSize:    10000,
 				},
 				{
 					Title:       "Distribution 2",
 					Format:      "XLSX",
 					MediaType:   "text/xlsx",
-					DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.xlsx",
+					DownloadURL: "/cpih01/time-series/1/filename.xlsx",
 					ByteSize:    20000,
 				},
 				{
 					Title:       "Distribution 3",
 					Format:      "XLS",
 					MediaType:   "text/xls",
-					DownloadURL: "/datasets/cpih01/editions/time-series/versions/1.xls",
+					DownloadURL: "/cpih01/time-series/1/filename.xls",
 					ByteSize:    30000,
-				},
-				{
-					Title:       "Distribution 4",
-					Format:      "XLS",
-					MediaType:   "text/xls",
-					DownloadURL: "dataset-uploads/somefile.xls",
-					ByteSize:    40000,
-				},
-				{
-					Title:       "Distribution 5",
-					Format:      "XLSX",
-					MediaType:   "text/xlsx",
-					DownloadURL: "/dataset-uploads/somefile.xlsx",
-					ByteSize:    50000,
 				},
 			}
 
@@ -6165,11 +6151,9 @@ func TestRewriteDistributions_Success(t *testing.T) {
 
 			Convey("Then the DownloadURLs should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
-				So((*distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv")
-				So((*distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx")
-				So((*distributions)[2].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xls")
-				So((*distributions)[3].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/dataset-uploads/somefile.xls")
-				So((*distributions)[4].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/dataset-uploads/somefile.xlsx")
+				So((*distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv")
+				So((*distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx")
+				So((*distributions)[2].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xls")
 			})
 		})
 
@@ -6179,21 +6163,21 @@ func TestRewriteDistributions_Success(t *testing.T) {
 					Title:       "Distribution 1",
 					Format:      "CSV",
 					MediaType:   "text/csv",
-					DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv",
+					DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv",
 					ByteSize:    10000,
 				},
 				{
 					Title:       "Distribution 2",
 					Format:      "XLSX",
 					MediaType:   "text/xlsx",
-					DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx",
+					DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx",
 					ByteSize:    20000,
 				},
 				{
 					Title:       "Distribution 3",
 					Format:      "XLS",
 					MediaType:   "text/xls",
-					DownloadURL: "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xls",
+					DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xls",
 					ByteSize:    30000,
 				},
 			}
@@ -6202,9 +6186,9 @@ func TestRewriteDistributions_Success(t *testing.T) {
 
 			Convey("Then the DownloadURLs should remain the same", func() {
 				So(err, ShouldBeNil)
-				So((*distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.csv")
-				So((*distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xlsx")
-				So((*distributions)[2].DownloadURL, ShouldEqual, "http://localhost:23600/downloads-new/datasets/cpih01/editions/time-series/versions/1.xls")
+				So((*distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv")
+				So((*distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx")
+				So((*distributions)[2].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xls")
 			})
 		})
 
@@ -6241,7 +6225,7 @@ func TestRewriteDistributions_Error(t *testing.T) {
 					Title:       "Distribution 1",
 					Format:      "CSV",
 					MediaType:   "text/csv",
-					DownloadURL: "://oldhost:1000/downloads/datasets/cpih01/editions/time-series/versions/1.csv",
+					DownloadURL: "://oldhost:1000/downloads/files/cpih01/time-series/1/filename.csv",
 					ByteSize:    10000,
 				},
 			}
@@ -6251,6 +6235,353 @@ func TestRewriteDistributions_Error(t *testing.T) {
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldContainSubstring, "unable to parse link to URL")
+			})
+		})
+	})
+}
+
+func TestGenerateDistributionsDownloadURLs(t *testing.T) {
+	Convey("Given a set of distributions", t, func() {
+		distributions := &[]models.Distribution{
+			{
+				Title:       "Distribution 1",
+				Format:      "CSV",
+				MediaType:   "text/csv",
+				DownloadURL: "/cpih01/time-series/1/file1.csv",
+				ByteSize:    10000,
+			},
+			{
+				Title:       "Distribution 2",
+				Format:      "XLSX",
+				MediaType:   "text/xlsx",
+				DownloadURL: "/cpih01/time-series/1/file2.xlsx",
+				ByteSize:    20000,
+			},
+			{
+				Title:       "Distribution 3",
+				Format:      "XLS",
+				MediaType:   "text/xls",
+				DownloadURL: "/cpih01/time-series/1/file3.xls",
+				ByteSize:    30000,
+			},
+		}
+
+		datasetID := "new-dataset"
+		edition := "new-edition"
+		version := 2
+
+		Convey("When generating download URLs", func() {
+			updatedDistributions := GenerateDistributionsDownloadURLs(datasetID, edition, version, distributions)
+
+			expectedResults := &[]models.Distribution{
+				{
+					Title:       "Distribution 1",
+					Format:      "CSV",
+					MediaType:   "text/csv",
+					DownloadURL: "/new-dataset/new-edition/2/file1.csv",
+					ByteSize:    10000,
+				},
+				{
+					Title:       "Distribution 2",
+					Format:      "XLSX",
+					MediaType:   "text/xlsx",
+					DownloadURL: "/new-dataset/new-edition/2/file2.xlsx",
+					ByteSize:    20000,
+				},
+				{
+					Title:       "Distribution 3",
+					Format:      "XLS",
+					MediaType:   "text/xls",
+					DownloadURL: "/new-dataset/new-edition/2/file3.xls",
+					ByteSize:    30000,
+				},
+			}
+
+			Convey("Then the DownloadURLs should be generated correctly using the provided parameters", func() {
+				So(updatedDistributions, ShouldResemble, expectedResults)
+			})
+		})
+
+		Convey("When the distributions are empty", func() {
+			emptyDistributions := &[]models.Distribution{}
+
+			updatedDistributions := GenerateDistributionsDownloadURLs(datasetID, edition, version, emptyDistributions)
+
+			Convey("Then the distributions should remain empty", func() {
+				So(len(*updatedDistributions), ShouldEqual, 0)
+			})
+		})
+
+		Convey("When the distributions are nil", func() {
+			var nilDistributions *[]models.Distribution
+
+			updatedDistributions := GenerateDistributionsDownloadURLs(datasetID, edition, version, nilDistributions)
+
+			Convey("Then the distributions should remain nil", func() {
+				So(updatedDistributions, ShouldBeNil)
+			})
+		})
+	})
+}
+
+func TestValidateDistributionsFromRequestBody(t *testing.T) {
+	Convey("Given a request body with distributions", t, func() {
+		Convey("When distributions contain valid formats", func() {
+			bodyBytes := []byte(`{"distributions": [{"format": "csv"}]}`)
+			err := ValidateDistributionsFromRequestBody(bodyBytes)
+
+			Convey("Then no error should be returned", func() {
+				So(err, ShouldBeNil)
+			})
+		})
+
+		Convey("When distributions contain all supported format types", func() {
+			bodyBytes := []byte(`{"distributions": [
+				{"format": "csv"},
+				{"format": "xls"},
+				{"format": "xlsx"},
+				{"format": "sdmx"},
+				{"format": "csdb"},
+				{"format": "csvw-metadata"}
+			]}`)
+			err := ValidateDistributionsFromRequestBody(bodyBytes)
+
+			Convey("Then no error should be returned", func() {
+				So(err, ShouldBeNil)
+			})
+		})
+
+		Convey("When a distribution is missing format field", func() {
+			bodyBytes := []byte(`{"distributions": [{}]}`)
+			err := ValidateDistributionsFromRequestBody(bodyBytes)
+
+			Convey("Then an error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "distributions[0].format field is missing")
+			})
+		})
+
+		Convey("When a distribution has invalid format", func() {
+			bodyBytes := []byte(`{"distributions": [{"format": "pdf"}]}`)
+			err := ValidateDistributionsFromRequestBody(bodyBytes)
+
+			Convey("Then an error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "distributions[0].format field is invalid")
+			})
+		})
+
+		Convey("When multiple distributions are provided", func() {
+			bodyBytes := []byte(`{"distributions": [
+				{"format": "csv"},
+				{"format": "sdmx"}
+			]}`)
+			err := ValidateDistributionsFromRequestBody(bodyBytes)
+
+			Convey("Then no error should be returned", func() {
+				So(err, ShouldBeNil)
+			})
+		})
+
+		Convey("When format field is not a string", func() {
+			bodyBytes := []byte(`{"distributions": [{"format": 123}]}`)
+			err := ValidateDistributionsFromRequestBody(bodyBytes)
+
+			Convey("Then an error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "distributions[0].format field is invalid")
+			})
+		})
+
+		Convey("When distributions field is not present", func() {
+			bodyBytes := []byte(`{}`)
+			err := ValidateDistributionsFromRequestBody(bodyBytes)
+
+			Convey("Then no error should be returned", func() {
+				So(err, ShouldBeNil)
+			})
+		})
+
+		Convey("When distributions field is empty array", func() {
+			bodyBytes := []byte(`{"distributions": []}`)
+			err := ValidateDistributionsFromRequestBody(bodyBytes)
+
+			Convey("Then no error should be returned", func() {
+				So(err, ShouldBeNil)
+			})
+		})
+
+		Convey("When request body is malformed JSON", func() {
+			bodyBytes := []byte(`{"distributions": [{"format": "csv"`)
+			err := ValidateDistributionsFromRequestBody(bodyBytes)
+
+			Convey("Then no error should be returned", func() {
+				// The function returns nil on JSON parse errors to let main unmarshal handle it
+				So(err, ShouldBeNil)
+			})
+		})
+
+		Convey("When distributions field is not an array", func() {
+			bodyBytes := []byte(`{"distributions": "not-an-array"}`)
+			err := ValidateDistributionsFromRequestBody(bodyBytes)
+
+			Convey("Then no error should be returned", func() {
+				// The function returns nil when distributions is not an array to let main unmarshal handle it
+				So(err, ShouldBeNil)
+			})
+		})
+
+		Convey("When format field is empty string", func() {
+			bodyBytes := []byte(`{"distributions": [{"format": ""}]}`)
+			err := ValidateDistributionsFromRequestBody(bodyBytes)
+
+			Convey("Then an error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "distributions[0].format field is invalid")
+			})
+		})
+
+		Convey("When second distribution has missing format", func() {
+			bodyBytes := []byte(`{"distributions": [
+				{"format": "csv"},
+				{}
+			]}`)
+			err := ValidateDistributionsFromRequestBody(bodyBytes)
+
+			Convey("Then an error should be returned for the second distribution", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "distributions[1].format field is missing")
+			})
+		})
+	})
+}
+
+func TestPopulateDistributions(t *testing.T) {
+	Convey("Given a version with distributions", t, func() {
+		Convey("When distributions have CSV format", func() {
+			version := &models.Version{
+				Distributions: &[]models.Distribution{
+					{Format: "csv", DownloadURL: "http://example.com/data.csv"},
+				},
+			}
+
+			err := PopulateDistributions(version)
+
+			Convey("Then the media type should be set correctly", func() {
+				So(err, ShouldBeNil)
+				So((*version.Distributions)[0].MediaType, ShouldEqual, models.DistributionMediaTypeCSV)
+			})
+		})
+
+		Convey("When distributions have multiple formats", func() {
+			version := &models.Version{
+				Distributions: &[]models.Distribution{
+					{Format: "csv", DownloadURL: "http://example.com/data.csv"},
+					{Format: "sdmx", DownloadURL: "http://example.com/data.sdmx"},
+					{Format: "xls", DownloadURL: "http://example.com/data.xls"},
+					{Format: "xlsx", DownloadURL: "http://example.com/data.xlsx"},
+					{Format: "csdb", DownloadURL: "http://example.com/data.csdb"},
+					{Format: "csvw-metadata", DownloadURL: "http://example.com/data.json"},
+				},
+			}
+
+			err := PopulateDistributions(version)
+
+			Convey("Then all media types should be set correctly", func() {
+				So(err, ShouldBeNil)
+				So((*version.Distributions)[0].MediaType, ShouldEqual, models.DistributionMediaTypeCSV)
+				So((*version.Distributions)[1].MediaType, ShouldEqual, models.DistributionMediaTypeSDMX)
+				So((*version.Distributions)[2].MediaType, ShouldEqual, models.DistributionMediaTypeXLS)
+				So((*version.Distributions)[3].MediaType, ShouldEqual, models.DistributionMediaTypeXLSX)
+				So((*version.Distributions)[4].MediaType, ShouldEqual, models.DistributionMediaTypeCSDB)
+				So((*version.Distributions)[5].MediaType, ShouldEqual, models.DistributionMediaTypeCSVWMeta)
+			})
+		})
+
+		Convey("When version has nil distributions", func() {
+			version := &models.Version{
+				Distributions: nil,
+			}
+
+			err := PopulateDistributions(version)
+
+			Convey("Then no error should be returned", func() {
+				So(err, ShouldBeNil)
+			})
+		})
+
+		Convey("When version has empty distributions array", func() {
+			version := &models.Version{
+				Distributions: &[]models.Distribution{},
+			}
+
+			err := PopulateDistributions(version)
+
+			Convey("Then no error should be returned", func() {
+				So(err, ShouldBeNil)
+			})
+		})
+
+		Convey("When a distribution has missing format field", func() {
+			version := &models.Version{
+				Distributions: &[]models.Distribution{
+					{DownloadURL: "http://example.com/data"},
+				},
+			}
+
+			err := PopulateDistributions(version)
+
+			Convey("Then an error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "distributions[0].format field is missing")
+			})
+		})
+
+		Convey("When a distribution has invalid format", func() {
+			version := &models.Version{
+				Distributions: &[]models.Distribution{
+					{Format: "pdf", DownloadURL: "http://example.com/data.pdf"},
+				},
+			}
+
+			err := PopulateDistributions(version)
+
+			Convey("Then an error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "distributions[0].format field is invalid")
+			})
+		})
+
+		Convey("When second distribution has invalid format", func() {
+			version := &models.Version{
+				Distributions: &[]models.Distribution{
+					{Format: "csv", DownloadURL: "http://example.com/data.csv"},
+					{Format: "pdf", DownloadURL: "http://example.com/data.pdf"},
+				},
+			}
+
+			err := PopulateDistributions(version)
+
+			Convey("Then an error should be returned for the second distribution", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "distributions[1].format field is invalid")
+			})
+		})
+
+		Convey("When third distribution has missing format", func() {
+			version := &models.Version{
+				Distributions: &[]models.Distribution{
+					{Format: "csv", DownloadURL: "http://example.com/data.csv"},
+					{Format: "sdmx", DownloadURL: "http://example.com/data.sdmx"},
+					{DownloadURL: "http://example.com/data"},
+				},
+			}
+
+			err := PopulateDistributions(version)
+
+			Convey("Then an error should be returned for the third distribution", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "distributions[2].format field is missing")
 			})
 		})
 	})

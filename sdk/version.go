@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -15,6 +14,8 @@ import (
 	"strings"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
+
+	dpresponse "github.com/ONSdigital/dp-net/v3/handlers/response"
 )
 
 const (
@@ -37,12 +38,12 @@ func NewDatasetAPIResponse(resp *http.Response, uri string) (e *ErrInvalidDatase
 		uri:        uri,
 	}
 	if resp.StatusCode == http.StatusNotFound {
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		if err != nil {
 			e.body = "Client failed to read DatasetAPI body"
 			return
 		}
-		defer closeResponseBody(nil, resp)
+		defer closeResponseBody(context.TODO(), resp)
 
 		e.body = string(b)
 	}
@@ -61,7 +62,7 @@ func (q *QueryParams) Validate() error {
 	return nil
 }
 
-// GetVersion gets a specific version for an edition from the dataset api
+// GetVersion retrieves a specific version for an edition of a dataset
 func (c *Client) GetVersion(ctx context.Context, headers Headers, datasetID, editionID, versionID string) (version models.Version, err error) {
 	version = models.Version{}
 	// Build uri
@@ -71,8 +72,10 @@ func (c *Client) GetVersion(ctx context.Context, headers Headers, datasetID, edi
 		return version, err
 	}
 
+	fmt.Println("THE HEADERS ARE")
+	fmt.Println(headers)
 	// Make request
-	resp, err := c.DoAuthenticatedGetRequest(ctx, headers, uri)
+	resp, err := c.doAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {
 		return version, err
 	}
@@ -96,7 +99,7 @@ func (c *Client) GetVersionV2(ctx context.Context, headers Headers, datasetID, e
 	}
 
 	// Make request
-	resp, err := c.DoAuthenticatedGetRequest(ctx, headers, uri)
+	resp, err := c.doAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {
 		return version, err
 	}
@@ -125,7 +128,7 @@ func (c *Client) GetVersionDimensions(ctx context.Context, headers Headers, data
 	}
 
 	// Make request
-	resp, err := c.DoAuthenticatedGetRequest(ctx, headers, uri)
+	resp, err := c.doAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {
 		return versionDimensionsList, err
 	}
@@ -186,7 +189,7 @@ func (c *Client) GetVersionDimensionOptions(ctx context.Context, headers Headers
 	}
 
 	// Make request
-	resp, err := c.DoAuthenticatedGetRequest(ctx, headers, uri)
+	resp, err := c.doAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {
 		return versionDimensionOptionsList, err
 	}
@@ -210,7 +213,7 @@ func (c *Client) GetVersionMetadata(ctx context.Context, headers Headers, datase
 	}
 
 	// Make request
-	resp, err := c.DoAuthenticatedGetRequest(ctx, headers, uri)
+	resp, err := c.doAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {
 		return metadata, err
 	}
@@ -233,7 +236,7 @@ type VersionsList struct {
 	TotalCount int              `json:"total_count"`
 }
 
-// GetVersions gets all versions for an edition from the dataset api
+// GetVersions returns a paginated list of versions for an edition
 func (c *Client) GetVersions(ctx context.Context, headers Headers, datasetID, editionID string, queryParams *QueryParams) (versionsList VersionsList, err error) {
 	versionsList = VersionsList{}
 	// Build uri
@@ -256,7 +259,7 @@ func (c *Client) GetVersions(ctx context.Context, headers Headers, datasetID, ed
 	}
 
 	// Make request
-	resp, err := c.DoAuthenticatedGetRequest(ctx, headers, uri)
+	resp, err := c.doAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {
 		return versionsList, err
 	}
@@ -265,18 +268,16 @@ func (c *Client) GetVersions(ctx context.Context, headers Headers, datasetID, ed
 
 	if resp.StatusCode != http.StatusOK {
 		err = NewDatasetAPIResponse(resp, uri.RequestURI())
-		return
+		return versionsList, err
 	}
 
-	// Unmarshal the response body to target
-	//err = unmarshalResponseBodyExpectingStringError(resp, &versionsList)
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return
+		return versionsList, err
 	}
 
-	if err = json.Unmarshal(b, &versionsList); err != nil {
-		return
+	if err := json.Unmarshal(b, &versionsList); err != nil {
+		return versionsList, err
 	}
 
 	return versionsList, err
@@ -284,7 +285,6 @@ func (c *Client) GetVersions(ctx context.Context, headers Headers, datasetID, ed
 
 // GetVersionsInBatches retrieves a list of datasets in concurrent batches and accumulates the results
 func (c *Client) GetVersionsInBatches(ctx context.Context, headers Headers, datasetID, edition string, batchSize, maxWorkers int) (versions VersionsList, err error) {
-
 	// Function to aggregate items.
 	// For the first received batch, as we have the total count information, will initialise the final structure of items with a fixed size equal to TotalCount.
 	// This serves two purposes:
@@ -315,7 +315,6 @@ func (c *Client) GetVersionsInBatches(ctx context.Context, headers Headers, data
 
 // GetVersionsBatchProcess gets the datasets from the dataset API in batches, calling the provided function for each batch.
 func (c *Client) GetVersionsBatchProcess(ctx context.Context, headers Headers, datasetID, edition string, processBatch VersionsBatchProcessor, batchSize, maxWorkers int) error {
-
 	// for each batch, obtain the dimensions starting at the provided offset, with a batch size limit,
 	// or the subset of IDs according to the provided offset, if a list of optionIDs was provided
 	batchGetter := func(offset int) (interface{}, int, string, error) {
@@ -346,7 +345,6 @@ func (c *Client) GetVersionWithHeaders(ctx context.Context, headers Headers, dat
 
 // Returns the full response so the etag in the header can be processed and returned
 func (c *Client) GetVersionWithResponse(ctx context.Context, headers Headers, datasetID, edition, versionID string) (v models.Version, resp *http.Response, err error) {
-
 	version := models.Version{}
 	// Build uri
 	uri := &url.URL{}
@@ -354,15 +352,9 @@ func (c *Client) GetVersionWithResponse(ctx context.Context, headers Headers, da
 	if err != nil {
 		return version, nil, err
 	}
-	//uri := fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s", c.hcCli.URL, datasetID, edition, version)
-
-	// resp, err = c.doGetWithAuthHeadersAndWithDownloadToken(ctx, userAuthToken, serviceAuthToken, downloadServiceAuthToken, collectionID, uri)
-	// if err != nil {
-	// 	return
-	// }
 
 	// Make request
-	resp, err = c.DoAuthenticatedGetRequest(ctx, headers, uri)
+	resp, err = c.doAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {
 		return version, nil, err
 	}
@@ -383,6 +375,7 @@ func (c *Client) GetVersionWithResponse(ctx context.Context, headers Headers, da
 	return v, resp, err
 }
 
+// PutVersion updates a specific version for a dataset series
 func (c *Client) PutVersion(ctx context.Context, headers Headers, datasetID, editionID, versionID string, version models.Version) (updatedVersion models.Version, err error) {
 	if err := validateRequiredParams(map[string]string{
 		"datasetID": datasetID,
@@ -403,7 +396,7 @@ func (c *Client) PutVersion(ctx context.Context, headers Headers, datasetID, edi
 		return updatedVersion, err
 	}
 
-	resp, err := c.DoAuthenticatedPutRequest(ctx, headers, uri, requestBody)
+	resp, err := c.doAuthenticatedPutRequest(ctx, headers, uri, requestBody)
 	if err != nil {
 		return updatedVersion, err
 	}
@@ -425,6 +418,7 @@ func (c *Client) PutVersion(ctx context.Context, headers Headers, datasetID, edi
 	return updatedVersion, nil
 }
 
+// PutVersionState updates the state of a specific version for a dataset series
 func (c *Client) PutVersionState(ctx context.Context, headers Headers, datasetID, editionID, versionID, state string) (err error) {
 	if err := validateRequiredParams(map[string]string{
 		"datasetID": datasetID,
@@ -451,7 +445,7 @@ func (c *Client) PutVersionState(ctx context.Context, headers Headers, datasetID
 		return err
 	}
 
-	resp, err := c.DoAuthenticatedPutRequest(ctx, headers, uri, requestBody)
+	resp, err := c.doAuthenticatedPutRequest(ctx, headers, uri, requestBody)
 	if err != nil {
 		return err
 	}
@@ -467,6 +461,55 @@ func (c *Client) PutVersionState(ctx context.Context, headers Headers, datasetID
 	}
 
 	return nil
+}
+
+// PostVersion creates a specific version for a dataset series
+func (c *Client) PostVersion(ctx context.Context, headers Headers, datasetID, editionID, versionID string, version models.Version) (createdVersion *models.Version, err error) {
+	if err := validateRequiredParams(map[string]string{
+		"datasetID": datasetID,
+		"editionID": editionID,
+		"versionID": versionID,
+	}); err != nil {
+		return createdVersion, err
+	}
+
+	uri := &url.URL{}
+	uri.Path, err = url.JoinPath(c.hcCli.URL, "datasets", datasetID, "editions", editionID, "versions", versionID)
+	if err != nil {
+		return createdVersion, err
+	}
+
+	requestBody, err := json.Marshal(version)
+	if err != nil {
+		return createdVersion, err
+	}
+
+	resp, err := c.doAuthenticatedPostRequest(ctx, headers, uri, requestBody)
+	if err != nil {
+		return createdVersion, err
+	}
+	defer closeResponseBody(ctx, resp)
+
+	if resp.StatusCode != http.StatusCreated {
+		errorResponse, err := unmarshalErrorResponse(resp.Body)
+		if err != nil {
+			return createdVersion, err
+		}
+		return createdVersion, fmt.Errorf("did not receive success response. received status %d, response body: %v", resp.StatusCode, errorResponse)
+	}
+
+	err = json.NewDecoder(resp.Body).Decode(&createdVersion)
+	if err != nil {
+		return createdVersion, err
+	}
+
+	// ETag must be taken from response header since it is not included in the response body
+	eTag := resp.Header.Get(dpresponse.ETagHeader)
+	if createdVersion != nil {
+		createdVersion.ETag = eTag
+	}
+
+	return createdVersion, nil
 }
 
 // Validate that all the specified params are not empty, and return an error message describing which ones are empty (if any)

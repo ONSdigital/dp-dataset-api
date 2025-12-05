@@ -9,6 +9,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/service"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	kafka "github.com/ONSdigital/dp-kafka/v4"
 	"net/http"
 	"sync"
@@ -26,6 +27,9 @@ var _ service.Initialiser = &InitialiserMock{}
 //		mockedInitialiser := &InitialiserMock{
 //			DoGetAuthorisationMiddlewareFunc: func(ctx context.Context, authorisationConfig *auth.Config) (auth.Middleware, error) {
 //				panic("mock out the DoGetAuthorisationMiddleware method")
+//			},
+//			DoGetFilesAPIClientFunc: func(ctx context.Context, cfg *config.Configuration) (filesAPISDK.Clienter, error) {
+//				panic("mock out the DoGetFilesAPIClient method")
 //			},
 //			DoGetGraphDBFunc: func(ctx context.Context) (store.GraphDB, service.Closer, error) {
 //				panic("mock out the DoGetGraphDB method")
@@ -52,6 +56,9 @@ type InitialiserMock struct {
 	// DoGetAuthorisationMiddlewareFunc mocks the DoGetAuthorisationMiddleware method.
 	DoGetAuthorisationMiddlewareFunc func(ctx context.Context, authorisationConfig *auth.Config) (auth.Middleware, error)
 
+	// DoGetFilesAPIClientFunc mocks the DoGetFilesAPIClient method.
+	DoGetFilesAPIClientFunc func(ctx context.Context, cfg *config.Configuration) (filesAPISDK.Clienter, error)
+
 	// DoGetGraphDBFunc mocks the DoGetGraphDB method.
 	DoGetGraphDBFunc func(ctx context.Context) (store.GraphDB, service.Closer, error)
 
@@ -75,6 +82,13 @@ type InitialiserMock struct {
 			Ctx context.Context
 			// AuthorisationConfig is the authorisationConfig argument value.
 			AuthorisationConfig *auth.Config
+		}
+		// DoGetFilesAPIClient holds details about calls to the DoGetFilesAPIClient method.
+		DoGetFilesAPIClient []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Cfg is the cfg argument value.
+			Cfg *config.Configuration
 		}
 		// DoGetGraphDB holds details about calls to the DoGetGraphDB method.
 		DoGetGraphDB []struct {
@@ -117,6 +131,7 @@ type InitialiserMock struct {
 		}
 	}
 	lockDoGetAuthorisationMiddleware sync.RWMutex
+	lockDoGetFilesAPIClient          sync.RWMutex
 	lockDoGetGraphDB                 sync.RWMutex
 	lockDoGetHTTPServer              sync.RWMutex
 	lockDoGetHealthCheck             sync.RWMutex
@@ -157,6 +172,42 @@ func (mock *InitialiserMock) DoGetAuthorisationMiddlewareCalls() []struct {
 	mock.lockDoGetAuthorisationMiddleware.RLock()
 	calls = mock.calls.DoGetAuthorisationMiddleware
 	mock.lockDoGetAuthorisationMiddleware.RUnlock()
+	return calls
+}
+
+// DoGetFilesAPIClient calls DoGetFilesAPIClientFunc.
+func (mock *InitialiserMock) DoGetFilesAPIClient(ctx context.Context, cfg *config.Configuration) (filesAPISDK.Clienter, error) {
+	if mock.DoGetFilesAPIClientFunc == nil {
+		panic("InitialiserMock.DoGetFilesAPIClientFunc: method is nil but Initialiser.DoGetFilesAPIClient was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+		Cfg *config.Configuration
+	}{
+		Ctx: ctx,
+		Cfg: cfg,
+	}
+	mock.lockDoGetFilesAPIClient.Lock()
+	mock.calls.DoGetFilesAPIClient = append(mock.calls.DoGetFilesAPIClient, callInfo)
+	mock.lockDoGetFilesAPIClient.Unlock()
+	return mock.DoGetFilesAPIClientFunc(ctx, cfg)
+}
+
+// DoGetFilesAPIClientCalls gets all the calls that were made to DoGetFilesAPIClient.
+// Check the length with:
+//
+//	len(mockedInitialiser.DoGetFilesAPIClientCalls())
+func (mock *InitialiserMock) DoGetFilesAPIClientCalls() []struct {
+	Ctx context.Context
+	Cfg *config.Configuration
+} {
+	var calls []struct {
+		Ctx context.Context
+		Cfg *config.Configuration
+	}
+	mock.lockDoGetFilesAPIClient.RLock()
+	calls = mock.calls.DoGetFilesAPIClient
+	mock.lockDoGetFilesAPIClient.RUnlock()
 	return calls
 }
 

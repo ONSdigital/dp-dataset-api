@@ -638,7 +638,6 @@ func TestPutVersionState(t *testing.T) {
 }
 
 func Test_GetVersionsInBatches(t *testing.T) {
-
 	datasetID := "test-dataset"
 	edition := "test-edition"
 
@@ -669,7 +668,6 @@ func Test_GetVersionsInBatches(t *testing.T) {
 	maxWorkers := 1
 
 	Convey("When a 200 OK status is returned in 2 consecutive calls", t, func() {
-
 		httpClient := createHTTPClientMock(
 			MockedHTTPResponse{http.StatusOK, versionsResponse1, nil},
 			MockedHTTPResponse{http.StatusOK, versionsResponse2, nil})
@@ -713,7 +711,6 @@ func Test_GetVersionsInBatches(t *testing.T) {
 
 		Convey("then GetOptionsInBatches fails with the expected error and the process is aborted", func() {
 			_, err := datasetAPIClient.GetVersionsInBatches(ctx, headers, datasetID, edition, batchSize, maxWorkers)
-			// So(err.Error(), ShouldContainSubstring, "did not receive success response")
 			So(err.(*ErrInvalidDatasetAPIResponse).actualCode, ShouldEqual, http.StatusBadRequest)
 			So(err.(*ErrInvalidDatasetAPIResponse).uri, ShouldResemble, "http://localhost:22000/datasets/test-dataset/editions/test-edition/versions?limit=1&offset=0")
 		})
@@ -752,15 +749,13 @@ func Test_GetVersionsInBatches(t *testing.T) {
 			So(processedBatches, ShouldResemble, []VersionsList{versionsResponse1})
 		})
 	})
-
 }
 
 func Test_GetVersionWithHeaders(t *testing.T) {
 	ctx := context.Background()
 
 	Convey("Given dataset api has a version", t, func() {
-
-		datasetId := "dataset-id"
+		datasetID := "dataset-id"
 		edition := "2023"
 		versionString := "1"
 		versionNumber, _ := strconv.Atoi(versionString)
@@ -791,7 +786,7 @@ func Test_GetVersionWithHeaders(t *testing.T) {
 		Convey("when GetVersionWithHeaders is called with a successful response", func() {
 			httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, version, map[string]string{"Etag": etag}})
 			datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
-			got, h, err := datasetAPIClient.GetVersionWithHeaders(ctx, headers, datasetId, edition, versionString)
+			got, h, err := datasetAPIClient.GetVersionWithHeaders(ctx, headers, datasetID, edition, versionString)
 
 			Convey("Then it returns the right values", func() {
 				So(err, ShouldBeNil)
@@ -799,20 +794,20 @@ func Test_GetVersionWithHeaders(t *testing.T) {
 				So(h, ShouldNotBeNil)
 				So(h.ETag, ShouldEqual, etag)
 				// And the relevant api call has been made
-				expectedUrl := fmt.Sprintf("/datasets/%s/editions/%s/versions/%s", datasetId, edition, versionString)
+				expectedURL := fmt.Sprintf("/datasets/%s/editions/%s/versions/%s", datasetID, edition, versionString)
 				expectedHeaders := Headers{
 					AccessToken:          headers.AccessToken,
 					CollectionID:         headers.CollectionID,
 					DownloadServiceToken: headers.DownloadServiceToken,
 				}
-				checkRequestBase(httpClient, http.MethodGet, expectedUrl, expectedHeaders)
+				checkRequestBase(httpClient, http.MethodGet, expectedURL, expectedHeaders)
 			})
 		})
 
 		Convey("when GetVersionWithHeaders is called and the version parameter is invalid", func() {
 			httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusBadRequest, version, map[string]string{"Etag": etag}})
 			datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
-			got, h, err := datasetAPIClient.GetVersionWithHeaders(ctx, headers, datasetId, edition, "test")
+			got, h, err := datasetAPIClient.GetVersionWithHeaders(ctx, headers, datasetID, edition, "test")
 
 			Convey("Then an error is returned", func() {
 				So(err, ShouldNotBeNil)
@@ -820,10 +815,8 @@ func Test_GetVersionWithHeaders(t *testing.T) {
 				So(err.(*ErrInvalidDatasetAPIResponse).uri, ShouldResemble, "http://localhost:22000/datasets/dataset-id/editions/2023/versions/test")
 				So(got, ShouldEqual, models.Version{})
 				So(h, ShouldNotBeNil)
-
 			})
 		})
-
 	})
 }
 
@@ -834,8 +827,88 @@ var checkRequestBase = func(httpClient *dphttp.ClienterMock, expectedMethod, exp
 	if expectedHeaders.AccessToken != "" {
 		So(httpClient.DoCalls()[0].Req.Header.Get(dprequest.AuthHeaderKey), ShouldEqual, "Bearer "+expectedHeaders.AccessToken)
 	}
-	//So(httpClient.DoCalls()[0].Req.Header.Get("If-Match"), ShouldEqual, expectedHeaders.IfMatch)
 	So(httpClient.DoCalls()[0].Req.Header.Get("Collection-Id"), ShouldEqual, expectedHeaders.CollectionID)
-	//So(httpClient.DoCalls()[0].Req.Header.Get("Authorization"), ShouldEqual, expectedHeaders.ServiceToken)
 	So(httpClient.DoCalls()[0].Req.Header.Get("X-Download-Service-Token"), ShouldEqual, expectedHeaders.DownloadServiceToken)
+}
+
+func TestPostVersion(t *testing.T) {
+	Convey("Given a request to create a version", t, func() {
+		exampleVersion := models.Version{
+			DatasetID: datasetID,
+			Edition:   editionID,
+			Version:   1,
+		}
+
+		expectedVersionResponse := exampleVersion
+		expectedVersionResponse.ETag = etag
+
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusCreated, expectedVersionResponse, map[string]string{"ETag": etag}})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+
+		Convey("And the parameters are valid", func() {
+			createdVersion, err := datasetAPIClient.PostVersion(ctx, headers, datasetID, editionID, versionID, exampleVersion)
+
+			Convey("Then the request is successful", func() {
+				So(err, ShouldBeNil)
+				So(*createdVersion, ShouldResemble, expectedVersionResponse)
+			})
+
+			Convey("And the request is sent to the correct endpoint with the correct body", func() {
+				So(len(httpClient.DoCalls()), ShouldEqual, 1)
+				call := httpClient.DoCalls()[0]
+				So(call.Req.Method, ShouldEqual, http.MethodPost)
+				So(call.Req.URL.RequestURI(), ShouldEqual, fmt.Sprintf("/datasets/%s/editions/%s/versions/%s", datasetID, editionID, versionID))
+				So(call.Req.Header.Get("Authorization"), ShouldEqual, fmt.Sprintf("Bearer %s", headers.AccessToken))
+
+				var sentVersion models.Version
+				err := json.NewDecoder(call.Req.Body).Decode(&sentVersion)
+				So(err, ShouldBeNil)
+				So(sentVersion, ShouldResemble, exampleVersion)
+			})
+		})
+
+		Convey("When all required parameters are not provided", func() {
+			createdVersion, err := datasetAPIClient.PostVersion(ctx, headers, "", "", "", exampleVersion)
+
+			Convey("Then an error is returned", func() {
+				So(err, ShouldNotBeNil)
+				So(createdVersion, ShouldBeNil)
+				So(err.Error(), ShouldStartWith, "required args cannot be empty:")
+				So(err.Error(), ShouldContainSubstring, "datasetID")
+				So(err.Error(), ShouldContainSubstring, "editionID")
+				So(err.Error(), ShouldContainSubstring, "versionID")
+			})
+
+			Convey("And the created version is nil", func() {
+				So(createdVersion, ShouldBeNil)
+			})
+		})
+
+		Convey("When the HTTP response is not a success", func() {
+			expectedErrorResponse := models.ErrorResponse{
+				// cause field is not included as it is an ignored JSON field
+				Errors: []models.Error{
+					{
+						Code:        models.InternalError,
+						Description: models.InternalErrorDescription,
+					},
+				},
+			}
+			httpClient = createHTTPClientMock(MockedHTTPResponse{http.StatusInternalServerError, expectedErrorResponse, map[string]string{}})
+			datasetAPIClient = newDatasetAPIHealthcheckClient(t, httpClient)
+
+			createdVersion, err := datasetAPIClient.PostVersion(ctx, headers, datasetID, editionID, versionID, exampleVersion)
+
+			Convey("Then an error is returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "did not receive success response")
+				So(err.Error(), ShouldContainSubstring, "received status "+strconv.Itoa(http.StatusInternalServerError))
+				So(err.Error(), ShouldContainSubstring, models.InternalErrorDescription)
+			})
+
+			Convey("And the created version is nil", func() {
+				So(createdVersion, ShouldBeNil)
+			})
+		})
+	})
 }

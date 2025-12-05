@@ -8,7 +8,7 @@ import (
 	"net/url"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/golang-neo4j-bolt-driver/errors"
+	"github.com/pkg/errors"
 )
 
 type UpdateInstance struct {
@@ -33,8 +33,6 @@ type UpdateInstance struct {
 
 // PutInstance updates an instance
 func (c *Client) PutInstance(ctx context.Context, headers Headers, instanceID string, i UpdateInstance, ifMatch string) (eTag string, err error) {
-	//uri := fmt.Sprintf("%s/instances/%s", c.hcCli.URL, instanceID)
-
 	uri := &url.URL{}
 	uri.Path, err = url.JoinPath(c.hcCli.URL, "instances", instanceID)
 	if err != nil {

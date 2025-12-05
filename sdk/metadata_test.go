@@ -8,7 +8,6 @@ import (
 )
 
 func Test_PutMetadata(t *testing.T) {
-
 	Convey("Given a valid metadata record", t, func() {
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, "", nil})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
@@ -26,7 +25,6 @@ func Test_PutMetadata(t *testing.T) {
 	Convey("Given no auth token has been configured so the request is unauthorized", t, func() {
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusUnauthorized, "", nil})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
-		// 	datasetClient := newDatasetClient(httpClient)
 
 		Convey("when put instance is called", func() {
 			metadata := EditableMetadata{Description: "test dataset", Title: "testing 1234"}
@@ -36,8 +34,6 @@ func Test_PutMetadata(t *testing.T) {
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldContainSubstring, "did not receive success response. received status 401")
 			})
-
 		})
 	})
-
 }

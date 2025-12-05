@@ -44,7 +44,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                             "title": "Published Dataset CSV",
                             "format": "csv",
                             "media_type": "text/csv",
-                            "download_url": "/downloads/datasets/static-dataset-1/editions/2024/versions/1.csv",
+                            "download_url": "/static-dataset-1/2024/1/filename.csv",
                             "byte_size": 150000
                         }
                     ]
@@ -78,14 +78,13 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                             "title": "Unpublished Dataset CSV",
                             "format": "csv",
                             "media_type": "text/csv",
-                            "download_url": "/downloads/datasets/static-dataset-1/editions/2025/versions/2.csv",
+                            "download_url": "/downloads/files/static-dataset-1/2025/2/filename.csv",
                             "byte_size": 150000
                         }
                     ]
                 }
             ]
             """
-    
     Scenario: Successfully creating a new version
         Given private endpoints are enabled
         And I am an admin user
@@ -99,7 +98,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                         "title": "Full Dataset CSV",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/datasets/static-dataset-1/editions/2024/versions/2.csv",
+                        "download_url": "/downloads/files/static-dataset-1/2024/2/filename.csv",
                         "byte_size": 100
                     }
                 ],
@@ -112,29 +111,29 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                 "dataset_id": "static-dataset-1",
                 "distributions": [
                     {
-                    "byte_size": 100,
-                    "download_url": "/downloads/datasets/static-dataset-1/editions/2024/versions/2.csv",
-                    "format": "csv",
-                    "media_type": "text/csv",
-                    "title": "Full Dataset CSV"
+                        "byte_size": 100,
+                        "download_url": "/static-dataset-1/2024/2/filename.csv",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "title": "Full Dataset CSV"
                     }
                 ],
                 "links": {
-                        "dataset": {
-                            "href": "http://localhost:22000/datasets/static-dataset-1",
-                            "id": "static-dataset-1"
-                        },
-                        "edition": {
-                            "href": "http://localhost:22000/datasets/static-dataset-1/editions/2024",
-                            "id": "2024"
-                        },
-                        "self": {
-                            "href": "http://localhost:22000/datasets/static-dataset-1/editions/2024/versions/2"
-                        }
+                    "dataset": {
+                        "href": "http://localhost:22000/datasets/static-dataset-1",
+                        "id": "static-dataset-1"
                     },
+                    "edition": {
+                        "href": "http://localhost:22000/datasets/static-dataset-1/editions/2024",
+                        "id": "2024"
+                    },
+                    "self": {
+                        "href": "http://localhost:22000/datasets/static-dataset-1/editions/2024/versions/2"
+                    }
+                },
                 "edition": "2024",
                 "edition_title": "2024",
-                "last_updated": "{{DYNAMIC_TIMESTAMP}}",
+                "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
                 "release_date": "2024-12-01T09:00:00.000Z",
                 "state": "associated",
                 "type": "static",
@@ -146,24 +145,24 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
     Scenario: Request without Authorization header returns 401
         Given private endpoints are enabled
         When I POST "/datasets/static-dataset-1/editions/2024/versions/2"
-        """
-        {
-            "release_date": "2024-12-01T09:00:00.000Z",
-            "edition_title": "2024",
-            "distributions": [
-                {
-                    "title": "Full Dataset CSV",
-                    "format": "csv",
-                    "media_type": "text/csv",
-                    "download_url": "/downloads/datasets/static-dataset-1/editions/2024/versions/2.csv",
-                    "byte_size": 100
-                }
-            ],
-            "type": "static"
-        }
-        """
+            """
+            {
+                "release_date": "2024-12-01T09:00:00.000Z",
+                "edition_title": "2024",
+                "distributions": [
+                    {
+                        "title": "Full Dataset CSV",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "download_url": "/downloads/files/static-dataset-1/2024/2/filename.csv",
+                        "byte_size": 100
+                    }
+                ],
+                "type": "static"
+            }
+            """
         Then the HTTP status code should be "401"
-    
+
     Scenario: Request with a dataset that doesn't exist returns 404
         Given private endpoints are enabled
         And I am an admin user
@@ -177,7 +176,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                         "title": "Full Dataset CSV",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/datasets/static-dataset-1/editions/2024/versions/2.csv",
+                        "download_url": "/downloads/files/static-dataset-1/2024/2/filename.csv",
                         "byte_size": 100
                     }
                 ],
@@ -185,17 +184,17 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
             }
             """
         Then I should receive the following JSON response with status "404":
-        """
-        {
-            "errors": [
-                {
-                    "code": "ErrDatasetNotFound",
-                    "description": "dataset not found"
-                }
-            ]
-        }
-        """
-    
+            """
+            {
+                "errors": [
+                    {
+                        "code": "ErrDatasetNotFound",
+                        "description": "dataset not found"
+                    }
+                ]
+            }
+            """
+
     Scenario: Request with an edition that doesn't exist returns 404
         Given private endpoints are enabled
         And I am an admin user
@@ -209,7 +208,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                         "title": "Full Dataset CSV",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/datasets/static-dataset-1/editions/2024/versions/2.csv",
+                        "download_url": "/downloads/files/static-dataset-1/2024/2/filename.csv",
                         "byte_size": 100
                     }
                 ],
@@ -217,17 +216,17 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
             }
             """
         Then I should receive the following JSON response with status "404":
-        """
-        {
-            "errors": [
-                {
-                    "code": "ErrEditionNotFound",
-                    "description": "edition not found"
-                }
-            ]
-        }
-        """
-    
+            """
+            {
+                "errors": [
+                    {
+                        "code": "ErrEditionNotFound",
+                        "description": "edition not found"
+                    }
+                ]
+            }
+            """
+
     Scenario: Request with a version that already exists returns 409
         Given private endpoints are enabled
         And I am an admin user
@@ -241,7 +240,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                         "title": "Full Dataset CSV",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/datasets/static-dataset-1/editions/2024/versions/1.csv",
+                        "download_url": "/downloads/files/static-dataset-1/2024/1/filename.csv",
                         "byte_size": 100
                     }
                 ],
@@ -249,17 +248,17 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
             }
             """
         Then I should receive the following JSON response with status "409":
-        """
-        {
-            "errors": [
-                {
-                    "code": "ErrVersionAlreadyExists",
-                    "description": "version already exists"
-                }
-            ]
-        }
-        """
-    
+            """
+            {
+                "errors": [
+                    {
+                        "code": "ErrVersionAlreadyExists",
+                        "description": "version already exists"
+                    }
+                ]
+            }
+            """
+
     Scenario: Request with an invalid version returns 400
         Given private endpoints are enabled
         And I am an admin user
@@ -273,7 +272,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                         "title": "Full Dataset CSV",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/datasets/static-dataset-1/editions/2024/versions/2.csv",
+                        "download_url": "/downloads/files/static-dataset-1/2024/2/filename.csv",
                         "byte_size": 100
                     }
                 ],
@@ -281,16 +280,16 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
             }
             """
         Then I should receive the following JSON response with status "400":
-        """
-        {
-            "errors": [
-                {
-                    "code": "ErrInvalidQueryParameter",
-                    "description": "invalid query parameter: version"
-                }
-            ]
-        }
-        """
+            """
+            {
+                "errors": [
+                    {
+                        "code": "ErrInvalidQueryParameter",
+                        "description": "invalid query parameter: version"
+                    }
+                ]
+            }
+            """
 
     Scenario: Request with a type that isn't static returns 400
         Given private endpoints are enabled
@@ -305,7 +304,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                         "title": "Full Dataset CSV",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/datasets/static-dataset-1/editions/2024/versions/2.csv",
+                        "download_url": "/downloads/files/static-dataset-1/2024/2/filename.csv",
                         "byte_size": 100
                     }
                 ],
@@ -313,17 +312,17 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
             }
             """
         Then I should receive the following JSON response with status "400":
-        """
-        {
-            "errors": [
-                {
-                    "code": "InvalidType",
-                    "description": "version type should be static"
-                }
-            ]
-        }
-        """
-    
+            """
+            {
+                "errors": [
+                    {
+                        "code": "InvalidType",
+                        "description": "version type should be static"
+                    }
+                ]
+            }
+            """
+
     Scenario: Request with all mandatory fields missing returns 400
         Given private endpoints are enabled
         And I am an admin user
@@ -334,21 +333,137 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
             }
             """
         Then I should receive the following JSON response with status "400":
-        """
-        {
-            "errors": [
-                {
-                    "code": "ErrMissingParameters",
-                    "description": "missing properties in JSON: release_date"
+            """
+            {
+                "errors": [
+                    {
+                        "code": "ErrMissingParameters",
+                        "description": "missing properties in JSON: release_date"
+                    },
+                    {
+                        "code": "ErrMissingParameters",
+                        "description": "missing properties in JSON: distributions"
+                    },
+                    {
+                        "code": "ErrMissingParameters",
+                        "description": "missing properties in JSON: edition_title"
+                    }
+                ]
+            }
+            """
+
+    Scenario: Successfully creating a static version with auto-populated media_type
+        Given private endpoints are enabled
+        And I am an admin user
+        When I POST "/datasets/static-dataset-1/editions/2024/versions/3"
+            """
+            {
+                "release_date": "2024-12-01T09:00:00.000Z",
+                "edition_title": "2024",
+                "type": "static",
+                "distributions": [
+                    {
+                        "title": "CSV Dataset",
+                        "format": "csv",
+                        "download_url": "/downloads/files/static-dataset-1/2024/3/filename.csv",
+                        "byte_size": 999
+                    }
+                ]
+            }
+            """
+        Then I should receive the following JSON response with status "201":
+            """
+            {
+                "dataset_id": "static-dataset-1",
+                "distributions": [
+                    {
+                        "byte_size": 999,
+                        "download_url": "/static-dataset-1/2024/3/filename.csv",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "title": "CSV Dataset"
+                    }
+                ],
+                "edition": "2024",
+                "edition_title": "2024",
+                "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
+                "links": {
+                    "dataset": {
+                        "href": "http://localhost:22000/datasets/static-dataset-1",
+                        "id": "static-dataset-1"
+                    },
+                    "edition": {
+                        "href": "http://localhost:22000/datasets/static-dataset-1/editions/2024",
+                        "id": "2024"
+                    },
+                    "self": {
+                        "href": "http://localhost:22000/datasets/static-dataset-1/editions/2024/versions/3"
+                    }
                 },
-                {
-                    "code": "ErrMissingParameters",
-                    "description": "missing properties in JSON: distributions"
-                },
-                {
-                    "code": "ErrMissingParameters",
-                    "description": "missing properties in JSON: edition_title"
-                }
-            ]
-        }
-        """
+                "release_date": "2024-12-01T09:00:00.000Z",
+                "state": "associated",
+                "type": "static",
+                "version": 3
+            }
+            """
+
+    Scenario: Request with missing distribution format returns 400
+        Given private endpoints are enabled
+        And I am an admin user
+        When I POST "/datasets/static-dataset-1/editions/2024/versions/3"
+            """
+            {
+                "release_date": "2024-12-01T09:00:00.000Z",
+                "edition_title": "2024",
+                "type": "static",
+                "distributions": [
+                    {
+                        "title": "CSV Without Format",
+                        "download_url": "/downloads/files/static-dataset-1/2024/3/filename.csv",
+                        "byte_size": 123
+                    }
+                ]
+            }
+            """
+        Then I should receive the following JSON response with status "400":
+            """
+            {
+                "errors": [
+                    {
+                        "code": "ErrMissingParameters",
+                        "description": "distributions[0].format field is missing"
+                    }
+                ]
+            }
+            """
+
+    Scenario: Request with invalid distribution format returns 400
+        Given private endpoints are enabled
+        And I am an admin user
+        When I POST "/datasets/static-dataset-1/editions/2024/versions/3"
+            """
+            {
+                "release_date": "2024-12-01T09:00:00.000Z",
+                "edition_title": "2024",
+                "type": "static",
+                "distributions": [
+                    {
+                        "title": "CSV Invalid Format",
+                        "download_url": "/downloads/files/static-dataset-1/2024/3/filename.csv",
+                        "byte_size": 999,
+                        "format": "INVALID"
+                    }
+                ]
+            }
+            """
+        Then I should receive the following JSON response with status "400":
+            """
+            {
+                "errors": [
+                    {
+                        "code": "ErrMissingParameters",
+                        "description": "distributions[0].format field is invalid"
+                    }
+                ]
+            }
+            """

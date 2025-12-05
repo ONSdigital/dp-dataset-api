@@ -12,7 +12,6 @@ import (
 
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
 
-	"github.com/ONSdigital/dp-authorisation/v2/authorisation/mock"
 	authMock "github.com/ONSdigital/dp-authorisation/v2/authorisation/mock"
 	"github.com/ONSdigital/dp-permissions-api/sdk"
 
@@ -209,7 +208,6 @@ func Test_GetInstanceUnauthorised(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusUnauthorized)
 				}
-
 			},
 		}
 
@@ -245,7 +243,6 @@ func Test_GetInstanceForbidden(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusForbidden)
 				}
-
 			},
 		}
 
@@ -464,7 +461,6 @@ func Test_AddInstanceUnauthorised(t *testing.T) {
 						return func(w http.ResponseWriter, r *http.Request) {
 							w.WriteHeader(http.StatusUnauthorized)
 						}
-
 					},
 				}
 
@@ -473,7 +469,6 @@ func Test_AddInstanceUnauthorised(t *testing.T) {
 
 				So(w.Code, ShouldEqual, http.StatusUnauthorized)
 				So(len(mockedDataStore.AddInstanceCalls()), ShouldEqual, 0)
-
 			})
 		})
 	})
@@ -496,7 +491,6 @@ func Test_AddInstanceForbidden(t *testing.T) {
 						return func(w http.ResponseWriter, r *http.Request) {
 							w.WriteHeader(http.StatusForbidden)
 						}
-
 					},
 				}
 
@@ -505,7 +499,6 @@ func Test_AddInstanceForbidden(t *testing.T) {
 
 				So(w.Code, ShouldEqual, http.StatusForbidden)
 				So(len(mockedDataStore.AddInstanceCalls()), ShouldEqual, 0)
-
 			})
 		})
 	})
@@ -645,7 +638,6 @@ func Test_UpdateInstanceUnauthorised(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusUnauthorized)
 				}
-
 			},
 		}
 
@@ -673,7 +665,6 @@ func Test_UpdateInstanceUnauthorised(t *testing.T) {
 
 func Test_UpdateInstanceForbidden(t *testing.T) {
 	t.Parallel()
-
 	Convey("Given a dataset API with a successful store mock and auth that returns forbidden", t, func() {
 		mockedDataStore := &storetest.StorerMock{}
 
@@ -682,7 +673,6 @@ func Test_UpdateInstanceForbidden(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusForbidden)
 				}
-
 			},
 		}
 
@@ -1012,7 +1002,7 @@ func getAPIWithCantabularMocks(ctx context.Context, mockedDataStore store.Storer
 	cfg.DatasetAPIURL = "http://localhost:22000"
 	cfg.EnablePrivateEndpoints = true
 	cfg.EnablePermissionsAuth = true
-	permissionsChecker := &mock.PermissionsCheckerMock{
+	permissionsChecker := &authMock.PermissionsCheckerMock{
 		HasPermissionFunc: func(ctx context.Context, entityData sdk.EntityData, permission string, attributes map[string]string) (bool, error) {
 			return true, nil
 		},

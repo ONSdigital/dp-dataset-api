@@ -30,6 +30,7 @@ const (
 	editionID            = "my-edition"
 	versionID            = "1"
 	accessToken          = "myservicetoken"
+	etag                 = "example-etag"
 )
 
 var ctx = context.Background()
@@ -127,7 +128,7 @@ func TestClientDoAuthenticatedPutRequest(t *testing.T) {
 	Convey("Succeeds with valid values", t, func() {
 		uri, _ := url.Parse("https://not-a-real-domain-this-is-a-test.com/target-path")
 		payload := []byte(`{"testing_key":"testing_value"}`)
-		resp, err := client.DoAuthenticatedPutRequest(context.Background(), headers, uri, payload)
+		resp, err := client.doAuthenticatedPutRequest(context.Background(), headers, uri, payload)
 
 		So(err, ShouldBeNil)
 		So(resp, ShouldNotBeNil)
@@ -148,13 +149,41 @@ func TestClientDoAuthenticatedPutRequestWithETag(t *testing.T) {
 	})
 }
 
+func TestClientDoAuthenticatedPostRequest(t *testing.T) {
+	Convey("Given a mocked dataset API client", t, func() {
+		expectedResponseBody := map[string]string{"message": "success"}
+		mockHTTPClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, expectedResponseBody, nil})
+		client := newDatasetAPIHealthcheckClient(t, mockHTTPClient)
+
+		Convey("When DoAuthenticatedPostRequest is called", func() {
+			uri, err := url.Parse("https://domain.com/target-path")
+			So(err, ShouldBeNil)
+
+			payload := []byte(`{"testing_key":"testing_value"}`)
+			resp, err := client.doAuthenticatedPostRequest(context.Background(), headers, uri, payload)
+
+			Convey("Then no error is returned", func() {
+				So(err, ShouldBeNil)
+			})
+
+			Convey("And the response is returned with the expected body", func() {
+				So(resp, ShouldNotBeNil)
+
+				var respBody map[string]string
+				err = json.NewDecoder(resp.Body).Decode(&respBody)
+				So(err, ShouldBeNil)
+				So(respBody, ShouldResemble, expectedResponseBody)
+			})
+		})
+	})
+}
+
 // Test the `Headers` struct and associated methods
 func TestHeaders(t *testing.T) {
 	downloadServiceToken := "mydownloadservicetoken"
 	collectionID := "collection"
 	serviceToken := "myservicetoken"
 	userAccessToken := "myuseraccesstoken"
-	//authorization := "myuseraccesstoken"
 
 	Convey("If Headers struct is empty", t, func() {
 		headers := Headers{}
@@ -162,7 +191,7 @@ func TestHeaders(t *testing.T) {
 			Header: http.Header{},
 		}
 		Convey("Test that Add() method doesn't update request headers", func() {
-			headers.Add(&request)
+			headers.add(&request)
 			So(request.Header, ShouldBeEmpty)
 		})
 	})
@@ -173,7 +202,7 @@ func TestHeaders(t *testing.T) {
 		request := http.Request{
 			Header: http.Header{},
 		}
-		headers.Add(&request)
+		headers.add(&request)
 		Convey("Test that Add() method updates `DownloadServiceHeaderKey` key with the correct value", func() {
 			So(request.Header, ShouldContainKey, dpNetRequest.DownloadServiceHeaderKey)
 			So(request.Header.Get(dpNetRequest.DownloadServiceHeaderKey), ShouldEqual, downloadServiceToken)
@@ -181,7 +210,6 @@ func TestHeaders(t *testing.T) {
 		Convey("Test that Add() method doesn't update other keys", func() {
 			So(request.Header, ShouldNotContainKey, dpNetRequest.AuthHeaderKey)
 			So(request.Header, ShouldNotContainKey, dpNetRequest.CollectionIDHeaderKey)
-			//So(request.Header, ShouldNotContainKey, dpNetRequest.FlorenceHeaderKey)
 		})
 	})
 	Convey("If Headers struct contains value for `CollectionID`", t, func() {
@@ -191,7 +219,7 @@ func TestHeaders(t *testing.T) {
 		request := http.Request{
 			Header: http.Header{},
 		}
-		headers.Add(&request)
+		headers.add(&request)
 		Convey("Test that Add() method updates `CollectionIDHeaderKey` key with the correct value", func() {
 			So(request.Header, ShouldContainKey, dpNetRequest.CollectionIDHeaderKey)
 			So(request.Header.Get(dpNetRequest.CollectionIDHeaderKey), ShouldEqual, collectionID)
@@ -199,7 +227,6 @@ func TestHeaders(t *testing.T) {
 		Convey("Test that Add() method doesn't update other keys", func() {
 			So(request.Header, ShouldNotContainKey, dpNetRequest.AuthHeaderKey)
 			So(request.Header, ShouldNotContainKey, dpNetRequest.DownloadServiceHeaderKey)
-			//So(request.Header, ShouldNotContainKey, dpNetRequest.FlorenceHeaderKey)
 		})
 	})
 	Convey("If Headers struct contains value for `ServiceToken`", t, func() {
@@ -209,7 +236,7 @@ func TestHeaders(t *testing.T) {
 		request := http.Request{
 			Header: http.Header{},
 		}
-		headers.Add(&request)
+		headers.add(&request)
 		Convey("Test that Add() method updates `AuthHeaderKey` key with the correct value", func() {
 			So(request.Header, ShouldContainKey, dpNetRequest.AuthHeaderKey)
 			// Full value for `AuthHeaderKey` is "Bearer <serviceToken>"
@@ -218,7 +245,6 @@ func TestHeaders(t *testing.T) {
 		Convey("Test that Add() method doesn't update other keys", func() {
 			So(request.Header, ShouldNotContainKey, dpNetRequest.CollectionIDHeaderKey)
 			So(request.Header, ShouldNotContainKey, dpNetRequest.DownloadServiceHeaderKey)
-			//So(request.Header, ShouldNotContainKey, dpNetRequest.FlorenceHeaderKey)
 		})
 	})
 	Convey("If Headers struct contains value for `UserAccessToken`", t, func() {
@@ -228,14 +254,11 @@ func TestHeaders(t *testing.T) {
 		request := http.Request{
 			Header: http.Header{},
 		}
-		headers.Add(&request)
+		headers.add(&request)
 		Convey("Test that Add() method updates `Authorization` key with the correct value", func() {
-			//So(request.Header, ShouldContainKey, dpNetRequest.FlorenceHeaderKey)
 			So(request.Header.Get(dpNetRequest.AuthHeaderKey), ShouldContainSubstring, userAccessToken)
-			//So(request.Header.Get(dpNetRequest.FlorenceHeaderKey), ShouldEqual, userAccessToken)
 		})
 		Convey("Test that Add() method doesn't update other keys", func() {
-			//So(request.Header, ShouldNotContainKey, dpNetRequest.AuthHeaderKey)
 			So(request.Header, ShouldNotContainKey, dpNetRequest.CollectionIDHeaderKey)
 			So(request.Header, ShouldNotContainKey, dpNetRequest.DownloadServiceHeaderKey)
 		})
@@ -305,7 +328,7 @@ func TestUnmarshalResponseBodyExpectingStringError(t *testing.T) {
 		})
 	})
 	Convey("If response status code is not 404 (StatusNotFound)", t, func() {
-		responseErr := errors.New("Not found!")
+		responseErr := errors.New("not found")
 		responseJSON, _ := json.Marshal(responseErr.Error())
 		mockResponse := &http.Response{
 			StatusCode: http.StatusNotFound,
@@ -368,6 +391,66 @@ type errorReader struct{}
 
 func (e errorReader) Read(p []byte) (n int, err error) {
 	return 0, errors.New("mock read error")
+}
+
+func TestUnmarshalErrorResponse(t *testing.T) {
+	Convey("Given a valid ErrorResponse body", t, func() {
+		errorResponse := models.ErrorResponse{
+			// cause field is not included as it is an ignored JSON field
+			Errors: []models.Error{
+				{
+					Code:        models.InternalError,
+					Description: models.InternalErrorDescription,
+				},
+			},
+		}
+		responseJSON, err := json.Marshal(errorResponse)
+		So(err, ShouldBeNil)
+		mockResponseBody := io.NopCloser(bytes.NewBuffer(responseJSON))
+
+		Convey("When unmarshalErrorResponse is called", func() {
+			result, err := unmarshalErrorResponse(mockResponseBody)
+
+			Convey("Then no error is returned", func() {
+				So(err, ShouldBeNil)
+			})
+
+			Convey("And the expected ErrorResponse is returned", func() {
+				So(result, ShouldResemble, &errorResponse)
+			})
+		})
+	})
+
+	Convey("Given an invalid ErrorResponse body", t, func() {
+		body := `invalid json`
+		mockResponseBody := io.NopCloser(strings.NewReader(body))
+
+		Convey("When unmarshalErrorResponse is called", func() {
+			result, err := unmarshalErrorResponse(mockResponseBody)
+
+			Convey("Then an error is returned", func() {
+				So(err, ShouldNotBeNil)
+			})
+
+			Convey("And the result is nil", func() {
+				So(result, ShouldBeNil)
+			})
+		})
+	})
+
+	Convey("Given a nil body", t, func() {
+		Convey("When unmarshalErrorResponse is called", func() {
+			result, err := unmarshalErrorResponse(nil)
+
+			Convey("Then an error is returned", func() {
+				So(err, ShouldEqual, errors.New("response body is nil"))
+			})
+
+			Convey("And the result is nil", func() {
+				So(result, ShouldBeNil)
+			})
+		})
+	})
 }
 
 func TestGetStringResponseBody(t *testing.T) {

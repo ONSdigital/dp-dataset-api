@@ -7,7 +7,6 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/ONSdigital/dp-api-clients-go/v2/files"
 	"github.com/ONSdigital/dp-api-clients-go/v2/health"
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
 	auth "github.com/ONSdigital/dp-authorisation/v2/authorisation"
@@ -22,6 +21,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/dp-dataset-api/url"
+	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	kafka "github.com/ONSdigital/dp-kafka/v4"
 	dphandlers "github.com/ONSdigital/dp-net/v3/handlers"
 	dphttp "github.com/ONSdigital/dp-net/v3/http"
@@ -52,13 +52,12 @@ type Service struct {
 	generateCMDDownloadsProducer        kafka.IProducer
 	generateCantabularDownloadsProducer kafka.IProducer
 	identityClient                      *clientsidentity.Client
-	filesAPIClient                      *files.Client
+	filesAPIClient                      filesAPISDK.Clienter
 	server                              HTTPServer
 	healthCheck                         HealthChecker
 	api                                 *api.DatasetAPI
 	smDS                                *application.StateMachineDatasetAPI
 	AuthMiddleware                      auth.Middleware
-	permissionChecker                   auth.PermissionsChecker
 	ZebedeeClient                       *health.Client
 }
 
@@ -218,7 +217,7 @@ func (svc *Service) SetGraphDBErrorConsumer(graphDBErrorConsumer Closer) {
 }
 
 // SetFilesAPIClient sets the files API client for a service
-func (svc *Service) SetFilesAPIClient(filesAPIClient *files.Client) {
+func (svc *Service) SetFilesAPIClient(filesAPIClient filesAPISDK.Clienter) {
 	svc.filesAPIClient = filesAPIClient
 }
 
@@ -230,6 +229,10 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	}
 
 	if err := svc.initGraphDB(ctx); err != nil {
+		return err
+	}
+
+	if err := svc.initFilesAPIClient(ctx); err != nil {
 		return err
 	}
 
@@ -284,14 +287,6 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		svc.identityClient = clientsidentity.New(svc.config.ZebedeeURL)
 	}
 
-	// Initialise Files API Client (if private endpoints are enabled)
-	if svc.config.EnablePrivateEndpoints {
-		if svc.filesAPIClient == nil {
-			svc.filesAPIClient = files.NewAPIClient(svc.config.FilesAPIURL, svc.config.ServiceAuthToken)
-			log.Info(ctx, "files API client created", log.Data{"url": svc.config.FilesAPIURL})
-		}
-	}
-
 	// Get HealthCheck
 	svc.healthCheck, err = svc.serviceList.GetHealthCheck(svc.config, buildTime, gitCommit, version)
 	if err != nil {
@@ -325,7 +320,6 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		log.Info(ctx, "URL rewriting enabled")
 	}
 
-	//datasetPermissions, permissions := getAuthorisationHandlers(ctx, svc.config)
 	// Get Permissions
 	authorisation, err := svc.serviceList.Init.DoGetAuthorisationMiddleware(ctx, svc.config.AuthConfig)
 	if err != nil {
@@ -347,7 +341,6 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	if svc.config.EnablePrivateEndpoints {
 		svc.generateCMDDownloadsProducer.LogErrors(ctx)
 		svc.generateCantabularDownloadsProducer.LogErrors(ctx)
-
 	}
 
 	idClient := clientsidentity.NewWithHealthClient(&health.Client{
@@ -407,28 +400,34 @@ func (svc *Service) initGraphDB(ctx context.Context) error {
 	return err
 }
 
-func createURLBuilder(config *config.Configuration) (*url.Builder, error) {
-	websiteURL, err := neturl.Parse(config.WebsiteURL)
+func (svc *Service) initFilesAPIClient(ctx context.Context) error {
+	var err error
+	svc.filesAPIClient, err = svc.serviceList.GetFilesAPIClient(ctx, svc.config)
+	return err
+}
+
+func createURLBuilder(cfg *config.Configuration) (*url.Builder, error) {
+	websiteURL, err := neturl.Parse(cfg.WebsiteURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to parse websiteURL from config")
 	}
 
-	downloadServiceURL, err := neturl.Parse(config.DownloadServiceURL)
+	downloadServiceURL, err := neturl.Parse(cfg.DownloadServiceURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to parse downloadServiceURL from config")
 	}
 
-	datasetAPIURL, err := neturl.Parse(config.DatasetAPIURL)
+	datasetAPIURL, err := neturl.Parse(cfg.DatasetAPIURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to parse datasetAPIURL from config")
 	}
 
-	codeListAPIURL, err := neturl.Parse(config.CodeListAPIURL)
+	codeListAPIURL, err := neturl.Parse(cfg.CodeListAPIURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to parse codeListAPIURL from config")
 	}
 
-	importAPIURL, err := neturl.Parse(config.ImportAPIURL)
+	importAPIURL, err := neturl.Parse(cfg.ImportAPIURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to parse importAPIURL from config")
 	}
@@ -442,11 +441,6 @@ func (svc *Service) createMiddleware() alice.Chain {
 	// healthcheck
 	healthcheckHandler := newMiddleware(svc.healthCheck.Handler, "/health")
 	middleware := alice.New(healthcheckHandler)
-
-	// // Only add the identity middleware when running in publishing.
-	// if cfg.EnablePrivateEndpoints {
-	// 	middleware = middleware.Append(dphandlers.IdentityWithHTTPClient(svc.identityClient))
-	// }
 
 	// collection ID
 	middleware = middleware.Append(dphandlers.CheckHeader(dphandlers.CollectionID))
@@ -564,6 +558,11 @@ func (svc *Service) registerCheckers(ctx context.Context) (err error) {
 		if err = svc.healthCheck.AddCheck("Kafka Generate Cantabular Downloads Producer", svc.generateCantabularDownloadsProducer.Checker); err != nil {
 			hasErrors = true
 			log.Error(ctx, "error adding check for cantabular kafka downloads producer", err)
+		}
+
+		if err = svc.healthCheck.AddCheck("Files API Client", svc.filesAPIClient.Checker); err != nil {
+			hasErrors = true
+			log.Error(ctx, "error adding check for files api client", err)
 		}
 
 		// If running Catabular Locally then don't do health checks against GraphDB

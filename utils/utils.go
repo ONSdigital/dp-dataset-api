@@ -2,7 +2,10 @@ package utils
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"net/url"
+	"path"
 	"strconv"
 	"strings"
 
@@ -15,6 +18,16 @@ import (
 const (
 	StaticDatasetType = "static"
 )
+
+// DistributionMediaTypeMap maps distribution formats to their corresponding media types
+var DistributionMediaTypeMap = map[models.DistributionFormat]models.DistributionMediaType{
+	models.DistributionFormatCSV:      models.DistributionMediaTypeCSV,
+	models.DistributionFormatSDMX:     models.DistributionMediaTypeSDMX,
+	models.DistributionFormatXLS:      models.DistributionMediaTypeXLS,
+	models.DistributionFormatXLSX:     models.DistributionMediaTypeXLSX,
+	models.DistributionFormatCSDB:     models.DistributionMediaTypeCSDB,
+	models.DistributionFormatCSVWMeta: models.DistributionMediaTypeCSVWMeta,
+}
 
 // ValidatePositiveInt obtains the positive int value of query var defined by the provided varKey
 func ValidatePositiveInt(parameter string) (val int, err error) {
@@ -781,7 +794,7 @@ func RewriteDistributions(ctx context.Context, results *[]models.Distribution, d
 
 	for _, item := range *results {
 		if item.DownloadURL != "" {
-			item.DownloadURL, err = links.BuildDownloadNewLink(item.DownloadURL, downloadServiceURL)
+			item.DownloadURL, err = links.BuildDownloadFilesLink(item.DownloadURL, downloadServiceURL)
 			if err != nil {
 				log.Error(ctx, "failed to rewrite DownloadURL", err)
 				return nil, err
@@ -790,4 +803,83 @@ func RewriteDistributions(ctx context.Context, results *[]models.Distribution, d
 		}
 	}
 	return items, nil
+}
+
+func GenerateDistributionsDownloadURLs(datasetID, edition string, version int, distributions *[]models.Distribution) *[]models.Distribution {
+	if distributions == nil || len(*distributions) == 0 {
+		return distributions
+	}
+
+	updatedDistributions := &[]models.Distribution{}
+
+	for _, distribution := range *distributions {
+		filename := path.Base(distribution.DownloadURL)
+		distribution.DownloadURL = fmt.Sprintf("/%s/%s/%d/%s", datasetID, edition, version, filename)
+		*updatedDistributions = append(*updatedDistributions, distribution)
+	}
+
+	return updatedDistributions
+}
+
+// PopulateDistributions populates the MediaType field for each distribution based on its Format field
+func PopulateDistributions(v *models.Version) error {
+	if v.Distributions == nil {
+		return nil
+	}
+
+	for i, dist := range *v.Distributions {
+		if dist.Format == "" {
+			return fmt.Errorf("distributions[%d].format field is missing", i)
+		}
+		mediaType, ok := DistributionMediaTypeMap[dist.Format]
+		if !ok {
+			return fmt.Errorf("distributions[%d].format field is invalid", i)
+		}
+		(*v.Distributions)[i].MediaType = mediaType
+	}
+
+	return nil
+}
+
+// ValidateDistributionsFromRequestBody validates distributions in the raw JSON request body
+// to provide detailed error messages with the index of invalid formats
+func ValidateDistributionsFromRequestBody(bodyBytes []byte) error {
+	// Parse just the distributions array from the raw JSON
+	var rawData map[string]interface{}
+	if err := json.Unmarshal(bodyBytes, &rawData); err != nil {
+		return nil // if we can't parse at all, let the main unmarshal handle it
+	}
+
+	distributions, ok := rawData["distributions"]
+	if !ok {
+		return nil // no distributions field, let the main unmarshal handle it
+	}
+
+	distArray, ok := distributions.([]interface{})
+	if !ok {
+		return nil // not an array, let the main unmarshal handle it
+	}
+
+	for i, dist := range distArray {
+		distMap, ok := dist.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("distributions[%d] is not a valid object", i)
+		}
+
+		formatVal, ok := distMap["format"]
+		if !ok {
+			return fmt.Errorf("distributions[%d].format field is missing", i)
+		}
+
+		formatStr, ok := formatVal.(string)
+		if !ok {
+			return fmt.Errorf("distributions[%d].format field is invalid", i)
+		}
+
+		if _, valid := DistributionMediaTypeMap[models.DistributionFormat(formatStr)]; !valid {
+			return fmt.Errorf("distributions[%d].format field is invalid", i)
+		}
+	}
+
+	return nil
 }

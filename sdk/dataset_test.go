@@ -21,7 +21,7 @@ func TestGetDataset(t *testing.T) {
 	Convey("If requested dataset is valid and get request returns 200", t, func() {
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, mockGetResponse, map[string]string{}})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
-		returnedDataset, err := datasetAPIClient.GetDataset(ctx, headers, collectionID, datasetID)
+		returnedDataset, err := datasetAPIClient.GetDataset(ctx, headers, datasetID)
 
 		Convey("Test that the request URI is constructed correctly and the correct method is used", func() {
 			expectedURI := "/datasets/" + datasetID
@@ -38,7 +38,7 @@ func TestGetDataset(t *testing.T) {
 	Convey("If requested dataset is not valid and get request returns 404", t, func() {
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusNotFound, apierrors.ErrDatasetNotFound.Error(), map[string]string{}})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
-		_, err := datasetAPIClient.GetDataset(ctx, headers, collectionID, datasetID)
+		_, err := datasetAPIClient.GetDataset(ctx, headers, datasetID)
 
 		Convey("Test that an error is raised and should contain status code", func() {
 			So(err, ShouldNotBeNil)
@@ -49,7 +49,7 @@ func TestGetDataset(t *testing.T) {
 	Convey("If the request encounters a server error and returns 500", t, func() {
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusInternalServerError, "Internal server error", map[string]string{}})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
-		_, err := datasetAPIClient.GetDataset(ctx, headers, collectionID, datasetID)
+		_, err := datasetAPIClient.GetDataset(ctx, headers, datasetID)
 
 		Convey("Test that an error is raised with the correct message", func() {
 			So(err, ShouldNotBeNil)
@@ -70,7 +70,7 @@ func TestGetDataset(t *testing.T) {
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, responseWithNext, map[string]string{}})
 
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
-		returnedDataset, err := datasetAPIClient.GetDataset(ctx, authHeaders, collectionID, datasetID)
+		returnedDataset, err := datasetAPIClient.GetDataset(ctx, authHeaders, datasetID)
 
 		Convey("Test that the dataset is extracted from the 'next' object", func() {
 			So(err, ShouldBeNil)
@@ -83,7 +83,6 @@ func TestGetDataset(t *testing.T) {
 }
 
 func TestClient_GetDatasetsInBatches(t *testing.T) {
-
 	versionsResponse1 := List{
 		Items:      []models.DatasetUpdate{{ID: "testDataset1"}},
 		TotalCount: 2, // Total count is read from the first response to determine how many batches are required
@@ -111,13 +110,9 @@ func TestClient_GetDatasetsInBatches(t *testing.T) {
 	maxWorkers := 1
 
 	Convey("When a 200 OK status is returned in 2 consecutive calls", t, func() {
-
 		httpClient := createHTTPClientMock(
 			MockedHTTPResponse{http.StatusOK, versionsResponse1, nil},
 			MockedHTTPResponse{http.StatusOK, versionsResponse2, nil})
-		//datasetClient := newDatasetClient(httpClient)
-
-		//httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, responseWithNext, map[string]string{}})
 
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
 
@@ -216,7 +211,6 @@ func TestClient_GetDatasetsInBatches(t *testing.T) {
 			So(processedBatches, ShouldResemble, []List{versionsResponse1})
 		})
 	})
-
 }
 
 func TestGetDatasetCurrentAndNext(t *testing.T) {
@@ -458,7 +452,6 @@ func TestGetDatasetEditions(t *testing.T) {
 }
 
 func Test_PutDataset(t *testing.T) {
-
 	Convey("Given a valid dataset", t, func() {
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, "", nil})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
@@ -476,7 +469,6 @@ func Test_PutDataset(t *testing.T) {
 	Convey("Given no auth token has been configured so the request is unauthorized", t, func() {
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusUnauthorized, "", nil})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
-		// 	datasetClient := newDatasetClient(httpClient)
 
 		Convey("when put dataset is called", func() {
 			dataset := models.Dataset{ID: "666"}
@@ -486,7 +478,6 @@ func Test_PutDataset(t *testing.T) {
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldContainSubstring, "did not receive success response. received status 401")
 			})
-
 		})
 	})
 
@@ -502,8 +493,173 @@ func Test_PutDataset(t *testing.T) {
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldContainSubstring, "did not receive success response. received status 400")
 			})
+		})
+	})
+}
 
+// Test CreateDataset SDK method
+func TestCreateDataset(t *testing.T) {
+	Convey("Given a static dataset to be created", t, func() {
+		mockStaticDataset := models.Dataset{
+			ID:          "static-dataset-123",
+			Title:       "Static Test Dataset",
+			Description: "Static dataset for testing",
+			Type:        "static",
+			NextRelease: "2025-12-01",
+			Keywords:    []string{"test", "static"},
+			Contacts: []models.ContactDetails{
+				{
+					Name:      "Test Contact",
+					Email:     "test@example.com",
+					Telephone: "01234567890",
+				},
+			},
+			Topics: []string{"economy"},
+		}
+
+		mockStaticResponse := models.DatasetUpdate{
+			ID: "static-dataset-123",
+			Next: &models.Dataset{
+				ID:          "static-dataset-123",
+				Title:       "Static Test Dataset",
+				Description: "Static dataset for testing",
+				Type:        "static",
+				State:       "created",
+				NextRelease: "2025-12-01",
+				Keywords:    []string{"test", "static"},
+				Contacts: []models.ContactDetails{
+					{
+						Name:      "Test Contact",
+						Email:     "test@example.com",
+						Telephone: "01234567890",
+					},
+				},
+				Topics: []string{"economy"},
+				Links: &models.DatasetLinks{
+					Self: &models.LinkObject{
+						HRef: "http://localhost:22000/datasets/static-dataset-123",
+					},
+					Editions: &models.LinkObject{
+						HRef: "http://localhost:22000/datasets/static-dataset-123/editions",
+					},
+				},
+			},
+		}
+
+		Convey("When the API returns 201 Created", func() {
+			httpClient := createHTTPClientMock(MockedHTTPResponse{
+				StatusCode: http.StatusCreated,
+				Body:       mockStaticResponse,
+				Headers:    map[string]string{},
+			})
+			datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+
+			returnedDataset, err := datasetAPIClient.CreateDataset(ctx, headers, mockStaticDataset)
+
+			Convey("Then the static dataset should be created successfully", func() {
+				So(err, ShouldBeNil)
+				So(returnedDataset.ID, ShouldEqual, "static-dataset-123")
+				So(returnedDataset.Next.Type, ShouldEqual, "static")
+				So(returnedDataset.Next.State, ShouldEqual, "created")
+				So(returnedDataset.Next.Keywords, ShouldResemble, []string{"test", "static"})
+				So(returnedDataset.Next.Topics, ShouldResemble, []string{"economy"})
+			})
 		})
 	})
 
+	Convey("Given a filterable dataset to be created", t, func() {
+		mockDataset := models.Dataset{
+			ID:          datasetID,
+			Title:       "Test Dataset",
+			Description: "Dataset for testing",
+			Type:        "filterable",
+		}
+
+		mockResponse := models.DatasetUpdate{
+			ID: datasetID,
+			Next: &models.Dataset{
+				ID:          datasetID,
+				Title:       "Test Dataset",
+				Description: "Dataset for testing",
+				Type:        "filterable",
+				State:       "created",
+				Links: &models.DatasetLinks{
+					Self: &models.LinkObject{
+						HRef: "http://localhost:22000/datasets/" + datasetID,
+					},
+					Editions: &models.LinkObject{
+						HRef: "http://localhost:22000/datasets/" + datasetID + "/editions",
+					},
+				},
+			},
+		}
+
+		Convey("When the API returns 201 Created", func() {
+			httpClient := createHTTPClientMock(MockedHTTPResponse{
+				StatusCode: http.StatusCreated,
+				Body:       mockResponse,
+				Headers:    map[string]string{},
+			})
+			datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+
+			returnedDataset, err := datasetAPIClient.CreateDataset(ctx, headers, mockDataset)
+
+			Convey("Then the correct POST request should be made", func() {
+				So(httpClient.DoCalls()[0].Req.Method, ShouldEqual, http.MethodPost)
+				So(httpClient.DoCalls()[0].Req.URL.RequestURI(), ShouldEqual, "/datasets")
+			})
+
+			Convey("And the filterable dataset should be created successfully", func() {
+				So(err, ShouldBeNil)
+				So(returnedDataset.ID, ShouldEqual, datasetID)
+				So(returnedDataset.Next.Title, ShouldEqual, "Test Dataset")
+				So(returnedDataset.Next.State, ShouldEqual, "created")
+			})
+		})
+	})
+
+	Convey("Given dataset creation fails with 400 Bad Request", t, func() {
+		httpClient := createHTTPClientMock(MockedHTTPResponse{
+			StatusCode: http.StatusBadRequest,
+			Body:       apierrors.ErrAddUpdateDatasetBadRequest.Error(),
+		})
+		client := newDatasetAPIHealthcheckClient(t, httpClient)
+
+		_, err := client.CreateDataset(ctx, headers, models.Dataset{})
+
+		Convey("Then the correct error should be returned", func() {
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldEqual, apierrors.ErrAddUpdateDatasetBadRequest.Error())
+		})
+	})
+
+	Convey("Given dataset already exists and API returns 403 Forbidden", t, func() {
+		httpClient := createHTTPClientMock(MockedHTTPResponse{
+			StatusCode: http.StatusForbidden,
+			Body:       apierrors.ErrAddDatasetAlreadyExists.Error(),
+		})
+		client := newDatasetAPIHealthcheckClient(t, httpClient)
+
+		_, err := client.CreateDataset(ctx, headers, models.Dataset{})
+
+		Convey("Then the correct error should be returned", func() {
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldEqual, apierrors.ErrAddDatasetAlreadyExists.Error())
+		})
+	})
+
+	Convey("Given the server encounters a 500 Internal Server Error", t, func() {
+		httpClient := createHTTPClientMock(MockedHTTPResponse{
+			StatusCode: http.StatusInternalServerError,
+			Body:       "Internal server error",
+		})
+		client := newDatasetAPIHealthcheckClient(t, httpClient)
+
+		_, err := client.CreateDataset(ctx, headers, models.Dataset{})
+
+		Convey("Then a server error should be returned", func() {
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldEqual, "Internal server error")
+		})
+	})
 }

@@ -13,7 +13,7 @@ import (
 	"testing"
 
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
-	"github.com/ONSdigital/dp-authorisation/v2/authorisation/mock"
+
 	authMock "github.com/ONSdigital/dp-authorisation/v2/authorisation/mock"
 	"github.com/ONSdigital/dp-permissions-api/sdk"
 
@@ -24,6 +24,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/dp-dataset-api/url"
+	filesAPISDKMocks "github.com/ONSdigital/dp-files-api/sdk/mocks"
 	dprequest "github.com/ONSdigital/dp-net/v3/request"
 	"github.com/gorilla/mux"
 
@@ -47,6 +48,8 @@ var (
 	datasetPayloadWithEmptyTopicsAndTypeStatic = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","keywords":["keyword"],"links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","id": "ageing-population-estimates", "next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","href":"https://www.ons.gov.uk/"},"type":"static","topics":[]}`
 	datasetPayloadWithEmptyContacts            = `{"contacts":[],"description":"census","keywords":["keyword"],"links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","id": "ageing-population-estimates", "next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","href":"https://www.ons.gov.uk/"},"type":"static","topics":["theme"]}`
 	datasetPayloadWithTypeStatic               = `{"id":"123","contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","href":"https://www.ons.gov.uk/"},"type":"static","keywords":["keyword","keyword 2"],"topics":["topic-0","topic-1"],"license":"Open Government Licence v3.0"}`
+
+	editionPayload = `"{\"edition\":\"2017\",\"state\":\"created\",\"license\":\"ONS\",\"release_date\":\"2017-04-04\",\"version\":\"1\"}"`
 
 	codeListAPIURL     = &neturl.URL{Scheme: "http", Host: "localhost:22400"}
 	datasetAPIURL      = &neturl.URL{Scheme: "http", Host: "localhost:22000"}
@@ -162,7 +165,7 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 
 	testIdentityClient := clientsidentity.New(cfg.ZebedeeURL)
 
-	permissionsChecker := &mock.PermissionsCheckerMock{
+	permissionsChecker := &authMock.PermissionsCheckerMock{
 		HasPermissionFunc: func(ctx context.Context, entityData sdk.EntityData, permission string, attributes map[string]string) (bool, error) {
 			return true, nil
 		},
@@ -226,11 +229,7 @@ func GetAPIWithCantabularMocks(mockedDataStore store.Storer, mockedGeneratedDown
 
 	testIdentityClient := clientsidentity.New(cfg.ZebedeeURL)
 
-	permissionsChecker := &mock.PermissionsCheckerMock{
-		// HasPermissionFunc: func(ctx context.Context, entityData permsdk.EntityData, permission string, attributes map[string]string) (bool, error) {
-		// 	return true, nil
-		// },
-	}
+	permissionsChecker := &authMock.PermissionsCheckerMock{}
 
 	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, authorisationMock, enableURLRewriting, &mockStatemachineDatasetAPI, permissionsChecker, testIdentityClient)
 }
@@ -253,7 +252,7 @@ func createRequestWithNoAuth(method, target string, body io.Reader) *http.Reques
 func TestGetDatasetsUnauthorised(t *testing.T) {
 	t.Parallel()
 	Convey("When request is unauthorised ", t, func() {
-		r, err := http.NewRequest("GET", "http://localhost:22000/datasets", nil)
+		r, err := http.NewRequest("GET", "http://localhost:22000/datasets", http.NoBody)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{}
@@ -263,7 +262,6 @@ func TestGetDatasetsUnauthorised(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusUnauthorized)
 				}
-
 			},
 		}
 
@@ -279,7 +277,7 @@ func TestGetDatasetsUnauthorised(t *testing.T) {
 func TestGetDatasetsForbidden(t *testing.T) {
 	t.Parallel()
 	Convey("When the auth response is forbidden for get datasets, no database calls are made", t, func() {
-		r, err := http.NewRequest("GET", "http://localhost:22000/datasets", nil)
+		r, err := http.NewRequest("GET", "http://localhost:22000/datasets", http.NoBody)
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{}
@@ -289,7 +287,6 @@ func TestGetDatasetsForbidden(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusForbidden)
 				}
-
 			},
 		}
 
@@ -586,7 +583,6 @@ func TestGetDatasetUnauthorised(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusUnauthorized)
 				}
-
 			},
 		}
 
@@ -610,7 +606,6 @@ func TestGetDatasetForbidden(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusForbidden)
 				}
-
 			},
 		}
 
@@ -1380,7 +1375,6 @@ func TestPostDatasetReturnsError(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusUnauthorized)
 				}
-
 			},
 		}
 
@@ -1403,7 +1397,6 @@ func TestPostDatasetReturnsError(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusForbidden)
 				}
-
 			},
 		}
 
@@ -2160,7 +2153,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 	})
 
 	Convey("When the request is not authorised to update dataset return status unauthorised", t, func() {
-		b := "{\"edition\":\"2017\",\"state\":\"created\",\"license\":\"ONS\",\"release_date\":\"2017-04-04\",\"version\":\"1\"}"
+		b := datasetPayload
 		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
@@ -2172,7 +2165,6 @@ func TestPutDatasetReturnsError(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusUnauthorized)
 				}
-
 			},
 		}
 
@@ -2183,11 +2175,10 @@ func TestPutDatasetReturnsError(t *testing.T) {
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
-
 	})
 
 	Convey("When the request is forbidden to update dataset return status forbidden", t, func() {
-		b := "{\"edition\":\"2017\",\"state\":\"created\",\"license\":\"ONS\",\"release_date\":\"2017-04-04\",\"version\":\"1\"}"
+		b := datasetPayload
 		r, err := http.NewRequest("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 		w := httptest.NewRecorder()
@@ -2199,7 +2190,6 @@ func TestPutDatasetReturnsError(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusForbidden)
 				}
-
 			},
 		}
 
@@ -2210,7 +2200,6 @@ func TestPutDatasetReturnsError(t *testing.T) {
 
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
-
 	})
 
 	Convey("When updating the static dataset with a title that already exists returns 409 conflict", t, func() {
@@ -2376,6 +2365,16 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 								ID: "456",
 							},
 						},
+						Distributions: &[]models.Distribution{
+							{
+								Title:       "Distribution1",
+								DownloadURL: "path/to/distribution1.txt",
+							},
+							{
+								Title:       "Distribution2",
+								DownloadURL: "path/to/distribution2.txt",
+							},
+						},
 					},
 					{
 						ID: "V2",
@@ -2388,8 +2387,8 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 				}
 				return versions, 1, nil
 			},
-			DeleteStaticVersionsByDatasetIDFunc: func(ctx context.Context, ID string) (int, error) {
-				return 2, nil
+			DeleteStaticDatasetVersionFunc: func(ctx context.Context, datasetID, editionID string, version int) error {
+				return nil
 			},
 			DeleteDatasetFunc: func(context.Context, string) error {
 				return nil
@@ -2402,13 +2401,22 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 			},
 		}
 
+		mockFilesAPIClient := filesAPISDKMocks.ClienterMock{
+			DeleteFileFunc: func(ctx context.Context, filePath string) error {
+				return nil
+			},
+		}
+
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+		api.filesAPIClient = &mockFilesAPIClient
 
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNoContent)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.DeleteStaticVersionsByDatasetIDCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetAllStaticVersionsCalls()), ShouldEqual, 1)
+		So(len(mockFilesAPIClient.DeleteFileCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.DeleteStaticDatasetVersionCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
 	})
 
@@ -2428,10 +2436,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 			},
 			GetAllStaticVersionsFunc: func(context.Context, string, string, int, int) ([]*models.Version, int, error) {
 				version := []*models.Version{}
-				return version, 0, errs.ErrVersionNotFound
-			},
-			DeleteStaticVersionsByDatasetIDFunc: func(ctx context.Context, ID string) (int, error) {
-				return 0, nil
+				return version, 0, errs.ErrVersionsNotFound
 			},
 			DeleteDatasetFunc: func(context.Context, string) error {
 				return nil
@@ -2450,7 +2455,6 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusNoContent)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.DeleteStaticVersionsByDatasetIDCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
 	})
 }
@@ -2509,6 +2513,9 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		authorisationMock := &authMock.MiddlewareMock{
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
+			},
+			ParseFunc: func(token string) (*sdk.EntityData, error) {
+				return &sdk.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -2588,7 +2595,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 	})
 
 	Convey("When the request is not authorised to delete the dataset return unauthorised and no database calls are made", t, func() {
-		b := "{\"edition\":\"2017\",\"state\":\"created\",\"license\":\"ONS\",\"release_date\":\"2017-04-04\",\"version\":\"1\"}"
+		b := editionPayload
 		r, err := http.NewRequest("DELETE", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 
@@ -2600,7 +2607,6 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusUnauthorized)
 				}
-
 			},
 		}
 
@@ -2615,7 +2621,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 	})
 
 	Convey("When the request is forbidden to delete the dataset return forbidden and no database calls are made", t, func() {
-		b := "{\"edition\":\"2017\",\"state\":\"created\",\"license\":\"ONS\",\"release_date\":\"2017-04-04\",\"version\":\"1\"}"
+		b := editionPayload
 		r, err := http.NewRequest("DELETE", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 		So(err, ShouldBeNil)
 
@@ -2627,7 +2633,6 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusForbidden)
 				}
-
 			},
 		}
 
@@ -2641,7 +2646,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
 	})
 
-	Convey("When deleting static dataset versions fails, return internal server error", t, func() {
+	Convey("When deleting a static dataset fails at DeleteStaticDatasetVersion, return internal server error", t, func() {
 		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/456", nil)
 		w := httptest.NewRecorder()
 
@@ -2676,11 +2681,8 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 				}
 				return versions, 1, nil
 			},
-			DeleteStaticVersionsByDatasetIDFunc: func(ctx context.Context, ID string) (int, error) {
-				return 0, errs.ErrInternalServer
-			},
-			DeleteDatasetFunc: func(context.Context, string) error {
-				return nil
+			DeleteStaticDatasetVersionFunc: func(ctx context.Context, datasetID, editionID string, version int) error {
+				return errs.ErrInternalServer
 			},
 		}
 
@@ -2695,7 +2697,62 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 
 		assertInternalServerErr(w)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.DeleteStaticVersionsByDatasetIDCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.DeleteStaticDatasetVersionCalls()), ShouldEqual, 1)
+	})
+
+	Convey("When deleting a static dataset fails at DeleteFile, return internal server error", t, func() {
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/456", nil)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					Next: &models.Dataset{
+						ID:    "456",
+						Type:  models.Static.String(),
+						State: models.CreatedState,
+					},
+				}, nil
+			},
+			GetAllStaticVersionsFunc: func(context.Context, string, string, int, int) ([]*models.Version, int, error) {
+				versions := []*models.Version{
+					{
+						ID: "1",
+						Links: &models.VersionLinks{
+							Dataset: &models.LinkObject{
+								ID: "456",
+							},
+						},
+						Distributions: &[]models.Distribution{
+							{
+								Title:       "Distribution1",
+								DownloadURL: "path/to/distribution1.txt",
+							},
+						},
+					},
+				}
+				return versions, 1, nil
+			},
+		}
+
+		mockFilesAPIClient := filesAPISDKMocks.ClienterMock{
+			DeleteFileFunc: func(ctx context.Context, filePath string) error {
+				return errors.New("files api returned an error")
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+		api.filesAPIClient = &mockFilesAPIClient
+		api.Router.ServeHTTP(w, r)
+
+		assertInternalServerErr(w)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockFilesAPIClient.DeleteFileCalls()), ShouldEqual, 1)
 	})
 }

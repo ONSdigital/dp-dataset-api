@@ -35,11 +35,11 @@ type Client struct {
 type Headers struct {
 	CollectionID         string
 	DownloadServiceToken string
-	AccessToken          string //could be user or service token for auth v2
+	AccessToken          string // could be user or service token for auth v2
 }
 
 // Adds headers to the input request
-func (h *Headers) Add(request *http.Request) {
+func (h *Headers) add(request *http.Request) {
 	if h.CollectionID != "" {
 		request.Header.Add(dpNetRequest.CollectionIDHeaderKey, h.CollectionID)
 	}
@@ -57,12 +57,12 @@ func (h *Headers) SetIfMatch(req *http.Request, headerValue string) error {
 	return nil
 }
 
-func setRequestHeader(req *http.Request, headerName string, headerValue string) error {
+func setRequestHeader(req *http.Request, headerName, headerValue string) error {
 	if req == nil {
 		return ErrRequestNil
 	}
 
-	if len(headerValue) == 0 {
+	if headerValue == "" {
 		return ErrValueEmpty
 	}
 
@@ -70,13 +70,13 @@ func setRequestHeader(req *http.Request, headerName string, headerValue string) 
 	return nil
 }
 
-// Checker calls topic api health endpoint and returns a check object to the caller
+// Checker calls the health.Client's Checker method
 func (c *Client) Checker(ctx context.Context, check *healthcheck.CheckState) error {
 	return c.hcCli.Checker(ctx, check)
 }
 
 // Creates new request object, executes a get request using the input `headers` and `uri` and returns the response
-func (c *Client) DoAuthenticatedGetRequest(ctx context.Context, headers Headers, uri *url.URL) (resp *http.Response, err error) {
+func (c *Client) doAuthenticatedGetRequest(ctx context.Context, headers Headers, uri *url.URL) (resp *http.Response, err error) {
 	resp = &http.Response{}
 	req, err := http.NewRequest(http.MethodGet, uri.RequestURI(), http.NoBody)
 	if err != nil {
@@ -84,19 +84,33 @@ func (c *Client) DoAuthenticatedGetRequest(ctx context.Context, headers Headers,
 	}
 
 	// Add auth headers to the request
-	headers.Add(req)
+	headers.add(req)
+
+	fmt.Println("THE HEADERS ARE")
+	fmt.Println(headers)
 
 	return c.hcCli.Client.Do(ctx, req)
 }
 
 // Creates new request object, executes a put request using the input `headers`, `uri`, and payload, and returns the response
-func (c *Client) DoAuthenticatedPutRequest(ctx context.Context, headers Headers, uri *url.URL, payload []byte) (*http.Response, error) {
+func (c *Client) doAuthenticatedPutRequest(ctx context.Context, headers Headers, uri *url.URL, payload []byte) (*http.Response, error) {
 	req, err := http.NewRequest(http.MethodPut, uri.RequestURI(), bytes.NewBuffer(payload))
 	if err != nil {
 		return nil, err
 	}
 
-	headers.Add(req)
+	headers.add(req)
+	return c.hcCli.Client.Do(ctx, req)
+}
+
+// Creates new request object, executes a post request using the input `headers`, `uri`, and payload, and returns the response
+func (c *Client) doAuthenticatedPostRequest(ctx context.Context, headers Headers, uri *url.URL, payload []byte) (*http.Response, error) {
+	req, err := http.NewRequest(http.MethodPost, uri.RequestURI(), bytes.NewBuffer(payload))
+	if err != nil {
+		return nil, err
+	}
+
+	headers.add(req)
 	return c.hcCli.Client.Do(ctx, req)
 }
 
@@ -107,8 +121,11 @@ func (c *Client) DoAuthenticatedPutRequestWithEtag(ctx context.Context, headers 
 		return nil, err
 	}
 
-	headers.Add(req)
-	headers.SetIfMatch(req, ifMatch)
+	headers.add(req)
+	err = headers.SetIfMatch(req, ifMatch)
+	if err != nil {
+		return nil, err
+	}
 	return c.hcCli.Client.Do(ctx, req)
 }
 
@@ -222,6 +239,22 @@ func unmarshalResponseBodyExpectingErrorResponseV2(response *http.Response, targ
 	fmt.Println(string(b))
 
 	return json.Unmarshal(b, &target)
+}
+
+// unmarshalErrorResponse unmarshals the response body into an ErrorResponse
+func unmarshalErrorResponse(body io.ReadCloser) (*models.ErrorResponse, error) {
+	if body == nil {
+		return nil, errors.New("response body is nil")
+	}
+
+	var errorResponse models.ErrorResponse
+
+	err := json.NewDecoder(body).Decode(&errorResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	return &errorResponse, nil
 }
 
 func getStringResponseBody(resp *http.Response) (*string, error) {

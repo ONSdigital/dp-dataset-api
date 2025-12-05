@@ -63,7 +63,7 @@ func DatasetAPIResponse(resp *http.Response, uri string) (e *ErrInvalidDatasetAP
 			e.body = "Client failed to read DatasetAPI body"
 			return
 		}
-		defer closeResponseBody(nil, resp)
+		defer closeResponseBody(context.TODO(), resp)
 
 		e.body = string(b)
 	}
@@ -71,8 +71,10 @@ func DatasetAPIResponse(resp *http.Response, uri string) (e *ErrInvalidDatasetAP
 }
 
 // Get returns dataset level information for a given dataset id
-func (c *Client) GetDataset(ctx context.Context, headers Headers, collectionID, datasetID string) (dataset models.Dataset, err error) {
+func (c *Client) GetDataset(ctx context.Context, headers Headers, datasetID string) (dataset models.Dataset, err error) {
 	dataset = models.Dataset{}
+
+	fmt.Println("GETTING DATASET")
 
 	// Build URI
 	uri := &url.URL{}
@@ -80,9 +82,8 @@ func (c *Client) GetDataset(ctx context.Context, headers Headers, collectionID, 
 	if err != nil {
 		return dataset, err
 	}
-
 	// Make request
-	resp, err := c.DoAuthenticatedGetRequest(ctx, headers, uri)
+	resp, err := c.doAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {
 		return dataset, err
 	}
@@ -130,7 +131,7 @@ func (c *Client) GetDatasetCurrentAndNext(ctx context.Context, headers Headers, 
 	}
 
 	// Make request
-	resp, err := c.DoAuthenticatedGetRequest(ctx, headers, uri)
+	resp, err := c.doAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {
 		return dataset, err
 	}
@@ -143,14 +144,14 @@ func (c *Client) GetDatasetCurrentAndNext(ctx context.Context, headers Headers, 
 
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return
+		return dataset, err
 	}
 
-	if err = json.Unmarshal(b, &dataset); err != nil {
-		return
+	if err := json.Unmarshal(b, &dataset); err != nil {
+		return dataset, err
 	}
 
-	return
+	return dataset, nil
 }
 
 // GetDatasetByPath returns dataset level information for a given dataset path
@@ -165,7 +166,7 @@ func (c *Client) GetDatasetByPath(ctx context.Context, headers Headers, path str
 	}
 
 	// Make request
-	resp, err := c.DoAuthenticatedGetRequest(ctx, headers, uri)
+	resp, err := c.doAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {
 		return dataset, err
 	}
@@ -216,7 +217,7 @@ func (c *Client) GetDatasetEditions(ctx context.Context, headers Headers, queryP
 	}
 
 	// Make request
-	resp, err := c.DoAuthenticatedGetRequest(ctx, headers, uri)
+	resp, err := c.doAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {
 		return datasetEditionsList, err
 	}
@@ -231,8 +232,6 @@ func (c *Client) GetDatasetEditions(ctx context.Context, headers Headers, queryP
 
 // GetDatasetsInBatches retrieves a list of datasets in concurrent batches and accumulates the results
 func (c *Client) GetDatasetsInBatches(ctx context.Context, headers Headers, batchSize, maxWorkers int) (datasets List, err error) {
-
-	fmt.Println("GOT TO DATASETS IN BATCHES")
 	// Function to aggregate items.
 	// For the first received batch, as we have the total count information, will initialise the final structure of items with a fixed size equal to TotalCount.
 	// This serves two purposes:
@@ -260,7 +259,6 @@ func (c *Client) GetDatasetsInBatches(ctx context.Context, headers Headers, batc
 
 // GetDatasetsBatchProcess gets the datasets from the dataset API in batches, calling the provided function for each batch.
 func (c *Client) GetDatasetsBatchProcess(ctx context.Context, headers Headers, processBatch DatasetsBatchProcessor, batchSize, maxWorkers int) error {
-
 	// for each batch, obtain the dimensions starting at the provided offset, with a batch size limit,
 	// or the subste of IDs according to the provided offset, if a list of optionIDs was provided
 	batchGetter := func(offset int) (interface{}, int, string, error) {
@@ -281,8 +279,7 @@ func (c *Client) GetDatasetsBatchProcess(ctx context.Context, headers Headers, p
 }
 
 // GetDatasets returns the list of datasets
-func (c *Client) GetDatasets(ctx context.Context, headers Headers, q *QueryParams) (m List, err error) {
-	//uri := fmt.Sprintf("%s/datasets", c.hcCli.URL)
+func (c *Client) GetDatasets(ctx context.Context, headers Headers, q *QueryParams) (datasets List, err error) {
 	// Build URI
 	uri := &url.URL{}
 	uri.Path, err = url.JoinPath(c.hcCli.URL, "datasets")
@@ -290,14 +287,6 @@ func (c *Client) GetDatasets(ctx context.Context, headers Headers, q *QueryParam
 		return List{}, err
 	}
 
-	fmt.Println("THE HEADERS ARE")
-	fmt.Println(headers)
-
-	fmt.Println("THE BASE URL IS")
-	fmt.Println(c.hcCli.URL)
-
-	fmt.Println("THE URI IS")
-	fmt.Println(uri.String())
 	if q != nil {
 		if err := q.Validate(); err != nil {
 			return List{}, err
@@ -313,32 +302,31 @@ func (c *Client) GetDatasets(ctx context.Context, headers Headers, q *QueryParam
 		uri.RawQuery = query.Encode()
 	}
 
-	resp, err := c.DoAuthenticatedGetRequest(ctx, headers, uri)
+	resp, err := c.doAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {
-		return
+		return List{}, err
 	}
 	defer closeResponseBody(ctx, resp)
 
 	if resp.StatusCode != http.StatusOK {
 		err = DatasetAPIResponse(resp, uri.RequestURI())
-		return
+		return List{}, err
 	}
 
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return
+		return List{}, err
 	}
 
-	if err = json.Unmarshal(b, &m); err != nil {
-		return
+	if err := json.Unmarshal(b, &datasets); err != nil {
+		return List{}, err
 	}
 
-	return
+	return datasets, nil
 }
 
 // PutDataset update the dataset
 func (c *Client) PutDataset(ctx context.Context, headers Headers, datasetID string, d models.Dataset) error {
-	//uri := fmt.Sprintf("%s/datasets/%s", c.hcCli.URL, datasetID)
 	var err error
 	uri := &url.URL{}
 	uri.Path, err = url.JoinPath(c.hcCli.URL, "datasets", datasetID)
@@ -351,7 +339,7 @@ func (c *Client) PutDataset(ctx context.Context, headers Headers, datasetID stri
 		return errors.New("error while attempting to marshall dataset")
 	}
 
-	resp, err := c.DoAuthenticatedPutRequest(ctx, headers, uri, payload)
+	resp, err := c.doAuthenticatedPutRequest(ctx, headers, uri, payload)
 	if err != nil {
 		return err
 	}
@@ -365,4 +353,46 @@ func (c *Client) PutDataset(ctx context.Context, headers Headers, datasetID stri
 		return fmt.Errorf("did not receive success response. received status %d, response body: %s", resp.StatusCode, *responseBody)
 	}
 	return nil
+}
+
+// CreateDataset creates a new dataset by posting to the POST /datasets endpoint
+func (c *Client) CreateDataset(ctx context.Context, headers Headers, dataset models.Dataset) (models.DatasetUpdate, error) {
+	var datasetUpdate models.DatasetUpdate
+
+	// Build URI
+	uri := &url.URL{}
+	var err error
+	uri.Path, err = url.JoinPath(c.hcCli.URL, "datasets")
+	if err != nil {
+		return datasetUpdate, err
+	}
+
+	// Marshal dataset to JSON
+	payload, err := json.Marshal(dataset)
+	if err != nil {
+		return datasetUpdate, err
+	}
+
+	// Make request
+	resp, err := c.doAuthenticatedPostRequest(ctx, headers, uri, payload)
+	if err != nil {
+		return datasetUpdate, err
+	}
+
+	defer closeResponseBody(ctx, resp)
+
+	// If response got errors
+	if resp.StatusCode != http.StatusCreated {
+		err = unmarshalResponseBodyExpectingStringError(resp, &datasetUpdate)
+		return datasetUpdate, err
+	}
+
+	// Read and unmarshal the response body for successful creation
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return datasetUpdate, err
+	}
+
+	err = json.Unmarshal(b, &datasetUpdate)
+	return datasetUpdate, err
 }

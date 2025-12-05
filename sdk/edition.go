@@ -22,7 +22,7 @@ func (c *Client) GetEdition(ctx context.Context, headers Headers, datasetID, edi
 	}
 
 	// Make request
-	resp, err := c.DoAuthenticatedGetRequest(ctx, headers, uri)
+	resp, err := c.doAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {
 		return edition, err
 	}
@@ -45,7 +45,7 @@ type EditionsList struct {
 	TotalCount int              `json:"total_count"`
 }
 
-// GetEditions returns all editions for a dataset
+// GetEditions returns a paginated list of editions for a dataset
 func (c *Client) GetEditions(ctx context.Context, headers Headers, datasetID string, queryParams *QueryParams) (editionList EditionsList, err error) {
 	editionList = EditionsList{}
 	// Build uri
@@ -68,7 +68,7 @@ func (c *Client) GetEditions(ctx context.Context, headers Headers, datasetID str
 	}
 
 	// Make request
-	resp, err := c.DoAuthenticatedGetRequest(ctx, headers, uri)
+	resp, err := c.doAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {
 		return editionList, err
 	}

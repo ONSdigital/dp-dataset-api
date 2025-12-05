@@ -51,6 +51,9 @@ var _ store.Storer = &StorerMock{}
 //			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID string, editionID string, state string) error {
 //				panic("mock out the CheckEditionExistsStatic method")
 //			},
+//			CheckEditionTitleExistsStaticFunc: func(ctx context.Context, datasetID string, editionTitle string) error {
+//				panic("mock out the CheckEditionTitleExistsStatic method")
+//			},
 //			CheckVersionExistsStaticFunc: func(ctx context.Context, datasetID string, editionID string, version int) (bool, error) {
 //				panic("mock out the CheckVersionExistsStatic method")
 //			},
@@ -62,9 +65,6 @@ var _ store.Storer = &StorerMock{}
 //			},
 //			DeleteStaticDatasetVersionFunc: func(ctx context.Context, datasetID string, editionID string, version int) error {
 //				panic("mock out the DeleteStaticDatasetVersion method")
-//			},
-//			DeleteStaticVersionsByDatasetIDFunc: func(ctx context.Context, ID string) (int, error) {
-//				panic("mock out the DeleteStaticVersionsByDatasetID method")
 //			},
 //			GetAllStaticVersionsFunc: func(ctx context.Context, ID string, state string, offset int, limit int) ([]*models.Version, int, error) {
 //				panic("mock out the GetAllStaticVersions method")
@@ -195,7 +195,7 @@ var _ store.Storer = &StorerMock{}
 //			UpsertVersionFunc: func(ctx context.Context, ID string, versionDoc *models.Version) error {
 //				panic("mock out the UpsertVersion method")
 //			},
-//			UpsertVersionStaticFunc: func(ctx context.Context, ID string, versionDoc *models.Version) error {
+//			UpsertVersionStaticFunc: func(ctx context.Context, versionDoc *models.Version) error {
 //				panic("mock out the UpsertVersionStatic method")
 //			},
 //		}
@@ -235,6 +235,9 @@ type StorerMock struct {
 	// CheckEditionExistsStaticFunc mocks the CheckEditionExistsStatic method.
 	CheckEditionExistsStaticFunc func(ctx context.Context, datasetID string, editionID string, state string) error
 
+	// CheckEditionTitleExistsStaticFunc mocks the CheckEditionTitleExistsStatic method.
+	CheckEditionTitleExistsStaticFunc func(ctx context.Context, datasetID string, editionTitle string) error
+
 	// CheckVersionExistsStaticFunc mocks the CheckVersionExistsStatic method.
 	CheckVersionExistsStaticFunc func(ctx context.Context, datasetID string, editionID string, version int) (bool, error)
 
@@ -246,9 +249,6 @@ type StorerMock struct {
 
 	// DeleteStaticDatasetVersionFunc mocks the DeleteStaticDatasetVersion method.
 	DeleteStaticDatasetVersionFunc func(ctx context.Context, datasetID string, editionID string, version int) error
-
-	// DeleteStaticVersionsByDatasetIDFunc mocks the DeleteStaticVersionsByDatasetID method.
-	DeleteStaticVersionsByDatasetIDFunc func(ctx context.Context, ID string) (int, error)
 
 	// GetAllStaticVersionsFunc mocks the GetAllStaticVersions method.
 	GetAllStaticVersionsFunc func(ctx context.Context, ID string, state string, offset int, limit int) ([]*models.Version, int, error)
@@ -380,7 +380,7 @@ type StorerMock struct {
 	UpsertVersionFunc func(ctx context.Context, ID string, versionDoc *models.Version) error
 
 	// UpsertVersionStaticFunc mocks the UpsertVersionStatic method.
-	UpsertVersionStaticFunc func(ctx context.Context, ID string, versionDoc *models.Version) error
+	UpsertVersionStaticFunc func(ctx context.Context, versionDoc *models.Version) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -474,6 +474,15 @@ type StorerMock struct {
 			// State is the state argument value.
 			State string
 		}
+		// CheckEditionTitleExistsStatic holds details about calls to the CheckEditionTitleExistsStatic method.
+		CheckEditionTitleExistsStatic []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// EditionTitle is the editionTitle argument value.
+			EditionTitle string
+		}
 		// CheckVersionExistsStatic holds details about calls to the CheckVersionExistsStatic method.
 		CheckVersionExistsStatic []struct {
 			// Ctx is the ctx argument value.
@@ -509,13 +518,6 @@ type StorerMock struct {
 			EditionID string
 			// Version is the version argument value.
 			Version int
-		}
-		// DeleteStaticVersionsByDatasetID holds details about calls to the DeleteStaticVersionsByDatasetID method.
-		DeleteStaticVersionsByDatasetID []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// ID is the ID argument value.
-			ID string
 		}
 		// GetAllStaticVersions holds details about calls to the GetAllStaticVersions method.
 		GetAllStaticVersions []struct {
@@ -986,8 +988,6 @@ type StorerMock struct {
 		UpsertVersionStatic []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
-			// ID is the ID argument value.
-			ID string
 			// VersionDoc is the versionDoc argument value.
 			VersionDoc *models.Version
 		}
@@ -1002,11 +1002,11 @@ type StorerMock struct {
 	lockCheckDatasetTitleExist              sync.RWMutex
 	lockCheckEditionExists                  sync.RWMutex
 	lockCheckEditionExistsStatic            sync.RWMutex
+	lockCheckEditionTitleExistsStatic       sync.RWMutex
 	lockCheckVersionExistsStatic            sync.RWMutex
 	lockDeleteDataset                       sync.RWMutex
 	lockDeleteEdition                       sync.RWMutex
 	lockDeleteStaticDatasetVersion          sync.RWMutex
-	lockDeleteStaticVersionsByDatasetID     sync.RWMutex
 	lockGetAllStaticVersions                sync.RWMutex
 	lockGetDataset                          sync.RWMutex
 	lockGetDatasetType                      sync.RWMutex
@@ -1453,6 +1453,46 @@ func (mock *StorerMock) CheckEditionExistsStaticCalls() []struct {
 	return calls
 }
 
+// CheckEditionTitleExistsStatic calls CheckEditionTitleExistsStaticFunc.
+func (mock *StorerMock) CheckEditionTitleExistsStatic(ctx context.Context, datasetID string, editionTitle string) error {
+	if mock.CheckEditionTitleExistsStaticFunc == nil {
+		panic("StorerMock.CheckEditionTitleExistsStaticFunc: method is nil but Storer.CheckEditionTitleExistsStatic was just called")
+	}
+	callInfo := struct {
+		Ctx          context.Context
+		DatasetID    string
+		EditionTitle string
+	}{
+		Ctx:          ctx,
+		DatasetID:    datasetID,
+		EditionTitle: editionTitle,
+	}
+	mock.lockCheckEditionTitleExistsStatic.Lock()
+	mock.calls.CheckEditionTitleExistsStatic = append(mock.calls.CheckEditionTitleExistsStatic, callInfo)
+	mock.lockCheckEditionTitleExistsStatic.Unlock()
+	return mock.CheckEditionTitleExistsStaticFunc(ctx, datasetID, editionTitle)
+}
+
+// CheckEditionTitleExistsStaticCalls gets all the calls that were made to CheckEditionTitleExistsStatic.
+// Check the length with:
+//
+//	len(mockedStorer.CheckEditionTitleExistsStaticCalls())
+func (mock *StorerMock) CheckEditionTitleExistsStaticCalls() []struct {
+	Ctx          context.Context
+	DatasetID    string
+	EditionTitle string
+} {
+	var calls []struct {
+		Ctx          context.Context
+		DatasetID    string
+		EditionTitle string
+	}
+	mock.lockCheckEditionTitleExistsStatic.RLock()
+	calls = mock.calls.CheckEditionTitleExistsStatic
+	mock.lockCheckEditionTitleExistsStatic.RUnlock()
+	return calls
+}
+
 // CheckVersionExistsStatic calls CheckVersionExistsStaticFunc.
 func (mock *StorerMock) CheckVersionExistsStatic(ctx context.Context, datasetID string, editionID string, version int) (bool, error) {
 	if mock.CheckVersionExistsStaticFunc == nil {
@@ -1610,42 +1650,6 @@ func (mock *StorerMock) DeleteStaticDatasetVersionCalls() []struct {
 	mock.lockDeleteStaticDatasetVersion.RLock()
 	calls = mock.calls.DeleteStaticDatasetVersion
 	mock.lockDeleteStaticDatasetVersion.RUnlock()
-	return calls
-}
-
-// DeleteStaticVersionsByDatasetID calls DeleteStaticVersionsByDatasetIDFunc.
-func (mock *StorerMock) DeleteStaticVersionsByDatasetID(ctx context.Context, ID string) (int, error) {
-	if mock.DeleteStaticVersionsByDatasetIDFunc == nil {
-		panic("StorerMock.DeleteStaticVersionsByDatasetIDFunc: method is nil but Storer.DeleteStaticVersionsByDatasetID was just called")
-	}
-	callInfo := struct {
-		Ctx context.Context
-		ID  string
-	}{
-		Ctx: ctx,
-		ID:  ID,
-	}
-	mock.lockDeleteStaticVersionsByDatasetID.Lock()
-	mock.calls.DeleteStaticVersionsByDatasetID = append(mock.calls.DeleteStaticVersionsByDatasetID, callInfo)
-	mock.lockDeleteStaticVersionsByDatasetID.Unlock()
-	return mock.DeleteStaticVersionsByDatasetIDFunc(ctx, ID)
-}
-
-// DeleteStaticVersionsByDatasetIDCalls gets all the calls that were made to DeleteStaticVersionsByDatasetID.
-// Check the length with:
-//
-//	len(mockedStorer.DeleteStaticVersionsByDatasetIDCalls())
-func (mock *StorerMock) DeleteStaticVersionsByDatasetIDCalls() []struct {
-	Ctx context.Context
-	ID  string
-} {
-	var calls []struct {
-		Ctx context.Context
-		ID  string
-	}
-	mock.lockDeleteStaticVersionsByDatasetID.RLock()
-	calls = mock.calls.DeleteStaticVersionsByDatasetID
-	mock.lockDeleteStaticVersionsByDatasetID.RUnlock()
 	return calls
 }
 
@@ -3526,23 +3530,21 @@ func (mock *StorerMock) UpsertVersionCalls() []struct {
 }
 
 // UpsertVersionStatic calls UpsertVersionStaticFunc.
-func (mock *StorerMock) UpsertVersionStatic(ctx context.Context, ID string, versionDoc *models.Version) error {
+func (mock *StorerMock) UpsertVersionStatic(ctx context.Context, versionDoc *models.Version) error {
 	if mock.UpsertVersionStaticFunc == nil {
 		panic("StorerMock.UpsertVersionStaticFunc: method is nil but Storer.UpsertVersionStatic was just called")
 	}
 	callInfo := struct {
 		Ctx        context.Context
-		ID         string
 		VersionDoc *models.Version
 	}{
 		Ctx:        ctx,
-		ID:         ID,
 		VersionDoc: versionDoc,
 	}
 	mock.lockUpsertVersionStatic.Lock()
 	mock.calls.UpsertVersionStatic = append(mock.calls.UpsertVersionStatic, callInfo)
 	mock.lockUpsertVersionStatic.Unlock()
-	return mock.UpsertVersionStaticFunc(ctx, ID, versionDoc)
+	return mock.UpsertVersionStaticFunc(ctx, versionDoc)
 }
 
 // UpsertVersionStaticCalls gets all the calls that were made to UpsertVersionStatic.
@@ -3551,12 +3553,10 @@ func (mock *StorerMock) UpsertVersionStatic(ctx context.Context, ID string, vers
 //	len(mockedStorer.UpsertVersionStaticCalls())
 func (mock *StorerMock) UpsertVersionStaticCalls() []struct {
 	Ctx        context.Context
-	ID         string
 	VersionDoc *models.Version
 } {
 	var calls []struct {
 		Ctx        context.Context
-		ID         string
 		VersionDoc *models.Version
 	}
 	mock.lockUpsertVersionStatic.RLock()

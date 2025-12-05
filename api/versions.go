@@ -1,15 +1,16 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"maps"
 	"net/http"
 	"strconv"
 	"strings"
 
-	"github.com/ONSdigital/dp-api-clients-go/v2/files"
 	"github.com/ONSdigital/dp-api-clients-go/v2/headers"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -301,11 +302,11 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 		return nil, models.NewErrorResponse(getVersionAPIErrStatusCode(err), nil, models.NewError(err, "failed to marshal version into bytes", "internal error"))
 	}
 
-	headers := map[string]string{
+	responseHeaders := map[string]string{
 		"Code": strconv.Itoa(http.StatusOK),
 	}
 
-	return models.NewSuccessResponse(versionBytes, http.StatusOK, headers), nil
+	return models.NewSuccessResponse(versionBytes, http.StatusOK, responseHeaders), nil
 }
 
 func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
@@ -313,17 +314,64 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	vars := mux.Vars(r)
-
 	data := log.Data{
 		"datasetID": vars["dataset_id"],
 		"edition":   vars["edition"],
 		"version":   vars["version"],
 	}
 
-	version, err := models.CreateVersion(r.Body, vars["dataset_id"])
+	// Read body once and validate distributions before unmarshaling
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Error(ctx, "failed to read request body", err, data)
+		handleVersionAPIErr(ctx, errs.ErrUnableToReadMessage, w, data)
+		return
+	}
+
+	if err := utils.ValidateDistributionsFromRequestBody(bodyBytes); err != nil {
+		log.Error(ctx, "invalid distributions format", err, data)
+		handleVersionAPIErr(ctx, err, w, data)
+		return
+	}
+
+	version, err := models.CreateVersion(bytes.NewReader(bodyBytes), vars["dataset_id"])
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, data)
 		return
+	}
+
+	// Populate distributions (static only)
+	if version.Type == models.Static.String() {
+		if err := utils.PopulateDistributions(version); err != nil {
+			handleVersionAPIErr(ctx, err, w, data)
+			return
+		}
+	}
+
+	// Only check for edition ID/title conflicts for static datasets
+	if version.Type == models.Static.String() {
+		// Check edition ID
+		checkErr := api.dataStore.Backend.CheckEditionExistsStatic(ctx, version.DatasetID, version.Edition, "")
+		if checkErr == nil {
+			log.Error(ctx, "edition ID already exists for this dataset", errs.ErrEditionAlreadyExists, data)
+			handleVersionAPIErr(ctx, errs.ErrEditionAlreadyExists, w, data)
+			return
+		} else if !errors.Is(checkErr, errs.ErrEditionNotFound) {
+			log.Error(ctx, "failed to check edition ID existence", checkErr, data)
+			handleVersionAPIErr(ctx, checkErr, w, data)
+			return
+		}
+		// Check edition title
+		checkErr = api.dataStore.Backend.CheckEditionTitleExistsStatic(ctx, version.DatasetID, version.EditionTitle)
+		if checkErr != nil {
+			if errors.Is(checkErr, errs.ErrEditionTitleAlreadyExists) {
+				log.Error(ctx, "edition title already exists for this dataset", checkErr, data)
+			} else {
+				log.Error(ctx, "failed to check edition title existence", checkErr, data)
+			}
+			handleVersionAPIErr(ctx, checkErr, w, data)
+			return
+		}
 	}
 
 	var amendedVersion *models.Version
@@ -390,7 +438,7 @@ func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if err := api.smDatasetAPI.DeleteStaticVersion(ctx, datasetID, edition, versionNum); err != nil {
+		if err := api.smDatasetAPI.DeleteStaticVersion(ctx, datasetID, edition, versionNum, api.filesAPIClient); err != nil {
 			handleVersionAPIErr(ctx, err, w, logData)
 			return
 		}
@@ -680,6 +728,10 @@ func getVersionAPIErrStatusCode(err error) int {
 		status = http.StatusBadRequest
 	case strings.HasPrefix(err.Error(), "a published version cannot be deleted"):
 		status = http.StatusForbidden
+	case strings.Contains(err.Error(), "format field is missing"):
+		status = http.StatusBadRequest
+	case strings.Contains(err.Error(), "format field is invalid"):
+		status = http.StatusBadRequest
 	case errs.NotAllowedMap[err]:
 		status = http.StatusMethodNotAllowed
 	default:
@@ -826,12 +878,11 @@ func (api *DatasetAPI) publishDistributionFiles(ctx context.Context, version *mo
 		}
 		maps.Copy(fileLogData, logData)
 
-		fileMetadata, err := api.filesAPIClient.GetFile(ctx, filepath, api.authToken)
+		_, err := api.filesAPIClient.GetFile(ctx, filepath)
 		if err != nil {
 			log.Error(ctx, "failed to get file metadata", err, fileLogData)
 
-			if errors.Is(err, files.ErrFileNotFound) ||
-				strings.Contains(err.Error(), "FileNotRegistered") ||
+			if strings.Contains(err.Error(), "FileNotRegistered") ||
 				strings.Contains(err.Error(), "file not registered") ||
 				strings.Contains(err.Error(), "not found") {
 				filesAPIError = errs.ErrFileMetadataNotFound
@@ -840,11 +891,13 @@ func (api *DatasetAPI) publishDistributionFiles(ctx context.Context, version *mo
 			continue
 		}
 
-		err = api.filesAPIClient.MarkFilePublished(ctx, filepath, fileMetadata.Etag)
+		err = api.filesAPIClient.MarkFilePublished(ctx, filepath)
 		if err != nil {
 			log.Error(ctx, "failed to publish file", err, fileLogData)
 
-			if errors.Is(err, files.ErrInvalidState) {
+			if strings.Contains(err.Error(), "FileStateError") ||
+				strings.Contains(err.Error(), "file is not set as publishable") ||
+				strings.Contains(err.Error(), "file state is not in state uploaded") {
 				filesAPIError = errs.ErrFileNotInCorrectState
 			}
 			lastError = err

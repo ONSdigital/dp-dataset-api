@@ -158,9 +158,8 @@ func (m *Mongo) CheckDatasetTitleExist(ctx context.Context, title string) (bool,
 	}
 	if count > 0 {
 		return true, nil
-	} else {
-		return false, nil
 	}
+	return false, nil
 }
 
 // GetEditions retrieves all edition documents for a dataset
@@ -819,36 +818,6 @@ func (m *Mongo) DeleteEdition(ctx context.Context, id string) (err error) {
 
 	log.Info(context.TODO(), "edition deleted", log.Data{"id": id})
 	return nil
-}
-
-// DeleteStaticVersionsByDatasetID deletes an existing edition document
-func (m *Mongo) DeleteStaticVersionsByDatasetID(ctx context.Context, datasetID string) (int, error) {
-	filter := bson.M{"links.dataset.id": datasetID}
-
-	deleteResult, err := m.Connection.
-		Collection(m.ActualCollectionName(config.VersionsCollection)).
-		Must().
-		DeleteMany(ctx, filter)
-	if err != nil {
-		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
-			return 0, errs.ErrVersionsNotFound
-		}
-		return 0, err
-	}
-
-	deletedCount := deleteResult.DeletedCount
-
-	if deletedCount == 0 {
-		log.Info(ctx, "no static versions found to delete", log.Data{"dataset_id": datasetID})
-		return 0, errs.ErrVersionsNotFound
-	}
-
-	log.Info(ctx, "static versions deleted", log.Data{
-		"dataset_id":    datasetID,
-		"deleted_count": deletedCount,
-	})
-
-	return deletedCount, nil
 }
 
 func (m *Mongo) IsStaticDataset(ctx context.Context, datasetID string) (bool, error) {

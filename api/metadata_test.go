@@ -24,7 +24,6 @@ import (
 
 func TestPutMetadataForbidden(t *testing.T) {
 	Convey("Given a request to put metdata is forbidden", t, func() {
-
 		mockedDataStore := &storetest.StorerMock{}
 
 		authorisationMock := &authMock.MiddlewareMock{
@@ -32,7 +31,6 @@ func TestPutMetadataForbidden(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusForbidden)
 				}
-
 			},
 		}
 
@@ -55,7 +53,6 @@ func TestPutMetadataForbidden(t *testing.T) {
 			payload, _ := json.Marshal(metadata)
 
 			Convey("And a valid version", func() {
-
 				url := fmt.Sprintf("http://localhost:22000/datasets/%s/editions/%s/versions/%s/metadata", "123", "2017", "!")
 				r := createRequestWithAuth("PUT", url, bytes.NewBuffer(payload))
 
@@ -72,12 +69,10 @@ func TestPutMetadataForbidden(t *testing.T) {
 			})
 		})
 	})
-
 }
 
 func TestPutMetadataUnauthorised(t *testing.T) {
 	Convey("Given a request to put metdata is unauthorised", t, func() {
-
 		mockedDataStore := &storetest.StorerMock{}
 
 		authorisationMock := &authMock.MiddlewareMock{
@@ -85,7 +80,6 @@ func TestPutMetadataUnauthorised(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusUnauthorized)
 				}
-
 			},
 		}
 
@@ -108,7 +102,6 @@ func TestPutMetadataUnauthorised(t *testing.T) {
 			payload, _ := json.Marshal(metadata)
 
 			Convey("And a valid version", func() {
-
 				url := fmt.Sprintf("http://localhost:22000/datasets/%s/editions/%s/versions/%s/metadata", "123", "2017", "!")
 				r := createRequestWithNoAuth("PUT", url, bytes.NewBuffer(payload))
 
@@ -125,7 +118,6 @@ func TestPutMetadataUnauthorised(t *testing.T) {
 			})
 		})
 	})
-
 }
 
 func TestPutMetadata(t *testing.T) {
@@ -391,7 +383,6 @@ func TestPutMetadata(t *testing.T) {
 func TestGetMetadataForbidden(t *testing.T) {
 	t.Parallel()
 	Convey("When a get request is made for metadata with incorrect authorisation details", t, func() {
-
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", http.NoBody)
 		w := httptest.NewRecorder()
 
@@ -402,14 +393,12 @@ func TestGetMetadataForbidden(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusForbidden)
 				}
-
 			},
 		}
 
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		api.Router.ServeHTTP(w, r)
 		Convey("Then a 403 response is returned and no expected database calls are made", func() {
-
 			So(w.Code, ShouldEqual, http.StatusForbidden)
 
 			So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
@@ -422,7 +411,6 @@ func TestGetMetadataForbidden(t *testing.T) {
 func TestGetMetadataUnauthorised(t *testing.T) {
 	t.Parallel()
 	Convey("When a get request is made for metadata without authorisation details", t, func() {
-
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", http.NoBody)
 		w := httptest.NewRecorder()
 
@@ -433,14 +421,12 @@ func TestGetMetadataUnauthorised(t *testing.T) {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusUnauthorized)
 				}
-
 			},
 		}
 
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		api.Router.ServeHTTP(w, r)
 		Convey("Then a 401 response is returned and no expected database calls are made", func() {
-
 			So(w.Code, ShouldEqual, http.StatusUnauthorized)
 
 			So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
