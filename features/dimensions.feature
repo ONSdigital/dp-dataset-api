@@ -203,9 +203,25 @@ Feature: Dataset API
             }
             """
 
-    Scenario: GET dimensions with no options in private mode
+    Scenario: GET dimensions with no options in private mode as admin user
         Given private endpoints are enabled
         And I am an admin user
+        When I GET "/datasets/population-estimates/editions/hello/versions/2/dimensions/age/options"
+        Then the HTTP status code should be "200"
+        And I should receive the following JSON response:
+            """
+            {
+                "count": 0,
+                "items": [],
+                "limit": 20,
+                "offset": 0,
+                "total_count": 0
+            }
+            """
+    
+    Scenario: GET dimensions with no options in private mode as a publisher user
+        Given private endpoints are enabled
+        And I am a publisher user
         When I GET "/datasets/population-estimates/editions/hello/versions/2/dimensions/age/options"
         Then the HTTP status code should be "200"
         And I should receive the following JSON response:

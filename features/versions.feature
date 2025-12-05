@@ -462,12 +462,107 @@ Feature: Dataset API
             }
             """
 
-  Scenario: GET /datasets/{id}/editions/{edition}/versions in private mode returns all versions
+  Scenario: GET /datasets/{id}/editions/{edition}/versions in private mode returns all versions for an admin user
     Given private endpoints are enabled
     And URL rewriting is enabled
     And I set the "X-Forwarded-Host" header to "api.example.com"
     And I set the "X-Forwarded-Path-Prefix" header to "v1"
     And I am an admin user
+    When I GET "/datasets/population-estimates/editions/hello/versions"
+    Then I should receive the following JSON response with status "200":
+            """
+            {
+                "count": 3,
+                "items": [
+                    {
+                        "dataset_id": "population-estimates",
+                        "id": "test-item-4",
+                        "last_updated":"2021-01-01T00:00:03Z",
+                        "version": 4,
+                        "state": "published",
+                        "links": {
+                            "dataset": {
+                                "id": "population-estimates"
+                            },
+                            "self": {
+                                "href": "https://api.example.com/v1/datasets/population-estimates/editions/hello/versions/4"
+                            }
+                        },
+                        "edition": "hello",
+                        "lowest_geography": "ltla",
+                        "distributions": [
+                            {
+                                "title": "Distribution 4",
+                                "format": "csv",
+                                "media_type": "text/csv",
+                                "download_url": "http://localhost:23600/downloads/files/datasets/population-estimates/editions/hello/versions/4.csv",
+                                "byte_size": 100000
+                            }
+                        ]
+                    },
+                    {
+                        "dataset_id": "population-estimates",
+                        "id": "test-item-2",
+                        "last_updated":"2021-01-01T00:00:01Z",
+                        "version": 2,
+                        "state": "associated",
+                        "links": {
+                            "dataset": {
+                                "id": "population-estimates"
+                            },
+                            "self": {
+                                "href": "https://api.example.com/v1/datasets/population-estimates/editions/hello/versions/2"
+                            }
+                        },
+                        "edition": "hello",
+                        "distributions": [
+                            {
+                                "title": "Distribution 2",
+                                "format": "csv",
+                                "media_type": "text/csv",
+                                "download_url": "http://localhost:23600/downloads/files/datasets/population-estimates/editions/hello/versions/2.csv",
+                                "byte_size": 100000
+                            }
+                        ]
+                    },
+                    {
+                        "dataset_id": "population-estimates",
+                        "id": "test-item-1",
+                        "last_updated":"2021-01-01T00:00:00Z",
+                        "version": 1,
+                        "state": "published",
+                        "links": {
+                            "dataset": {
+                                "id": "population-estimates"
+                            },
+                            "self": {
+                                "href": "https://api.example.com/v1/datasets/population-estimates/editions/hello/versions/1"
+                            }
+                        },
+                        "edition": "hello",
+                        "distributions": [
+                            {
+                                "title": "Distribution 1",
+                                "format": "csv",
+                                "media_type": "text/csv",
+                                "download_url": "http://localhost:23600/downloads/files/datasets/population-estimates/editions/hello/versions/1.csv",
+                                "byte_size": 100000
+                            }
+                        ]
+                    }
+                ],
+                "limit": 20,
+                "offset": 0,
+                "total_count": 3
+            }
+            """
+
+  Scenario: GET /datasets/{id}/editions/{edition}/versions in private mode returns all versions for a publisher user
+    Given private endpoints are enabled
+    And URL rewriting is enabled
+    And I set the "X-Forwarded-Host" header to "api.example.com"
+    And I set the "X-Forwarded-Path-Prefix" header to "v1"
+    And I am a publisher user
     When I GET "/datasets/population-estimates/editions/hello/versions"
     Then I should receive the following JSON response with status "200":
             """
@@ -929,7 +1024,7 @@ Feature: Dataset API
         """
 
 
-  Scenario: PUT published version for Cantabular dataset produces Kafka event and returns OK
+  Scenario: PUT published version for Cantabular dataset produces Kafka event and returns OK for an admin user
     Given private endpoints are enabled
     And I am an admin user
     And I have a real kafka container with topic "cantabular-export-start"
@@ -986,6 +1081,65 @@ Feature: Dataset API
                 "state": "published"
             }
         """
+
+    Scenario: PUT published version for Cantabular dataset produces Kafka event and returns OK for a publisher user
+    Given private endpoints are enabled
+    And I am a publisher user
+    And I have a real kafka container with topic "cantabular-export-start"
+    And these versions need to be published:
+            """
+              [
+               {
+                 "version_id": "test-cantabular-version-2",
+                 "version_number": "1"
+               }
+              ]
+            """
+    When I PUT "/datasets/test-cantabular-dataset-2/editions/2021/versions/1"
+            """
+            {
+              "instance_id": "test-cantabular-version-2",
+              "license": "ONS",
+              "release_date": "2017-04-04",
+              "state": "published",
+              "collection_id": "bla",
+              "links": {
+                "version": {
+                  "id": "1",
+                  "href": "/datasets/test-cantabular-dataset-2/editions/2021/versions/1"
+                }
+              }
+            }
+            """
+    And these cantabular generator downloads events are produced:
+      | InstanceID                | DatasetID                 | Edition | Version |FilterOutputID| Dimensions |
+      | test-cantabular-version-2 | test-cantabular-dataset-2 | 2021    | 1       |              | []         |
+    Then I should receive the following JSON response with status "200":
+        """
+            {
+                "dataset_id": "test-cantabular-dataset-2",
+                "downloads": {
+                    "csv": {
+                    "href": "/downloads/datasets/test-cantabular-dataset-2/editions/2021/versions/1.csv",
+                    "size": "1"
+                    }
+                },
+                "id": "test-cantabular-version-2",
+                "last_updated": "0001-01-01T00:00:00Z",
+                "links": {
+                    "dataset": {
+                    "id": "test-cantabular-dataset-2"
+                    },
+                    "self": {
+                    "href": "/datasets/test-cantabular-dataset-2/editions/2021/versions/1"
+                    }
+                },
+                "release_date": "2017-04-04",
+                "edition": "2021",
+                "state": "published"
+            }
+        """
+
     Scenario: PUT version fails when trying to update edition-id on cantabular dataset
         Given private endpoints are enabled
         And I am an admin user

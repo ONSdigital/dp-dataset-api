@@ -151,9 +151,20 @@ Feature: Static Dataset Version DELETE API
             ]
             """
 
-    Scenario: DELETE single static dataset version with correct parameters successfully
+    Scenario: DELETE single static dataset version with correct parameters successfully for an admin user
         Given private endpoints are enabled
         And I am an admin user
+        And the "ENABLE_DETACH_DATASET" feature flag is "false"
+        And the "ENABLE_DELETE_STATIC_VERSION" feature flag is "true"
+        When I DELETE "/datasets/static-dataset-test/editions/2024/versions/1"
+        Then the HTTP status code should be "204"
+        And the static version "static-version-approved" should not exist
+        And the dataset "static-dataset-test" should exist
+        And the dataset "static-dataset-test" should have next equal to current
+
+    Scenario: DELETE single static dataset version with correct parameters successfully for a publisher user
+        Given private endpoints are enabled
+        And I am a publisher user
         And the "ENABLE_DETACH_DATASET" feature flag is "false"
         And the "ENABLE_DELETE_STATIC_VERSION" feature flag is "true"
         When I DELETE "/datasets/static-dataset-test/editions/2024/versions/1"

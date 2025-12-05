@@ -32,6 +32,35 @@ Feature: Private Dataset API
             }
             """
 
+    Scenario: Successfully creating a new dataset document for a publisher user
+        When I POST "/datasets/ageing-population-estimates"
+            """
+            {
+                "state": "anything",
+                "title": "CID",
+                "type": "filterable"
+            }
+            """
+        And I am a publisher user
+        Then the HTTP status code should be "201"
+        And the document in the database for id "ageing-population-estimates" should be:
+            """
+            {
+                "id": "ageing-population-estimates",
+                "state": "created",
+                "title": "CID",
+                "type": "filterable",
+                "links": {
+                    "editions": {
+                        "href":"http://localhost:22000/datasets/ageing-population-estimates/editions"
+                    },
+                    "self": {
+                        "href":"http://localhost:22000/datasets/ageing-population-estimates"
+                    }
+                }
+            }
+            """
+
     Scenario: A document with the same ID already exists in the database
         Given I have these datasets:
             """
@@ -257,6 +286,40 @@ Feature: Private Dataset API
             ]
             """
         When I GET "/datasets"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "count": 1,
+                "items": [
+                    {
+                        "id": "population-estimates",
+                        "next": {
+                            "id": "population-estimates",
+                            "last_updated":"0001-01-01T00:00:00Z"
+                        },
+                        "current": {
+                            "id": "population-estimates",
+                            "last_updated":"0001-01-01T00:00:00Z"
+                        }
+                    }
+                ],
+                "limit": 20,
+                "offset": 0,
+                "total_count": 1
+            }
+            """
+
+    Scenario: GET /datasets for a publisher user
+        Given I have these datasets:
+            """
+            [
+                {
+                    "id": "population-estimates"
+                }
+            ]
+            """
+        When I GET "/datasets"
+        And I am a publisher user
         Then I should receive the following JSON response with status "200":
             """
             {

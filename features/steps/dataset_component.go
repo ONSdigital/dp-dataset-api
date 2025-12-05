@@ -303,9 +303,19 @@ func getPermissionsDataset() *permissionsSDK.Bundle {
 					ID: "1", // policy
 				},
 			},
+			"groups/role-publisher": {
+				{
+					ID: "1",
+				},
+			},
 		},
 		"datasets:create": {
 			"groups/role-admin": {
+				{
+					ID: "1",
+				},
+			},
+			"groups/role-publisher": {
 				{
 					ID: "1",
 				},
@@ -317,9 +327,19 @@ func getPermissionsDataset() *permissionsSDK.Bundle {
 					ID: "1",
 				},
 			},
+			"groups/role-publisher": {
+				{
+					ID: "1",
+				},
+			},
 		},
 		"datasets:delete": {
 			"groups/role-admin": {
+				{
+					ID: "1",
+				},
+			},
+			"groups/role-publisher": {
 				{
 					ID: "1",
 				},
@@ -331,9 +351,19 @@ func getPermissionsDataset() *permissionsSDK.Bundle {
 					ID: "1",
 				},
 			},
+			"groups/role-publisher": {
+				{
+					ID: "1",
+				},
+			},
 		},
 		"dataset-editions-versions:create": {
 			"groups/role-admin": {
+				{
+					ID: "1",
+				},
+			},
+			"groups/role-publisher": {
 				{
 					ID: "1",
 				},
@@ -345,9 +375,19 @@ func getPermissionsDataset() *permissionsSDK.Bundle {
 					ID: "1",
 				},
 			},
+			"groups/role-publisher": {
+				{
+					ID: "1",
+				},
+			},
 		},
 		"dataset-editions-versions:update": {
 			"groups/role-admin": {
+				{
+					ID: "1",
+				},
+			},
+			"groups/role-publisher": {
 				{
 					ID: "1",
 				},
@@ -359,6 +399,11 @@ func getPermissionsDataset() *permissionsSDK.Bundle {
 					ID: "1",
 				},
 			},
+			"groups/role-publisher": {
+				{
+					ID: "1",
+				},
+			},
 		},
 		"dataset-instances:read": {
 			"groups/role-admin": {
@@ -366,9 +411,19 @@ func getPermissionsDataset() *permissionsSDK.Bundle {
 					ID: "1",
 				},
 			},
+			"groups/role-publisher": {
+				{
+					ID: "1",
+				},
+			},
 		},
 		"dataset-instances:update": {
 			"groups/role-admin": {
+				{
+					ID: "1",
+				},
+			},
+			"groups/role-publisher": {
 				{
 					ID: "1",
 				},

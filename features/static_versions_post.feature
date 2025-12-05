@@ -51,9 +51,31 @@ Feature: Static Dataset Versions POST API
             ]
             """
 
-    Scenario: POST creates a new static dataset version successfully
+    Scenario: POST creates a new static dataset version successfully for an admin user
         Given private endpoints are enabled
         And I am an admin user
+        When I POST "/datasets/static-dataset-test/editions/2024/versions"
+            """
+            {
+                "release_date": "2024-12-01T09:00:00.000Z",
+                "edition_title": "2024",
+                "type": "static",
+                "distributions": [
+                    {
+                        "title": "Full Dataset CSV",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "download_url": "/downloads/files/static-dataset-test/2024/1/filename.csv",
+                        "byte_size": 100000
+                    }
+                ]
+            }
+            """
+        Then the HTTP status code should be "201"
+
+    Scenario: POST creates a new static dataset version successfully for a publisher user
+        Given private endpoints are enabled
+        And I am a publisher user
         When I POST "/datasets/static-dataset-test/editions/2024/versions"
             """
             {
