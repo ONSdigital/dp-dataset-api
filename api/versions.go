@@ -51,7 +51,7 @@ var (
 	}
 )
 
-type SearchContentUpdated struct {
+type SearchContentUpdatedProducer struct {
 	Producer KafkaProducer
 }
 
@@ -851,24 +851,26 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if updatedVersion.State == models.PublishedState {
-		searchContentUpdatedEvent := map[string]interface{}{
-			"uri":          updatedVersion.Links.Version.HRef,
-			"title":        updatedVersion.Edition,
-			"content_type": updatedVersion.Type,
-		}
-		jsonBytes, err := json.Marshal(searchContentUpdatedEvent)
-		if err != nil {
-			log.Error(ctx, "failed to marshal searchContentUpdatedEvent for kafka: %w", err, logData)
-		}
+		if api.searchContentUpdated != nil && api.searchContentUpdated.Producer != nil {
+			searchContentUpdatedEvent := map[string]interface{}{
+				"dataset_id":   updatedVersion.DatasetID,
+				"uri":          updatedVersion.Links.Version.HRef,
+				"title":        updatedVersion.Edition,
+				"content_type": updatedVersion.Type,
+			}
 
-		api.searchContentUpdated.Producer.Output() <- kafka.BytesMessage{Value: jsonBytes, Context: ctx}
-		if err != nil {
-			log.Error(ctx, "putState endpoint: failed to send search content update", err, logData)
-			handleVersionAPIErr(ctx, err, w, logData)
-			return
+			jsonBytes, err := json.Marshal(searchContentUpdatedEvent)
+			if err != nil {
+				log.Error(ctx, "failed to marshal searchContentUpdatedEvent for kafka", err, logData)
+			} else {
+				go func() {
+					api.searchContentUpdated.Producer.Output() <- kafka.BytesMessage{Value: jsonBytes, Context: ctx}
+					log.Info(ctx, "putState endpoint: sent search content update to kafka", logData)
+				}()
+			}
+		} else {
+			log.Info(ctx, "putState endpoint: search content producer not initialized, skipping kafka event", logData)
 		}
-		log.Info(ctx, "putState endpoint: sent search content update to kafka", logData)
-
 	}
 
 	setJSONContentType(w)

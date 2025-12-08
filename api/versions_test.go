@@ -73,7 +73,7 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 		}
 
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions, SearchContentUpdatedProducer{})
 		list, totalCount, err := api.getVersions(w, r, 20, 0)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -108,7 +108,7 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 		}
 
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions, SearchContentUpdatedProducer{})
 		list, totalCount, err := api.getVersions(w, r, 20, 0)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -143,7 +143,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		}
 
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions, SearchContentUpdatedProducer{})
 		_, _, err := api.getVersions(w, r, 20, 0)
 		So(err, ShouldNotBeNil)
 
@@ -167,7 +167,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		}
 
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions, SearchContentUpdatedProducer{})
 		_, _, err := api.getVersions(w, r, 20, 0)
 		So(err, ShouldNotBeNil)
 
@@ -195,7 +195,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		}
 
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions, SearchContentUpdatedProducer{})
 		_, _, err := api.getVersions(w, r, 20, 0)
 		So(err, ShouldNotBeNil)
 
@@ -227,7 +227,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		}
 
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions, SearchContentUpdatedProducer{})
 		_, _, err := api.getVersions(w, r, 20, 0)
 		So(err, ShouldNotBeNil)
 
@@ -258,7 +258,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 		}
 
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions, SearchContentUpdatedProducer{})
 		_, _, err := api.getVersions(w, r, 20, 0)
 		So(err, ShouldNotBeNil)
 
@@ -293,7 +293,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -339,7 +339,7 @@ func TestGetVersionReturnsOK(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		Convey("With an etag", func() {
 			version.ETag = "version-etag"
@@ -399,7 +399,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
@@ -420,7 +420,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -451,7 +451,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -485,7 +485,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -518,7 +518,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -539,7 +539,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -560,7 +560,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -579,7 +579,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -620,7 +620,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -700,7 +700,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		permissions := getAuthorisationHandlerMock()
 
 		Convey("Given a valid request is executed", func() {
-			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 			api.Router.ServeHTTP(w, r)
 
 			Convey("Then the request is successful, with the expected calls", func() {
@@ -737,7 +737,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				return "", nil
 			}
 
-			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 			api.Router.ServeHTTP(w, r)
 
 			Convey("Then the request is successful, with the expected calls including the update retry", func() {
@@ -930,7 +930,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 			api.Router.ServeHTTP(w, r)
 
 			So(w.Code, ShouldEqual, http.StatusOK)
@@ -981,7 +981,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				UnlockInstanceFunc: func(context.Context, string) {},
 			}
 
-			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 			api.Router.ServeHTTP(w, r)
 
 			So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -1108,7 +1108,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 		api.Router.ServeHTTP(w, r)
 
 		ctx := context.Background()
@@ -1251,7 +1251,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 			api.Router.ServeHTTP(w, r)
 
 			So(w.Code, ShouldEqual, http.StatusOK)
@@ -1511,7 +1511,7 @@ func updateVersionDownloadTest(r *http.Request) {
 
 	datasetPermissions := getAuthorisationHandlerMock()
 	permissions := getAuthorisationHandlerMock()
-	api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+	api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 	api.Router.ServeHTTP(w, r)
 
 	So(w.Code, ShouldEqual, http.StatusOK)
@@ -1592,7 +1592,7 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 			datasetPermissions := getAuthorisationHandlerMock()
 			permissions := getAuthorisationHandlerMock()
 
-			api := GetAPIWithCMDMocks(mockedDataStore, mockDownloadGenerator, datasetPermissions, permissions, SearchContentUpdated{})
+			api := GetAPIWithCMDMocks(mockedDataStore, mockDownloadGenerator, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then an internal server error response is returned", func() {
@@ -1685,7 +1685,7 @@ func TestPutEmptyVersion(t *testing.T) {
 
 			datasetPermissions := getAuthorisationHandlerMock()
 			permissions := getAuthorisationHandlerMock()
-			api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions, SearchContentUpdated{})
+			api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a http status ok is returned", func() {
@@ -1749,7 +1749,7 @@ func TestPutEmptyVersion(t *testing.T) {
 
 			datasetPermissions := getAuthorisationHandlerMock()
 			permissions := getAuthorisationHandlerMock()
-			api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions, SearchContentUpdated{})
+			api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a http status ok is returned", func() {
@@ -1807,7 +1807,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -1847,7 +1847,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -1891,7 +1891,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -1926,7 +1926,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -1961,7 +1961,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -2017,7 +2017,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -2071,7 +2071,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -2128,7 +2128,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -2168,7 +2168,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -2209,7 +2209,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusForbidden)
@@ -2273,7 +2273,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -2409,7 +2409,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -2810,7 +2810,7 @@ func TestDetachVersionReturnOK(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -2877,7 +2877,7 @@ func TestDetachVersionReturnOK(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -2926,7 +2926,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -2961,7 +2961,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -2999,7 +2999,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -3040,7 +3040,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -3081,7 +3081,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -3130,7 +3130,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -3182,7 +3182,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -3222,7 +3222,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -3250,7 +3250,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -3278,7 +3278,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -3330,7 +3330,7 @@ func TestDeleteVersionStaticDatasetReturnOK(t *testing.T) {
 		}
 
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -3360,7 +3360,7 @@ func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -3402,7 +3402,7 @@ func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -3444,7 +3444,7 @@ func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -3494,7 +3494,7 @@ func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -3530,7 +3530,7 @@ func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -3569,7 +3569,7 @@ func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -3740,7 +3740,7 @@ func TestPutStateReturnsOk(t *testing.T) {
 
 		permissions := getAuthorisationHandlerMock()
 		scuProducerMock := getSearchContentUpdatedMock()
-		searchContentUpdated := SearchContentUpdated{Producer: scuProducerMock}
+		searchContentUpdated := SearchContentUpdatedProducer{Producer: scuProducerMock}
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions, searchContentUpdated)
 		api.Router.ServeHTTP(w, r)
 
@@ -3768,7 +3768,7 @@ func TestPutStateReturnsError(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{}
 
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions, SearchContentUpdatedProducer{})
 
 		api.putState(w, r)
 
@@ -3784,7 +3784,7 @@ func TestPutStateReturnsError(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{}
 
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -3800,7 +3800,7 @@ func TestPutStateReturnsError(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{}
 
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -3819,7 +3819,7 @@ func TestPutStateReturnsError(t *testing.T) {
 		}
 
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -3838,7 +3838,7 @@ func TestPutStateReturnsError(t *testing.T) {
 		}
 
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, permissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -4213,7 +4213,7 @@ func TestPutVersionEditionValidationNonStatic(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdated{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 

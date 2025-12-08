@@ -392,49 +392,59 @@ Feature: Static Dataset Versions PUT API
             """
     Then the HTTP status code should be "200"
 
-    Scenario: PUT state handles idempotent transitions correctly
-        Given I have a static dataset with version:
-            """
-            {
-                "dataset": {
-                    "id": "static-dataset-published",
-                    "title": "Static Dataset Published Test",
-                    "state": "published",
-                    "type": "static"
-                },
-                "version": {
-                    "id": "static-version-published",
-                    "edition": "2025",
-                    "edition_title": "2025 Edition",
-                    "links": {
-                        "dataset": {
-                            "id": "static-dataset-published"
-                        },
-                        "edition": {
-                            "href": "/datasets/static-dataset-published/editions/2025",
-                            "id": "2025"
-                        },
-                        "self": {
-                            "href": "/datasets/static-dataset-published/editions/2025/versions/1"
-                        }
+  Scenario: PUT state handles idempotent transitions correctly
+    Given I have a static dataset with version:
+        """
+        {
+            "dataset": {
+                "id": "static-dataset-published",
+                "title": "Static Dataset Published Test",
+                "state": "published",
+                "type": "static"
+            },
+            "version": {
+                "id": "static-version-published",
+                "edition": "2025",
+                "edition_title": "2025 Edition",
+                "links": {
+                    "dataset": {
+                        "id": "static-dataset-published"
                     },
-                    "version": 1,
-                    "release_date": "2025-01-01T09:00:00.000Z",
-                    "state": "published",
-                    "type": "static"
-                }
+                    "edition": {
+                        "href": "/datasets/static-dataset-published/editions/2025",
+                        "id": "2025"
+                    },
+                    "self": {
+                        "href": "/datasets/static-dataset-published/editions/2025/versions/1"
+                    }
+                },
+                "version": 1,
+                "release_date": "2025-01-01T09:00:00.000Z",
+                "state": "published",
+                "type": "static"
             }
-            """
-        And private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
-        When I PUT "/datasets/static-dataset-published/editions/2025/versions/1/state"
-            """
-            {
-                "state": "published"
-            }
-            """
-        Then the HTTP status code should be "200"
+        }
+        """
+    And private endpoints are enabled
+    And I am identified as "user@ons.gov.uk"
+    And I have a real kafka container with topic "search-content-updated"
+    And I am authorised
+    When I PUT "/datasets/static-dataset-published/editions/2025/versions/1/state"
+        """
+        {
+            "state": "published"
+        }
+        """
+    Then the HTTP status code should be "200"
+    And these kafka messages are produced:
+        """
+        {
+          "content_type": "static",
+          "dataset_id": "",
+          "title": "2025",
+          "uri": "/datasets/static-dataset-published/editions/2025/versions/1"
+        }
+        """
 
     Scenario: PUT succeeds when updating edition ID to unique value within series
         Given private endpoints are enabled
