@@ -41,7 +41,7 @@ func (q *QueryParams) Validate() error {
 	return nil
 }
 
-// GetVersion gets a specific version for an edition from the dataset api
+// GetVersion retrieves a specific version for an edition of a dataset
 func (c *Client) GetVersion(ctx context.Context, headers Headers, datasetID, editionID, versionID string) (version models.Version, err error) {
 	version = models.Version{}
 	// Build uri
@@ -52,7 +52,7 @@ func (c *Client) GetVersion(ctx context.Context, headers Headers, datasetID, edi
 	}
 
 	// Make request
-	resp, err := c.DoAuthenticatedGetRequest(ctx, headers, uri)
+	resp, err := c.doAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {
 		return version, err
 	}
@@ -76,7 +76,7 @@ func (c *Client) GetVersionV2(ctx context.Context, headers Headers, datasetID, e
 	}
 
 	// Make request
-	resp, err := c.DoAuthenticatedGetRequest(ctx, headers, uri)
+	resp, err := c.doAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {
 		return version, err
 	}
@@ -105,7 +105,7 @@ func (c *Client) GetVersionDimensions(ctx context.Context, headers Headers, data
 	}
 
 	// Make request
-	resp, err := c.DoAuthenticatedGetRequest(ctx, headers, uri)
+	resp, err := c.doAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {
 		return versionDimensionsList, err
 	}
@@ -166,7 +166,7 @@ func (c *Client) GetVersionDimensionOptions(ctx context.Context, headers Headers
 	}
 
 	// Make request
-	resp, err := c.DoAuthenticatedGetRequest(ctx, headers, uri)
+	resp, err := c.doAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {
 		return versionDimensionOptionsList, err
 	}
@@ -190,7 +190,7 @@ func (c *Client) GetVersionMetadata(ctx context.Context, headers Headers, datase
 	}
 
 	// Make request
-	resp, err := c.DoAuthenticatedGetRequest(ctx, headers, uri)
+	resp, err := c.doAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {
 		return metadata, err
 	}
@@ -213,7 +213,7 @@ type VersionsList struct {
 	TotalCount int              `json:"total_count"`
 }
 
-// GetVersions gets all versions for an edition from the dataset api
+// GetVersions returns a paginated list of versions for an edition
 func (c *Client) GetVersions(ctx context.Context, headers Headers, datasetID, editionID string, queryParams *QueryParams) (versionsList VersionsList, err error) {
 	versionsList = VersionsList{}
 	// Build uri
@@ -236,7 +236,7 @@ func (c *Client) GetVersions(ctx context.Context, headers Headers, datasetID, ed
 	}
 
 	// Make request
-	resp, err := c.DoAuthenticatedGetRequest(ctx, headers, uri)
+	resp, err := c.doAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {
 		return versionsList, err
 	}
@@ -249,6 +249,7 @@ func (c *Client) GetVersions(ctx context.Context, headers Headers, datasetID, ed
 	return versionsList, err
 }
 
+// PutVersion updates a specific version for a dataset series
 func (c *Client) PutVersion(ctx context.Context, headers Headers, datasetID, editionID, versionID string, version models.Version) (updatedVersion models.Version, err error) {
 	if err := validateRequiredParams(map[string]string{
 		"datasetID": datasetID,
@@ -269,7 +270,7 @@ func (c *Client) PutVersion(ctx context.Context, headers Headers, datasetID, edi
 		return updatedVersion, err
 	}
 
-	resp, err := c.DoAuthenticatedPutRequest(ctx, headers, uri, requestBody)
+	resp, err := c.doAuthenticatedPutRequest(ctx, headers, uri, requestBody)
 	if err != nil {
 		return updatedVersion, err
 	}
@@ -291,6 +292,7 @@ func (c *Client) PutVersion(ctx context.Context, headers Headers, datasetID, edi
 	return updatedVersion, nil
 }
 
+// PutVersionState updates the state of a specific version for a dataset series
 func (c *Client) PutVersionState(ctx context.Context, headers Headers, datasetID, editionID, versionID, state string) (err error) {
 	if err := validateRequiredParams(map[string]string{
 		"datasetID": datasetID,
@@ -317,7 +319,7 @@ func (c *Client) PutVersionState(ctx context.Context, headers Headers, datasetID
 		return err
 	}
 
-	resp, err := c.DoAuthenticatedPutRequest(ctx, headers, uri, requestBody)
+	resp, err := c.doAuthenticatedPutRequest(ctx, headers, uri, requestBody)
 	if err != nil {
 		return err
 	}
@@ -356,7 +358,7 @@ func (c *Client) PostVersion(ctx context.Context, headers Headers, datasetID, ed
 		return createdVersion, err
 	}
 
-	resp, err := c.DoAuthenticatedPostRequest(ctx, headers, uri, requestBody)
+	resp, err := c.doAuthenticatedPostRequest(ctx, headers, uri, requestBody)
 	if err != nil {
 		return createdVersion, err
 	}
