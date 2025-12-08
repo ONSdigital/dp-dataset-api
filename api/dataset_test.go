@@ -94,7 +94,7 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 		models.CantabularTable:         mockedGeneratedDownloads,
 		models.CantabularFlexibleTable: mockedGeneratedDownloads,
 	}
-	
+
 	states := []application.State{application.Published, application.EditionConfirmed, application.Associated}
 	transitions := []application.Transition{{
 		Label:               "published",
