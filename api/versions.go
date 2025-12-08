@@ -797,7 +797,7 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if updatedVersion.State == models.PublishedState {
-		if api.searchContentUpdated != nil && api.searchContentUpdated.Producer != nil {
+		if api.searchContentUpdatedProducer != nil && api.searchContentUpdatedProducer.Producer != nil {
 			searchContentUpdatedEvent := map[string]interface{}{
 				"dataset_id":   updatedVersion.DatasetID,
 				"uri":          updatedVersion.Links.Version.HRef,
@@ -810,7 +810,7 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 				log.Error(ctx, "failed to marshal searchContentUpdatedEvent for kafka", err, logData)
 			} else {
 				go func() {
-					api.searchContentUpdated.Producer.Output() <- kafka.BytesMessage{Value: jsonBytes, Context: ctx}
+					api.searchContentUpdatedProducer.Producer.Output() <- kafka.BytesMessage{Value: jsonBytes, Context: ctx}
 					log.Info(ctx, "putState endpoint: sent search content update to kafka", logData)
 				}()
 			}
