@@ -427,7 +427,7 @@ Feature: Static Dataset Versions PUT API
         """
     And private endpoints are enabled
     And I am identified as "user@ons.gov.uk"
-#    And I have a real kafka container with topic "search-content-updated"
+    And I have a real kafka container with topic "search-content-updated"
     And I am authorised
     When I PUT "/datasets/static-dataset-published/editions/2025/versions/1/state"
         """
@@ -436,11 +436,12 @@ Feature: Static Dataset Versions PUT API
         }
         """
     Then the HTTP status code should be "200"
-#    And these kafka messages are produced:
-#        """
-#        {
-#          "content_type": "static",
-#          "title": "Static Dataset Published Test",
-#          "uri": "http://localhost:22000/datasets/static-dataset-published/editions/2025/versions/1
-#        }
-#        """
+    And these kafka messages are produced:
+        """
+        {
+          "content_type": "static",
+          "dataset_id": "",
+          "title": "2025",
+          "uri": "/datasets/static-dataset-published/editions/2025/versions/1"
+        }
+        """

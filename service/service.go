@@ -49,7 +49,7 @@ type Service struct {
 	mongoDB                             store.MongoDB
 	generateCMDDownloadsProducer        kafka.IProducer
 	generateCantabularDownloadsProducer kafka.IProducer
-	searchContentUpdatedProducer        kafka.IProducer
+	searchContentUpdatedKafkaProducer   kafka.IProducer
 	identityClient                      *clientsidentity.Client
 	filesAPIClient                      filesAPISDK.Clienter
 	server                              HTTPServer
@@ -251,7 +251,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 			log.Fatal(ctx, "could not obtain generate downloads producer for cantabular", err)
 			return err
 		}
-		svc.searchContentUpdatedProducer, err = svc.serviceList.GetProducer(ctx, svc.config, svc.config.SearchContentUpdatedTopic)
+		svc.searchContentUpdatedKafkaProducer, err = svc.serviceList.GetProducer(ctx, svc.config, svc.config.SearchContentUpdatedTopic)
 		if err != nil {
 			log.Fatal(ctx, "could not obtain search content updated producer", err)
 			return err
@@ -268,8 +268,8 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		Marshaller: schema.GenerateCMDDownloadsEvent,
 	}
 
-	searchContentUpdated := &api.SearchContentUpdated{
-		Producer: adapter.NewProducerAdapter(svc.searchContentUpdatedProducer),
+	searchContentUpdatedProducer := &api.SearchContentUpdatedProducer{
+		Producer: adapter.NewProducerAdapter(svc.searchContentUpdatedKafkaProducer),
 	}
 
 	downloadGenerators := map[models.DatasetType]api.DownloadsGenerator{
@@ -329,7 +329,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	datasetPermissions, permissions := getAuthorisationHandlers(ctx, svc.config)
 	sm := GetStateMachine(ctx, ds)
 	svc.smDS = application.Setup(ds, smDownloadGenerators, sm)
-	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions, enableURLRewriting, svc.smDS, searchContentUpdated)
+	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions, enableURLRewriting, svc.smDS, searchContentUpdatedProducer)
 
 	// Set the files API client on the DatasetAPI after initialisation
 	if svc.config.EnablePrivateEndpoints && svc.filesAPIClient != nil {
@@ -343,7 +343,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	if svc.config.EnablePrivateEndpoints {
 		svc.generateCMDDownloadsProducer.LogErrors(ctx)
 		svc.generateCantabularDownloadsProducer.LogErrors(ctx)
-		svc.searchContentUpdatedProducer.LogErrors(ctx)
+		svc.searchContentUpdatedKafkaProducer.LogErrors(ctx)
 	}
 
 	// Run the http server in a new go-routine
@@ -578,7 +578,7 @@ func (svc *Service) registerCheckers(ctx context.Context) (err error) {
 			log.Error(ctx, "error adding check for cantabular kafka downloads producer", err)
 		}
 
-		if err = svc.healthCheck.AddCheck("Kafka Search Content Updated Producer", svc.searchContentUpdatedProducer.Checker); err != nil {
+		if err = svc.healthCheck.AddCheck("Kafka Search Content Updated Producer", svc.searchContentUpdatedKafkaProducer.Checker); err != nil {
 			hasErrors = true
 			log.Error(ctx, "error adding check for search content updated kafka producer", err)
 		}

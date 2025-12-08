@@ -275,7 +275,17 @@ func (c *DatasetComponent) theseCantabularGeneratorDownloadsEventsAreProduced(ev
 	return nil
 }
 
-func (c *DatasetComponent) theseKafkaMessagesAreProduced(events *godog.Table) error {
+func (c *DatasetComponent) theseKafkaMessagesAreProduced(kafkaJSON *godog.DocString) error {
+	var expectedPayload interface{}
+	if err := json.Unmarshal([]byte(kafkaJSON.Content), &expectedPayload); err != nil {
+		return fmt.Errorf("failed to unmarshal kafkaJSON: %w", err)
+	}
+	expectedJSON, err := json.Marshal(expectedPayload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal expected payload: %w", err)
+	}
+	expected := []string{string(expectedJSON)}
+
 	messages := []string{}
 	listen := true
 
@@ -295,7 +305,7 @@ func (c *DatasetComponent) theseKafkaMessagesAreProduced(events *godog.Table) er
 		}
 	}
 
-	if diff := cmp.Diff(messages, events); diff != "" {
+	if diff := cmp.Diff(messages, expected); diff != "" {
 		return fmt.Errorf("-got +expected)\n%s", diff)
 	}
 	return nil
