@@ -679,7 +679,7 @@ func TestAddDatasetVersionCondensed_Success(t *testing.T) {
 		}
 
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{},
-			getAuthorisationHandlerMock(), getAuthorisationHandlerMock())
+			getAuthorisationHandlerMock(), getAuthorisationHandlerMock(), SearchContentUpdatedProducer{})
 
 		success, failure := api.addDatasetVersionCondensed(w, r)
 
@@ -1034,7 +1034,7 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 		}
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
 
 		So(errorResponse.Status, ShouldEqual, http.StatusConflict)
@@ -1176,6 +1176,7 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 			&mocks.DownloadsGeneratorMock{},
 			getAuthorisationHandlerMock(),
 			getAuthorisationHandlerMock(),
+			SearchContentUpdatedProducer{},
 		)
 
 		success, errResp := api.addDatasetVersionCondensed(w, r)
@@ -1210,6 +1211,7 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 			&mocks.DownloadsGeneratorMock{},
 			getAuthorisationHandlerMock(),
 			getAuthorisationHandlerMock(),
+			SearchContentUpdatedProducer{},
 		)
 
 		success, errResp := api.addDatasetVersionCondensed(w, r)
@@ -1816,7 +1818,7 @@ func TestCreateVersion_Failure(t *testing.T) {
 		}
 
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{},
-			datasetPermissions, permissions)
+			datasetPermissions, permissions, SearchContentUpdatedProducer{})
 
 		r := createRequestWithAuth(
 			"POST",
@@ -1879,7 +1881,7 @@ func TestCreateVersion_Failure(t *testing.T) {
 		}
 
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{},
-			getAuthorisationHandlerMock(), getAuthorisationHandlerMock())
+			getAuthorisationHandlerMock(), getAuthorisationHandlerMock(), SearchContentUpdatedProducer{})
 
 		success, errResp := api.createVersion(w, r)
 

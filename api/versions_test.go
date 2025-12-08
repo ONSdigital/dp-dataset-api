@@ -803,7 +803,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 		api.Router.ServeHTTP(w, r)
 
 		Convey("Then it returns a 409 Conflict status", func() {
@@ -861,7 +861,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 
 		datasetPermissions := getAuthorisationHandlerMock()
 		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions, SearchContentUpdatedProducer{})
 		api.Router.ServeHTTP(w, r)
 
 		Convey("Then it returns a 409 Conflict status", func() {
@@ -2467,7 +2467,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mocked, &mocks.DownloadsGeneratorMock{}, getAuthorisationHandlerMock(), getAuthorisationHandlerMock())
+		api := GetAPIWithCMDMocks(mocked, &mocks.DownloadsGeneratorMock{}, getAuthorisationHandlerMock(), getAuthorisationHandlerMock(), SearchContentUpdatedProducer{})
 		api.Router.ServeHTTP(w, r)
 
 		Convey("Then the API returns 400 with missing-format error", func() {
@@ -2509,7 +2509,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mocked, &mocks.DownloadsGeneratorMock{}, getAuthorisationHandlerMock(), getAuthorisationHandlerMock())
+		api := GetAPIWithCMDMocks(mocked, &mocks.DownloadsGeneratorMock{}, getAuthorisationHandlerMock(), getAuthorisationHandlerMock(), SearchContentUpdatedProducer{})
 		api.Router.ServeHTTP(w, r)
 
 		Convey("Then API returns 400 with invalid-format error", func() {
