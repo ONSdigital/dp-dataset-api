@@ -687,7 +687,7 @@ func Test_GetVersionsInBatches(t *testing.T) {
 		})
 
 		Convey("then GetDatasetsBatchProcess calls the batchProcessor function twice, with the expected batches", func() {
-			err := datasetAPIClient.GetVersionsBatchProcess(ctx, headers, datasetID, edition, testProcess, batchSize, maxWorkers)
+			err := datasetAPIClient.getVersionsBatchProcess(ctx, headers, datasetID, edition, testProcess, batchSize, maxWorkers)
 			So(err, ShouldBeNil)
 			So(processedBatches, ShouldResemble, []VersionsList{versionsResponse1, versionsResponse2})
 			So(httpClient.DoCalls(), ShouldHaveLength, 2)
@@ -716,7 +716,7 @@ func Test_GetVersionsInBatches(t *testing.T) {
 		})
 
 		Convey("then GetDatasetsBatchProcess fails with the expected error and doesn't call the batchProcessor", func() {
-			err := datasetAPIClient.GetVersionsBatchProcess(ctx, headers, datasetID, edition, testProcess, batchSize, maxWorkers)
+			err := datasetAPIClient.getVersionsBatchProcess(ctx, headers, datasetID, edition, testProcess, batchSize, maxWorkers)
 			So(err.(*ErrInvalidDatasetAPIResponse).actualCode, ShouldEqual, http.StatusBadRequest)
 			So(err.(*ErrInvalidDatasetAPIResponse).uri, ShouldResemble, "http://localhost:22000/datasets/test-dataset/editions/test-edition/versions?limit=1&offset=0")
 			So(processedBatches, ShouldResemble, []VersionsList{})
@@ -743,7 +743,7 @@ func Test_GetVersionsInBatches(t *testing.T) {
 		})
 
 		Convey("then GetDatasetsBatchProcess fails with the expected error and calls the batchProcessor for the first batch only", func() {
-			err := datasetAPIClient.GetVersionsBatchProcess(ctx, headers, datasetID, edition, testProcess, batchSize, maxWorkers)
+			err := datasetAPIClient.getVersionsBatchProcess(ctx, headers, datasetID, edition, testProcess, batchSize, maxWorkers)
 			So(err.(*ErrInvalidDatasetAPIResponse).actualCode, ShouldEqual, http.StatusBadRequest)
 			So(err.(*ErrInvalidDatasetAPIResponse).uri, ShouldResemble, "http://localhost:22000/datasets/test-dataset/editions/test-edition/versions?limit=1&offset=1")
 			So(processedBatches, ShouldResemble, []VersionsList{versionsResponse1})

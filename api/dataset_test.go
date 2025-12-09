@@ -15,7 +15,7 @@ import (
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
 
 	authMock "github.com/ONSdigital/dp-authorisation/v2/authorisation/mock"
-	"github.com/ONSdigital/dp-permissions-api/sdk"
+	permissionsAPISDK "github.com/ONSdigital/dp-permissions-api/sdk"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/application"
@@ -166,7 +166,7 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 	testIdentityClient := clientsidentity.New(cfg.ZebedeeURL)
 
 	permissionsChecker := &authMock.PermissionsCheckerMock{
-		HasPermissionFunc: func(ctx context.Context, entityData sdk.EntityData, permission string, attributes map[string]string) (bool, error) {
+		HasPermissionFunc: func(ctx context.Context, entityData permissionsAPISDK.EntityData, permission string, attributes map[string]string) (bool, error) {
 			return true, nil
 		},
 	}
@@ -318,8 +318,8 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return nil, sdk.ErrFailedToParsePermissionsResponse
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return nil, permissionsAPISDK.ErrFailedToParsePermissionsResponse
 			},
 		}
 
@@ -350,8 +350,8 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return nil, sdk.ErrFailedToParsePermissionsResponse
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return nil, permissionsAPISDK.ErrFailedToParsePermissionsResponse
 			},
 		}
 
@@ -382,8 +382,8 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return nil, sdk.ErrFailedToParsePermissionsResponse
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return nil, permissionsAPISDK.ErrFailedToParsePermissionsResponse
 			},
 		}
 
@@ -419,8 +419,8 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return nil, sdk.ErrFailedToParsePermissionsResponse
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return nil, permissionsAPISDK.ErrFailedToParsePermissionsResponse
 			},
 		}
 
@@ -459,8 +459,8 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -492,8 +492,8 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -521,8 +521,8 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -554,8 +554,8 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -632,8 +632,8 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -658,8 +658,8 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -708,8 +708,8 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return nil, sdk.ErrFailedToParsePermissionsResponse
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return nil, permissionsAPISDK.ErrFailedToParsePermissionsResponse
 			},
 		}
 
@@ -735,8 +735,8 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -765,8 +765,8 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -799,8 +799,8 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -833,8 +833,8 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -867,8 +867,8 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -901,8 +901,8 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -935,8 +935,8 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -969,8 +969,8 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -2514,8 +2514,8 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 

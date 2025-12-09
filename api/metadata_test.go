@@ -18,7 +18,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
-	"github.com/ONSdigital/dp-permissions-api/sdk"
+	permissionsAPISDK "github.com/ONSdigital/dp-permissions-api/sdk"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -462,8 +462,8 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -527,8 +527,8 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -594,8 +594,8 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -657,8 +657,8 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -690,8 +690,8 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -729,8 +729,8 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return nil, sdk.ErrFailedToParsePermissionsResponse
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return nil, permissionsAPISDK.ErrFailedToParsePermissionsResponse
 			},
 		}
 
@@ -767,8 +767,8 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -805,8 +805,8 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -838,8 +838,8 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -877,8 +877,8 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -903,8 +903,8 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -930,8 +930,8 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -957,8 +957,8 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -999,8 +999,8 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -1044,8 +1044,8 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 

@@ -58,7 +58,7 @@ func (c *Client) PutInstance(ctx context.Context, headers Headers, instanceID st
 		return "", fmt.Errorf("did not receive success response. received status %d, response body: %s", resp.StatusCode, *responseBody)
 	}
 
-	eTag, err = GetResponseETag(resp)
+	eTag, err = getResponseETag(resp)
 	if err != nil && err != ErrHeaderNotFound {
 		return "", err
 	}

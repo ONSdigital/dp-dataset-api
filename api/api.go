@@ -20,7 +20,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/url"
 	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	dprequest "github.com/ONSdigital/dp-net/v3/request"
-	"github.com/ONSdigital/dp-permissions-api/sdk"
+	permissionsAPISDK "github.com/ONSdigital/dp-permissions-api/sdk"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 
@@ -475,12 +475,13 @@ func (api *DatasetAPI) checkUserPermission(r *http.Request, logData log.Data, pe
 				return false
 			}
 			// valid
-			entityData = &sdk.EntityData{UserID: resp.Identifier}
+			entityData = &permissionsAPISDK.EntityData{UserID: resp.Identifier}
 		}
 		logData["entity_data"] = entityData
 
 		hasPermission, err := api.permissionsChecker.HasPermission(r.Context(), *entityData, permission, nil)
 		if err != nil {
+			log.Error(r.Context(), "permissions check errored", err, logData)
 			return false
 		}
 

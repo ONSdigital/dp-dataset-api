@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/ONSdigital/dp-dataset-api/models"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -13,7 +14,7 @@ func Test_PutMetadata(t *testing.T) {
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
 
 		Convey("when put metadata is called", func() {
-			metadata := EditableMetadata{Description: "test dataset", Title: "testing 1234"}
+			metadata := models.EditableMetadata{Description: "test dataset", Title: "testing 1234"}
 			err := datasetAPIClient.PutMetadata(ctx, headers, "666", "test", "1", metadata, "1234")
 
 			Convey("then no error is returned", func() {
@@ -27,7 +28,7 @@ func Test_PutMetadata(t *testing.T) {
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
 
 		Convey("when put instance is called", func() {
-			metadata := EditableMetadata{Description: "test dataset", Title: "testing 1234"}
+			metadata := models.EditableMetadata{Description: "test dataset", Title: "testing 1234"}
 			err := datasetAPIClient.PutMetadata(ctx, headers, "666", "test", "1", metadata, "1234")
 
 			Convey("then an error is returned", func() {

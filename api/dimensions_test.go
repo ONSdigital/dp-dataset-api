@@ -12,7 +12,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
-	"github.com/ONSdigital/dp-permissions-api/sdk"
+	permissionsAPISDK "github.com/ONSdigital/dp-permissions-api/sdk"
 	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
 	"go.mongodb.org/mongo-driver/bson"
@@ -91,8 +91,8 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -121,8 +121,8 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -148,8 +148,8 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -175,8 +175,8 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -203,8 +203,8 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -230,8 +230,8 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -286,8 +286,8 @@ func TestGetDimensionOptionsReturnsOk(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -462,8 +462,8 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 				RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 					return handlerFunc
 				},
-				ParseFunc: func(token string) (*sdk.EntityData, error) {
-					return &sdk.EntityData{UserID: "admin"}, nil
+				ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+					return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 				},
 			}
 
@@ -488,8 +488,8 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -517,8 +517,8 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -547,8 +547,8 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 
@@ -574,8 +574,8 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
-			ParseFunc: func(token string) (*sdk.EntityData, error) {
-				return &sdk.EntityData{UserID: "admin"}, nil
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
 

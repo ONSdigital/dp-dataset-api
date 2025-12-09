@@ -11,34 +11,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-// EditableMetadata represents the metadata fields that can be edited
-type EditableMetadata struct {
-	Alerts            *[]models.Alert         `json:"alerts,omitempty"`
-	CanonicalTopic    string                  `json:"canonical_topic,omitempty"`
-	Contacts          []models.ContactDetails `json:"contacts,omitempty"`
-	Description       string                  `json:"description,omitempty"`
-	Dimensions        []models.Dimension      `json:"dimensions,omitempty"`
-	Keywords          []string                `json:"keywords,omitempty"`
-	LatestChanges     *[]models.LatestChange  `json:"latest_changes,omitempty"`
-	License           string                  `json:"license,omitempty"`
-	Methodologies     []models.GeneralDetails `json:"methodologies,omitempty"`
-	NationalStatistic *bool                   `json:"national_statistic,omitempty"`
-	NextRelease       string                  `json:"next_release,omitempty"`
-	Publications      []models.GeneralDetails `json:"publications,omitempty"`
-	QMI               *models.GeneralDetails  `json:"qmi,omitempty"`
-	RelatedDatasets   []models.GeneralDetails `json:"related_datasets,omitempty"`
-	ReleaseDate       string                  `json:"release_date,omitempty"`
-	ReleaseFrequency  string                  `json:"release_frequency,omitempty"`
-	Title             string                  `json:"title,omitempty"`
-	Survey            string                  `json:"survey,omitempty"`
-	Subtopics         []string                `json:"subtopics,omitempty"`
-	UnitOfMeasure     string                  `json:"unit_of_measure,omitempty"`
-	UsageNotes        *[]models.UsageNote     `json:"usage_notes,omitempty"`
-	RelatedContent    []models.GeneralDetails `json:"related_content,omitempty"`
-}
-
 // PutMetadata updates the dataset and the version metadata
-func (c *Client) PutMetadata(ctx context.Context, headers Headers, datasetID, edition, version string, metadata EditableMetadata, versionEtag string) error {
+func (c *Client) PutMetadata(ctx context.Context, headers Headers, datasetID, edition, version string, metadata models.EditableMetadata, versionEtag string) error {
 	var err error
 	uri := &url.URL{}
 	uri.Path, err = url.JoinPath(c.hcCli.URL, "datasets", datasetID, "editions", edition, "versions", version, "metadata")

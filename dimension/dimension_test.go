@@ -13,7 +13,7 @@ import (
 
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
 	authMock "github.com/ONSdigital/dp-authorisation/v2/authorisation/mock"
-	"github.com/ONSdigital/dp-permissions-api/sdk"
+	permissionsAPISDK "github.com/ONSdigital/dp-permissions-api/sdk"
 
 	"github.com/ONSdigital/dp-dataset-api/api"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -2036,7 +2036,7 @@ func getAPIWithCMDMocks(ctx context.Context, mockedDataStore store.Storer, mocke
 	}
 
 	permissionsChecker := &authMock.PermissionsCheckerMock{
-		HasPermissionFunc: func(ctx context.Context, entityData sdk.EntityData, permission string, attributes map[string]string) (bool, error) {
+		HasPermissionFunc: func(ctx context.Context, entityData permissionsAPISDK.EntityData, permission string, attributes map[string]string) (bool, error) {
 			return true, nil
 		},
 	}

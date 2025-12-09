@@ -29,7 +29,7 @@ var (
 
 // GetResponseETag returns the value of "ETag" response header if it exists, returns
 // ErrResponseNil if the header is not found.
-func GetResponseETag(resp *http.Response) (string, error) {
+func getResponseETag(resp *http.Response) (string, error) {
 	return getResponseHeader(resp, eTagHeader)
 }
 

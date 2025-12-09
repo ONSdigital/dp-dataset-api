@@ -113,8 +113,6 @@ Feature: Dataset API
     Scenario: GET /instances/test-item-1/dimensions in private mode returns first page of 20 instance dimensions for an admin user
         Given private endpoints are enabled
         And I am an admin user
-        And I set the "X-Forwarded-Host" header to "api.example.com"
-        And I set the "X-Forwarded-Path-Prefix" header to "v1"
         When I GET "/instances/test-item-1/dimensions"
         Then I should receive the following JSON response with status "200":
             """
@@ -203,8 +201,6 @@ Feature: Dataset API
     Scenario: GET /instances/test-item-1/dimensions in private mode returns first page of 20 instance dimensions for a publisher user
         Given private endpoints are enabled
         And I am a publisher user
-        And I set the "X-Forwarded-Host" header to "api.example.com"
-        And I set the "X-Forwarded-Path-Prefix" header to "v1"
         When I GET "/instances/test-item-1/dimensions"
         Then I should receive the following JSON response with status "200":
             """
@@ -293,8 +289,6 @@ Feature: Dataset API
     Scenario: GET /instances/test-item-1/dimensions?offset=3&limit=7 in private mode returns the paginated instance dimensions values according to offset and limit
         Given private endpoints are enabled
         And I am an admin user
-        And I set the "X-Forwarded-Host" header to "api.example.com"
-        And I set the "X-Forwarded-Path-Prefix" header to "v1"
         When I GET "/instances/test-item-1/dimensions?offset=3&limit=7"
         Then I should receive the following JSON response with status "200":
             """
