@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/ONSdigital/dp-dataset-api/cloudflare"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/store"
@@ -22,6 +23,7 @@ type ExternalServiceList struct {
 	HealthCheck               bool
 	MongoDB                   bool
 	FilesAPIClient            bool
+	CloudflareClient          bool
 	Init                      Initialiser
 }
 
@@ -97,6 +99,20 @@ func (e *ExternalServiceList) GetFilesAPIClient(ctx context.Context, cfg *config
 	return nil, nil
 }
 
+// GetCloudflareClient returns a Cloudflare client
+func (e *ExternalServiceList) GetCloudflareClient(ctx context.Context, cfg *config.Configuration) (cloudflare.Clienter, error) {
+	cloudflareClient, err := e.Init.DoGetCloudflareClient(ctx, cfg)
+	if err != nil {
+		log.Error(ctx, "failed to initialise cloudflare client", err)
+		return nil, err
+	}
+	if cloudflareClient != nil {
+		e.CloudflareClient = true
+		log.Info(ctx, "cloudflare client created successfully")
+	}
+	return cloudflareClient, nil
+}
+
 // DoGetHTTPServer creates an HTTP Server with the provided bind address and router
 func (e *Init) DoGetHTTPServer(bindAddr string, router http.Handler) HTTPServer {
 	s := dphttp.NewServer(bindAddr, router)
@@ -162,4 +178,37 @@ func (e *Init) DoGetMongoDB(ctx context.Context, cfg config.MongoConfig) (store.
 // DoGetFilesAPIClient returns a files API client
 func (e *Init) DoGetFilesAPIClient(ctx context.Context, cfg *config.Configuration) (filesAPISDK.Clienter, error) {
 	return filesAPISDK.New(cfg.FilesAPIURL, cfg.ServiceAuthToken), nil
+}
+
+// DoGetCloudflareClient returns a Cloudflare client
+func (e *Init) DoGetCloudflareClient(ctx context.Context, cfg *config.Configuration) (cloudflare.Clienter, error) {
+	if cfg.CloudflareAPIToken == "" || cfg.CloudflareZoneID == "" {
+		log.Info(ctx, "cloudflare integration disabled: missing API token or zone ID")
+		return nil, nil
+	}
+
+	var client cloudflare.Clienter
+	var err error
+
+	// for local mock server when SDK is disabled
+	if !cfg.EnableCloudflareSDK && cfg.CloudflareAPIURL != "" {
+		client, err = cloudflare.New(
+			cfg.CloudflareAPIToken,
+			cfg.CloudflareZoneID,
+			cfg.EnableCloudflareSDK,
+			cfg.CloudflareAPIURL,
+		)
+	} else {
+		client, err = cloudflare.New(
+			cfg.CloudflareAPIToken,
+			cfg.CloudflareZoneID,
+			cfg.EnableCloudflareSDK,
+		)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
 }
