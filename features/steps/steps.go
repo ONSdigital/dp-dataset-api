@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -405,8 +406,8 @@ func (c *DatasetComponent) iHaveTheseStaticVersions(versionsJSON *godog.DocStrin
 		version := &versions[timeOffset]
 		if version.Links.Version == nil {
 			version.Links.Version = &models.LinkObject{
-				HRef: version.Links.Edition.HRef + "/versions/" + version.ID,
-				ID:   version.ID,
+				HRef: version.Links.Edition.HRef + "/versions/" + strconv.Itoa(version.Version),
+				ID:   strconv.Itoa(version.Version),
 			}
 		}
 		if err := c.putDocumentInDatabase(version, version.ID, versionsCollection, timeOffset); err != nil {

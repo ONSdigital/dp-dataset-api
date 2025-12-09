@@ -43,7 +43,7 @@ Feature: Static Dataset Versions POST API
                             "title": "Published Dataset CSV",
                             "format": "csv",
                             "media_type": "text/csv",
-                            "download_url": "/static-dataset-existing/2024/1/filename.csv",
+                            "download_url": "/uuid/filename.csv",
                             "byte_size": 150000
                         }
                     ]
@@ -87,13 +87,47 @@ Feature: Static Dataset Versions POST API
                         "title": "Full Dataset CSV",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/files/static-dataset-test/2024/1/filename.csv",
+                        "download_url": "/uuid/filename.csv",
                         "byte_size": 100000
                     }
                 ]
             }
             """
-        Then the HTTP status code should be "201"
+        Then I should receive the following JSON response with status "201":
+            """
+            {
+                "dataset_id": "static-dataset-test",
+                "distributions": [
+                    {
+                        "byte_size": 100000,
+                        "download_url": "/uuid/filename.csv",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "title": "Full Dataset CSV"
+                    }
+                ],
+                "edition": "2024",
+                "edition_title": "2024",
+                "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
+                "links": {
+                    "dataset": {
+                        "href": "http://localhost:22000/datasets/static-dataset-test",
+                        "id": "static-dataset-test"
+                    },
+                    "edition": {
+                        "href": "http://localhost:22000/datasets/static-dataset-test/editions/2024",
+                        "id": "2024"
+                    },
+                    "self": {
+                        "href": "http://localhost:22000/datasets/static-dataset-test/editions/2024/versions/1"
+                    }
+                },
+                "release_date": "2024-12-01T09:00:00.000Z",
+                "state": "associated",
+                "type": "static",
+                "version": 1
+            }
+            """
 
     Scenario: POST creates version 2 when version 1 is published
         Given private endpoints are enabled
@@ -109,7 +143,7 @@ Feature: Static Dataset Versions POST API
                         "title": "Updated Dataset CSV",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/files/static-dataset-existing/2024/2/filename.csv",
+                        "download_url": "/uuid/filename.csv",
                         "byte_size": 200000
                     }
                 ]
@@ -142,7 +176,7 @@ Feature: Static Dataset Versions POST API
                         "title": "Test CSV",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/files/non-existent-dataset/2024/1/filename.csv",
+                        "download_url": "/uuid/filename.csv",
                         "byte_size": 100000
                     }
                 ]
@@ -176,7 +210,7 @@ Feature: Static Dataset Versions POST API
                             "title": "csv",
                             "format": "csv",
                             "media_type": "text/csv",
-                            "download_url": "/downloads/files/static-dataset-test/2024/1/filename.csv",
+                            "download_url": "/uuid/filename.csv",
                             "byte_size": 100000
                         }
                     ]
@@ -196,7 +230,7 @@ Feature: Static Dataset Versions POST API
                         "title": "csv",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/files/static-dataset-test/2024/2/filename.csv",
+                        "download_url": "/uuid/filename.csv",
                         "byte_size": 120000
                     }
                 ]
@@ -217,7 +251,7 @@ Feature: Static Dataset Versions POST API
                         "title": "Test CSV",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/files/static-dataset-test/2024/1/filename.csv",
+                        "download_url": "/uuid/filename.csv",
                         "byte_size": 100000
                     }
                 ]
@@ -239,7 +273,7 @@ Feature: Static Dataset Versions POST API
                         "title": "Full Dataset CSV",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/files/static-dataset-test/2024/1/filename.csv",
+                        "download_url": "/uuid/filename.csv",
                         "byte_size": 100000
                     }
                 ]
@@ -271,7 +305,7 @@ Feature: Static Dataset Versions POST API
                     {
                         "title": "Full Dataset CSV",
                         "format": "csv",
-                        "download_url": "/downloads/files/static-dataset-test/2024/1/filename.csv",
+                        "download_url": "/uuid/filename.csv",
                         "byte_size": 100000
                     }
                 ]
@@ -291,7 +325,7 @@ Feature: Static Dataset Versions POST API
                 "distributions": [
                     {
                         "title": "Full Dataset CSV",
-                        "download_url": "/downloads/files/static-dataset-test/2024/1/filename.csv",
+                        "download_url": "/uuid/filename.csv",
                         "byte_size": 100000
                     }
                 ]
@@ -322,7 +356,7 @@ Feature: Static Dataset Versions POST API
                 "distributions": [
                     {
                         "title": "Full Dataset CSV",
-                        "download_url": "/downloads/files/static-dataset-test/2024/1/filename.csv",
+                        "download_url": "/uuid/filename.csv",
                         "byte_size": 100000,
                         "format": "WRONG"
                     }

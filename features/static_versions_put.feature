@@ -35,7 +35,7 @@ Feature: Static Dataset Versions PUT API
                             "title": "csv",
                             "format": "csv",
                             "media_type": "text/csv",
-                            "download_url": "/downloads/datasets/static-dataset-update/editions/2025/versions/1.csv",
+                            "download_url": "/uuid/filename.csv",
                             "byte_size": 125000
                         }
                     ]
@@ -61,7 +61,7 @@ Feature: Static Dataset Versions PUT API
                 "distributions": [
                     {
                         "byte_size": 125000,
-                        "download_url": "/downloads/datasets/static-dataset-update/editions/2025/versions/1.csv",
+                        "download_url": "/uuid/filename.csv",
                         "format": "csv",
                         "media_type": "text/csv",
                         "title": "csv"
@@ -106,7 +106,7 @@ Feature: Static Dataset Versions PUT API
                 "distributions": [
                     {
                         "byte_size": 125000,
-                        "download_url": "/downloads/datasets/static-dataset-update/editions/2025/versions/1.csv",
+                        "download_url": "/uuid/filename.csv",
                         "format": "csv",
                         "media_type": "text/csv",
                         "title": "csv"
@@ -158,14 +158,14 @@ Feature: Static Dataset Versions PUT API
                         "title": "updated csv",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/datasets/static-dataset-update/editions/2025/versions/1-updated.csv",
+                        "download_url": "/uuid/filename-updated.csv",
                         "byte_size": 150000
                     },
                     {
                         "title": "xlsx",
                         "format": "xlsx",
                         "media_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        "download_url": "/downloads/datasets/static-dataset-update/editions/2025/versions/1.xlsx",
+                        "download_url": "/uuid/filename.xlsx",
                         "byte_size": 175000
                     }
                 ],
@@ -568,7 +568,7 @@ Feature: Static Dataset Versions PUT API
                 "distributions": [
                     {
                         "title": "Full Dataset (CSV)",
-                        "download_url": "https://download.ons.gov.uk/my-dataset-download.csv",
+                        "download_url": "/uuid/filename.csv",
                         "byte_size": 4300000,
                         "format": "csv"
                     }
@@ -597,7 +597,7 @@ Feature: Static Dataset Versions PUT API
                 "distributions": [
                     {
                         "title": "Full Dataset (CSV)",
-                        "download_url": "https://download.ons.gov.uk/my-dataset-download.csv",
+                        "download_url": "/uuid/filename.csv",
                         "byte_size": 4300000
                     }
                 ],
@@ -629,7 +629,7 @@ Feature: Static Dataset Versions PUT API
                 "distributions": [
                     {
                         "title": "Full Dataset (CSV)",
-                        "download_url": "https://download.ons.gov.uk/my-dataset-download.csv",
+                        "download_url": "/uuid/filename.csv",
                         "byte_size": 4300000,
                         "format": "INVALID"
                     }

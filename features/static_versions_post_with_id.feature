@@ -44,7 +44,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                             "title": "Published Dataset CSV",
                             "format": "csv",
                             "media_type": "text/csv",
-                            "download_url": "/static-dataset-1/2024/1/filename.csv",
+                            "download_url": "/uuid/filename.csv",
                             "byte_size": 150000
                         }
                     ]
@@ -78,7 +78,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                             "title": "Unpublished Dataset CSV",
                             "format": "csv",
                             "media_type": "text/csv",
-                            "download_url": "/downloads/files/static-dataset-1/2025/2/filename.csv",
+                            "download_url": "/uuid/filename.csv",
                             "byte_size": 150000
                         }
                     ]
@@ -112,7 +112,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                 "distributions": [
                     {
                         "byte_size": 100,
-                        "download_url": "/static-dataset-1/2024/2/filename.csv",
+                        "download_url": "/downloads/files/static-dataset-1/2024/2/filename.csv",
                         "format": "csv",
                         "media_type": "text/csv",
                         "title": "Full Dataset CSV"
@@ -155,7 +155,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                         "title": "Full Dataset CSV",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/files/static-dataset-1/2024/2/filename.csv",
+                        "download_url": "/uuid/filename.csv",
                         "byte_size": 100
                     }
                 ],
@@ -169,7 +169,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                 "distributions": [
                     {
                         "byte_size": 100,
-                        "download_url": "/static-dataset-1/2024/2/filename.csv",
+                        "download_url": "/uuid/filename.csv",
                         "format": "csv",
                         "media_type": "text/csv",
                         "title": "Full Dataset CSV"
@@ -211,7 +211,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                         "title": "Full Dataset CSV",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/files/static-dataset-1/2024/2/filename.csv",
+                        "download_url": "/uuid/filename.csv",
                         "byte_size": 100
                     }
                 ],
@@ -233,7 +233,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                         "title": "Full Dataset CSV",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/files/static-dataset-1/2024/2/filename.csv",
+                        "download_url": "/uuid/filename.csv",
                         "byte_size": 100
                     }
                 ],
@@ -265,7 +265,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                         "title": "Full Dataset CSV",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/files/static-dataset-1/2024/2/filename.csv",
+                        "download_url": "/uuid/filename.csv",
                         "byte_size": 100
                     }
                 ],
@@ -297,7 +297,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                         "title": "Full Dataset CSV",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/files/static-dataset-1/2024/1/filename.csv",
+                        "download_url": "/uuid/filename.csv",
                         "byte_size": 100
                     }
                 ],
@@ -329,7 +329,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                         "title": "Full Dataset CSV",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/files/static-dataset-1/2024/2/filename.csv",
+                        "download_url": "/uuid/filename.csv",
                         "byte_size": 100
                     }
                 ],
@@ -361,7 +361,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                         "title": "Full Dataset CSV",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/files/static-dataset-1/2024/2/filename.csv",
+                        "download_url": "/uuid/filename.csv",
                         "byte_size": 100
                     }
                 ],
@@ -422,7 +422,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                     {
                         "title": "CSV Dataset",
                         "format": "csv",
-                        "download_url": "/downloads/files/static-dataset-1/2024/3/filename.csv",
+                        "download_url": "/uuid/filename.csv",
                         "byte_size": 999
                     }
                 ]
@@ -435,7 +435,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                 "distributions": [
                     {
                         "byte_size": 999,
-                        "download_url": "/static-dataset-1/2024/3/filename.csv",
+                        "download_url": "/uuid/filename.csv",
                         "format": "csv",
                         "media_type": "text/csv",
                         "title": "CSV Dataset"
@@ -476,7 +476,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                 "distributions": [
                     {
                         "title": "CSV Without Format",
-                        "download_url": "/downloads/files/static-dataset-1/2024/3/filename.csv",
+                        "download_url": "/uuid/filename.csv",
                         "byte_size": 123
                     }
                 ]
@@ -506,7 +506,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                 "distributions": [
                     {
                         "title": "CSV Invalid Format",
-                        "download_url": "/downloads/files/static-dataset-1/2024/3/filename.csv",
+                        "download_url": "/uuid/filename.csv",
                         "byte_size": 999,
                         "format": "INVALID"
                     }

@@ -1,4 +1,4 @@
-Feature: Dataset API
+Feature: GET /dataset-editions
 
     Background:
         Given I have these datasets:
