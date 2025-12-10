@@ -18,6 +18,7 @@ Feature: Dataset API
                     "id": "population-estimates",
                     "edition": "2019",
                     "state": "published",
+                    "version": 1,
                     "links": {
                         "dataset": {
                             "href": "/datasets/population-estimates",
@@ -34,7 +35,7 @@ Feature: Dataset API
                             "title": "Distribution 1",
                             "format": "csv",
                             "media_type": "text/csv",
-                            "download_url": "/population-estimates/2019/1/filename.csv",
+                            "download_url": "/uuid/filename.csv",
                             "byte_size": 100000
                         }
                     ]
@@ -49,6 +50,7 @@ Feature: Dataset API
                 "items": [
                     {
                         "edition": "2019",
+                        "version": 1,
                         "state": "published",
                         "links": {
                             "dataset": {
@@ -56,8 +58,8 @@ Feature: Dataset API
                                 "id": "population-estimates"
                             },
                             "latest_version": {
-                                "href": "/datasets/population-estimates/editions/2019/versions/population-estimates",
-                                "id": "population-estimates"
+                                "href": "/datasets/population-estimates/editions/2019/versions/1",
+                                "id": "1"
                             },
                             "self": {
                                 "href": "/datasets/population-estimates/editions/2019",
@@ -72,7 +74,7 @@ Feature: Dataset API
                                 "title": "Distribution 1",
                                 "format": "csv",
                                 "media_type": "text/csv",
-                                "download_url": "/population-estimates/2019/1/filename.csv",
+                                "download_url": "/uuid/filename.csv",
                                 "byte_size": 100000
                             }
                         ]
@@ -83,7 +85,6 @@ Feature: Dataset API
                 "total_count": 1
             }
             """
-
 
     Scenario: GET /datasets/{id}/editions/{edition_id} with type static
         Given I have these datasets:
@@ -102,6 +103,7 @@ Feature: Dataset API
                 {
                     "id": "population-estimates",
                     "edition": "2019",
+                    "version": 1,
                     "state": "published",
                     "links": {
                         "dataset": {
@@ -119,7 +121,7 @@ Feature: Dataset API
                             "title": "Distribution 1",
                             "format": "csv",
                             "media_type": "text/csv",
-                            "download_url": "/downloads/files/population-estimates/2019/1/filename.csv",
+                            "download_url": "/downloads/files/uuid/filename.csv",
                             "byte_size": 100000
                         }
                     ]
@@ -131,6 +133,7 @@ Feature: Dataset API
             """
             {
                 "edition": "2019",
+                "version": 1,
                 "state": "published",
                 "links": {
                     "dataset": {
@@ -138,8 +141,8 @@ Feature: Dataset API
                         "id": "population-estimates"
                     },
                     "latest_version": {
-                        "href": "/datasets/population-estimates/editions/2019/versions/population-estimates",
-                        "id": "population-estimates"
+                        "href": "/datasets/population-estimates/editions/2019/versions/1",
+                        "id": "1"
                     },
                     "self": {
                         "href": "/datasets/population-estimates/editions/2019",
@@ -154,7 +157,7 @@ Feature: Dataset API
                         "title": "Distribution 1",
                         "format": "csv",
                         "media_type": "text/csv",
-                        "download_url": "/downloads/files/population-estimates/2019/1/filename.csv",
+                        "download_url": "/downloads/files/uuid/filename.csv",
                         "byte_size": 100000
                     }
                 ]
