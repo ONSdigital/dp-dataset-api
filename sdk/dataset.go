@@ -16,7 +16,7 @@ import (
 )
 
 // List represents an object containing a list of datasets
-type List struct {
+type DatasetsList struct {
 	Items      []models.DatasetUpdate `json:"items"`
 	Count      int                    `json:"count"`
 	Offset     int                    `json:"offset"`
@@ -25,7 +25,7 @@ type List struct {
 }
 
 // DatasetsBatchProcessor is the type corresponding to a batch processing function for a dataset List.
-type DatasetsBatchProcessor func(List) (abort bool, err error)
+type DatasetsBatchProcessor func(DatasetsList) (abort bool, err error)
 
 // ErrInvalidDatasetAPIResponse is returned when the dataset api does not respond
 // with a valid status
@@ -52,7 +52,7 @@ func (e ErrInvalidDatasetAPIResponse) Code() int {
 var _ error = ErrInvalidDatasetAPIResponse{}
 
 // DatasetAPIResponse creates an error response, optionally adding body to e when status is 404
-func DatasetAPIResponse(resp *http.Response, uri string) (e *ErrInvalidDatasetAPIResponse) {
+func datasetAPIResponse(resp *http.Response, uri string, ctx context.Context) (e *ErrInvalidDatasetAPIResponse) {
 	e = &ErrInvalidDatasetAPIResponse{
 		actualCode: resp.StatusCode,
 		uri:        uri,
@@ -63,7 +63,7 @@ func DatasetAPIResponse(resp *http.Response, uri string) (e *ErrInvalidDatasetAP
 			e.body = "Client failed to read DatasetAPI body"
 			return
 		}
-		defer closeResponseBody(context.TODO(), resp)
+		defer closeResponseBody(ctx, resp)
 
 		e.body = string(b)
 	}
@@ -229,13 +229,13 @@ func (c *Client) GetDatasetEditions(ctx context.Context, headers Headers, queryP
 }
 
 // GetDatasetsInBatches retrieves a list of datasets in concurrent batches and accumulates the results
-func (c *Client) GetDatasetsInBatches(ctx context.Context, headers Headers, batchSize, maxWorkers int) (datasets List, err error) {
+func (c *Client) GetDatasetsInBatches(ctx context.Context, headers Headers, batchSize, maxWorkers int) (datasets DatasetsList, err error) {
 	// Function to aggregate items.
 	// For the first received batch, as we have the total count information, will initialise the final structure of items with a fixed size equal to TotalCount.
 	// This serves two purposes:
 	//   - We can guarantee, even with concurrent calls, that values are returned in the same order that the API defines, by offsetting the index.
 	//   - We do a single memory allocation for the final array, making the code more memory efficient.
-	var processBatch DatasetsBatchProcessor = func(b List) (abort bool, err error) {
+	var processBatch DatasetsBatchProcessor = func(b DatasetsList) (abort bool, err error) {
 		if len(datasets.Items) == 0 { // first batch response being handled
 			datasets.TotalCount = b.TotalCount
 			datasets.Items = make([]models.DatasetUpdate, b.TotalCount)
@@ -248,15 +248,15 @@ func (c *Client) GetDatasetsInBatches(ctx context.Context, headers Headers, batc
 	}
 
 	// call dataset API GetOptions in batches and aggregate the responses
-	if err := c.GetDatasetsBatchProcess(ctx, headers, processBatch, batchSize, maxWorkers); err != nil {
-		return List{}, err
+	if err := c.getDatasetsBatchProcess(ctx, headers, processBatch, batchSize, maxWorkers); err != nil {
+		return DatasetsList{}, err
 	}
 
 	return datasets, nil
 }
 
 // GetDatasetsBatchProcess gets the datasets from the dataset API in batches, calling the provided function for each batch.
-func (c *Client) GetDatasetsBatchProcess(ctx context.Context, headers Headers, processBatch DatasetsBatchProcessor, batchSize, maxWorkers int) error {
+func (c *Client) getDatasetsBatchProcess(ctx context.Context, headers Headers, processBatch DatasetsBatchProcessor, batchSize, maxWorkers int) error {
 	// for each batch, obtain the dimensions starting at the provided offset, with a batch size limit,
 	// or the subste of IDs according to the provided offset, if a list of optionIDs was provided
 	batchGetter := func(offset int) (interface{}, int, string, error) {
@@ -266,28 +266,28 @@ func (c *Client) GetDatasetsBatchProcess(ctx context.Context, headers Headers, p
 
 	// cast and process the batch according to the provided method
 	batchProcessor := func(b interface{}, batchETag string) (abort bool, err error) {
-		v, ok := b.(List)
+		v, ok := b.(DatasetsList)
 		if !ok {
 			return true, errors.New("wrong type")
 		}
 		return processBatch(v)
 	}
 
-	return ProcessInConcurrentBatches(batchGetter, batchProcessor, batchSize, maxWorkers)
+	return processInConcurrentBatches(batchGetter, batchProcessor, batchSize, maxWorkers)
 }
 
 // GetDatasets returns the list of datasets
-func (c *Client) GetDatasets(ctx context.Context, headers Headers, q *QueryParams) (datasets List, err error) {
+func (c *Client) GetDatasets(ctx context.Context, headers Headers, q *QueryParams) (datasets DatasetsList, err error) {
 	// Build URI
 	uri := &url.URL{}
 	uri.Path, err = url.JoinPath(c.hcCli.URL, "datasets")
 	if err != nil {
-		return List{}, err
+		return DatasetsList{}, err
 	}
 
 	if q != nil {
 		if err := q.Validate(); err != nil {
-			return List{}, err
+			return DatasetsList{}, err
 		}
 
 		// Add query parameters
@@ -302,22 +302,22 @@ func (c *Client) GetDatasets(ctx context.Context, headers Headers, q *QueryParam
 
 	resp, err := c.doAuthenticatedGetRequest(ctx, headers, uri)
 	if err != nil {
-		return List{}, err
+		return DatasetsList{}, err
 	}
 	defer closeResponseBody(ctx, resp)
 
 	if resp.StatusCode != http.StatusOK {
-		err = DatasetAPIResponse(resp, uri.RequestURI())
-		return List{}, err
+		err = datasetAPIResponse(resp, uri.RequestURI(), ctx)
+		return DatasetsList{}, err
 	}
 
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return List{}, err
+		return DatasetsList{}, err
 	}
 
 	if err := json.Unmarshal(b, &datasets); err != nil {
-		return List{}, err
+		return DatasetsList{}, err
 	}
 
 	return datasets, nil

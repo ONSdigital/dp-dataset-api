@@ -3,6 +3,8 @@ package sdk
 import (
 	"errors"
 	"net/http"
+
+	dpNetRequest "github.com/ONSdigital/dp-net/v3/request"
 )
 
 // ResponseHedaers represents headers that are available in the HTTP response
@@ -26,6 +28,45 @@ var (
 	// eTagHeader is the ETag header name
 	eTagHeader = "ETag"
 )
+
+// Contains the headers to be added to any request
+type Headers struct {
+	CollectionID         string
+	DownloadServiceToken string
+	AccessToken          string // could be user or service token for auth v2
+}
+
+// Adds headers to the input request
+func (h *Headers) add(request *http.Request) {
+	if h.CollectionID != "" {
+		request.Header.Add(dpNetRequest.CollectionIDHeaderKey, h.CollectionID)
+	}
+	dpNetRequest.AddDownloadServiceTokenHeader(request, h.DownloadServiceToken)
+	dpNetRequest.AddServiceTokenHeader(request, h.AccessToken)
+}
+
+// SetIfMatch set the If-Match header on the provided request. If this header is already present it
+// will be overwritten by the new value. Empty values are allowed for this header.
+func setIfMatch(req *http.Request, headerValue string) error {
+	err := setRequestHeader(req, ifMatchHeader, headerValue)
+	if err != nil && err != ErrValueEmpty {
+		return err
+	}
+	return nil
+}
+
+func setRequestHeader(req *http.Request, headerName, headerValue string) error {
+	if req == nil {
+		return ErrRequestNil
+	}
+
+	if headerValue == "" {
+		return ErrValueEmpty
+	}
+
+	req.Header.Set(headerName, headerValue)
+	return nil
+}
 
 // GetResponseETag returns the value of "ETag" response header if it exists, returns
 // ErrResponseNil if the header is not found.

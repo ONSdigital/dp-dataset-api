@@ -9,6 +9,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/sdk"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
+	"net/http"
 	"sync"
 )
 
@@ -34,8 +35,17 @@ var _ sdk.Clienter = &ClienterMock{}
 //			GetDatasetByPathFunc: func(ctx context.Context, headers sdk.Headers, path string) (models.Dataset, error) {
 //				panic("mock out the GetDatasetByPath method")
 //			},
+//			GetDatasetCurrentAndNextFunc: func(ctx context.Context, headers sdk.Headers, datasetID string) (models.DatasetUpdate, error) {
+//				panic("mock out the GetDatasetCurrentAndNext method")
+//			},
 //			GetDatasetEditionsFunc: func(ctx context.Context, headers sdk.Headers, queryParams *sdk.QueryParams) (sdk.DatasetEditionsList, error) {
 //				panic("mock out the GetDatasetEditions method")
+//			},
+//			GetDatasetsFunc: func(ctx context.Context, headers sdk.Headers, q *sdk.QueryParams) (sdk.DatasetsList, error) {
+//				panic("mock out the GetDatasets method")
+//			},
+//			GetDatasetsInBatchesFunc: func(ctx context.Context, headers sdk.Headers, batchSize int, maxWorkers int) (sdk.DatasetsList, error) {
+//				panic("mock out the GetDatasetsInBatches method")
 //			},
 //			GetEditionFunc: func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string) (models.Edition, error) {
 //				panic("mock out the GetEdition method")
@@ -55,11 +65,32 @@ var _ sdk.Clienter = &ClienterMock{}
 //			GetVersionMetadataFunc: func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, versionID string) (models.Metadata, error) {
 //				panic("mock out the GetVersionMetadata method")
 //			},
+//			GetVersionWithHeadersFunc: func(ctx context.Context, headers sdk.Headers, datasetID string, edition string, version string) (models.Version, sdk.ResponseHeaders, error) {
+//				panic("mock out the GetVersionWithHeaders method")
+//			},
+//			GetVersionWithResponseFunc: func(ctx context.Context, headers sdk.Headers, datasetID string, edition string, versionID string) (models.Version, *http.Response, error) {
+//				panic("mock out the GetVersionWithResponse method")
+//			},
 //			GetVersionsFunc: func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, queryParams *sdk.QueryParams) (sdk.VersionsList, error) {
 //				panic("mock out the GetVersions method")
 //			},
+//			GetVersionsInBatchesFunc: func(ctx context.Context, headers sdk.Headers, datasetID string, edition string, batchSize int, maxWorkers int) (sdk.VersionsList, error) {
+//				panic("mock out the GetVersionsInBatches method")
+//			},
 //			HealthFunc: func() *health.Client {
 //				panic("mock out the Health method")
+//			},
+//			PostVersionFunc: func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, versionID string, version models.Version) (*models.Version, error) {
+//				panic("mock out the PostVersion method")
+//			},
+//			PutDatasetFunc: func(ctx context.Context, headers sdk.Headers, datasetID string, d models.Dataset) error {
+//				panic("mock out the PutDataset method")
+//			},
+//			PutInstanceFunc: func(ctx context.Context, headers sdk.Headers, instanceID string, i sdk.UpdateInstance, ifMatch string) (string, error) {
+//				panic("mock out the PutInstance method")
+//			},
+//			PutMetadataFunc: func(ctx context.Context, headers sdk.Headers, datasetID string, edition string, version string, metadata models.EditableMetadata, versionEtag string) error {
+//				panic("mock out the PutMetadata method")
 //			},
 //			PutVersionFunc: func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, versionID string, version models.Version) (models.Version, error) {
 //				panic("mock out the PutVersion method")
@@ -89,8 +120,17 @@ type ClienterMock struct {
 	// GetDatasetByPathFunc mocks the GetDatasetByPath method.
 	GetDatasetByPathFunc func(ctx context.Context, headers sdk.Headers, path string) (models.Dataset, error)
 
+	// GetDatasetCurrentAndNextFunc mocks the GetDatasetCurrentAndNext method.
+	GetDatasetCurrentAndNextFunc func(ctx context.Context, headers sdk.Headers, datasetID string) (models.DatasetUpdate, error)
+
 	// GetDatasetEditionsFunc mocks the GetDatasetEditions method.
 	GetDatasetEditionsFunc func(ctx context.Context, headers sdk.Headers, queryParams *sdk.QueryParams) (sdk.DatasetEditionsList, error)
+
+	// GetDatasetsFunc mocks the GetDatasets method.
+	GetDatasetsFunc func(ctx context.Context, headers sdk.Headers, q *sdk.QueryParams) (sdk.DatasetsList, error)
+
+	// GetDatasetsInBatchesFunc mocks the GetDatasetsInBatches method.
+	GetDatasetsInBatchesFunc func(ctx context.Context, headers sdk.Headers, batchSize int, maxWorkers int) (sdk.DatasetsList, error)
 
 	// GetEditionFunc mocks the GetEdition method.
 	GetEditionFunc func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string) (models.Edition, error)
@@ -110,11 +150,32 @@ type ClienterMock struct {
 	// GetVersionMetadataFunc mocks the GetVersionMetadata method.
 	GetVersionMetadataFunc func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, versionID string) (models.Metadata, error)
 
+	// GetVersionWithHeadersFunc mocks the GetVersionWithHeaders method.
+	GetVersionWithHeadersFunc func(ctx context.Context, headers sdk.Headers, datasetID string, edition string, version string) (models.Version, sdk.ResponseHeaders, error)
+
+	// GetVersionWithResponseFunc mocks the GetVersionWithResponse method.
+	GetVersionWithResponseFunc func(ctx context.Context, headers sdk.Headers, datasetID string, edition string, versionID string) (models.Version, *http.Response, error)
+
 	// GetVersionsFunc mocks the GetVersions method.
 	GetVersionsFunc func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, queryParams *sdk.QueryParams) (sdk.VersionsList, error)
 
+	// GetVersionsInBatchesFunc mocks the GetVersionsInBatches method.
+	GetVersionsInBatchesFunc func(ctx context.Context, headers sdk.Headers, datasetID string, edition string, batchSize int, maxWorkers int) (sdk.VersionsList, error)
+
 	// HealthFunc mocks the Health method.
 	HealthFunc func() *health.Client
+
+	// PostVersionFunc mocks the PostVersion method.
+	PostVersionFunc func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, versionID string, version models.Version) (*models.Version, error)
+
+	// PutDatasetFunc mocks the PutDataset method.
+	PutDatasetFunc func(ctx context.Context, headers sdk.Headers, datasetID string, d models.Dataset) error
+
+	// PutInstanceFunc mocks the PutInstance method.
+	PutInstanceFunc func(ctx context.Context, headers sdk.Headers, instanceID string, i sdk.UpdateInstance, ifMatch string) (string, error)
+
+	// PutMetadataFunc mocks the PutMetadata method.
+	PutMetadataFunc func(ctx context.Context, headers sdk.Headers, datasetID string, edition string, version string, metadata models.EditableMetadata, versionEtag string) error
 
 	// PutVersionFunc mocks the PutVersion method.
 	PutVersionFunc func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, versionID string, version models.Version) (models.Version, error)
@@ -163,6 +224,15 @@ type ClienterMock struct {
 			// Path is the path argument value.
 			Path string
 		}
+		// GetDatasetCurrentAndNext holds details about calls to the GetDatasetCurrentAndNext method.
+		GetDatasetCurrentAndNext []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Headers is the headers argument value.
+			Headers sdk.Headers
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+		}
 		// GetDatasetEditions holds details about calls to the GetDatasetEditions method.
 		GetDatasetEditions []struct {
 			// Ctx is the ctx argument value.
@@ -171,6 +241,26 @@ type ClienterMock struct {
 			Headers sdk.Headers
 			// QueryParams is the queryParams argument value.
 			QueryParams *sdk.QueryParams
+		}
+		// GetDatasets holds details about calls to the GetDatasets method.
+		GetDatasets []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Headers is the headers argument value.
+			Headers sdk.Headers
+			// Q is the q argument value.
+			Q *sdk.QueryParams
+		}
+		// GetDatasetsInBatches holds details about calls to the GetDatasetsInBatches method.
+		GetDatasetsInBatches []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Headers is the headers argument value.
+			Headers sdk.Headers
+			// BatchSize is the batchSize argument value.
+			BatchSize int
+			// MaxWorkers is the maxWorkers argument value.
+			MaxWorkers int
 		}
 		// GetEdition holds details about calls to the GetEdition method.
 		GetEdition []struct {
@@ -250,6 +340,32 @@ type ClienterMock struct {
 			// VersionID is the versionID argument value.
 			VersionID string
 		}
+		// GetVersionWithHeaders holds details about calls to the GetVersionWithHeaders method.
+		GetVersionWithHeaders []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Headers is the headers argument value.
+			Headers sdk.Headers
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// Edition is the edition argument value.
+			Edition string
+			// Version is the version argument value.
+			Version string
+		}
+		// GetVersionWithResponse holds details about calls to the GetVersionWithResponse method.
+		GetVersionWithResponse []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Headers is the headers argument value.
+			Headers sdk.Headers
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// Edition is the edition argument value.
+			Edition string
+			// VersionID is the versionID argument value.
+			VersionID string
+		}
 		// GetVersions holds details about calls to the GetVersions method.
 		GetVersions []struct {
 			// Ctx is the ctx argument value.
@@ -263,8 +379,79 @@ type ClienterMock struct {
 			// QueryParams is the queryParams argument value.
 			QueryParams *sdk.QueryParams
 		}
+		// GetVersionsInBatches holds details about calls to the GetVersionsInBatches method.
+		GetVersionsInBatches []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Headers is the headers argument value.
+			Headers sdk.Headers
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// Edition is the edition argument value.
+			Edition string
+			// BatchSize is the batchSize argument value.
+			BatchSize int
+			// MaxWorkers is the maxWorkers argument value.
+			MaxWorkers int
+		}
 		// Health holds details about calls to the Health method.
 		Health []struct {
+		}
+		// PostVersion holds details about calls to the PostVersion method.
+		PostVersion []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Headers is the headers argument value.
+			Headers sdk.Headers
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// EditionID is the editionID argument value.
+			EditionID string
+			// VersionID is the versionID argument value.
+			VersionID string
+			// Version is the version argument value.
+			Version models.Version
+		}
+		// PutDataset holds details about calls to the PutDataset method.
+		PutDataset []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Headers is the headers argument value.
+			Headers sdk.Headers
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// D is the d argument value.
+			D models.Dataset
+		}
+		// PutInstance holds details about calls to the PutInstance method.
+		PutInstance []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Headers is the headers argument value.
+			Headers sdk.Headers
+			// InstanceID is the instanceID argument value.
+			InstanceID string
+			// I is the i argument value.
+			I sdk.UpdateInstance
+			// IfMatch is the ifMatch argument value.
+			IfMatch string
+		}
+		// PutMetadata holds details about calls to the PutMetadata method.
+		PutMetadata []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Headers is the headers argument value.
+			Headers sdk.Headers
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// Edition is the edition argument value.
+			Edition string
+			// Version is the version argument value.
+			Version string
+			// Metadata is the metadata argument value.
+			Metadata models.EditableMetadata
+			// VersionEtag is the versionEtag argument value.
+			VersionEtag string
 		}
 		// PutVersion holds details about calls to the PutVersion method.
 		PutVersion []struct {
@@ -304,15 +491,25 @@ type ClienterMock struct {
 	lockCreateDataset              sync.RWMutex
 	lockGetDataset                 sync.RWMutex
 	lockGetDatasetByPath           sync.RWMutex
+	lockGetDatasetCurrentAndNext   sync.RWMutex
 	lockGetDatasetEditions         sync.RWMutex
+	lockGetDatasets                sync.RWMutex
+	lockGetDatasetsInBatches       sync.RWMutex
 	lockGetEdition                 sync.RWMutex
 	lockGetEditions                sync.RWMutex
 	lockGetVersion                 sync.RWMutex
 	lockGetVersionDimensionOptions sync.RWMutex
 	lockGetVersionDimensions       sync.RWMutex
 	lockGetVersionMetadata         sync.RWMutex
+	lockGetVersionWithHeaders      sync.RWMutex
+	lockGetVersionWithResponse     sync.RWMutex
 	lockGetVersions                sync.RWMutex
+	lockGetVersionsInBatches       sync.RWMutex
 	lockHealth                     sync.RWMutex
+	lockPostVersion                sync.RWMutex
+	lockPutDataset                 sync.RWMutex
+	lockPutInstance                sync.RWMutex
+	lockPutMetadata                sync.RWMutex
 	lockPutVersion                 sync.RWMutex
 	lockPutVersionState            sync.RWMutex
 	lockURL                        sync.RWMutex
@@ -478,6 +675,46 @@ func (mock *ClienterMock) GetDatasetByPathCalls() []struct {
 	return calls
 }
 
+// GetDatasetCurrentAndNext calls GetDatasetCurrentAndNextFunc.
+func (mock *ClienterMock) GetDatasetCurrentAndNext(ctx context.Context, headers sdk.Headers, datasetID string) (models.DatasetUpdate, error) {
+	if mock.GetDatasetCurrentAndNextFunc == nil {
+		panic("ClienterMock.GetDatasetCurrentAndNextFunc: method is nil but Clienter.GetDatasetCurrentAndNext was just called")
+	}
+	callInfo := struct {
+		Ctx       context.Context
+		Headers   sdk.Headers
+		DatasetID string
+	}{
+		Ctx:       ctx,
+		Headers:   headers,
+		DatasetID: datasetID,
+	}
+	mock.lockGetDatasetCurrentAndNext.Lock()
+	mock.calls.GetDatasetCurrentAndNext = append(mock.calls.GetDatasetCurrentAndNext, callInfo)
+	mock.lockGetDatasetCurrentAndNext.Unlock()
+	return mock.GetDatasetCurrentAndNextFunc(ctx, headers, datasetID)
+}
+
+// GetDatasetCurrentAndNextCalls gets all the calls that were made to GetDatasetCurrentAndNext.
+// Check the length with:
+//
+//	len(mockedClienter.GetDatasetCurrentAndNextCalls())
+func (mock *ClienterMock) GetDatasetCurrentAndNextCalls() []struct {
+	Ctx       context.Context
+	Headers   sdk.Headers
+	DatasetID string
+} {
+	var calls []struct {
+		Ctx       context.Context
+		Headers   sdk.Headers
+		DatasetID string
+	}
+	mock.lockGetDatasetCurrentAndNext.RLock()
+	calls = mock.calls.GetDatasetCurrentAndNext
+	mock.lockGetDatasetCurrentAndNext.RUnlock()
+	return calls
+}
+
 // GetDatasetEditions calls GetDatasetEditionsFunc.
 func (mock *ClienterMock) GetDatasetEditions(ctx context.Context, headers sdk.Headers, queryParams *sdk.QueryParams) (sdk.DatasetEditionsList, error) {
 	if mock.GetDatasetEditionsFunc == nil {
@@ -515,6 +752,90 @@ func (mock *ClienterMock) GetDatasetEditionsCalls() []struct {
 	mock.lockGetDatasetEditions.RLock()
 	calls = mock.calls.GetDatasetEditions
 	mock.lockGetDatasetEditions.RUnlock()
+	return calls
+}
+
+// GetDatasets calls GetDatasetsFunc.
+func (mock *ClienterMock) GetDatasets(ctx context.Context, headers sdk.Headers, q *sdk.QueryParams) (sdk.DatasetsList, error) {
+	if mock.GetDatasetsFunc == nil {
+		panic("ClienterMock.GetDatasetsFunc: method is nil but Clienter.GetDatasets was just called")
+	}
+	callInfo := struct {
+		Ctx     context.Context
+		Headers sdk.Headers
+		Q       *sdk.QueryParams
+	}{
+		Ctx:     ctx,
+		Headers: headers,
+		Q:       q,
+	}
+	mock.lockGetDatasets.Lock()
+	mock.calls.GetDatasets = append(mock.calls.GetDatasets, callInfo)
+	mock.lockGetDatasets.Unlock()
+	return mock.GetDatasetsFunc(ctx, headers, q)
+}
+
+// GetDatasetsCalls gets all the calls that were made to GetDatasets.
+// Check the length with:
+//
+//	len(mockedClienter.GetDatasetsCalls())
+func (mock *ClienterMock) GetDatasetsCalls() []struct {
+	Ctx     context.Context
+	Headers sdk.Headers
+	Q       *sdk.QueryParams
+} {
+	var calls []struct {
+		Ctx     context.Context
+		Headers sdk.Headers
+		Q       *sdk.QueryParams
+	}
+	mock.lockGetDatasets.RLock()
+	calls = mock.calls.GetDatasets
+	mock.lockGetDatasets.RUnlock()
+	return calls
+}
+
+// GetDatasetsInBatches calls GetDatasetsInBatchesFunc.
+func (mock *ClienterMock) GetDatasetsInBatches(ctx context.Context, headers sdk.Headers, batchSize int, maxWorkers int) (sdk.DatasetsList, error) {
+	if mock.GetDatasetsInBatchesFunc == nil {
+		panic("ClienterMock.GetDatasetsInBatchesFunc: method is nil but Clienter.GetDatasetsInBatches was just called")
+	}
+	callInfo := struct {
+		Ctx        context.Context
+		Headers    sdk.Headers
+		BatchSize  int
+		MaxWorkers int
+	}{
+		Ctx:        ctx,
+		Headers:    headers,
+		BatchSize:  batchSize,
+		MaxWorkers: maxWorkers,
+	}
+	mock.lockGetDatasetsInBatches.Lock()
+	mock.calls.GetDatasetsInBatches = append(mock.calls.GetDatasetsInBatches, callInfo)
+	mock.lockGetDatasetsInBatches.Unlock()
+	return mock.GetDatasetsInBatchesFunc(ctx, headers, batchSize, maxWorkers)
+}
+
+// GetDatasetsInBatchesCalls gets all the calls that were made to GetDatasetsInBatches.
+// Check the length with:
+//
+//	len(mockedClienter.GetDatasetsInBatchesCalls())
+func (mock *ClienterMock) GetDatasetsInBatchesCalls() []struct {
+	Ctx        context.Context
+	Headers    sdk.Headers
+	BatchSize  int
+	MaxWorkers int
+} {
+	var calls []struct {
+		Ctx        context.Context
+		Headers    sdk.Headers
+		BatchSize  int
+		MaxWorkers int
+	}
+	mock.lockGetDatasetsInBatches.RLock()
+	calls = mock.calls.GetDatasetsInBatches
+	mock.lockGetDatasetsInBatches.RUnlock()
 	return calls
 }
 
@@ -806,6 +1127,102 @@ func (mock *ClienterMock) GetVersionMetadataCalls() []struct {
 	return calls
 }
 
+// GetVersionWithHeaders calls GetVersionWithHeadersFunc.
+func (mock *ClienterMock) GetVersionWithHeaders(ctx context.Context, headers sdk.Headers, datasetID string, edition string, version string) (models.Version, sdk.ResponseHeaders, error) {
+	if mock.GetVersionWithHeadersFunc == nil {
+		panic("ClienterMock.GetVersionWithHeadersFunc: method is nil but Clienter.GetVersionWithHeaders was just called")
+	}
+	callInfo := struct {
+		Ctx       context.Context
+		Headers   sdk.Headers
+		DatasetID string
+		Edition   string
+		Version   string
+	}{
+		Ctx:       ctx,
+		Headers:   headers,
+		DatasetID: datasetID,
+		Edition:   edition,
+		Version:   version,
+	}
+	mock.lockGetVersionWithHeaders.Lock()
+	mock.calls.GetVersionWithHeaders = append(mock.calls.GetVersionWithHeaders, callInfo)
+	mock.lockGetVersionWithHeaders.Unlock()
+	return mock.GetVersionWithHeadersFunc(ctx, headers, datasetID, edition, version)
+}
+
+// GetVersionWithHeadersCalls gets all the calls that were made to GetVersionWithHeaders.
+// Check the length with:
+//
+//	len(mockedClienter.GetVersionWithHeadersCalls())
+func (mock *ClienterMock) GetVersionWithHeadersCalls() []struct {
+	Ctx       context.Context
+	Headers   sdk.Headers
+	DatasetID string
+	Edition   string
+	Version   string
+} {
+	var calls []struct {
+		Ctx       context.Context
+		Headers   sdk.Headers
+		DatasetID string
+		Edition   string
+		Version   string
+	}
+	mock.lockGetVersionWithHeaders.RLock()
+	calls = mock.calls.GetVersionWithHeaders
+	mock.lockGetVersionWithHeaders.RUnlock()
+	return calls
+}
+
+// GetVersionWithResponse calls GetVersionWithResponseFunc.
+func (mock *ClienterMock) GetVersionWithResponse(ctx context.Context, headers sdk.Headers, datasetID string, edition string, versionID string) (models.Version, *http.Response, error) {
+	if mock.GetVersionWithResponseFunc == nil {
+		panic("ClienterMock.GetVersionWithResponseFunc: method is nil but Clienter.GetVersionWithResponse was just called")
+	}
+	callInfo := struct {
+		Ctx       context.Context
+		Headers   sdk.Headers
+		DatasetID string
+		Edition   string
+		VersionID string
+	}{
+		Ctx:       ctx,
+		Headers:   headers,
+		DatasetID: datasetID,
+		Edition:   edition,
+		VersionID: versionID,
+	}
+	mock.lockGetVersionWithResponse.Lock()
+	mock.calls.GetVersionWithResponse = append(mock.calls.GetVersionWithResponse, callInfo)
+	mock.lockGetVersionWithResponse.Unlock()
+	return mock.GetVersionWithResponseFunc(ctx, headers, datasetID, edition, versionID)
+}
+
+// GetVersionWithResponseCalls gets all the calls that were made to GetVersionWithResponse.
+// Check the length with:
+//
+//	len(mockedClienter.GetVersionWithResponseCalls())
+func (mock *ClienterMock) GetVersionWithResponseCalls() []struct {
+	Ctx       context.Context
+	Headers   sdk.Headers
+	DatasetID string
+	Edition   string
+	VersionID string
+} {
+	var calls []struct {
+		Ctx       context.Context
+		Headers   sdk.Headers
+		DatasetID string
+		Edition   string
+		VersionID string
+	}
+	mock.lockGetVersionWithResponse.RLock()
+	calls = mock.calls.GetVersionWithResponse
+	mock.lockGetVersionWithResponse.RUnlock()
+	return calls
+}
+
 // GetVersions calls GetVersionsFunc.
 func (mock *ClienterMock) GetVersions(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, queryParams *sdk.QueryParams) (sdk.VersionsList, error) {
 	if mock.GetVersionsFunc == nil {
@@ -854,6 +1271,58 @@ func (mock *ClienterMock) GetVersionsCalls() []struct {
 	return calls
 }
 
+// GetVersionsInBatches calls GetVersionsInBatchesFunc.
+func (mock *ClienterMock) GetVersionsInBatches(ctx context.Context, headers sdk.Headers, datasetID string, edition string, batchSize int, maxWorkers int) (sdk.VersionsList, error) {
+	if mock.GetVersionsInBatchesFunc == nil {
+		panic("ClienterMock.GetVersionsInBatchesFunc: method is nil but Clienter.GetVersionsInBatches was just called")
+	}
+	callInfo := struct {
+		Ctx        context.Context
+		Headers    sdk.Headers
+		DatasetID  string
+		Edition    string
+		BatchSize  int
+		MaxWorkers int
+	}{
+		Ctx:        ctx,
+		Headers:    headers,
+		DatasetID:  datasetID,
+		Edition:    edition,
+		BatchSize:  batchSize,
+		MaxWorkers: maxWorkers,
+	}
+	mock.lockGetVersionsInBatches.Lock()
+	mock.calls.GetVersionsInBatches = append(mock.calls.GetVersionsInBatches, callInfo)
+	mock.lockGetVersionsInBatches.Unlock()
+	return mock.GetVersionsInBatchesFunc(ctx, headers, datasetID, edition, batchSize, maxWorkers)
+}
+
+// GetVersionsInBatchesCalls gets all the calls that were made to GetVersionsInBatches.
+// Check the length with:
+//
+//	len(mockedClienter.GetVersionsInBatchesCalls())
+func (mock *ClienterMock) GetVersionsInBatchesCalls() []struct {
+	Ctx        context.Context
+	Headers    sdk.Headers
+	DatasetID  string
+	Edition    string
+	BatchSize  int
+	MaxWorkers int
+} {
+	var calls []struct {
+		Ctx        context.Context
+		Headers    sdk.Headers
+		DatasetID  string
+		Edition    string
+		BatchSize  int
+		MaxWorkers int
+	}
+	mock.lockGetVersionsInBatches.RLock()
+	calls = mock.calls.GetVersionsInBatches
+	mock.lockGetVersionsInBatches.RUnlock()
+	return calls
+}
+
 // Health calls HealthFunc.
 func (mock *ClienterMock) Health() *health.Client {
 	if mock.HealthFunc == nil {
@@ -878,6 +1347,206 @@ func (mock *ClienterMock) HealthCalls() []struct {
 	mock.lockHealth.RLock()
 	calls = mock.calls.Health
 	mock.lockHealth.RUnlock()
+	return calls
+}
+
+// PostVersion calls PostVersionFunc.
+func (mock *ClienterMock) PostVersion(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, versionID string, version models.Version) (*models.Version, error) {
+	if mock.PostVersionFunc == nil {
+		panic("ClienterMock.PostVersionFunc: method is nil but Clienter.PostVersion was just called")
+	}
+	callInfo := struct {
+		Ctx       context.Context
+		Headers   sdk.Headers
+		DatasetID string
+		EditionID string
+		VersionID string
+		Version   models.Version
+	}{
+		Ctx:       ctx,
+		Headers:   headers,
+		DatasetID: datasetID,
+		EditionID: editionID,
+		VersionID: versionID,
+		Version:   version,
+	}
+	mock.lockPostVersion.Lock()
+	mock.calls.PostVersion = append(mock.calls.PostVersion, callInfo)
+	mock.lockPostVersion.Unlock()
+	return mock.PostVersionFunc(ctx, headers, datasetID, editionID, versionID, version)
+}
+
+// PostVersionCalls gets all the calls that were made to PostVersion.
+// Check the length with:
+//
+//	len(mockedClienter.PostVersionCalls())
+func (mock *ClienterMock) PostVersionCalls() []struct {
+	Ctx       context.Context
+	Headers   sdk.Headers
+	DatasetID string
+	EditionID string
+	VersionID string
+	Version   models.Version
+} {
+	var calls []struct {
+		Ctx       context.Context
+		Headers   sdk.Headers
+		DatasetID string
+		EditionID string
+		VersionID string
+		Version   models.Version
+	}
+	mock.lockPostVersion.RLock()
+	calls = mock.calls.PostVersion
+	mock.lockPostVersion.RUnlock()
+	return calls
+}
+
+// PutDataset calls PutDatasetFunc.
+func (mock *ClienterMock) PutDataset(ctx context.Context, headers sdk.Headers, datasetID string, d models.Dataset) error {
+	if mock.PutDatasetFunc == nil {
+		panic("ClienterMock.PutDatasetFunc: method is nil but Clienter.PutDataset was just called")
+	}
+	callInfo := struct {
+		Ctx       context.Context
+		Headers   sdk.Headers
+		DatasetID string
+		D         models.Dataset
+	}{
+		Ctx:       ctx,
+		Headers:   headers,
+		DatasetID: datasetID,
+		D:         d,
+	}
+	mock.lockPutDataset.Lock()
+	mock.calls.PutDataset = append(mock.calls.PutDataset, callInfo)
+	mock.lockPutDataset.Unlock()
+	return mock.PutDatasetFunc(ctx, headers, datasetID, d)
+}
+
+// PutDatasetCalls gets all the calls that were made to PutDataset.
+// Check the length with:
+//
+//	len(mockedClienter.PutDatasetCalls())
+func (mock *ClienterMock) PutDatasetCalls() []struct {
+	Ctx       context.Context
+	Headers   sdk.Headers
+	DatasetID string
+	D         models.Dataset
+} {
+	var calls []struct {
+		Ctx       context.Context
+		Headers   sdk.Headers
+		DatasetID string
+		D         models.Dataset
+	}
+	mock.lockPutDataset.RLock()
+	calls = mock.calls.PutDataset
+	mock.lockPutDataset.RUnlock()
+	return calls
+}
+
+// PutInstance calls PutInstanceFunc.
+func (mock *ClienterMock) PutInstance(ctx context.Context, headers sdk.Headers, instanceID string, i sdk.UpdateInstance, ifMatch string) (string, error) {
+	if mock.PutInstanceFunc == nil {
+		panic("ClienterMock.PutInstanceFunc: method is nil but Clienter.PutInstance was just called")
+	}
+	callInfo := struct {
+		Ctx        context.Context
+		Headers    sdk.Headers
+		InstanceID string
+		I          sdk.UpdateInstance
+		IfMatch    string
+	}{
+		Ctx:        ctx,
+		Headers:    headers,
+		InstanceID: instanceID,
+		I:          i,
+		IfMatch:    ifMatch,
+	}
+	mock.lockPutInstance.Lock()
+	mock.calls.PutInstance = append(mock.calls.PutInstance, callInfo)
+	mock.lockPutInstance.Unlock()
+	return mock.PutInstanceFunc(ctx, headers, instanceID, i, ifMatch)
+}
+
+// PutInstanceCalls gets all the calls that were made to PutInstance.
+// Check the length with:
+//
+//	len(mockedClienter.PutInstanceCalls())
+func (mock *ClienterMock) PutInstanceCalls() []struct {
+	Ctx        context.Context
+	Headers    sdk.Headers
+	InstanceID string
+	I          sdk.UpdateInstance
+	IfMatch    string
+} {
+	var calls []struct {
+		Ctx        context.Context
+		Headers    sdk.Headers
+		InstanceID string
+		I          sdk.UpdateInstance
+		IfMatch    string
+	}
+	mock.lockPutInstance.RLock()
+	calls = mock.calls.PutInstance
+	mock.lockPutInstance.RUnlock()
+	return calls
+}
+
+// PutMetadata calls PutMetadataFunc.
+func (mock *ClienterMock) PutMetadata(ctx context.Context, headers sdk.Headers, datasetID string, edition string, version string, metadata models.EditableMetadata, versionEtag string) error {
+	if mock.PutMetadataFunc == nil {
+		panic("ClienterMock.PutMetadataFunc: method is nil but Clienter.PutMetadata was just called")
+	}
+	callInfo := struct {
+		Ctx         context.Context
+		Headers     sdk.Headers
+		DatasetID   string
+		Edition     string
+		Version     string
+		Metadata    models.EditableMetadata
+		VersionEtag string
+	}{
+		Ctx:         ctx,
+		Headers:     headers,
+		DatasetID:   datasetID,
+		Edition:     edition,
+		Version:     version,
+		Metadata:    metadata,
+		VersionEtag: versionEtag,
+	}
+	mock.lockPutMetadata.Lock()
+	mock.calls.PutMetadata = append(mock.calls.PutMetadata, callInfo)
+	mock.lockPutMetadata.Unlock()
+	return mock.PutMetadataFunc(ctx, headers, datasetID, edition, version, metadata, versionEtag)
+}
+
+// PutMetadataCalls gets all the calls that were made to PutMetadata.
+// Check the length with:
+//
+//	len(mockedClienter.PutMetadataCalls())
+func (mock *ClienterMock) PutMetadataCalls() []struct {
+	Ctx         context.Context
+	Headers     sdk.Headers
+	DatasetID   string
+	Edition     string
+	Version     string
+	Metadata    models.EditableMetadata
+	VersionEtag string
+} {
+	var calls []struct {
+		Ctx         context.Context
+		Headers     sdk.Headers
+		DatasetID   string
+		Edition     string
+		Version     string
+		Metadata    models.EditableMetadata
+		VersionEtag string
+	}
+	mock.lockPutMetadata.RLock()
+	calls = mock.calls.PutMetadata
+	mock.lockPutMetadata.RUnlock()
 	return calls
 }
 

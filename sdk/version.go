@@ -331,7 +331,7 @@ func (c *Client) getVersionsBatchProcess(ctx context.Context, headers Headers, d
 		return processBatch(v)
 	}
 
-	return ProcessInConcurrentBatches(batchGetter, batchProcessor, batchSize, maxWorkers)
+	return processInConcurrentBatches(batchGetter, batchProcessor, batchSize, maxWorkers)
 }
 
 // GetVersionWithHeaders gets a specific version for an edition from the dataset api and additional response headers

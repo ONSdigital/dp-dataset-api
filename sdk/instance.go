@@ -44,7 +44,7 @@ func (c *Client) PutInstance(ctx context.Context, headers Headers, instanceID st
 		return "", errors.Wrap(err, "error while attempting to marshall instance")
 	}
 
-	resp, err := c.DoAuthenticatedPutRequestWithEtag(ctx, headers, uri, payload, ifMatch)
+	resp, err := c.doAuthenticatedPutRequestWithEtag(ctx, headers, uri, payload, ifMatch)
 	if err != nil {
 		return "", errors.Wrap(err, "http client returned error while attempting to make request")
 	}

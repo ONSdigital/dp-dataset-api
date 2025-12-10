@@ -25,7 +25,7 @@ func (c *Client) PutMetadata(ctx context.Context, headers Headers, datasetID, ed
 		return errors.Wrap(err, "error while attempting to marshall metadata")
 	}
 
-	resp, err := c.DoAuthenticatedPutRequestWithEtag(ctx, headers, uri, payload, versionEtag)
+	resp, err := c.doAuthenticatedPutRequestWithEtag(ctx, headers, uri, payload, versionEtag)
 	if err != nil {
 		return err
 	}

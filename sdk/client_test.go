@@ -142,7 +142,7 @@ func TestClientDoAuthenticatedPutRequestWithETag(t *testing.T) {
 	Convey("Succeeds with valid values", t, func() {
 		uri, _ := url.Parse("https://testing.this.com/a-test")
 		payload := []byte(`{"testing_key":"testing_value"}`)
-		resp, err := client.DoAuthenticatedPutRequestWithEtag(context.Background(), headers, uri, payload, "123456")
+		resp, err := client.doAuthenticatedPutRequestWithEtag(context.Background(), headers, uri, payload, "123456")
 
 		So(err, ShouldBeNil)
 		So(resp, ShouldNotBeNil)

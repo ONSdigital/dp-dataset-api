@@ -60,7 +60,11 @@ func NewDatasetComponent(mongoURI, zebedeeURL string) (*DatasetComponent, error)
 
 	log.Info(context.Background(), "configuration for component test", log.Data{"config": c.Config})
 
-	fakePermissionsAPI := setupFakePermissionsAPI()
+	fakePermissionsAPI, err := setupFakePermissionsAPI()
+	if err != nil {
+		return nil, err
+	}
+
 	c.Config.AuthConfig.PermissionsAPIURL = fakePermissionsAPI.URL()
 
 	c.Config.ZebedeeURL = zebedeeURL
@@ -285,14 +289,15 @@ func (c *DatasetComponent) setInitialiserRealKafka() {
 	}
 }
 
-func setupFakePermissionsAPI() *authorisationtest.FakePermissionsAPI {
-	fakePermissionsAPI := authorisationtest.NewFakePermissionsAPI()
+func setupFakePermissionsAPI() (fakePermissionsAPI *authorisationtest.FakePermissionsAPI, err error) {
+	fakePermissionsAPI = authorisationtest.NewFakePermissionsAPI()
 	dataset := getPermissionsDataset()
 	fakePermissionsAPI.Reset()
 	if err := fakePermissionsAPI.UpdatePermissionsBundleResponse(dataset); err != nil {
 		log.Error(context.Background(), "failed to update permissions bundle response", err)
+		return nil, err
 	}
-	return fakePermissionsAPI
+	return fakePermissionsAPI, nil
 }
 
 func getPermissionsDataset() *permissionsSDK.Bundle {

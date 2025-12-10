@@ -16,7 +16,7 @@ type GenericBatchProcessor func(batch interface{}, batchETag string) (abort bool
 type VersionsBatchProcessor func(VersionsList) (abort bool, err error)
 
 // ProcessInConcurrentBatches is a generic method to concurrently obtain some resource in batches and then process each batch
-func ProcessInConcurrentBatches(getBatch GenericBatchGetter, processBatch GenericBatchProcessor, batchSize, maxWorkers int) (err error) {
+func processInConcurrentBatches(getBatch GenericBatchGetter, processBatch GenericBatchProcessor, batchSize, maxWorkers int) (err error) {
 	// validate paramters
 	if getBatch == nil {
 		return errors.New("getBatch function cannot be nil")

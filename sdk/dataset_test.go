@@ -83,21 +83,21 @@ func TestGetDataset(t *testing.T) {
 }
 
 func TestClient_GetDatasetsInBatches(t *testing.T) {
-	versionsResponse1 := List{
+	versionsResponse1 := DatasetsList{
 		Items:      []models.DatasetUpdate{{ID: "testDataset1"}},
 		TotalCount: 2, // Total count is read from the first response to determine how many batches are required
 		Offset:     0,
 		Count:      1,
 	}
 
-	versionsResponse2 := List{
+	versionsResponse2 := DatasetsList{
 		Items:      []models.DatasetUpdate{{ID: "testDataset2"}},
 		TotalCount: 2,
 		Offset:     1,
 		Count:      1,
 	}
 
-	expectedDatasets := List{
+	expectedDatasets := DatasetsList{
 		Items: []models.DatasetUpdate{
 			versionsResponse1.Items[0],
 			versionsResponse2.Items[0],
@@ -116,8 +116,8 @@ func TestClient_GetDatasetsInBatches(t *testing.T) {
 
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
 
-		processedBatches := []List{}
-		var testProcess DatasetsBatchProcessor = func(batch List) (abort bool, err error) {
+		processedBatches := []DatasetsList{}
+		var testProcess DatasetsBatchProcessor = func(batch DatasetsList) (abort bool, err error) {
 			processedBatches = append(processedBatches, batch)
 			return false, nil
 		}
@@ -135,9 +135,9 @@ func TestClient_GetDatasetsInBatches(t *testing.T) {
 		})
 
 		Convey("then GetDatasetsBatchProcess calls the batchProcessor function twice, with the expected batches", func() {
-			err := datasetAPIClient.GetDatasetsBatchProcess(ctx, headers, testProcess, batchSize, maxWorkers)
+			err := datasetAPIClient.getDatasetsBatchProcess(ctx, headers, testProcess, batchSize, maxWorkers)
 			So(err, ShouldBeNil)
-			So(processedBatches, ShouldResemble, []List{versionsResponse1, versionsResponse2})
+			So(processedBatches, ShouldResemble, []DatasetsList{versionsResponse1, versionsResponse2})
 			So(httpClient.DoCalls(), ShouldHaveLength, 2)
 			So(httpClient.DoCalls()[0].Req.URL.String(), ShouldResemble,
 				"http://localhost:22000/datasets?limit=1&offset=0")
@@ -151,8 +151,8 @@ func TestClient_GetDatasetsInBatches(t *testing.T) {
 			MockedHTTPResponse{http.StatusBadRequest, "", nil})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
 
-		processedBatches := []List{}
-		var testProcess DatasetsBatchProcessor = func(batch List) (abort bool, err error) {
+		processedBatches := []DatasetsList{}
+		var testProcess DatasetsBatchProcessor = func(batch DatasetsList) (abort bool, err error) {
 			processedBatches = append(processedBatches, batch)
 			return false, nil
 		}
@@ -170,11 +170,11 @@ func TestClient_GetDatasetsInBatches(t *testing.T) {
 		})
 
 		Convey("then GetDatasetsBatchProcess fails with the expected error and doesn't call the batchProcessor", func() {
-			err := datasetAPIClient.GetDatasetsBatchProcess(ctx, headers, testProcess, batchSize, maxWorkers)
+			err := datasetAPIClient.getDatasetsBatchProcess(ctx, headers, testProcess, batchSize, maxWorkers)
 			So(err, ShouldNotBeNil)
 			So(err.(*ErrInvalidDatasetAPIResponse).actualCode, ShouldEqual, http.StatusBadRequest)
 			So(err.(*ErrInvalidDatasetAPIResponse).uri, ShouldResemble, "http://localhost:22000/datasets?limit=1&offset=0")
-			So(processedBatches, ShouldResemble, []List{})
+			So(processedBatches, ShouldResemble, []DatasetsList{})
 		})
 	})
 
@@ -185,8 +185,8 @@ func TestClient_GetDatasetsInBatches(t *testing.T) {
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
 
 		// testProcess is a generic batch processor for testing
-		processedBatches := []List{}
-		var testProcess DatasetsBatchProcessor = func(batch List) (abort bool, err error) {
+		processedBatches := []DatasetsList{}
+		var testProcess DatasetsBatchProcessor = func(batch DatasetsList) (abort bool, err error) {
 			processedBatches = append(processedBatches, batch)
 			return false, nil
 		}
@@ -204,11 +204,11 @@ func TestClient_GetDatasetsInBatches(t *testing.T) {
 		})
 
 		Convey("then GetDatasetsBatchProcess fails with the expected error and calls the batchProcessor for the first batch only", func() {
-			err := datasetAPIClient.GetDatasetsBatchProcess(ctx, headers, testProcess, batchSize, maxWorkers)
+			err := datasetAPIClient.getDatasetsBatchProcess(ctx, headers, testProcess, batchSize, maxWorkers)
 			So(err, ShouldNotBeNil)
 			So(err.(*ErrInvalidDatasetAPIResponse).actualCode, ShouldEqual, http.StatusBadRequest)
 			So(err.(*ErrInvalidDatasetAPIResponse).uri, ShouldResemble, "http://localhost:22000/datasets?limit=1&offset=1")
-			So(processedBatches, ShouldResemble, []List{versionsResponse1})
+			So(processedBatches, ShouldResemble, []DatasetsList{versionsResponse1})
 		})
 	})
 }

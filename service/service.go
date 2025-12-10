@@ -24,7 +24,6 @@ import (
 	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	kafka "github.com/ONSdigital/dp-kafka/v4"
 	dphandlers "github.com/ONSdigital/dp-net/v3/handlers"
-	dphttp "github.com/ONSdigital/dp-net/v3/http"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
@@ -334,26 +333,16 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		svc.config.AuthConfig.PermissionsMaxCacheTime,
 	)
 
-	var idClient *clientsidentity.Client
-
 	// Log kafka producer errors in parallel go-routine
 	if svc.config.EnablePrivateEndpoints {
 		svc.generateCMDDownloadsProducer.LogErrors(ctx)
 		svc.generateCantabularDownloadsProducer.LogErrors(ctx)
-
-		// Create Zebedee client
-		svc.ZebedeeClient = health.NewClientWithClienter("Zebedee", svc.config.ZebedeeURL, dphttp.ClientWithTimeout(dphttp.NewClient(), svc.config.ZebedeeClientTimeout))
-		idClient = clientsidentity.NewWithHealthClient(&health.Client{
-			Client: svc.ZebedeeClient.Client,
-			URL:    svc.config.ZebedeeURL,
-			Name:   "identity",
-		})
 	}
 
 	sm := GetStateMachine(ctx, ds)
 	svc.smDS = application.Setup(ds, smDownloadGenerators, sm)
 
-	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, authorisation, enableURLRewriting, svc.smDS, permissionChecker, idClient)
+	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, authorisation, enableURLRewriting, svc.smDS, permissionChecker, svc.identityClient)
 
 	// Set the files API client on the DatasetAPI after initialisation
 	if svc.config.EnablePrivateEndpoints && svc.filesAPIClient != nil {

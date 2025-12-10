@@ -16,7 +16,6 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
-	dpNetRequest "github.com/ONSdigital/dp-net/v3/request"
 	"github.com/ONSdigital/log.go/v2/log"
 )
 
@@ -29,45 +28,6 @@ const (
 
 type Client struct {
 	hcCli *health.Client
-}
-
-// Contains the headers to be added to any request
-type Headers struct {
-	CollectionID         string
-	DownloadServiceToken string
-	AccessToken          string // could be user or service token for auth v2
-}
-
-// Adds headers to the input request
-func (h *Headers) add(request *http.Request) {
-	if h.CollectionID != "" {
-		request.Header.Add(dpNetRequest.CollectionIDHeaderKey, h.CollectionID)
-	}
-	dpNetRequest.AddDownloadServiceTokenHeader(request, h.DownloadServiceToken)
-	dpNetRequest.AddServiceTokenHeader(request, h.AccessToken)
-}
-
-// SetIfMatch set the If-Match header on the provided request. If this header is already present it
-// will be overwritten by the new value. Empty values are allowed for this header.
-func (h *Headers) SetIfMatch(req *http.Request, headerValue string) error {
-	err := setRequestHeader(req, ifMatchHeader, headerValue)
-	if err != nil && err != ErrValueEmpty {
-		return err
-	}
-	return nil
-}
-
-func setRequestHeader(req *http.Request, headerName, headerValue string) error {
-	if req == nil {
-		return ErrRequestNil
-	}
-
-	if headerValue == "" {
-		return ErrValueEmpty
-	}
-
-	req.Header.Set(headerName, headerValue)
-	return nil
 }
 
 // Checker calls the health.Client's Checker method
@@ -112,14 +72,14 @@ func (c *Client) doAuthenticatedPostRequest(ctx context.Context, headers Headers
 }
 
 // Creates new request object, executes a put request using the input `headers`, `uri`, and payload, and returns the response including an IfMatch header
-func (c *Client) DoAuthenticatedPutRequestWithEtag(ctx context.Context, headers Headers, uri *url.URL, payload []byte, ifMatch string) (*http.Response, error) {
+func (c *Client) doAuthenticatedPutRequestWithEtag(ctx context.Context, headers Headers, uri *url.URL, payload []byte, ifMatch string) (*http.Response, error) {
 	req, err := http.NewRequest(http.MethodPut, uri.RequestURI(), bytes.NewBuffer(payload))
 	if err != nil {
 		return nil, err
 	}
 
 	headers.add(req)
-	err = headers.SetIfMatch(req, ifMatch)
+	err = setIfMatch(req, ifMatch)
 	if err != nil {
 		return nil, err
 	}
