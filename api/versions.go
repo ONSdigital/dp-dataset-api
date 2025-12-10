@@ -350,47 +350,48 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 
 	// Only check for edition ID/title conflicts for static datasets
 	if version.Type == models.Static.String() {
-		versionStr := vars["version"]
+		if version.Edition != "" || version.EditionTitle != "" {
+			versionStr := vars["version"]
 
-		versionNumber, _ := strconv.Atoi(versionStr)
-		// Load the existing version
-		existingVersion, getErr := api.dataStore.Backend.GetVersionStatic(
-			ctx,
-			vars["dataset_id"],
-			vars["edition"],
-			versionNumber,
-			"",
-		)
+			versionNumber, _ := strconv.Atoi(versionStr)
+			// Load the existing version
+			existingVersion, getErr := api.dataStore.Backend.GetVersionStatic(
+				ctx,
+				vars["dataset_id"],
+				vars["edition"],
+				versionNumber,
+				"",
+			)
 
-		if getErr != nil {
-			fmt.Println("here")
-			handleVersionAPIErr(ctx, getErr, w, data)
-			return
-		}
-
-		// Detect whether edition ID or title has changed
-		editionChanged := existingVersion.Edition != version.Edition
-		titleChanged := existingVersion.EditionTitle != version.EditionTitle
-
-		// Only validate uniqueness IF edition or title is changing
-		if editionChanged {
-			checkErr := api.dataStore.Backend.CheckEditionExistsStatic(ctx, version.DatasetID, version.Edition, "")
-			if checkErr == nil {
-				log.Error(ctx, "edition ID already exists for this dataset", errs.ErrEditionAlreadyExists, data)
-				handleVersionAPIErr(ctx, errs.ErrEditionAlreadyExists, w, data)
-				return
-			} else if !errors.Is(checkErr, errs.ErrEditionNotFound) {
-				log.Error(ctx, "failed to check edition ID existence", checkErr, data)
-				handleVersionAPIErr(ctx, checkErr, w, data)
+			if getErr != nil {
+				handleVersionAPIErr(ctx, getErr, w, data)
 				return
 			}
-		}
 
-		if titleChanged {
-			checkErr := api.dataStore.Backend.CheckEditionTitleExistsStatic(ctx, version.DatasetID, version.EditionTitle)
-			if checkErr != nil {
-				handleVersionAPIErr(ctx, checkErr, w, data)
-				return
+			// Detect whether edition ID or title has changed
+			editionChanged := existingVersion.Edition != version.Edition
+			titleChanged := existingVersion.EditionTitle != version.EditionTitle
+
+			// Only validate uniqueness IF edition or title is changing
+			if editionChanged {
+				checkErr := api.dataStore.Backend.CheckEditionExistsStatic(ctx, version.DatasetID, version.Edition, "")
+				if checkErr == nil {
+					log.Error(ctx, "edition ID already exists for this dataset", errs.ErrEditionAlreadyExists, data)
+					handleVersionAPIErr(ctx, errs.ErrEditionAlreadyExists, w, data)
+					return
+				} else if !errors.Is(checkErr, errs.ErrEditionNotFound) {
+					log.Error(ctx, "failed to check edition ID existence", checkErr, data)
+					handleVersionAPIErr(ctx, checkErr, w, data)
+					return
+				}
+			}
+
+			if titleChanged {
+				checkErr := api.dataStore.Backend.CheckEditionTitleExistsStatic(ctx, version.DatasetID, version.EditionTitle)
+				if checkErr != nil {
+					handleVersionAPIErr(ctx, checkErr, w, data)
+					return
+				}
 			}
 		}
 	}
