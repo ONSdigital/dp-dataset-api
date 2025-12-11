@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ONSdigital/dp-authorisation/v2/authorisationtest"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/download"
 	"github.com/ONSdigital/dp-dataset-api/schema"
@@ -56,6 +57,7 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the response header "([^"]*)" should not be empty$`, c.theResponseHeaderShouldNotBeEmpty)
 	ctx.Step(`^the dataset "([^"]*)" should have next equal to current$`, c.theDatasetShouldHaveNextEqualToCurrent)
 	ctx.Step(`^the "([^"]*)" feature flag is "([^"]*)"$`, c.theFeatureFlagIs)
+	ctx.Step(`^I am a publisher user$`, c.publisherJWTToken)
 	ctx.Step(`^these kafka messages are produced:$`, c.theseKafkaMessagesAreProduced)
 }
 
@@ -663,4 +665,9 @@ func (c *DatasetComponent) theResponseHeaderShouldNotBeEmpty(header string) erro
 		return fmt.Errorf("expected non-empty header %q but got empty", header)
 	}
 	return nil
+}
+
+func (c *DatasetComponent) publisherJWTToken() error {
+	err := c.apiFeature.ISetTheHeaderTo("Authorization", authorisationtest.PublisherJWTToken)
+	return err
 }

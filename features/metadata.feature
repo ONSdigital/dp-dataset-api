@@ -2,8 +2,7 @@ Feature: Dataset API - metadata
 
     Background:
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         And I have these datasets:
             """
             [
@@ -132,6 +131,49 @@ Feature: Dataset API - metadata
                 "release_date": "today"
             }
             """
+
+    Scenario: Successful PUT metadata with valid etag for a publisher user
+        When I set the "If-Match" header to "etag-test-item-1"
+        And I am a publisher user
+        And I PUT "/datasets/population-estimates/editions/hello/versions/1/metadata"
+            """
+            {
+                "title": "new title",
+                "canonical_topic": "new-canonical-topic-id",
+                "subtopics": ["a", "b"],
+                "release_date": "today"
+            }
+            """
+        Then the HTTP status code should be "200"
+        And the document in the database for id "population-estimates" should be:
+            """
+            {
+                "id": "population-estimates",
+                "canonical_topic": "new-canonical-topic-id",
+                "subtopics": ["a", "b"],
+                "state": "associated",
+                "title": "new title"          
+            }
+            """
+        And the version in the database for id "test-item-1" should be:
+            """
+            {
+                "id": "test-item-1",
+                "version": 1,
+                "state": "associated",
+                "links": {
+                    "dataset": {
+                        "id": "population-estimates"
+                    },
+                    "self": {
+                        "href": "/datasets/population-estimates/editions/hello/versions/1"
+                    }
+                },
+                "edition": "hello",
+                "release_date": "today"
+            }
+            """
+
 
     Scenario: Successful PUT metadata with no etag
         When I PUT "/datasets/population-estimates/editions/hello/versions/1/metadata"
@@ -542,10 +584,108 @@ Feature: Dataset API - metadata
             }
             """
 
-    Scenario: GET metadata for unpublished version when authorised
+    Scenario: GET metadata for unpublished version when authorised for an admin user
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
+        And I have these datasets:
+            """
+            [
+                {
+                    "id": "population-estimates",
+                    "title": "title",
+                    "description": "description",
+                    "state": "associated",
+                    "next_release": "2022",
+                    "contacts": [
+                        {
+                            "name": "name 1",
+                            "email": "name@example.com",
+                            "telephone": "01234 567890"
+                        }
+                    ]
+                }
+            ]
+            """
+        And I have these editions:
+            """
+            [
+                {
+                    "id": "test-edition-1",
+                    "edition": "2023",
+                    "state": "associated",
+                    "links": {
+                        "dataset": {
+                            "id": "population-estimates"
+                        }
+                    }
+                }
+            ]
+            """
+        And I have these versions:
+            """
+            [
+                {
+                    "id": "test-version-1",
+                    "version": 1,
+                    "state": "associated",
+                    "release_date": "2023-01-01T00:00:00.000Z",
+                    "links": {
+                        "dataset": {
+                            "id": "population-estimates"
+                        },
+                        "edition": {
+                            "id": "2023"
+                        },
+                        "self": {
+                            "href": "/datasets/population-estimates/editions/2023/versions/1"
+                        },
+                        "version": {
+                            "href": "/datasets/population-estimates/editions/2023/versions/1",
+                            "id": "1"
+                        }
+                    },
+                    "edition": "2023"
+                }
+            ]
+            """
+        When I GET "/datasets/population-estimates/editions/2023/versions/1/metadata"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+            "contacts": [
+                {
+                "name": "name 1",
+                "email": "name@example.com",
+                "telephone": "01234 567890"
+                }
+            ],
+            "description": "description",
+            "distribution": ["json"],
+            "edition": "2023",
+            "id": "population-estimates",
+            "last_updated": "0001-01-01T00:00:00Z",
+            "links": {
+                "self": {
+                "href": "/datasets/population-estimates/editions/2023/versions/1/metadata"
+                },
+                "version": {
+                "href": "/datasets/population-estimates/editions/2023/versions/1"
+                },
+                "website_version": {
+                "href": "http://localhost:20000/datasets/population-estimates/editions/2023/versions/1"
+                }
+            },
+            "next_release": "2022",
+            "release_date": "2023-01-01T00:00:00.000Z",
+            "title": "title",
+            "version": 1,
+            "state": "associated"
+            }
+            """
+
+    Scenario: GET metadata for unpublished version when authorised for a publisher user
+        Given private endpoints are enabled
+        And I am a publisher user
         And I have these datasets:
             """
             [

@@ -1,6 +1,6 @@
-Feature: Static Dataset Versions DELETE API
+Feature: Static Dataset Type DELETE API
 
-    Background: We have static datasets for DELETE version testing
+    Background: We have static datasets for DELETE testing
         Given I have these datasets:
             """
             [
@@ -117,10 +117,17 @@ Feature: Static Dataset Versions DELETE API
             ]
             """
     
-     Scenario: DELETE static dataset with unpublished versions successfully
+     Scenario: DELETE static dataset with unpublished versions successfully for admin user
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
+        When I DELETE "/datasets/static-dataset-test"
+        Then the HTTP status code should be "204"
+        And the dataset "static-dataset-test" should not exist
+        And the static version "static-version-approved" should not exist 
+
+    Scenario: DELETE static dataset with unpublished versions successfully for a publisher user
+        Given private endpoints are enabled
+        And I am a publisher user
         When I DELETE "/datasets/static-dataset-test"
         Then the HTTP status code should be "204"
         And the dataset "static-dataset-test" should not exist
@@ -128,8 +135,7 @@ Feature: Static Dataset Versions DELETE API
 
     Scenario: DELETE rejects published static dataset from deletion
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I DELETE "/datasets/static-dataset-published"
         Then the HTTP status code should be "403"
         And the dataset "static-dataset-published" should exist
@@ -137,8 +143,7 @@ Feature: Static Dataset Versions DELETE API
 
     Scenario: DELETE /datasets/{id} fails due to bad files-api client response
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I DELETE "/datasets/static-dataset-bad-version-download-url"
         Then the HTTP status code should be "500"
         And the dataset "static-dataset-bad-version-download-url" should exist
@@ -146,8 +151,7 @@ Feature: Static Dataset Versions DELETE API
 
     Scenario: DELETE unpublished static dataset with no versions successfully
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I DELETE "/datasets/static-dataset-no-versions"
         Then the HTTP status code should be "204"
         And the dataset "static-dataset-no-versions" should not exist

@@ -85,10 +85,66 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                 }
             ]
             """
-    Scenario: Successfully creating a new version
+    Scenario: Successfully creating a new version for an admin user
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
+        When I POST "/datasets/static-dataset-1/editions/2024/versions/2"
+            """
+            {
+                "release_date": "2024-12-01T09:00:00.000Z",
+                "edition_title": "2024",
+                "distributions": [
+                    {
+                        "title": "Full Dataset CSV",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "download_url": "/downloads/files/static-dataset-1/2024/2/filename.csv",
+                        "byte_size": 100
+                    }
+                ],
+                "type": "static"
+            }
+            """
+        Then I should receive the following JSON response with status "201":
+            """
+            {
+                "dataset_id": "static-dataset-1",
+                "distributions": [
+                    {
+                        "byte_size": 100,
+                        "download_url": "/downloads/files/static-dataset-1/2024/2/filename.csv",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "title": "Full Dataset CSV"
+                    }
+                ],
+                "links": {
+                    "dataset": {
+                        "href": "http://localhost:22000/datasets/static-dataset-1",
+                        "id": "static-dataset-1"
+                    },
+                    "edition": {
+                        "href": "http://localhost:22000/datasets/static-dataset-1/editions/2024",
+                        "id": "2024"
+                    },
+                    "self": {
+                        "href": "http://localhost:22000/datasets/static-dataset-1/editions/2024/versions/2"
+                    }
+                },
+                "edition": "2024",
+                "edition_title": "2024",
+                "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
+                "release_date": "2024-12-01T09:00:00.000Z",
+                "state": "associated",
+                "type": "static",
+                "version": 2
+            }
+            """
+        And the response header "ETag" should not be empty
+
+    Scenario: Successfully creating a new version for a publisher user
+        Given private endpoints are enabled
+        And I am a publisher user
         When I POST "/datasets/static-dataset-1/editions/2024/versions/2"
             """
             {
@@ -166,8 +222,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
 
     Scenario: Request with a dataset that doesn't exist returns 404
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I POST "/datasets/missing/editions/2024/versions/2"
             """
             {
@@ -199,8 +254,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
 
     Scenario: Request with an edition that doesn't exist returns 404
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I POST "/datasets/static-dataset-1/editions/0/versions/2"
             """
             {
@@ -232,8 +286,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
 
     Scenario: Request with a version that already exists returns 409
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I POST "/datasets/static-dataset-1/editions/2024/versions/1"
             """
             {
@@ -265,8 +318,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
 
     Scenario: Request with an invalid version returns 400
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I POST "/datasets/static-dataset-1/editions/2024/versions/invalid"
             """
             {
@@ -298,8 +350,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
 
     Scenario: Request with a type that isn't static returns 400
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I POST "/datasets/static-dataset-1/editions/2024/versions/2"
             """
             {
@@ -331,8 +382,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
 
     Scenario: Request with all mandatory fields missing returns 400
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I POST "/datasets/missing/editions/2024/versions/2"
             """
             {
@@ -361,8 +411,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
 
     Scenario: Successfully creating a static version with auto-populated media_type
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I POST "/datasets/static-dataset-1/editions/2024/versions/3"
             """
             {
@@ -417,8 +466,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
 
     Scenario: Request with missing distribution format returns 400
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I POST "/datasets/static-dataset-1/editions/2024/versions/3"
             """
             {
@@ -448,8 +496,7 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
 
     Scenario: Request with invalid distribution format returns 400
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I POST "/datasets/static-dataset-1/editions/2024/versions/3"
             """
             {

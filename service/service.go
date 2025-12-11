@@ -7,8 +7,10 @@ import (
 	"slices"
 	"sync"
 
+	"github.com/ONSdigital/dp-api-clients-go/v2/health"
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
-	"github.com/ONSdigital/dp-authorisation/auth"
+	auth "github.com/ONSdigital/dp-authorisation/v2/authorisation"
+	"github.com/ONSdigital/dp-authorisation/v2/permissions"
 	"github.com/ONSdigital/dp-dataset-api/api"
 	"github.com/ONSdigital/dp-dataset-api/application"
 	"github.com/ONSdigital/dp-dataset-api/config"
@@ -22,7 +24,6 @@ import (
 	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	kafka "github.com/ONSdigital/dp-kafka/v4"
 	dphandlers "github.com/ONSdigital/dp-net/v3/handlers"
-	dphttp "github.com/ONSdigital/dp-net/v3/http"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
@@ -56,6 +57,8 @@ type Service struct {
 	healthCheck                         HealthChecker
 	api                                 *api.DatasetAPI
 	smDS                                *application.StateMachineDatasetAPI
+	AuthMiddleware                      auth.Middleware
+	ZebedeeClient                       *health.Client
 }
 
 var stateMachine *application.StateMachine
@@ -305,7 +308,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 
 	// Get HTTP router and server with middleware
 	r := mux.NewRouter()
-	m := svc.createMiddleware(svc.config)
+	m := svc.createMiddleware()
 
 	if svc.config.OtelEnabled {
 		r.Use(otelmux.Middleware(svc.config.OTServiceName))
@@ -326,10 +329,31 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		log.Info(ctx, "URL rewriting enabled")
 	}
 
-	datasetPermissions, permissions := getAuthorisationHandlers(ctx, svc.config)
+	// Get Permissions
+	authorisation, err := svc.serviceList.Init.DoGetAuthorisationMiddleware(ctx, svc.config.AuthConfig)
+	if err != nil {
+		log.Fatal(ctx, "could not instantiate authorisation middleware", err)
+		return err
+	}
+
+	permissionChecker := permissions.NewChecker(
+		ctx,
+		svc.config.AuthConfig.PermissionsAPIURL,
+		svc.config.AuthConfig.PermissionsCacheUpdateInterval,
+		svc.config.AuthConfig.PermissionsMaxCacheTime,
+	)
+
+	// Log kafka producer errors in parallel go-routine
+	if svc.config.EnablePrivateEndpoints {
+		svc.generateCMDDownloadsProducer.LogErrors(ctx)
+		svc.generateCantabularDownloadsProducer.LogErrors(ctx)
+		svc.searchContentUpdatedKafkaProducer.LogErrors(ctx)
+	}
+
 	sm := GetStateMachine(ctx, ds)
 	svc.smDS = application.Setup(ds, smDownloadGenerators, sm)
-	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, datasetPermissions, permissions, enableURLRewriting, svc.smDS, searchContentUpdatedProducer)
+
+	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, authorisation, enableURLRewriting, svc.smDS, permissionChecker, svc.identityClient, searchContentUpdatedProducer)
 
 	// Set the files API client on the DatasetAPI after initialisation
 	if svc.config.EnablePrivateEndpoints && svc.filesAPIClient != nil {
@@ -338,13 +362,6 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	}
 
 	svc.healthCheck.Start(ctx)
-
-	// Log kafka producer errors in parallel go-routine
-	if svc.config.EnablePrivateEndpoints {
-		svc.generateCMDDownloadsProducer.LogErrors(ctx)
-		svc.generateCantabularDownloadsProducer.LogErrors(ctx)
-		svc.searchContentUpdatedKafkaProducer.LogErrors(ctx)
-	}
 
 	// Run the http server in a new go-routine
 	go func() {
@@ -420,45 +437,12 @@ func createURLBuilder(cfg *config.Configuration) (*url.Builder, error) {
 	return url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL), nil
 }
 
-func getAuthorisationHandlers(ctx context.Context, cfg *config.Configuration) (datasetPermissions, permissions api.AuthHandler) {
-	if !cfg.EnablePermissionsAuth {
-		log.Info(ctx, "feature flag not enabled defaulting to nop auth impl", log.Data{"feature": "ENABLE_PERMISSIONS_AUTH"})
-		return &auth.NopHandler{}, &auth.NopHandler{}
-	}
-
-	log.Info(ctx, "feature flag enabled", log.Data{"feature": "ENABLE_PERMISSIONS_AUTH"})
-
-	authClient := auth.NewPermissionsClient(dphttp.NewClient())
-	authVerifier := auth.DefaultPermissionsVerifier()
-
-	// for checking caller permissions when we have a datasetID, collection ID and user/service token
-	datasetPermissions = auth.NewHandler(
-		auth.NewDatasetPermissionsRequestBuilder(cfg.ZebedeeURL, "dataset_id", mux.Vars),
-		authClient,
-		authVerifier,
-	)
-
-	// for checking caller permissions when we only have a user/service token
-	permissions = auth.NewHandler(
-		auth.NewPermissionsRequestBuilder(cfg.ZebedeeURL),
-		authClient,
-		authVerifier,
-	)
-
-	return datasetPermissions, permissions
-}
-
 // CreateMiddleware creates an Alice middleware chain of handlers
 // to forward collectionID from cookie from header
-func (svc *Service) createMiddleware(cfg *config.Configuration) alice.Chain {
+func (svc *Service) createMiddleware() alice.Chain {
 	// healthcheck
 	healthcheckHandler := newMiddleware(svc.healthCheck.Handler, "/health")
 	middleware := alice.New(healthcheckHandler)
-
-	// Only add the identity middleware when running in publishing.
-	if cfg.EnablePrivateEndpoints {
-		middleware = middleware.Append(dphandlers.IdentityWithHTTPClient(svc.identityClient))
-	}
 
 	// collection ID
 	middleware = middleware.Append(dphandlers.CheckHeader(dphandlers.CollectionID))

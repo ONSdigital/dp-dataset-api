@@ -6,6 +6,7 @@ import (
 
 	"github.com/kelseyhightower/envconfig"
 
+	"github.com/ONSdigital/dp-authorisation/v2/authorisation"
 	mongodriver "github.com/ONSdigital/dp-mongodb/v3/mongodb"
 )
 
@@ -61,6 +62,7 @@ type Configuration struct {
 	OTBatchTimeout                 time.Duration `envconfig:"OTEL_BATCH_TIMEOUT"`
 	OtelEnabled                    bool          `envconfig:"OTEL_ENABLED"`
 	MongoConfig
+	AuthConfig *authorisation.Config
 }
 
 var cfg *Configuration
@@ -108,7 +110,6 @@ func Get() (*Configuration, error) {
 		EnablePrivateEndpoints:         false,
 		EnableDetachDataset:            false,
 		EnableDeleteStaticVersion:      false,
-		EnablePermissionsAuth:          false,
 		EnableObservationEndpoint:      true,
 		EnableURLRewriting:             false,
 		DisableGraphDBDependency:       false,
@@ -137,6 +138,7 @@ func Get() (*Configuration, error) {
 			DatasetAPIURL:  "http://localhost:22000",
 		},
 		ComponentTestUseLogFile: false,
+		AuthConfig:              authorisation.NewDefaultConfig(),
 	}
 
 	return cfg, envconfig.Process("", cfg)

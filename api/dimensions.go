@@ -38,7 +38,7 @@ func (api *DatasetAPI) getDimensions(w http.ResponseWriter, r *http.Request, lim
 	}
 
 	list, totalCount, err := func() ([]models.Dimension, int, error) {
-		authorised := api.authenticate(r, logData)
+		authorised := api.checkUserPermission(r, logData, datasetEditionVersionReadPermission)
 
 		var state string
 		if !authorised {
@@ -162,7 +162,7 @@ func (api *DatasetAPI) getDimensionOptions(w http.ResponseWriter, r *http.Reques
 	dimension := vars["dimension"]
 
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": versionID, "dimension": dimension, "func": "getDimensionOptions"}
-	authorised := api.authenticate(r, logData)
+	authorised := api.checkUserPermission(r, logData, datasetEditionVersionReadPermission)
 
 	versionName, err := models.ParseAndValidateVersionNumber(ctx, versionID)
 	if err != nil {

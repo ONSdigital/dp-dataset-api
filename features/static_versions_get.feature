@@ -83,8 +83,7 @@ Feature: Static versions GET /versions
     
     Scenario: GET /datasets/test-static/editions/test-edition-static-approved/versions in private mode returns all versions
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I GET "/datasets/test-static/editions/test-edition-static-approved/versions"
         Then I should receive the following JSON response with status "200":
             """
