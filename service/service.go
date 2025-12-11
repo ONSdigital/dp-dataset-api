@@ -287,7 +287,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	if svc.config.EnablePrivateEndpoints {
 		svc.identityClient = clientsidentity.New(svc.config.ZebedeeURL)
 		// Get Permissions
-		authorisation, err = svc.serviceList.Init.DoGetAuthorisationMiddleware(ctx, svc.config.AuthConfig)
+		authorisation, err = svc.serviceList.GetAuthorisationMiddleware(ctx, svc.config.AuthConfig)
 		if err != nil {
 			log.Fatal(ctx, "could not instantiate authorisation middleware", err)
 			return err
