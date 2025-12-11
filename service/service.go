@@ -281,9 +281,24 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		models.Filterable:                  downloadGeneratorCMD,
 	}
 
+	var authorisation auth.Middleware
+	var permissionChecker *permissions.Checker
 	// Get Identity Client (only if private endpoints are enabled)
 	if svc.config.EnablePrivateEndpoints {
 		svc.identityClient = clientsidentity.New(svc.config.ZebedeeURL)
+		// Get Permissions
+		authorisation, err = svc.serviceList.Init.DoGetAuthorisationMiddleware(ctx, svc.config.AuthConfig)
+		if err != nil {
+			log.Fatal(ctx, "could not instantiate authorisation middleware", err)
+			return err
+		}
+
+		permissionChecker = permissions.NewChecker(
+			ctx,
+			svc.config.AuthConfig.PermissionsAPIURL,
+			svc.config.AuthConfig.PermissionsCacheUpdateInterval,
+			svc.config.AuthConfig.PermissionsMaxCacheTime,
+		)
 	}
 
 	// Get HealthCheck
@@ -318,20 +333,6 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	if enableURLRewriting {
 		log.Info(ctx, "URL rewriting enabled")
 	}
-
-	// Get Permissions
-	authorisation, err := svc.serviceList.Init.DoGetAuthorisationMiddleware(ctx, svc.config.AuthConfig)
-	if err != nil {
-		log.Fatal(ctx, "could not instantiate authorisation middleware", err)
-		return err
-	}
-
-	permissionChecker := permissions.NewChecker(
-		ctx,
-		svc.config.AuthConfig.PermissionsAPIURL,
-		svc.config.AuthConfig.PermissionsCacheUpdateInterval,
-		svc.config.AuthConfig.PermissionsMaxCacheTime,
-	)
 
 	// Log kafka producer errors in parallel go-routine
 	if svc.config.EnablePrivateEndpoints {
