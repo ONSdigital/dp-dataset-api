@@ -1073,7 +1073,6 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 	})
 
 	Convey("When updating only release_date and edition ID and title are unchanged", t, func() {
-
 		generatorMock := &mocks.DownloadsGeneratorMock{
 			GenerateFunc: func(context.Context, string, string, string, string) error {
 				return nil
