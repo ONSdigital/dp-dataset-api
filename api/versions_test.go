@@ -1072,6 +1072,87 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		})
 	})
 
+	Convey("When updating only release_date and edition ID and title are unchanged", t, func() {
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(context.Context, string, string, string, string) error {
+				return nil
+			},
+		}
+
+		b := `{
+            "edition": "2017",
+            "edition_title": "Test Title",
+            "release_date": "2024-05-01",
+            "type": "static"
+        }`
+
+		r := createRequestWithAuth(
+			"PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b),
+		)
+		w := httptest.NewRecorder()
+
+		InstanceID := "789"
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID, editionID, state string) error {
+				return nil
+			},
+			CheckEditionTitleExistsStaticFunc: func(ctx context.Context, datasetID, editionTitle string) error {
+				return nil
+			},
+
+			GetVersionStaticFunc: func(ctx context.Context, datasetID, editionID string, version int, state string) (*models.Version, error) {
+				return &models.Version{
+					ID:           InstanceID,
+					Edition:      "2017",
+					EditionTitle: "Test Title ",
+					State:        models.AssociatedState,
+					Type:         models.Static.String(),
+					ETag:         testETag,
+					Version:      1,
+				}, nil
+			},
+
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					ID:      InstanceID,
+					Edition: "2017",
+					State:   models.EditionConfirmedState,
+					ETag:    testETag,
+				}, nil
+			},
+
+			UpdateVersionStaticFunc: func(ctx context.Context, currentVersion *models.Version, versionUpdate *models.Version, eTagSelector string) (string, error) {
+				return "", nil
+			},
+
+			AcquireVersionsLockFunc: func(context.Context, string) (string, error) {
+				return testLockID, nil
+			},
+			UnlockVersionsFunc: func(context.Context, string) {
+			},
+
+			AcquireInstanceLockFunc: func(context.Context, string) (string, error) {
+				return "", nil
+			},
+			UnlockInstanceFunc: func(context.Context, string) {},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock)
+
+		api.Router.ServeHTTP(w, r)
+
+		Convey("Then response should be 200 OK", func() {
+			So(w.Code, ShouldEqual, http.StatusOK)
+		})
+	})
+
 	Convey("When updating to a new edition ID that already exists", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
 			GenerateFunc: func(context.Context, string, string, string, string) error {
@@ -1102,6 +1183,14 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 					Edition: "2017",
 					State:   models.EditionConfirmedState,
 					ETag:    testETag,
+				}, nil
+			},
+			GetVersionStaticFunc: func(ctx context.Context, datasetID, editionID string, version int, state string) (*models.Version, error) {
+				return &models.Version{
+					ID:           "789",
+					Edition:      "2017",
+					EditionTitle: "Test Title",
+					State:        models.EditionConfirmedState,
 				}, nil
 			},
 		}
@@ -1164,6 +1253,14 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 					Edition: "2017",
 					State:   models.EditionConfirmedState,
 					ETag:    testETag,
+				}, nil
+			},
+			GetVersionStaticFunc: func(ctx context.Context, datasetID, editionID string, version int, state string) (*models.Version, error) {
+				return &models.Version{
+					ID:           "789",
+					Edition:      "2017",
+					EditionTitle: "Test Title",
+					State:        models.EditionConfirmedState,
 				}, nil
 			},
 		}

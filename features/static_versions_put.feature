@@ -42,6 +42,42 @@ Feature: Static Dataset Versions PUT API
                 }
             }
             """
+            
+    And I have these static versions:
+        """
+        [
+            {
+                "id": "static-version-2024",
+                "edition": "2024",
+                "edition_title": "2024 Edition",
+                "links": {
+                    "dataset": {
+                        "id": "static-dataset-update"
+                    },
+                    "edition": {
+                        "href": "/datasets/static-dataset-update/editions/2024",
+                        "id": "2024"
+                    },
+                    "self": {
+                        "href": "/datasets/static-dataset-update/editions/2024/versions/1"
+                    }
+                },
+                "version": 1,
+                "release_date": "2024-01-01T09:00:00.000Z",
+                "state": "associated",
+                "type": "static",
+                "distributions": [
+                    {
+                        "title": "csv",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "download_url": "/uuid/filename2.csv",
+                        "byte_size": 125000
+                    }
+                ]
+            }
+        ]
+        """
 
     Scenario: PUT updates static dataset version successfully for an admin user
         Given private endpoints are enabled
@@ -496,7 +532,7 @@ Feature: Static Dataset Versions PUT API
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
             """
             {
-                "edition_title": "2025 Edition",
+                "edition_title": "2024 Edition",
                 "type": "static"
             }
             """
@@ -512,7 +548,7 @@ Feature: Static Dataset Versions PUT API
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
             """
             {
-                "edition": "2025",
+                "edition": "2024",
                 "edition_title": "Different Title",
                 "type": "static"
             }
@@ -521,7 +557,7 @@ Feature: Static Dataset Versions PUT API
         And I should receive the following response:
             """
             the edition already exists
-            """
+        """
 
     Scenario: PUT succeeds when updating both edition ID and title to unique values within the series
         Given private endpoints are enabled
@@ -542,8 +578,8 @@ Feature: Static Dataset Versions PUT API
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
             """
             {
-                "edition": "2025",
-                "edition_title": "2025 Edition",
+                "edition": "2024",
+                "edition_title": "2024 Edition",
                 "type": "static"
             }
             """
@@ -560,7 +596,7 @@ Feature: Static Dataset Versions PUT API
             """
             {
                 "edition": "2026",
-                "edition_title": "2025 Edition",
+                "edition_title": "2024 Edition",
                 "type": "static"
             }
             """
@@ -599,7 +635,7 @@ Feature: Static Dataset Versions PUT API
             """
         Then the HTTP status code should be "200"
 
-    Scenario: PUT fails when a distributions object is missing required field format
+    Scenario: PUT fails when a distributions object is missing the required field format
         Given private endpoints are enabled
         And I am an admin user
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
@@ -631,7 +667,7 @@ Feature: Static Dataset Versions PUT API
             distributions[0].format field is missing
             """
 
-    Scenario: PUT fails when a distributions object is having inavalid field format
+    Scenario: PUT fails when a distributions object has an invalid field format
         Given private endpoints are enabled
         And I am an admin user
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
