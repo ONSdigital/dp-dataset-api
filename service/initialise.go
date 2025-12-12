@@ -18,13 +18,13 @@ import (
 
 // ExternalServiceList holds the initialiser and initialisation state of external services.
 type ExternalServiceList struct {
-	KafkaProducer bool
-	AuthorisationMiddleware   bool
-	Graph                     bool
-	HealthCheck               bool
-	MongoDB                   bool
-	FilesAPIClient            bool
-	Init                      Initialiser
+	KafkaProducer           bool
+	AuthorisationMiddleware bool
+	Graph                   bool
+	HealthCheck             bool
+	MongoDB                 bool
+	FilesAPIClient          bool
+	Init                    Initialiser
 }
 
 // NewServiceList creates a new service list with the provided initialiser
