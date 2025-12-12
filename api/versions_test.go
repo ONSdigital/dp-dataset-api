@@ -1139,10 +1139,14 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			UnlockInstanceFunc: func(context.Context, string) {},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, datasetPermissions, permissions)
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock)
+
 		api.Router.ServeHTTP(w, r)
 
 		Convey("Then response should be 200 OK", func() {
