@@ -855,7 +855,8 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 			searchContentUpdatedEvent := map[string]interface{}{
 				"dataset_id":   updatedVersion.DatasetID,
 				"uri":          updatedVersion.Links.Version.HRef,
-				"title":        updatedVersion.Edition,
+				"title":        updatedVersion.EditionTitle,
+				"edition":      updatedVersion.Edition,
 				"content_type": updatedVersion.Type,
 			}
 
@@ -865,7 +866,7 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 			} else {
 				go func() {
 					api.searchContentUpdatedProducer.Producer.Output() <- kafka.BytesMessage{Value: jsonBytes, Context: ctx}
-					log.Info(ctx, "putState endpoint: sent search content update to kafka", logData)
+					log.Info(ctx, "putState endpoint: queued search content update for kafka", logData)
 				}()
 			}
 		} else {
