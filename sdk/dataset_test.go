@@ -65,8 +65,7 @@ func TestGetDataset(t *testing.T) {
 
 		// Provide service token to simulate authenticated request
 		authHeaders := Headers{
-			ServiceToken:    "valid-token",
-			UserAccessToken: "",
+			AccessToken: "valid-token",
 		}
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, responseWithNext, map[string]string{}})
 
@@ -79,6 +78,210 @@ func TestGetDataset(t *testing.T) {
 			So(returnedDataset.CollectionID, ShouldEqual, collectionID)
 			So(returnedDataset.Title, ShouldEqual, "Test Dataset")
 			So(returnedDataset.Description, ShouldEqual, "Dataset for testing")
+		})
+	})
+}
+
+func TestClient_GetDatasetsInBatches(t *testing.T) {
+	versionsResponse1 := DatasetsList{
+		Items:      []models.DatasetUpdate{{ID: "testDataset1"}},
+		TotalCount: 2, // Total count is read from the first response to determine how many batches are required
+		Offset:     0,
+		Count:      1,
+	}
+
+	versionsResponse2 := DatasetsList{
+		Items:      []models.DatasetUpdate{{ID: "testDataset2"}},
+		TotalCount: 2,
+		Offset:     1,
+		Count:      1,
+	}
+
+	expectedDatasets := DatasetsList{
+		Items: []models.DatasetUpdate{
+			versionsResponse1.Items[0],
+			versionsResponse2.Items[0],
+		},
+		Count:      2,
+		TotalCount: 2,
+	}
+
+	batchSize := 1
+	maxWorkers := 1
+
+	Convey("When a 200 OK status is returned in 2 consecutive calls", t, func() {
+		httpClient := createHTTPClientMock(
+			MockedHTTPResponse{http.StatusOK, versionsResponse1, nil},
+			MockedHTTPResponse{http.StatusOK, versionsResponse2, nil})
+
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+
+		processedBatches := []DatasetsList{}
+		var testProcess DatasetsBatchProcessor = func(batch DatasetsList) (abort bool, err error) {
+			processedBatches = append(processedBatches, batch)
+			return false, nil
+		}
+
+		// Provide service token to simulate authenticated request
+		authHeaders := Headers{
+			AccessToken: "valid-token",
+		}
+
+		Convey("then GetDatasetsInBatches succeeds and returns the accumulated items from all the batches", func() {
+			datasets, err := datasetAPIClient.GetDatasetsInBatches(ctx, authHeaders, batchSize, maxWorkers)
+
+			So(err, ShouldBeNil)
+			So(datasets, ShouldResemble, expectedDatasets)
+		})
+
+		Convey("then GetDatasetsBatchProcess calls the batchProcessor function twice, with the expected batches", func() {
+			err := datasetAPIClient.getDatasetsBatchProcess(ctx, headers, testProcess, batchSize, maxWorkers)
+			So(err, ShouldBeNil)
+			So(processedBatches, ShouldResemble, []DatasetsList{versionsResponse1, versionsResponse2})
+			So(httpClient.DoCalls(), ShouldHaveLength, 2)
+			So(httpClient.DoCalls()[0].Req.URL.String(), ShouldResemble,
+				"http://localhost:22000/datasets?limit=1&offset=0")
+			So(httpClient.DoCalls()[1].Req.URL.String(), ShouldResemble,
+				"http://localhost:22000/datasets?limit=1&offset=1")
+		})
+	})
+
+	Convey("When a 400 error status is returned in the first call", t, func() {
+		httpClient := createHTTPClientMock(
+			MockedHTTPResponse{http.StatusBadRequest, "", nil})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+
+		processedBatches := []DatasetsList{}
+		var testProcess DatasetsBatchProcessor = func(batch DatasetsList) (abort bool, err error) {
+			processedBatches = append(processedBatches, batch)
+			return false, nil
+		}
+
+		// Provide service token to simulate authenticated request
+		authHeaders := Headers{
+			AccessToken: "valid-token",
+		}
+
+		Convey("then GetOptionsInBatches fails with the expected error and the process is aborted", func() {
+			_, err := datasetAPIClient.GetDatasetsInBatches(ctx, authHeaders, batchSize, maxWorkers)
+			So(err, ShouldNotBeNil)
+			So(err.(*ErrInvalidDatasetAPIResponse).actualCode, ShouldEqual, http.StatusBadRequest)
+			So(err.(*ErrInvalidDatasetAPIResponse).uri, ShouldResemble, "http://localhost:22000/datasets?limit=1&offset=0")
+		})
+
+		Convey("then GetDatasetsBatchProcess fails with the expected error and doesn't call the batchProcessor", func() {
+			err := datasetAPIClient.getDatasetsBatchProcess(ctx, headers, testProcess, batchSize, maxWorkers)
+			So(err, ShouldNotBeNil)
+			So(err.(*ErrInvalidDatasetAPIResponse).actualCode, ShouldEqual, http.StatusBadRequest)
+			So(err.(*ErrInvalidDatasetAPIResponse).uri, ShouldResemble, "http://localhost:22000/datasets?limit=1&offset=0")
+			So(processedBatches, ShouldResemble, []DatasetsList{})
+		})
+	})
+
+	Convey("When a 200 error status is returned in the first call and 400 error is returned in the second call", t, func() {
+		httpClient := createHTTPClientMock(
+			MockedHTTPResponse{http.StatusOK, versionsResponse1, nil},
+			MockedHTTPResponse{http.StatusBadRequest, "", nil})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+
+		// testProcess is a generic batch processor for testing
+		processedBatches := []DatasetsList{}
+		var testProcess DatasetsBatchProcessor = func(batch DatasetsList) (abort bool, err error) {
+			processedBatches = append(processedBatches, batch)
+			return false, nil
+		}
+
+		// Provide service token to simulate authenticated request
+		authHeaders := Headers{
+			AccessToken: "valid-token",
+		}
+
+		Convey("then GetDatasetsInBatches fails with the expected error, corresponding to the second batch, and the process is aborted", func() {
+			_, err := datasetAPIClient.GetDatasetsInBatches(ctx, authHeaders, batchSize, maxWorkers)
+			So(err, ShouldNotBeNil)
+			So(err.(*ErrInvalidDatasetAPIResponse).actualCode, ShouldEqual, http.StatusBadRequest)
+			So(err.(*ErrInvalidDatasetAPIResponse).uri, ShouldResemble, "http://localhost:22000/datasets?limit=1&offset=1")
+		})
+
+		Convey("then GetDatasetsBatchProcess fails with the expected error and calls the batchProcessor for the first batch only", func() {
+			err := datasetAPIClient.getDatasetsBatchProcess(ctx, headers, testProcess, batchSize, maxWorkers)
+			So(err, ShouldNotBeNil)
+			So(err.(*ErrInvalidDatasetAPIResponse).actualCode, ShouldEqual, http.StatusBadRequest)
+			So(err.(*ErrInvalidDatasetAPIResponse).uri, ShouldResemble, "http://localhost:22000/datasets?limit=1&offset=1")
+			So(processedBatches, ShouldResemble, []DatasetsList{versionsResponse1})
+		})
+	})
+}
+
+func TestGetDatasetCurrentAndNext(t *testing.T) {
+	mockGetResponse := models.DatasetUpdate{
+		Next: &models.Dataset{ID: datasetID,
+			CollectionID: collectionID,
+			Title:        "Test Dataset",
+			Description:  "Dataset for testing"},
+		Current: &models.Dataset{ID: datasetID,
+			CollectionID: collectionID,
+			Title:        "Test Dataset",
+			Description:  "Dataset for testing"},
+	}
+
+	Convey("If requested dataset is valid and get request returns 200", t, func() {
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, mockGetResponse, map[string]string{}})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+		returnedDataset, err := datasetAPIClient.GetDatasetCurrentAndNext(ctx, headers, datasetID)
+
+		Convey("Test that the request URI is constructed correctly and the correct method is used", func() {
+			expectedURI := "/datasets/" + datasetID
+			So(httpClient.DoCalls()[0].Req.Method, ShouldEqual, http.MethodGet)
+			So(httpClient.DoCalls()[0].Req.URL.RequestURI(), ShouldResemble, expectedURI)
+		})
+
+		Convey("Test that the requested dataset update object is returned without error", func() {
+			So(err, ShouldBeNil)
+			So(returnedDataset, ShouldResemble, mockGetResponse)
+		})
+	})
+
+	Convey("If requested dataset is not valid and get request returns 404", t, func() {
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusNotFound, apierrors.ErrDatasetNotFound.Error(), map[string]string{}})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+		_, err := datasetAPIClient.GetDatasetCurrentAndNext(ctx, headers, datasetID)
+
+		Convey("Test that an error is raised and should contain status code", func() {
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldEqual, apierrors.ErrDatasetNotFound.Error())
+		})
+	})
+
+	Convey("If the request encounters a server error and returns 500", t, func() {
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusInternalServerError, "Internal server error", map[string]string{}})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+		_, err := datasetAPIClient.GetDatasetCurrentAndNext(ctx, headers, datasetID)
+
+		Convey("Test that an error is raised with the correct message", func() {
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldEqual, "Internal server error")
+		})
+	})
+
+	Convey("If not authenticated then no response is returned ", t, func() {
+		// dataset response nested under "next"
+		responseWithNext := &models.DatasetUpdate{
+			// Next: &mockGetResponse,
+		}
+
+		// Provide service token to simulate authenticated request
+		authHeaders := Headers{
+			AccessToken: "invalid-token",
+		}
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusForbidden, responseWithNext, map[string]string{}})
+
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+		returnedDataset, err := datasetAPIClient.GetDatasetCurrentAndNext(ctx, authHeaders, datasetID)
+
+		Convey("Test that the dataset is extracted from the 'next' object", func() {
+			So(err, ShouldNotBeNil)
+			So(returnedDataset.ID, ShouldEqual, "")
 		})
 	})
 }
@@ -243,6 +446,52 @@ func TestGetDatasetEditions(t *testing.T) {
 			Convey("Then an error should be returned indicating the error", func() {
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldEqual, "negative offsets or limits are not allowed")
+			})
+		})
+	})
+}
+
+func Test_PutDataset(t *testing.T) {
+	Convey("Given a valid dataset", t, func() {
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, "", nil})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+
+		Convey("when put dataset is called", func() {
+			dataset := models.Dataset{ID: "666"}
+			err := datasetAPIClient.PutDataset(ctx, headers, "666", dataset)
+
+			Convey("then no error is returned", func() {
+				So(err, ShouldBeNil)
+			})
+		})
+	})
+
+	Convey("Given no auth token has been configured so the request is unauthorized", t, func() {
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusUnauthorized, "", nil})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+
+		Convey("when put dataset is called", func() {
+			dataset := models.Dataset{ID: "666"}
+			err := datasetAPIClient.PutDataset(ctx, headers, "666", dataset)
+
+			Convey("then an error is returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "did not receive success response. received status 401")
+			})
+		})
+	})
+
+	Convey("given an invalid request body is provided then a 400 response is returned", t, func() {
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusBadRequest, "", nil})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+
+		Convey("when put dataset is called", func() {
+			dataset := models.Dataset{ID: ""}
+			err := datasetAPIClient.PutDataset(ctx, headers, "666", dataset)
+
+			Convey("then an error is returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "did not receive success response. received status 400")
 			})
 		})
 	})

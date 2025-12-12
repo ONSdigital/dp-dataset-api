@@ -79,10 +79,54 @@ Feature: Static Dataset Versions PUT API
         ]
         """
 
-    Scenario: PUT updates static dataset version successfully
+    Scenario: PUT updates static dataset version successfully for an admin user
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
+        When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
+            """
+            {
+                "state": "approved",
+                "type": "static"
+            }
+            """
+        Then the HTTP status code should be "200"
+        And I should receive the following JSON response:
+            """
+            {
+                "dataset_id": "static-dataset-update",
+                "distributions": [
+                    {
+                        "byte_size": 125000,
+                        "download_url": "/uuid/filename.csv",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "title": "csv"
+                    }
+                ],
+                "edition": "2025",
+                "id": "static-version-update",
+                "last_updated": "0001-01-01T00:00:00Z",
+                "links": {
+                    "dataset": {
+                        "id": "static-dataset-update"
+                    },
+                    "edition": {
+                        "href": "/datasets/static-dataset-update/editions/2025",
+                        "id": "2025"
+                    },
+                    "self": {
+                        "href": "/datasets/static-dataset-update/editions/2025/versions/1"
+                    }
+                },
+                "release_date": "2025-01-01T09:00:00.000Z",
+                "state": "approved",
+                "type": "static"
+            }
+            """
+
+    Scenario: PUT updates static dataset version successfully for a publisher user
+        Given private endpoints are enabled
+        And I am a publisher user
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
             """
             {
@@ -127,8 +171,7 @@ Feature: Static Dataset Versions PUT API
 
     Scenario: PUT updates static dataset version with new data
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
             """
             {
@@ -142,8 +185,7 @@ Feature: Static Dataset Versions PUT API
 
     Scenario: PUT updates static dataset version distributions
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
             """
             {
@@ -170,8 +212,7 @@ Feature: Static Dataset Versions PUT API
 
     Scenario: PUT updates static dataset version edition
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
             """
             {
@@ -184,8 +225,7 @@ Feature: Static Dataset Versions PUT API
 
     Scenario: PUT fails for non-existent version
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/999"
             """
             {
@@ -197,8 +237,7 @@ Feature: Static Dataset Versions PUT API
 
     Scenario: PUT fails for non-existent dataset
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I PUT "/datasets/non-existent/editions/2025/versions/1"
             """
             {
@@ -221,8 +260,7 @@ Feature: Static Dataset Versions PUT API
 
     Scenario: PUT state endpoint updates successfully
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/1/state"
             """
             {
@@ -233,8 +271,7 @@ Feature: Static Dataset Versions PUT API
 
     Scenario: PUT state transitions from associated to approved
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/1/state"
             """
             {
@@ -289,8 +326,7 @@ Feature: Static Dataset Versions PUT API
             }
             """
         And private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I PUT "/datasets/static-dataset-publish/editions/2025/versions/1/state"
             """
             {
@@ -301,8 +337,7 @@ Feature: Static Dataset Versions PUT API
 
     Scenario: PUT state fails with invalid state transition from associated to published
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/1/state"
             """
             {
@@ -313,8 +348,7 @@ Feature: Static Dataset Versions PUT API
 
     Scenario: PUT state fails with invalid state
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/1/state"
             """
             {
@@ -399,8 +433,7 @@ Feature: Static Dataset Versions PUT API
             }
             """
         And private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I PUT "/datasets/static-dataset-conflict/editions/2025/versions/1"
             """
             {
@@ -416,8 +449,7 @@ Feature: Static Dataset Versions PUT API
 
     Scenario: PUT succeeds when updating edition-id to new edition for static dataset
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
             """
             {
@@ -462,8 +494,7 @@ Feature: Static Dataset Versions PUT API
             }
             """
         And private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I PUT "/datasets/static-dataset-published/editions/2025/versions/1/state"
             """
             {
@@ -474,8 +505,7 @@ Feature: Static Dataset Versions PUT API
 
     Scenario: PUT succeeds when updating edition ID to unique value within series
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
             """
             {
@@ -487,8 +517,7 @@ Feature: Static Dataset Versions PUT API
 
     Scenario: PUT fails when updating edition title to existing value within same series
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
             """
             {
@@ -504,8 +533,7 @@ Feature: Static Dataset Versions PUT API
 
     Scenario: PUT fails when updating edition ID to duplicate value within same series
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
             """
             {
@@ -522,8 +550,7 @@ Feature: Static Dataset Versions PUT API
 
     Scenario: PUT succeeds when updating both edition ID and title to unique values within the series
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
             """
             {
@@ -536,8 +563,7 @@ Feature: Static Dataset Versions PUT API
 
     Scenario: PUT fails when both edition ID and title already exist within the same series
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
             """
             {
@@ -554,8 +580,7 @@ Feature: Static Dataset Versions PUT API
 
     Scenario: PUT fails when updating edition title to one that already exists but edition ID is unique
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
             """
             {
@@ -572,8 +597,7 @@ Feature: Static Dataset Versions PUT API
 
     Scenario: PUT succeeds when distributions contain valid formats
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
             """
             {
@@ -602,8 +626,7 @@ Feature: Static Dataset Versions PUT API
 
     Scenario: PUT fails when a distributions object is missing the required field format
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
             """
             {
@@ -635,8 +658,7 @@ Feature: Static Dataset Versions PUT API
 
     Scenario: PUT fails when a distributions object has an invalid field format
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
             """
             {

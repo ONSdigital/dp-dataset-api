@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	authMock "github.com/ONSdigital/dp-authorisation/v2/authorisation/mock"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -15,10 +16,84 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+var (
+	eventBodyStr = `{"message": "321", "type": "error", "message_offset":"00", "time":"2017-08-25T15:09:11.829Z" }`
+)
+
+func TestAddEventUnauthorised(t *testing.T) {
+	t.Parallel()
+
+	Convey("Given a dataset API with a successful store mock and auth that returns unauthorised", t, func() {
+		mockedDataStore := &storetest.StorerMock{}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusUnauthorized)
+				}
+			},
+		}
+
+		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+
+		Convey("When a POST request to create an event for an instance resource is made, with a valid If-Match header", func() {
+			body := strings.NewReader(eventBodyStr)
+			r, err := createRequestWithNoToken("POST", "http://localhost:21800/instances/123/events", body)
+			r.Header.Set("If-Match", testIfMatch)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then the response status is 401 unauthorised", func() {
+				So(w.Code, ShouldEqual, http.StatusUnauthorized)
+			})
+
+			Convey("Then none of the expected functions are called", func() {
+				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 0)
+				So(mockedDataStore.AddEventToInstanceCalls(), ShouldHaveLength, 0)
+			})
+		})
+	})
+}
+
+func TestAddEventForbidden(t *testing.T) {
+	t.Parallel()
+	Convey("Given a dataset API with a successful store mock and auth that returns forbidden", t, func() {
+		mockedDataStore := &storetest.StorerMock{}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusForbidden)
+				}
+			},
+		}
+
+		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+
+		Convey("When a POST request to create an event for an instance resource is made, with a valid If-Match header", func() {
+			body := strings.NewReader(eventBodyStr)
+			r, err := createRequestWithToken("POST", "http://localhost:21800/instances/123/events", body)
+			r.Header.Set("If-Match", testIfMatch)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then the response status is 403 forbidden", func() {
+				So(w.Code, ShouldEqual, http.StatusForbidden)
+			})
+
+			Convey("Then none of the expected functions are called", func() {
+				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 0)
+				So(mockedDataStore.AddEventToInstanceCalls(), ShouldHaveLength, 0)
+			})
+		})
+	})
+}
+
 func TestAddEventReturnsOk(t *testing.T) {
 	t.Parallel()
 
-	bodyStr := `{"message": "321", "type": "error", "message_offset":"00", "time":"2017-08-25T15:09:11.829Z" }`
 	layout := "2006-01-02T15:04:05.000Z"
 	str := "2017-08-25T15:09:11.829Z"
 	testTime, _ := time.Parse(layout, str)
@@ -44,12 +119,16 @@ func TestAddEventReturnsOk(t *testing.T) {
 			return testETag, nil
 		}
 
-		datasetPermissions := mocks.NewAuthHandlerMock()
-		permissions := mocks.NewAuthHandlerMock()
-		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		Convey("When a POST request to create an event for an instance resource is made, with a valid If-Match header", func() {
-			body := strings.NewReader(bodyStr)
+			body := strings.NewReader(eventBodyStr)
 			r, err := createRequestWithToken("POST", "http://localhost:21800/instances/123/events", body)
 			r.Header.Set("If-Match", testIfMatch)
 			So(err, ShouldBeNil)
@@ -78,7 +157,7 @@ func TestAddEventReturnsOk(t *testing.T) {
 		})
 
 		Convey("When a POST request to create an event for an instance resource is made, without an If-Match header", func() {
-			body := strings.NewReader(bodyStr)
+			body := strings.NewReader(eventBodyStr)
 			r, err := createRequestWithToken("POST", "http://localhost:21800/instances/123/events", body)
 			So(err, ShouldBeNil)
 			w := httptest.NewRecorder()
@@ -119,9 +198,13 @@ func TestAddEventToInstanceReturnsBadRequest(t *testing.T) {
 
 				mockedDataStore := &storetest.StorerMock{}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
+
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -139,9 +222,12 @@ func TestAddEventToInstanceReturnsBadRequest(t *testing.T) {
 				w := httptest.NewRecorder()
 				mockedDataStore := &storetest.StorerMock{}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -170,9 +256,12 @@ func TestAddEventToInstanceReturnsNotFound(t *testing.T) {
 					return nil, errs.ErrInstanceNotFound
 				}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -209,9 +298,13 @@ func TestAddEventToInstanceReturnsInternalError(t *testing.T) {
 					return "", errs.ErrInternalServer
 				}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
+
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -244,9 +337,13 @@ func TestAddInstanceConflict(t *testing.T) {
 					return nil, errs.ErrInstanceConflict
 				}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
+
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusConflict)

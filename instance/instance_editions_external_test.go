@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	authMock "github.com/ONSdigital/dp-authorisation/v2/authorisation/mock"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -17,14 +18,101 @@ import (
 
 const testLockID = "testLock"
 
+func Test_UpdateInstanceToEditionConfirmedUnauthorised(t *testing.T) {
+	Convey("Given a dataset API with auth and a successful store mock with a 'completed' generic instance", t, func() {
+		mockedDataStore := &storetest.StorerMock{}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusUnauthorized)
+				}
+			},
+		}
+
+		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+
+		Convey("When the requested state change is to 'edition-confirmed'", func() {
+			body := strings.NewReader(`{"state":"edition-confirmed", "edition": "2017"}`)
+			r, err := createRequestWithNoToken("PUT", "http://localhost:21800/instances/123", body)
+			r.Header.Set("If-Match", testIfMatch)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then the response status is 401 unauthorized", func() {
+				So(w.Code, ShouldEqual, http.StatusUnauthorized)
+			})
+
+			Convey("Then none of the expected mongoDB functions are called", func() {
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
+			})
+
+			Convey("Then the dp-graph function is not called", func() {
+				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
+			})
+		})
+	})
+}
+
+func Test_UpdateInstanceToEditionConfirmedForbidden(t *testing.T) {
+	Convey("Given a dataset API with auth that returns forbidden and a successful store mock with a 'completed' generic instance", t, func() {
+		mockedDataStore := &storetest.StorerMock{}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusForbidden)
+				}
+			},
+		}
+
+		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+
+		Convey("When the requested state change is to 'edition-confirmed'", func() {
+			body := strings.NewReader(`{"state":"edition-confirmed", "edition": "2017"}`)
+			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123", body)
+			r.Header.Set("If-Match", testIfMatch)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then the response status is 403 forbidden", func() {
+				So(w.Code, ShouldEqual, http.StatusForbidden)
+			})
+
+			Convey("Then none of the expected mongoDB functions are called", func() {
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
+			})
+
+			Convey("Then the dp-graph function is not called", func() {
+				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
+			})
+		})
+	})
+}
+
 func Test_UpdateInstanceToEditionConfirmedReturnsOk(t *testing.T) {
 	Convey("Given a dataset API with auth and a successful store mock with a 'completed' generic instance", t, func() {
 		i := completedInstance()
 
 		mockedDataStore, isLocked := storeMockEditionCompleteWithLock(i, true)
-		datasetPermissions := mocks.NewAuthHandlerMock()
-		permissions := mocks.NewAuthHandlerMock()
-		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		Convey("When the requested state change is to 'edition-confirmed'", func() {
 			body := strings.NewReader(`{"state":"edition-confirmed", "edition": "2017"}`)
@@ -38,11 +126,6 @@ func Test_UpdateInstanceToEditionConfirmedReturnsOk(t *testing.T) {
 			Convey("Then the response status is 200 OK, with the expected ETag header", func() {
 				So(w.Code, ShouldEqual, http.StatusOK)
 				So(w.Header().Get("ETag"), ShouldEqual, testETag)
-			})
-
-			Convey("Then the expected permission required functions are called", func() {
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 			})
 
 			Convey("Then the expected mongoDB functions are called", func() {
@@ -68,9 +151,14 @@ func Test_UpdateInstanceToEditionConfirmedReturnsOk(t *testing.T) {
 		i.Type = models.CantabularBlob.String()
 
 		mockedDataStore, isLocked := storeMockEditionCompleteWithLock(i, true)
-		datasetPermissions := mocks.NewAuthHandlerMock()
-		permissions := mocks.NewAuthHandlerMock()
-		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		Convey("When the requested state change is to 'edition-confirmed'", func() {
 			body := strings.NewReader(`{"state":"edition-confirmed", "edition": "2017"}`)
@@ -84,11 +172,6 @@ func Test_UpdateInstanceToEditionConfirmedReturnsOk(t *testing.T) {
 			Convey("Then the response status is 200 OK, with the expected ETag header", func() {
 				So(w.Code, ShouldEqual, http.StatusOK)
 				So(w.Header().Get("ETag"), ShouldEqual, testETag)
-			})
-
-			Convey("Then the expected permission required functions are called", func() {
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 			})
 
 			Convey("Then the expected mongoDB functions are called", func() {
@@ -145,15 +228,16 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 					return errors.New("boom")
 				}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
@@ -185,17 +269,18 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 					So(isLocked, ShouldBeTrue)
 					return testETag, nil
 				}
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
+
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusForbidden)
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrExpectedResourceStateOfSubmitted.Error())
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
-
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateInstanceCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)

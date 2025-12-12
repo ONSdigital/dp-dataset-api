@@ -151,10 +151,20 @@ Feature: Static Dataset Version DELETE API
             ]
             """
 
-    Scenario: DELETE single static dataset version with correct parameters successfully
+    Scenario: DELETE single static dataset version with correct parameters successfully for an admin user
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
+        And the "ENABLE_DETACH_DATASET" feature flag is "false"
+        And the "ENABLE_DELETE_STATIC_VERSION" feature flag is "true"
+        When I DELETE "/datasets/static-dataset-test/editions/2024/versions/1"
+        Then the HTTP status code should be "204"
+        And the static version "static-version-approved" should not exist
+        And the dataset "static-dataset-test" should exist
+        And the dataset "static-dataset-test" should have next equal to current
+
+    Scenario: DELETE single static dataset version with correct parameters successfully for a publisher user
+        Given private endpoints are enabled
+        And I am a publisher user
         And the "ENABLE_DETACH_DATASET" feature flag is "false"
         And the "ENABLE_DELETE_STATIC_VERSION" feature flag is "true"
         When I DELETE "/datasets/static-dataset-test/editions/2024/versions/1"
@@ -165,8 +175,7 @@ Feature: Static Dataset Version DELETE API
 
     Scenario: DELETE static dataset version with invalid version (not an integer) returns 400
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         And the "ENABLE_DETACH_DATASET" feature flag is "false"
         And the "ENABLE_DELETE_STATIC_VERSION" feature flag is "true"
         When I DELETE "/datasets/static-dataset-published/editions/2025/versions/invalid-version"
@@ -183,8 +192,7 @@ Feature: Static Dataset Version DELETE API
 
     Scenario: DELETE static dataset with published versions returns 403
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         And the "ENABLE_DETACH_DATASET" feature flag is "false"
         And the "ENABLE_DELETE_STATIC_VERSION" feature flag is "true"
         When I DELETE "/datasets/static-dataset-published/editions/2025/versions/1"
@@ -196,8 +204,7 @@ Feature: Static Dataset Version DELETE API
 
     Scenario: DELETE static dataset with non-existent dataset-id returns 404
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         And the "ENABLE_DETACH_DATASET" feature flag is "false"
         And the "ENABLE_DELETE_STATIC_VERSION" feature flag is "true"
         When I DELETE "/datasets/static-dataset-non-existent/editions/2024/versions/1"
@@ -209,8 +216,7 @@ Feature: Static Dataset Version DELETE API
 
     Scenario: DELETE static dataset with non-existent edition returns 404
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         And the "ENABLE_DETACH_DATASET" feature flag is "false"
         And the "ENABLE_DELETE_STATIC_VERSION" feature flag is "true"
         When I DELETE "/datasets/static-dataset-test/editions/non-existent-edition/versions/1"
@@ -222,8 +228,7 @@ Feature: Static Dataset Version DELETE API
             
     Scenario: DELETE static dataset with non-existent version returns 404
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         And the "ENABLE_DETACH_DATASET" feature flag is "false"
         And the "ENABLE_DELETE_STATIC_VERSION" feature flag is "true"
         When I DELETE "/datasets/static-dataset-test/editions/2024/versions/12"
@@ -235,8 +240,7 @@ Feature: Static Dataset Version DELETE API
 
     Scenario: DELETE non-static dataset when ENABLE_DETACH_DATASET is disabled and ENABLE_DELETE_STATIC_VERSION is enabled
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         And the "ENABLE_DETACH_DATASET" feature flag is "false"
         And the "ENABLE_DELETE_STATIC_VERSION" feature flag is "true"
         When I DELETE "/datasets/non-static-dataset-no-versions/editions/2025/versions/1"
@@ -248,8 +252,7 @@ Feature: Static Dataset Version DELETE API
     
     Scenario: DELETE /datasets/{id}/editions/{edition}/versions/{version} fails due to bad files-api client response
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         And the "ENABLE_DELETE_STATIC_VERSION" feature flag is "true"
         When I DELETE "/datasets/static-dataset-bad-version-download-url/editions/January/versions/1"
         Then the HTTP status code should be "500"

@@ -21,7 +21,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 	vars := mux.Vars(r)
 	datasetID := vars["dataset_id"]
 	logData := log.Data{"dataset_id": datasetID}
-	authorised := api.authenticate(r, logData)
+	authorised := api.checkUserPermission(r, logData, datasetEditionVersionReadPermission)
 
 	var state string
 	if !authorised {
@@ -148,7 +148,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"dataset_id": datasetID, "edition": editionID}
 
 	b, err := func() ([]byte, error) {
-		authorised := api.authenticate(r, logData)
+		authorised := api.checkUserPermission(r, logData, datasetEditionVersionReadPermission)
 
 		var state string
 		if !authorised {

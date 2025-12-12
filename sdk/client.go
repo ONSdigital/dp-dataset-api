@@ -16,34 +16,18 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
-	dpNetRequest "github.com/ONSdigital/dp-net/v3/request"
 	"github.com/ONSdigital/log.go/v2/log"
 )
 
 const (
 	service = "dp-dataset-api"
+
+	// ifMatchHeader is the If-Match header name
+	ifMatchHeader = "If-Match"
 )
 
 type Client struct {
 	hcCli *health.Client
-}
-
-// Contains the headers to be added to any request
-type Headers struct {
-	CollectionID         string
-	DownloadServiceToken string
-	ServiceToken         string
-	UserAccessToken      string
-}
-
-// Adds headers to the input request
-func (h *Headers) add(request *http.Request) {
-	if h.CollectionID != "" {
-		request.Header.Add(dpNetRequest.CollectionIDHeaderKey, h.CollectionID)
-	}
-	dpNetRequest.AddDownloadServiceTokenHeader(request, h.DownloadServiceToken)
-	dpNetRequest.AddFlorenceHeader(request, h.UserAccessToken)
-	dpNetRequest.AddServiceTokenHeader(request, h.ServiceToken)
 }
 
 // Checker calls the health.Client's Checker method
@@ -84,6 +68,21 @@ func (c *Client) doAuthenticatedPostRequest(ctx context.Context, headers Headers
 	}
 
 	headers.add(req)
+	return c.hcCli.Client.Do(ctx, req)
+}
+
+// Creates new request object, executes a put request using the input `headers`, `uri`, and payload, and returns the response including an IfMatch header
+func (c *Client) doAuthenticatedPutRequestWithEtag(ctx context.Context, headers Headers, uri *url.URL, payload []byte, ifMatch string) (*http.Response, error) {
+	req, err := http.NewRequest(http.MethodPut, uri.RequestURI(), bytes.NewBuffer(payload))
+	if err != nil {
+		return nil, err
+	}
+
+	headers.add(req)
+	err = setIfMatch(req, ifMatch)
+	if err != nil {
+		return nil, err
+	}
 	return c.hcCli.Client.Do(ctx, req)
 }
 

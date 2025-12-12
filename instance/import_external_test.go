@@ -8,11 +8,87 @@ import (
 	"strings"
 	"testing"
 
+	authMock "github.com/ONSdigital/dp-authorisation/v2/authorisation/mock"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+const (
+	observationsMessageBodyStr = `{"import_observations":{"state":"completed"}}`
+)
+
+func Test_InsertedObservationsUnauthorised(t *testing.T) {
+	t.Parallel()
+
+	Convey("Given a dataset API with a successful store mock and auth that returns unauthorised", t, func() {
+		mockedDataStore := &storetest.StorerMock{}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusUnauthorized)
+				}
+			},
+		}
+
+		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+
+		Convey("When a PUT request to update the inserted observations for an instance resource is made, with a valid If-Match header", func() {
+			r, err := createRequestWithNoToken("PUT", "http://localhost:21800/instances/123/inserted_observations/200", nil)
+			r.Header.Set("If-Match", testIfMatch)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then the response status is 401 unauthorized", func() {
+				So(w.Code, ShouldEqual, http.StatusUnauthorized)
+			})
+
+			Convey("Then none of the expected functions are called", func() {
+				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 0)
+				So(mockedDataStore.UpdateObservationInsertedCalls(), ShouldHaveLength, 0)
+			})
+		})
+	})
+}
+
+func Test_InsertedObservationsForbidden(t *testing.T) {
+	t.Parallel()
+
+	Convey("Given a dataset API with a successful store mock and auth that returns forbidden", t, func() {
+		mockedDataStore := &storetest.StorerMock{}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusForbidden)
+				}
+			},
+		}
+
+		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+
+		Convey("When a PUT request to update the inserted observations for an instance resource is made, with a valid If-Match header", func() {
+			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/inserted_observations/200", nil)
+			r.Header.Set("If-Match", testIfMatch)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then the response status is 403 forbidden", func() {
+				So(w.Code, ShouldEqual, http.StatusForbidden)
+			})
+
+			Convey("Then none of the expected functions are called", func() {
+				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 0)
+				So(mockedDataStore.UpdateObservationInsertedCalls(), ShouldHaveLength, 0)
+			})
+		})
+	})
+}
 
 func Test_InsertedObservationsReturnsOk(t *testing.T) {
 	t.Parallel()
@@ -29,9 +105,14 @@ func Test_InsertedObservationsReturnsOk(t *testing.T) {
 		mockedDataStore.UpdateObservationInsertedFunc = func(context.Context, *models.Instance, int64, string) (string, error) {
 			return testETag, nil
 		}
-		datasetPermissions := mocks.NewAuthHandlerMock()
-		permissions := mocks.NewAuthHandlerMock()
-		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		Convey("When a PUT request to update the inserted observations for an instance resource is made, with a valid If-Match header", func() {
 			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/inserted_observations/200", nil)
@@ -46,8 +127,6 @@ func Test_InsertedObservationsReturnsOk(t *testing.T) {
 			})
 
 			Convey("Then the expected functions are called", func() {
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 2)
 				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
 				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
@@ -74,8 +153,6 @@ func Test_InsertedObservationsReturnsOk(t *testing.T) {
 			})
 
 			Convey("Then the expected functions are called", func() {
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 2)
 				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
 				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, AnyETag)
@@ -110,18 +187,17 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 					return nil, errs.ErrInternalServer
 				}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
-
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 0)
 
@@ -146,18 +222,18 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 				mockedDataStore.UpdateObservationInsertedFunc = func(context.Context, *models.Instance, int64, string) (string, error) {
 					return "", errs.ErrInstanceNotFound
 				}
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
+
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusNotFound)
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInstanceNotFound.Error())
-
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
-
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 1)
 
@@ -179,18 +255,17 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 					return &models.Instance{State: models.SubmittedState}, nil
 				}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInsertedObservationsInvalidSyntax.Error())
-
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
-
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateObservationInsertedCalls()), ShouldEqual, 0)
 
@@ -213,18 +288,18 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return nil, errs.ErrInstanceConflict
 				}
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
+
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusConflict)
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInstanceConflict.Error())
-
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
-
 				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
 				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, "wrong")
@@ -235,10 +310,80 @@ func Test_InsertedObservationsReturnsError(t *testing.T) {
 	})
 }
 
-func Test_UpdateImportTask_UpdateImportObservationsReturnsOk(t *testing.T) {
+func Test_UpdateImportTask_UpdateImportObservationsUnauthorised(t *testing.T) {
 	t.Parallel()
 
-	bodyStr := `{"import_observations":{"state":"completed"}}`
+	Convey("Given a dataset API with a successful store mock and auth that returns unauthorised", t, func() {
+		mockedDataStore := &storetest.StorerMock{}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusUnauthorized)
+				}
+			},
+		}
+
+		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+
+		Convey("When a PUT request to update the import_observations value for an import task of an instance resource is made, with a valid If-Match header", func() {
+			body := strings.NewReader(observationsMessageBodyStr)
+			r, err := createRequestWithNoToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+			r.Header.Set("If-Match", testIfMatch)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then the response status is 401 unauthorized", func() {
+				So(w.Code, ShouldEqual, http.StatusUnauthorized)
+			})
+
+			Convey("Then none of the expected functions are called", func() {
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
+			})
+		})
+	})
+}
+
+func Test_UpdateImportTask_UpdateImportObservationsForbidden(t *testing.T) {
+	t.Parallel()
+
+	Convey("Given a dataset API with a successful store mock and auth that returns forbidden", t, func() {
+		mockedDataStore := &storetest.StorerMock{}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusForbidden)
+				}
+			},
+		}
+
+		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+
+		Convey("When a PUT request to update the import_observations value for an import task of an instance resource is made, with a valid If-Match header", func() {
+			body := strings.NewReader(observationsMessageBodyStr)
+			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+			r.Header.Set("If-Match", testIfMatch)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then the response status is 403 forbidden", func() {
+				So(w.Code, ShouldEqual, http.StatusForbidden)
+			})
+
+			Convey("Then none of the expected functions are called", func() {
+				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
+			})
+		})
+	})
+}
+
+func Test_UpdateImportTask_UpdateImportObservationsReturnsOk(t *testing.T) {
+	t.Parallel()
 
 	Convey("Given a dataset API with a successful store mock and auth", t, func() {
 		instance := &models.Instance{
@@ -255,12 +400,17 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsOk(t *testing.T) {
 		mockedDataStore.UpdateImportObservationsTaskStateFunc = func(context.Context, *models.Instance, string, string) (string, error) {
 			return testETag, nil
 		}
-		datasetPermissions := mocks.NewAuthHandlerMock()
-		permissions := mocks.NewAuthHandlerMock()
-		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		Convey("When a PUT request to update the import_observations value for an import task of an instance resource is made, with a valid If-Match header", func() {
-			body := strings.NewReader(bodyStr)
+			body := strings.NewReader(observationsMessageBodyStr)
 			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
 			r.Header.Set("If-Match", testIfMatch)
 			So(err, ShouldBeNil)
@@ -273,8 +423,6 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsOk(t *testing.T) {
 			})
 
 			Convey("Then the expected functions are called", func() {
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
 				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, testIfMatch)
@@ -291,7 +439,7 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsOk(t *testing.T) {
 		})
 
 		Convey("When a PUT request to retrieve an instance resource is made, without an If-Match header", func() {
-			body := strings.NewReader(bodyStr)
+			body := strings.NewReader(observationsMessageBodyStr)
 			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
 			So(err, ShouldBeNil)
 			w := httptest.NewRecorder()
@@ -303,8 +451,6 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsOk(t *testing.T) {
 			})
 
 			Convey("Then the expected functions are called", func() {
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
 				So(mockedDataStore.GetInstanceCalls()[0].ETagSelector, ShouldEqual, AnyETag)
@@ -322,7 +468,7 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsOk(t *testing.T) {
 	})
 }
 
-func Test_UpdateImportTaskRetrunsError(t *testing.T) {
+func Test_UpdateImportTaskReturnsError(t *testing.T) {
 	t.Parallel()
 	Convey("Given a PUT request to update an instance resource with import task", t, func() {
 		Convey("When the service is unable to connect to the datastore", func() {
@@ -340,18 +486,17 @@ func Test_UpdateImportTaskRetrunsError(t *testing.T) {
 				mockedDataStore.GetInstanceFunc = func(context.Context, string, string) (*models.Instance, error) {
 					return nil, errs.ErrInternalServer
 				}
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
-
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
@@ -377,17 +522,17 @@ func Test_UpdateImportTaskRetrunsError(t *testing.T) {
 					return nil, errs.ErrInstanceNotFound
 				}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusNotFound)
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInstanceNotFound.Error())
-
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
@@ -416,17 +561,17 @@ func Test_UpdateImportTaskRetrunsError(t *testing.T) {
 					return testETag, nil
 				}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusForbidden)
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrResourcePublished.Error())
-
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.AddVersionDetailsToInstanceCalls()), ShouldEqual, 0)
 
@@ -458,17 +603,17 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 					return testETag, nil
 				}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
 				So(w.Body.String(), ShouldContainSubstring, "unexpected end of JSON input")
-
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
@@ -497,17 +642,16 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 					return testETag, nil
 				}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
-
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
 				So(w.Body.String(), ShouldContainSubstring, "bad request - invalid import observation task, must include state")
-
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
@@ -534,17 +678,18 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 				mockedDataStore.UpdateImportObservationsTaskStateFunc = func(context.Context, *models.Instance, string, string) (string, error) {
 					return testETag, nil
 				}
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
+
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
 				So(w.Body.String(), ShouldContainSubstring, "bad request - invalid task state value for import observations: notvalid")
-
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
@@ -555,8 +700,7 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 
 		Convey("When the service loses connection to datastore whilst updating observations", func() {
 			Convey("Then return status internal server error (500)", func() {
-				body := strings.NewReader(`{"import_observations":{"state":"completed"}}`)
-				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", body)
+				r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/import_tasks", strings.NewReader(observationsMessageBodyStr))
 				So(err, ShouldBeNil)
 				w := httptest.NewRecorder()
 
@@ -572,17 +716,17 @@ func Test_UpdateImportTask_UpdateImportObservationsReturnsError(t *testing.T) {
 					return "", errs.ErrInternalServer
 				}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 1)
 
@@ -614,17 +758,17 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 					return testETag, nil
 				}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
 				So(w.Body.String(), ShouldContainSubstring, "unexpected end of JSON input")
-
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
@@ -653,17 +797,17 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 					return testETag, nil
 				}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
 				So(w.Body.String(), ShouldContainSubstring, "bad request - request body does not contain any import tasks")
-
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
@@ -693,17 +837,17 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 					return testETag, nil
 				}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
 				So(w.Body.String(), ShouldContainSubstring, "bad request - missing hierarchy task")
-
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
@@ -732,17 +876,17 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 					return testETag, nil
 				}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
 				So(w.Body.String(), ShouldContainSubstring, "bad request - missing mandatory fields: [dimension_name]")
-
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
@@ -771,17 +915,17 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 					return testETag, nil
 				}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
 				So(w.Body.String(), ShouldContainSubstring, "bad request - missing mandatory fields: [state]")
-
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
@@ -810,17 +954,17 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 					return testETag, nil
 				}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
 				So(w.Body.String(), ShouldContainSubstring, "bad request - invalid task state value: notvalid")
-
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
@@ -849,17 +993,17 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 					return "", errors.New("not found")
 				}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusNotFound)
 				So(w.Body.String(), ShouldContainSubstring, "geography hierarchy import task does not exist")
-
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 1)
@@ -888,17 +1032,17 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsError(t *testing.T) {
 					return "", errors.New("internal error")
 				}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 1)
@@ -932,15 +1076,16 @@ func Test_UpdateImportTask_BuildHierarchyTaskReturnsOk(t *testing.T) {
 					return testETag, nil
 				}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusOK)
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 1)
@@ -974,17 +1119,17 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 					return testETag, nil
 				}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
 				So(w.Body.String(), ShouldContainSubstring, "unexpected end of JSON input")
-
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
@@ -1013,17 +1158,17 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 					return testETag, nil
 				}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
 				So(w.Body.String(), ShouldContainSubstring, "bad request - request body does not contain any import tasks")
-
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
@@ -1051,17 +1196,18 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 				mockedDataStore.UpdateBuildSearchTaskStateFunc = func(context.Context, *models.Instance, string, string, string) (string, error) {
 					return testETag, nil
 				}
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
+
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
 				So(w.Body.String(), ShouldContainSubstring, "bad request - missing search index task")
-
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
@@ -1090,17 +1236,17 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 					return testETag, nil
 				}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
 				So(w.Body.String(), ShouldContainSubstring, "bad request - missing mandatory fields: [dimension_name]")
-
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
@@ -1129,17 +1275,17 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 					return testETag, nil
 				}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
 				So(w.Body.String(), ShouldContainSubstring, "bad request - missing mandatory fields: [state]")
-
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
@@ -1168,17 +1314,17 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 					return testETag, nil
 				}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
 				So(w.Body.String(), ShouldContainSubstring, "bad request - invalid task state value: notvalid")
-
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
@@ -1207,17 +1353,17 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 					return "", errors.New("not found")
 				}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusNotFound)
 				So(w.Body.String(), ShouldContainSubstring, "geography search index import task does not exist")
-
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
@@ -1246,17 +1392,17 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexTask_Failure(t *testing.T) {
 					return "", errors.New("internal error")
 				}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
 				So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)
@@ -1290,15 +1436,16 @@ func Test_UpdateImportTask_UpdateBuildSearchIndexReturnsOk(t *testing.T) {
 					return testETag, nil
 				}
 
-				datasetPermissions := mocks.NewAuthHandlerMock()
-				permissions := mocks.NewAuthHandlerMock()
+				authorisationMock := &authMock.MiddlewareMock{
+					RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+						return handlerFunc
+					},
+				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusOK)
-				So(datasetPermissions.Required.Calls, ShouldEqual, 0)
-				So(permissions.Required.Calls, ShouldEqual, 1)
 				So(len(mockedDataStore.GetInstanceCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.UpdateImportObservationsTaskStateCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateBuildHierarchyTaskStateCalls()), ShouldEqual, 0)

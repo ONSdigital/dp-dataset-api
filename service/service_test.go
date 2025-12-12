@@ -7,6 +7,9 @@ import (
 	"sync"
 	"testing"
 
+	authorisationMock "github.com/ONSdigital/dp-authorisation/v2/authorisation/mock"
+
+	"github.com/ONSdigital/dp-authorisation/v2/authorisation"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/service"
 	serviceMock "github.com/ONSdigital/dp-dataset-api/service/mock"
@@ -68,6 +71,15 @@ func TestRun(t *testing.T) {
 			StartFunc:    func(context.Context) {},
 		}
 
+		authorisationMiddleware := &authorisationMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			CloseFunc: func(ctx context.Context) error {
+				return nil
+			},
+		}
+
 		serverWg := &sync.WaitGroup{}
 		serverMock := &serviceMock.HTTPServerMock{
 			ListenAndServeFunc: func() error {
@@ -81,6 +93,10 @@ func TestRun(t *testing.T) {
 				serverWg.Done()
 				return errServer
 			},
+		}
+
+		funcDoGetAuthOk := func(ctx context.Context, authorisationConfig *authorisation.Config) (authorisation.Middleware, error) {
+			return authorisationMiddleware, nil
 		}
 
 		funcDoGetHealthcheckOk := func(*config.Configuration, string, string, string) (service.HealthChecker, error) {
@@ -205,11 +221,12 @@ func TestRun(t *testing.T) {
 
 		Convey("Given that initialising Healthcheck returns an error", func() {
 			initMock := &serviceMock.InitialiserMock{
-				DoGetMongoDBFunc:        funcDoGetMongoDBOk,
-				DoGetGraphDBFunc:        funcDoGetGraphDBOk,
-				DoGetFilesAPIClientFunc: funcDoGetFilesAPIClientOk,
-				DoGetKafkaProducerFunc:  funcDoGetKafkaProducerOk,
-				DoGetHealthCheckFunc:    funcDoGetHealthcheckErr,
+				DoGetMongoDBFunc:                 funcDoGetMongoDBOk,
+				DoGetGraphDBFunc:                 funcDoGetGraphDBOk,
+				DoGetFilesAPIClientFunc:          funcDoGetFilesAPIClientOk,
+				DoGetKafkaProducerFunc:           funcDoGetKafkaProducerOk,
+				DoGetHealthCheckFunc:             funcDoGetHealthcheckErr,
+				DoGetAuthorisationMiddlewareFunc: funcDoGetAuthOk,
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
@@ -241,6 +258,7 @@ func TestRun(t *testing.T) {
 				DoGetHealthCheckFunc: func(*config.Configuration, string, string, string) (service.HealthChecker, error) {
 					return hcMockAddFail, nil
 				},
+				DoGetAuthorisationMiddlewareFunc: funcDoGetAuthOk,
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
@@ -267,12 +285,13 @@ func TestRun(t *testing.T) {
 
 		Convey("Given that all dependencies are successfully initialised", func() {
 			initMock := &serviceMock.InitialiserMock{
-				DoGetMongoDBFunc:        funcDoGetMongoDBOk,
-				DoGetGraphDBFunc:        funcDoGetGraphDBOk,
-				DoGetFilesAPIClientFunc: funcDoGetFilesAPIClientOk,
-				DoGetKafkaProducerFunc:  funcDoGetKafkaProducerOk,
-				DoGetHealthCheckFunc:    funcDoGetHealthcheckOk,
-				DoGetHTTPServerFunc:     funcDoGetHTTPServer,
+				DoGetMongoDBFunc:                 funcDoGetMongoDBOk,
+				DoGetGraphDBFunc:                 funcDoGetGraphDBOk,
+				DoGetFilesAPIClientFunc:          funcDoGetFilesAPIClientOk,
+				DoGetKafkaProducerFunc:           funcDoGetKafkaProducerOk,
+				DoGetHealthCheckFunc:             funcDoGetHealthcheckOk,
+				DoGetHTTPServerFunc:              funcDoGetHTTPServer,
+				DoGetAuthorisationMiddlewareFunc: funcDoGetAuthOk,
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
@@ -302,6 +321,7 @@ func TestRun(t *testing.T) {
 				So(len(hcMock.StartCalls()), ShouldEqual, 1)
 				serverWg.Wait() // Wait for HTTP server go-routine to finish
 				So(len(serverMock.ListenAndServeCalls()), ShouldEqual, 1)
+				So(len(initMock.DoGetAuthorisationMiddlewareCalls()), ShouldEqual, 1)
 			})
 		})
 
@@ -341,12 +361,13 @@ func TestRun(t *testing.T) {
 
 		Convey("Given that all dependencies are successfully initialised but the http server fails", func() {
 			initMock := &serviceMock.InitialiserMock{
-				DoGetMongoDBFunc:        funcDoGetMongoDBOk,
-				DoGetGraphDBFunc:        funcDoGetGraphDBOk,
-				DoGetFilesAPIClientFunc: funcDoGetFilesAPIClientOk,
-				DoGetKafkaProducerFunc:  funcDoGetKafkaProducerOk,
-				DoGetHealthCheckFunc:    funcDoGetHealthcheckOk,
-				DoGetHTTPServerFunc:     funcDoGetFailingHTTPServer,
+				DoGetMongoDBFunc:                 funcDoGetMongoDBOk,
+				DoGetGraphDBFunc:                 funcDoGetGraphDBOk,
+				DoGetFilesAPIClientFunc:          funcDoGetFilesAPIClientOk,
+				DoGetKafkaProducerFunc:           funcDoGetKafkaProducerOk,
+				DoGetHealthCheckFunc:             funcDoGetHealthcheckOk,
+				DoGetHTTPServerFunc:              funcDoGetFailingHTTPServer,
+				DoGetAuthorisationMiddlewareFunc: funcDoGetAuthOk,
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)

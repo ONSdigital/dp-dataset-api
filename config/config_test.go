@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ONSdigital/dp-authorisation/v2/authorisation"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -61,6 +62,7 @@ func TestSpec(t *testing.T) {
 				So(cfg.IsWriteConcernMajorityEnabled, ShouldEqual, true)
 				So(cfg.DatasetAPIURL, ShouldEqual, "http://localhost:22000")
 				So(cfg.CodeListAPIURL, ShouldEqual, "http://localhost:22400")
+				So(cfg.AuthConfig, ShouldEqual, authorisation.NewDefaultConfig())
 			})
 		})
 	})

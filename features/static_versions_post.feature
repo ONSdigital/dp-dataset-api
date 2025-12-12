@@ -51,10 +51,31 @@ Feature: Static Dataset Versions POST API
             ]
             """
 
-    Scenario: POST creates a new static dataset version successfully
+    Scenario: POST creates a new static dataset version successfully for an admin user
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
+        When I POST "/datasets/static-dataset-test/editions/2024/versions"
+            """
+            {
+                "release_date": "2024-12-01T09:00:00.000Z",
+                "edition_title": "2024",
+                "type": "static",
+                "distributions": [
+                    {
+                        "title": "Full Dataset CSV",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "download_url": "/downloads/files/static-dataset-test/2024/1/filename.csv",
+                        "byte_size": 100000
+                    }
+                ]
+            }
+            """
+        Then the HTTP status code should be "201"
+
+    Scenario: POST creates a new static dataset version successfully for a publisher user
+        Given private endpoints are enabled
+        And I am a publisher user
         When I POST "/datasets/static-dataset-test/editions/2024/versions"
             """
             {
@@ -110,8 +131,7 @@ Feature: Static Dataset Versions POST API
 
     Scenario: POST creates version 2 when version 1 is published
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I POST "/datasets/static-dataset-existing/editions/2024/versions"
             """
             {
@@ -133,8 +153,7 @@ Feature: Static Dataset Versions POST API
 
     Scenario: POST fails with missing mandatory fields
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I POST "/datasets/static-dataset-test/editions/2024/versions"
             """
             {
@@ -145,8 +164,7 @@ Feature: Static Dataset Versions POST API
 
     Scenario: POST fails for non-existent dataset
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I POST "/datasets/non-existent-dataset/editions/2024/versions"
             """
             {
@@ -200,8 +218,7 @@ Feature: Static Dataset Versions POST API
             ]
             """
         And private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I POST "/datasets/static-dataset-test/editions/2024/versions"
             """
             {
@@ -244,8 +261,7 @@ Feature: Static Dataset Versions POST API
 
     Scenario: POST creates a new static dataset version with exisiting edition title fails
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I POST "/datasets/static-dataset-existing/editions/2025/versions"
             """
             {
@@ -278,8 +294,7 @@ Feature: Static Dataset Versions POST API
 
     Scenario: POST creates a static version and auto-populates media_type based on format
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I POST "/datasets/static-dataset-test/editions/2024/versions"
             """
             {
@@ -300,8 +315,7 @@ Feature: Static Dataset Versions POST API
 
     Scenario: POST fails when the distribution format field is missing
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I POST "/datasets/static-dataset-test/editions/2024/versions"
             """
             {
@@ -332,8 +346,7 @@ Feature: Static Dataset Versions POST API
 
     Scenario: POST fails when the distribution format field is invalid
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I POST "/datasets/static-dataset-test/editions/2024/versions"
             """
             {

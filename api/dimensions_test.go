@@ -7,19 +7,69 @@ import (
 	"sort"
 	"testing"
 
+	authMock "github.com/ONSdigital/dp-authorisation/v2/authorisation/mock"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	permissionsAPISDK "github.com/ONSdigital/dp-permissions-api/sdk"
 	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func initAPIWithMockedStore(mockedStore *storetest.StorerMock) *DatasetAPI {
-	datasetPermissions := getAuthorisationHandlerMock()
-	permissions := getAuthorisationHandlerMock()
-	return GetAPIWithCMDMocks(mockedStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+func initAPIWithMockedStore(mockedStore *storetest.StorerMock, authorisationMock *authMock.MiddlewareMock) *DatasetAPI {
+	return GetAPIWithCMDMocks(mockedStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+}
+
+func TestGetDimensionsForbidden(t *testing.T) {
+	t.Parallel()
+
+	Convey("When the request contains valid ids but the request is forbidden, then no database calls are made", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", http.NoBody)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusForbidden)
+				}
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusForbidden)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)
+	})
+}
+
+func TestGetDimensionsUnauthorised(t *testing.T) {
+	t.Parallel()
+
+	Convey("When the request contains valid ids, but no authorisation information is provided, then no database calls are made", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions", http.NoBody)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusUnauthorized)
+				}
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 0)
+	})
 }
 
 func TestGetDimensionsReturnsOk(t *testing.T) {
@@ -37,14 +87,19 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(datasetPermissions.Required.Calls, ShouldEqual, 1)
-		So(permissions.Required.Calls, ShouldEqual, 0)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDimensionsCalls()), ShouldEqual, 1)
 	})
@@ -62,7 +117,16 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		api := initAPIWithMockedStore(mockedDataStore)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := initAPIWithMockedStore(mockedDataStore, authorisationMock)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -80,7 +144,16 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		api := initAPIWithMockedStore(mockedDataStore)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := initAPIWithMockedStore(mockedDataStore, authorisationMock)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -98,7 +171,16 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		api := initAPIWithMockedStore(mockedDataStore)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := initAPIWithMockedStore(mockedDataStore, authorisationMock)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -117,7 +199,16 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		api := initAPIWithMockedStore(mockedDataStore)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := initAPIWithMockedStore(mockedDataStore, authorisationMock)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -135,7 +226,16 @@ func TestGetDimensionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		api := initAPIWithMockedStore(mockedDataStore)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := initAPIWithMockedStore(mockedDataStore, authorisationMock)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -182,16 +282,25 @@ func TestGetDimensionOptionsReturnsOk(t *testing.T) {
 			},
 		}
 
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+		}
+
 		// func to perform a call
 		callOptions := func(r *http.Request) (interface{}, int, error) {
 			w := httptest.NewRecorder()
-			api := initAPIWithMockedStore(mockedDataStore)
+			api := initAPIWithMockedStore(mockedDataStore, authorisationMock)
 			return api.getDimensionOptions(w, r, 20, 0)
 		}
 
 		callOptionsWithIDs := func(r *http.Request) (interface{}, int, error) {
 			w := httptest.NewRecorder()
-			api := initAPIWithMockedStore(mockedDataStore)
+			api := initAPIWithMockedStore(mockedDataStore, authorisationMock)
 			return api.getDimensionOptions(w, r, 20, 0)
 		}
 
@@ -285,6 +394,60 @@ func TestGetDimensionOptionsReturnsOk(t *testing.T) {
 	})
 }
 
+func TestGetDimensionOptionsUnauthorised(t *testing.T) {
+	t.Parallel()
+
+	Convey("Given a set of mocked dependencies", t, func() {
+		Convey("Then an unauthorised request results in a 401 response with no database calls", func() {
+			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options", http.NoBody)
+			w := httptest.NewRecorder()
+			mockedDataStore := &storetest.StorerMock{}
+
+			authorisationMock := &authMock.MiddlewareMock{
+				RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+					return func(w http.ResponseWriter, r *http.Request) {
+						w.WriteHeader(http.StatusUnauthorized)
+					}
+				},
+			}
+
+			api := initAPIWithMockedStore(&storetest.StorerMock{}, authorisationMock)
+			api.Router.ServeHTTP(w, r)
+
+			So(w.Code, ShouldEqual, http.StatusUnauthorized)
+			So(mockedDataStore.GetDimensionOptionsCalls(), ShouldHaveLength, 0)
+			So(mockedDataStore.GetDimensionOptionsFromIDsCalls(), ShouldHaveLength, 0)
+		})
+	})
+}
+
+func TestGetDimensionOptionsForbidden(t *testing.T) {
+	t.Parallel()
+
+	Convey("Given a set of mocked dependencies", t, func() {
+		Convey("Then a forbidden request results in a 403 response with no database calls", func() {
+			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options", http.NoBody)
+			w := httptest.NewRecorder()
+			mockedDataStore := &storetest.StorerMock{}
+
+			authorisationMock := &authMock.MiddlewareMock{
+				RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+					return func(w http.ResponseWriter, r *http.Request) {
+						w.WriteHeader(http.StatusForbidden)
+					}
+				},
+			}
+
+			api := initAPIWithMockedStore(&storetest.StorerMock{}, authorisationMock)
+			api.Router.ServeHTTP(w, r)
+
+			So(w.Code, ShouldEqual, http.StatusForbidden)
+			So(mockedDataStore.GetDimensionOptionsCalls(), ShouldHaveLength, 0)
+			So(mockedDataStore.GetDimensionOptionsFromIDsCalls(), ShouldHaveLength, 0)
+		})
+	})
+}
+
 func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 	t.Parallel()
 
@@ -295,7 +458,16 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions/age/options?id=id1,id2,id3&id=id4,id5,id6", http.NoBody)
 			w := httptest.NewRecorder()
 
-			api := initAPIWithMockedStore(&storetest.StorerMock{})
+			authorisationMock := &authMock.MiddlewareMock{
+				RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+					return handlerFunc
+				},
+				ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+					return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+				},
+			}
+
+			api := initAPIWithMockedStore(&storetest.StorerMock{}, authorisationMock)
 			api.Router.ServeHTTP(w, r)
 
 			So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -312,7 +484,16 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		api := initAPIWithMockedStore(mockedDataStore)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := initAPIWithMockedStore(mockedDataStore, authorisationMock)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -332,7 +513,16 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		api := initAPIWithMockedStore(mockedDataStore)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := initAPIWithMockedStore(mockedDataStore, authorisationMock)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -353,7 +543,16 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		api := initAPIWithMockedStore(mockedDataStore)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := initAPIWithMockedStore(mockedDataStore, authorisationMock)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -371,7 +570,16 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 			},
 		}
 
-		api := initAPIWithMockedStore(mockedDataStore)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := initAPIWithMockedStore(mockedDataStore, authorisationMock)
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())

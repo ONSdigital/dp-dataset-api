@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	authMock "github.com/ONSdigital/dp-authorisation/v2/authorisation/mock"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -16,6 +17,66 @@ import (
 	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+func TestGetDatasetEditionsForbidden(t *testing.T) {
+	t.Parallel()
+	Convey("Given a request to GET /dataset-editions which is forbidden", t, func() {
+		r := createRequestWithAuth("GET", "http://localhost:22000/dataset-editions", http.NoBody)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusForbidden)
+				}
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+
+		Convey("When getDatasetEditions is called", func() {
+			api.Router.ServeHTTP(w, r)
+
+			Convey("Then it should return a 403 status code with no database calls made", func() {
+				So(w.Code, ShouldEqual, http.StatusForbidden)
+				So(len(mockedDataStore.GetStaticVersionsByStateCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
+			})
+		})
+	})
+}
+
+func TestGetDatasetEditionsUnauthorised(t *testing.T) {
+	t.Parallel()
+	Convey("Given a request to GET /dataset-editions which is unauthorised", t, func() {
+		r := createRequestWithAuth("GET", "http://localhost:22000/dataset-editions", http.NoBody)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusUnauthorized)
+				}
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+
+		Convey("When getDatasetEditions is called", func() {
+			api.Router.ServeHTTP(w, r)
+
+			Convey("Then it should return a 401 status code with no database calls made", func() {
+				So(w.Code, ShouldEqual, http.StatusUnauthorized)
+				So(len(mockedDataStore.GetStaticVersionsByStateCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
+			})
+		})
+	})
+}
 
 func TestGetDatasetEditions_WithQueryParam_Success(t *testing.T) {
 	t.Parallel()
@@ -68,9 +129,13 @@ func TestGetDatasetEditions_WithQueryParam_Success(t *testing.T) {
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		Convey("When getDatasetEditions is called", func() {
 			results, totalCount, err := api.getDatasetEditions(w, r, 20, 0)
@@ -147,9 +212,13 @@ func TestGetDatasetEditions_WithPublishedParam(t *testing.T) {
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		Convey("When getDatasetEditions is called", func() {
 			results, totalCount, err := api.getDatasetEditions(w, r, 20, 0)
@@ -188,9 +257,13 @@ func TestGetDatasetEditions_WithPublishedParam(t *testing.T) {
 
 		mockedDataStore := &storetest.StorerMock{}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		Convey("When getDatasetEditions is called", func() {
 			results, totalCount, err := api.getDatasetEditions(w, r, 20, 0)
@@ -210,9 +283,13 @@ func TestGetDatasetEditions_WithPublishedParam(t *testing.T) {
 
 		mockedDataStore := &storetest.StorerMock{}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		Convey("When getDatasetEditions is called", func() {
 			results, totalCount, err := api.getDatasetEditions(w, r, 20, 0)
@@ -294,9 +371,13 @@ func TestGetDatasetEditions_WithoutQueryParam_Success(t *testing.T) {
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		Convey("When getDatasetEditions is called", func() {
 			results, totalCount, err := api.getDatasetEditions(w, r, 20, 0)
@@ -364,9 +445,13 @@ func TestGetDatasetEditions_InvalidQueryParam_Failure(t *testing.T) {
 
 		mockedDataStore := &storetest.StorerMock{}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		Convey("When getDatasetEditions is called", func() {
 			results, totalCount, err := api.getDatasetEditions(w, r, 20, 0)
@@ -393,9 +478,13 @@ func TestGetDatasetEditions_GetStaticVersionsByState_Failure(t *testing.T) {
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		Convey("When getDatasetEditions is called and no versions are found", func() {
 			r := createRequestWithAuth("GET", "http://localhost:22000/dataset-editions?state=associated", http.NoBody)
@@ -442,9 +531,13 @@ func TestGetDatasetEditions_GetDataset_Failure(t *testing.T) {
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		Convey("When getDatasetEditions is called and the dataset is not found", func() {
 			r := createRequestWithAuth("GET", "http://localhost:22000/dataset-editions", http.NoBody)
@@ -475,9 +568,13 @@ func TestGetDatasetEditions_GetDataset_Failure(t *testing.T) {
 			},
 		}
 
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		Convey("When getDatasetEditions is called and the datastore fails", func() {
 			r := createRequestWithAuth("GET", "http://localhost:22000/dataset-editions", http.NoBody)
@@ -550,9 +647,14 @@ func TestAddDatasetVersionCondensed_Success(t *testing.T) {
 				return nil
 			},
 		}
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
 
 		So(successResponse.Status, ShouldEqual, http.StatusCreated)
@@ -625,7 +727,13 @@ func TestAddDatasetVersionCondensed_Success(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, getAuthorisationHandlerMock(), getAuthorisationHandlerMock())
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
 
 		So(successResponse.Status, ShouldEqual, http.StatusCreated)
@@ -678,8 +786,14 @@ func TestAddDatasetVersionCondensed_Success(t *testing.T) {
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error { return nil },
 		}
 
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{},
-			getAuthorisationHandlerMock(), getAuthorisationHandlerMock())
+			authorisationMock)
 
 		success, failure := api.addDatasetVersionCondensed(w, r)
 
@@ -720,9 +834,14 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 				}, nil
 			},
 		}
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
 
 		castErr := errorResponse.Errors[0]
@@ -767,9 +886,14 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 				return &models.Version{Version: 2}, nil
 			},
 		}
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
 
 		So(successResponse.Status, ShouldEqual, http.StatusCreated)
@@ -801,9 +925,14 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 				return nil, errs.ErrInternalServer
 			},
 		}
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
 
 		So(errorResponse.Status, ShouldEqual, http.StatusInternalServerError)
@@ -887,9 +1016,14 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 				return errs.ErrDatasetNotFound
 			},
 		}
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
 
 		So(errorResponse.Status, ShouldEqual, http.StatusNotFound)
@@ -987,9 +1121,14 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 				return nil
 			},
 		}
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
 
@@ -1032,9 +1171,14 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 				return nil, errs.ErrVersionNotFound
 			},
 		}
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
 
 		So(errorResponse.Status, ShouldEqual, http.StatusConflict)
@@ -1074,9 +1218,14 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 				return nil, nil
 			},
 		}
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
 
 		So(errorResponse.Status, ShouldEqual, http.StatusBadRequest)
@@ -1140,9 +1289,14 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 				return nil
 			},
 		}
-		datasetPermissions := getAuthorisationHandlerMock()
-		permissions := getAuthorisationHandlerMock()
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
 
 		So(errorResponse.Status, ShouldEqual, http.StatusBadRequest)
@@ -1169,13 +1323,18 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 		)
 		w := httptest.NewRecorder()
 
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
 		api := GetAPIWithCMDMocks(
 			&storetest.StorerMock{
 				CheckDatasetExistsFunc: func(context.Context, string, string) error { return nil },
 			},
 			&mocks.DownloadsGeneratorMock{},
-			getAuthorisationHandlerMock(),
-			getAuthorisationHandlerMock(),
+			authorisationMock,
 		)
 
 		success, errResp := api.addDatasetVersionCondensed(w, r)
@@ -1203,13 +1362,18 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 		)
 		w := httptest.NewRecorder()
 
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
 		api := GetAPIWithCMDMocks(
 			&storetest.StorerMock{
 				CheckDatasetExistsFunc: func(context.Context, string, string) error { return nil },
 			},
 			&mocks.DownloadsGeneratorMock{},
-			getAuthorisationHandlerMock(),
-			getAuthorisationHandlerMock(),
+			authorisationMock,
 		)
 
 		success, errResp := api.addDatasetVersionCondensed(w, r)
@@ -1346,8 +1510,11 @@ func TestCreateVersion_Success(t *testing.T) {
 		},
 	}
 
-	datasetPermissions := getAuthorisationHandlerMock()
-	permissions := getAuthorisationHandlerMock()
+	authorisationMock := &authMock.MiddlewareMock{
+		RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+			return handlerFunc
+		},
+	}
 
 	Convey("Given a valid request to createVersion", t, func() {
 		validVersionJSON, err := json.Marshal(validVersion)
@@ -1356,7 +1523,7 @@ func TestCreateVersion_Success(t *testing.T) {
 		returnedVersionJSON, err := json.Marshal(expectedVersion)
 		So(err, ShouldBeNil)
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(validVersionJSON))
 		vars := map[string]string{
 			"dataset_id": "123",
@@ -1429,11 +1596,15 @@ func TestCreateVersion_Failure(t *testing.T) {
 	}
 
 	mockedDataStore := &storetest.StorerMock{}
-	datasetPermissions := getAuthorisationHandlerMock()
-	permissions := getAuthorisationHandlerMock()
+
+	authorisationMock := &authMock.MiddlewareMock{
+		RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+			return handlerFunc
+		},
+	}
 
 	Convey("When the JSON body provided is invalid", t, func() {
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/invalid", http.NoBody)
 		vars := map[string]string{
 			"dataset_id": "123",
@@ -1459,7 +1630,13 @@ func TestCreateVersion_Failure(t *testing.T) {
 		validVersionJSON, err := json.Marshal(validVersion)
 		So(err, ShouldBeNil)
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/invalid", bytes.NewBuffer(validVersionJSON))
 		vars := map[string]string{
 			"dataset_id": "123",
@@ -1488,7 +1665,13 @@ func TestCreateVersion_Failure(t *testing.T) {
 		invalidTypeVersionJSON, err := json.Marshal(invalidTypeVersion)
 		So(err, ShouldBeNil)
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(invalidTypeVersionJSON))
 		vars := map[string]string{
 			"dataset_id": "123",
@@ -1518,7 +1701,13 @@ func TestCreateVersion_Failure(t *testing.T) {
 		invalidVersionJSON, err := json.Marshal(invalidVersion)
 		So(err, ShouldBeNil)
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/100", bytes.NewBuffer(invalidVersionJSON))
 		vars := map[string]string{
 			"dataset_id": "123",
@@ -1556,7 +1745,7 @@ func TestCreateVersion_Failure(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(validVersionJSON))
 		vars := map[string]string{
 			"dataset_id": "123",
@@ -1588,7 +1777,7 @@ func TestCreateVersion_Failure(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(validVersionJSON))
 		vars := map[string]string{
 			"dataset_id": "123",
@@ -1623,7 +1812,7 @@ func TestCreateVersion_Failure(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(validVersionJSON))
 		vars := map[string]string{
 			"dataset_id": "123",
@@ -1658,7 +1847,7 @@ func TestCreateVersion_Failure(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(validVersionJSON))
 		vars := map[string]string{
 			"dataset_id": "123",
@@ -1696,7 +1885,7 @@ func TestCreateVersion_Failure(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(validVersionJSON))
 		vars := map[string]string{
 			"dataset_id": "123",
@@ -1734,7 +1923,7 @@ func TestCreateVersion_Failure(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(validVersionJSON))
 		vars := map[string]string{
 			"dataset_id": "123",
@@ -1775,7 +1964,7 @@ func TestCreateVersion_Failure(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, datasetPermissions, permissions)
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(validVersionJSON))
 		vars := map[string]string{
 			"dataset_id": "123",
@@ -1815,8 +2004,14 @@ func TestCreateVersion_Failure(t *testing.T) {
 			CheckDatasetExistsFunc: func(context.Context, string, string) error { return nil },
 		}
 
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{},
-			datasetPermissions, permissions)
+			authorisationMock)
 
 		r := createRequestWithAuth(
 			"POST",
@@ -1878,8 +2073,14 @@ func TestCreateVersion_Failure(t *testing.T) {
 			},
 		}
 
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{},
-			getAuthorisationHandlerMock(), getAuthorisationHandlerMock())
+			authorisationMock)
 
 		success, errResp := api.createVersion(w, r)
 

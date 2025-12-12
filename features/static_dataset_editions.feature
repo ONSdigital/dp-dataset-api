@@ -148,10 +148,103 @@ Feature: GET /dataset-editions
             ]
             """
         
-    Scenario: GET /dataset-editions returns all versions and returns 200
+    Scenario: GET /dataset-editions returns all versions and returns 200 for an admin user
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
+        When I GET "/dataset-editions"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "count": 6,
+                "items": [
+                     {
+                         "dataset_id": "static-dataset-2",
+                         "title": "Static Dataset 2",
+                         "description": "Static Dataset 2 Description",
+                         "edition": "February",
+                         "edition_title": "February Edition Title",
+                         "latest_version": {
+                            "href": "/datasets/static-dataset-2/editions/February/versions/1",
+                            "id": "1"
+                        },
+                         "release_date": "2025-02-01T06:00:00.000Z",
+                         "state": "published"
+                    },
+                    {
+                        "dataset_id": "static-dataset-4",
+                        "title": "Static Dataset 4",
+                        "description": "Static Dataset 4 Description",
+                        "edition": "May",
+                        "edition_title": "May Edition Title",
+                        "latest_version": {
+                            "href": "/datasets/static-dataset-4/editions/May/versions/1",
+                            "id": "1"
+                        },
+                        "release_date": "2025-05-01T07:00:00.000Z",
+                        "state": "associated"
+                    },
+                    {
+                        "dataset_id": "static-dataset-3",
+                        "title": "Static Dataset 3",
+                        "description": "Static Dataset 3 Description",
+                        "edition": "April",
+                        "edition_title": "April Edition Title",
+                        "latest_version": {
+                            "href": "/datasets/static-dataset-3/editions/April/versions/1",
+                            "id": "1"
+                        },
+                        "release_date": "2025-04-01T07:00:00.000Z",
+                        "state": "approved"
+                    },
+                    {
+                        "dataset_id": "static-dataset-3",
+                        "title": "Static Dataset 3",
+                        "description": "Static Dataset 3 Description",
+                        "edition": "March",
+                        "edition_title": "March Edition Title",
+                        "latest_version": {
+                            "href": "/datasets/static-dataset-3/editions/March/versions/1",
+                            "id": "1"
+                        },
+                        "release_date": "2025-03-01T07:00:00.000Z",
+                        "state": "approved"
+                    },
+                    {
+                        "dataset_id": "static-dataset-2",
+                        "title": "Static Dataset 2",
+                        "description": "Static Dataset 2 Description",
+                        "edition": "February",
+                        "edition_title": "February Edition Title",
+                        "latest_version": {
+                            "href": "/datasets/static-dataset-2/editions/February/versions/2",
+                            "id": "2"
+                        },
+                        "release_date": "2025-02-01T07:00:00.000Z",
+                        "state": "edition-confirmed"
+                    },
+                    {
+                        "dataset_id": "static-dataset-1",
+                        "title": "Static Dataset 1",
+                        "description": "Static Dataset 1 Description",
+                        "edition": "January",
+                        "edition_title": "January Edition Title",
+                        "latest_version": {
+                            "href": "/datasets/static-dataset-1/editions/January/versions/1",
+                            "id": "1"
+                        },
+                        "release_date": "2025-01-01T07:00:00.000Z",
+                        "state": "associated"
+                    }
+                ],
+                "limit": 20,
+                "offset": 0,
+                "total_count": 6
+            }
+            """
+
+    Scenario: GET /dataset-editions returns all versions and returns 200 for a publisher user
+        Given private endpoints are enabled
+        And I am a publisher user
         When I GET "/dataset-editions"
         Then I should receive the following JSON response with status "200":
             """
@@ -245,8 +338,7 @@ Feature: GET /dataset-editions
 
     Scenario: GET /dataset-editions?state=associated returns all associated versions and returns 200
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I GET "/dataset-editions?state=associated"
         Then I should receive the following JSON response with status "200":
             """
@@ -288,8 +380,7 @@ Feature: GET /dataset-editions
     
     Scenario: GET /dataset-editions?published=true returns published versions only and returns 200
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I GET "/dataset-editions?published=true"
         Then I should receive the following JSON response with status "200":
             """
@@ -318,8 +409,7 @@ Feature: GET /dataset-editions
 
     Scenario: GET /dataset-editions?published=false returns no published versions only and returns 200
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I GET "/dataset-editions?published=false"
         Then I should receive the following JSON response with status "200":
             """
@@ -400,8 +490,7 @@ Feature: GET /dataset-editions
 
     Scenario: GET /dataset-editions invalid published parameter
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I GET "/dataset-editions?published=123"
         Then the HTTP status code should be "400"
         And I should receive the following response:
@@ -411,8 +500,7 @@ Feature: GET /dataset-editions
     
     Scenario: GET /dataset-editions with state and published parameters
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         When I GET "/dataset-editions?published=true&state=associated"
         Then the HTTP status code should be "400"
         And I should receive the following response:
@@ -422,8 +510,7 @@ Feature: GET /dataset-editions
     
     Scenario: GET /dataset-editions returns 404 when there are no editions of static datasets
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         And there are no datasets
         When I GET "/dataset-editions"
         Then the HTTP status code should be "404"
@@ -434,8 +521,7 @@ Feature: GET /dataset-editions
     
     Scenario: GET /dataset-editions?state=associated returns 404 when there are no editions of static datasets that match the given state
         Given private endpoints are enabled
-        And I am identified as "user@ons.gov.uk"
-        And I am authorised
+        And I am an admin user
         And there are no datasets
         And I have these static versions:
             """

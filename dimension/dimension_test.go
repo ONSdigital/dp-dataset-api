@@ -11,6 +11,10 @@ import (
 	"sync"
 	"testing"
 
+	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
+	authMock "github.com/ONSdigital/dp-authorisation/v2/authorisation/mock"
+	permissionsAPISDK "github.com/ONSdigital/dp-permissions-api/sdk"
+
 	"github.com/ONSdigital/dp-dataset-api/api"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/application"
@@ -46,6 +50,13 @@ func createRequestWithToken(method, requestURL string, body io.Reader) (*http.Re
 	r, err := http.NewRequest(method, requestURL, body)
 	ctx := r.Context()
 	ctx = dprequest.SetCaller(ctx, "someone@ons.gov.uk")
+	r = r.WithContext(ctx)
+	return r, err
+}
+
+func createRequestWithNoToken(method, requestURL string, body io.Reader) (*http.Request, error) {
+	r, err := http.NewRequest(method, requestURL, body)
+	ctx := r.Context()
 	r = r.WithContext(ctx)
 	return r, err
 }
@@ -147,7 +158,14 @@ func TestAddNodeIDToDimensionReturnsOK(t *testing.T) {
 			So(*isLocked, ShouldBeTrue)
 			return nil
 		}
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		Convey("When a PUT request to update the nodeID for an option is made, with a valid If-Match header", func() {
 			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55/node_id/11", nil)
@@ -230,7 +248,13 @@ func TestPatchOptionReturnsOK(t *testing.T) {
 			return nil
 		}
 
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		Convey("Then patch dimension option with a valid node_id returns ok", func() {
 			body := strings.NewReader(`[
@@ -384,7 +408,13 @@ func TestAddNodeIDToDimensionReturnsNotFound(t *testing.T) {
 			return errs.ErrDimensionNodeNotFound
 		}
 
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		Convey("Add node id to a dimension returns status not found", func() {
 			r, err := createRequestWithToken("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55/node_id/11", nil)
@@ -430,7 +460,13 @@ func TestPatchOptionReturnsNotFound(t *testing.T) {
 			return errs.ErrDimensionNodeNotFound
 		}
 
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		Convey("Then patch dimension option returns status not found", func() {
 			body := strings.NewReader(`[
@@ -470,7 +506,13 @@ func TestPatchOptionReturnsBadRequest(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore, isLocked := storeMockWithLock(false)
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		bodies := map[string]io.Reader{
 			"Then patch dimension option with an invalid body returns bad request":                            strings.NewReader(`wrong`),
@@ -509,7 +551,13 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -528,7 +576,13 @@ func TestAddNodeIDToDimensionReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -552,12 +606,18 @@ func TestPatchOptionReturnsInternalError(t *testing.T) {
 			return nil, errs.ErrInternalServer
 		}
 
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
 		r, err := createRequestWithToken(http.MethodPatch, "http://localhost:21800/instances/123/dimensions/age/options/55", body)
 		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
 
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -576,7 +636,13 @@ func TestPatchOptionReturnsInternalError(t *testing.T) {
 			return &models.Instance{State: "gobbledygook"}, nil
 		}
 
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -595,12 +661,18 @@ func TestPatchOptionReturnsInternalError(t *testing.T) {
 			return nil, errs.ErrInternalServer
 		}
 
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
 		r, err := createRequestWithToken(http.MethodPatch, "http://localhost:21800/instances/123/dimensions/age/options/55", body)
 		So(err, ShouldBeNil)
 
 		w := httptest.NewRecorder()
 
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -624,7 +696,13 @@ func TestAddNodeIDToDimensionReturnsForbidden(t *testing.T) {
 			},
 		}
 
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusForbidden)
@@ -650,7 +728,13 @@ func TestPatchOptionReturnsForbidden(t *testing.T) {
 			},
 		}
 
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusForbidden)
@@ -669,10 +753,48 @@ func TestAddNodeIDToDimensionReturnsUnauthorized(t *testing.T) {
 
 		mockedDataStore := &storetest.StorerMock{}
 
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusUnauthorized)
+				}
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+	})
+}
+
+func TestAddNodeIDToDimensionReturnsAuthForbidden(t *testing.T) {
+	t.Parallel()
+	Convey("Add node id to a dimension of an instance returns forbidden", t, func() {
+		r, err := http.NewRequest("PUT", "http://localhost:21800/instances/123/dimensions/age/options/55/node_id/11", http.NoBody)
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusForbidden)
+				}
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+		datasetAPI.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusForbidden)
+		Convey("Then none of the expected functions are called", func() {
+			So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 0)
+			So(mockedDataStore.UpdateETagForOptionsCalls(), ShouldHaveLength, 0)
+			So(mockedDataStore.UpsertDimensionsToInstanceCalls(), ShouldHaveLength, 0)
+		})
 	})
 }
 
@@ -690,10 +812,23 @@ func TestPatchOptionReturnsUnauthorized(t *testing.T) {
 
 		mockedDataStore := &storetest.StorerMock{}
 
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusUnauthorized)
+				}
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
+		Convey("Then none of the expected functions are called", func() {
+			So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 0)
+			So(mockedDataStore.UpdateETagForOptionsCalls(), ShouldHaveLength, 0)
+			So(mockedDataStore.UpsertDimensionsToInstanceCalls(), ShouldHaveLength, 0)
+		})
 	})
 }
 
@@ -720,7 +855,13 @@ func TestAddDimensionToInstanceReturnsOk(t *testing.T) {
 			return nil
 		}
 
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		Convey("When a POST request to add dimensions to an instance resource is made, with a valid If-Match header", func() {
 			json := strings.NewReader(bodyStr)
@@ -811,7 +952,13 @@ func TestAddDimensionToInstanceReturnsNotFound(t *testing.T) {
 			return errs.ErrDimensionNodeNotFound
 		}
 
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -849,7 +996,13 @@ func TestAddDimensionToInstanceReturnsForbidden(t *testing.T) {
 			},
 		}
 
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusForbidden)
@@ -869,11 +1022,54 @@ func TestAddDimensionToInstanceReturnsUnauthorized(t *testing.T) {
 
 		mockedDataStore := &storetest.StorerMock{}
 
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusUnauthorized)
+				}
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
-		So(w.Body.String(), ShouldContainSubstring, "unauthenticated request")
+		Convey("Then none of the expected functions are called", func() {
+			So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 0)
+			So(mockedDataStore.UpdateETagForOptionsCalls(), ShouldHaveLength, 0)
+			So(mockedDataStore.UpsertDimensionsToInstanceCalls(), ShouldHaveLength, 0)
+		})
+	})
+}
+
+func TestAddDimensionToInstanceAuthForbidden(t *testing.T) {
+	t.Parallel()
+	Convey("Add a dimension to a instance returns forbidden", t, func() {
+		json := strings.NewReader(`{"value":"24", "code_list":"123-456", "dimension": "test"}`)
+		r, err := http.NewRequest("POST", "http://localhost:21800/instances/123/dimensions", json)
+		So(err, ShouldBeNil)
+
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusForbidden)
+				}
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+		datasetAPI.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusForbidden)
+		Convey("Then none of the expected functions are called", func() {
+			So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 0)
+			So(mockedDataStore.UpdateETagForOptionsCalls(), ShouldHaveLength, 0)
+			So(mockedDataStore.UpsertDimensionsToInstanceCalls(), ShouldHaveLength, 0)
+		})
 	})
 }
 
@@ -893,7 +1089,13 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -915,7 +1117,13 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 			},
 		}
 
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -923,6 +1131,76 @@ func TestAddDimensionToInstanceReturnsInternalError(t *testing.T) {
 		// Gets called twice as there is a check wrapper around this route which
 		// checks the instance is not published before entering handler
 		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
+	})
+}
+
+func TestGetDimensionsUnauthorised(t *testing.T) {
+	t.Parallel()
+
+	Convey("Given a dataset API where the authorisation token is missing", t, func() {
+		mockedDataStore := &storetest.StorerMock{}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusUnauthorized)
+				}
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+
+		Convey("When a GET request to retrieve an instance resource is made, with a valid If-Match header", func() {
+			r, err := createRequestWithNoToken("GET", "http://localhost:21800/instances/123/dimensions", nil)
+			r.Header.Set("If-Match", testIfMatch)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then the response status is 401 unauthorized, with no ETag header", func() {
+				So(w.Code, ShouldEqual, http.StatusUnauthorized)
+			})
+
+			Convey("Then the expected functions are not called", func() {
+				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 0)
+				So(mockedDataStore.GetDimensionsFromInstanceCalls(), ShouldHaveLength, 0)
+			})
+		})
+	})
+}
+
+func TestGetDimensionsForbidden(t *testing.T) {
+	t.Parallel()
+
+	Convey("Given a dataset API request where the authorisation is forbidden", t, func() {
+		mockedDataStore := &storetest.StorerMock{}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusForbidden)
+				}
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+
+		Convey("When a GET request to retrieve an instance resource is made, with a valid If-Match header", func() {
+			r, err := createRequestWithNoToken("GET", "http://localhost:21800/instances/123/dimensions", nil)
+			r.Header.Set("If-Match", testIfMatch)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then the response status is 403 forbidden, with no ETag header", func() {
+				So(w.Code, ShouldEqual, http.StatusForbidden)
+			})
+
+			Convey("Then the expected functions are not called", func() {
+				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 0)
+				So(mockedDataStore.GetDimensionsFromInstanceCalls(), ShouldHaveLength, 0)
+			})
+		})
 	})
 }
 
@@ -935,7 +1213,14 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 			So(*isLocked, ShouldBeTrue)
 			return []*models.DimensionOption{}, 0, nil
 		}
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		Convey("When a GET request to retrieve an instance resource is made, with a valid If-Match header", func() {
 			r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123/dimensions", nil)
@@ -1007,7 +1292,13 @@ func TestGetDimensionsReturnsNotFound(t *testing.T) {
 			return nil, 0, errs.ErrDimensionNodeNotFound
 		}
 
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -1035,7 +1326,13 @@ func TestGetDimensionsReturnsConflict(t *testing.T) {
 			return nil, errs.ErrInstanceConflict
 		}
 
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusConflict)
@@ -1061,7 +1358,13 @@ func TestGetDimensionsAndOptionsReturnsInternalError(t *testing.T) {
 			return nil, errs.ErrInternalServer
 		}
 
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -1084,7 +1387,13 @@ func TestGetDimensionsAndOptionsReturnsInternalError(t *testing.T) {
 			return &models.Instance{State: "gobbly gook"}, nil
 		}
 
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -1093,6 +1402,76 @@ func TestGetDimensionsAndOptionsReturnsInternalError(t *testing.T) {
 		So(mockedDataStore.GetInstanceCalls()[0].ID, ShouldEqual, "123")
 		validateLock(mockedDataStore, "123")
 		So(*isLocked, ShouldBeFalse)
+	})
+}
+
+func TestGetUniqueDimensionAndOptionsUnauthorised(t *testing.T) {
+	t.Parallel()
+
+	Convey("Given a dataset API with an auth response that is unauthorized", t, func() {
+		mockedDataStore := &storetest.StorerMock{}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusUnauthorized)
+				}
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+
+		Convey("When a GET request to retrieve an dimension options is made, with a valid If-Match header", func() {
+			r, err := createRequestWithNoToken("GET", "http://localhost:21800/instances/123/dimensions/age/options", nil)
+			r.Header.Set("If-Match", testIfMatch)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then the response status is 401 unauthorized", func() {
+				So(w.Code, ShouldEqual, http.StatusUnauthorized)
+			})
+
+			Convey("Then none of the expected functions are called", func() {
+				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 0)
+				So(mockedDataStore.GetUniqueDimensionAndOptionsCalls(), ShouldHaveLength, 0)
+			})
+		})
+	})
+}
+
+func TestGetUniqueDimensionAndOptionsForbidden(t *testing.T) {
+	t.Parallel()
+
+	Convey("Given a dataset API with an auth response that is forbidden", t, func() {
+		mockedDataStore := &storetest.StorerMock{}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusForbidden)
+				}
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+
+		Convey("When a GET request to retrieve an dimension options is made, with a valid If-Match header", func() {
+			r, err := createRequestWithNoToken("GET", "http://localhost:21800/instances/123/dimensions/age/options", nil)
+			r.Header.Set("If-Match", testIfMatch)
+			So(err, ShouldBeNil)
+			w := httptest.NewRecorder()
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then the response status is 403 forbidden", func() {
+				So(w.Code, ShouldEqual, http.StatusForbidden)
+			})
+
+			Convey("Then none of the expected functions are called", func() {
+				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 0)
+				So(mockedDataStore.GetUniqueDimensionAndOptionsCalls(), ShouldHaveLength, 0)
+			})
+		})
 	})
 }
 
@@ -1106,7 +1485,13 @@ func TestGetUniqueDimensionAndOptionsReturnsOk(t *testing.T) {
 			return []*string{}, 0, nil
 		}
 
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		Convey("When a GET request to retrieve an instance resource is made, with a valid If-Match header", func() {
 			r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123/dimensions/age/options", nil)
@@ -1173,7 +1558,13 @@ func TestGetUniqueDimensionAndOptionsReturnsNotFound(t *testing.T) {
 			return nil, 0, errs.ErrInstanceNotFound
 		}
 
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -1200,7 +1591,13 @@ func TestGetUniqueDimensionAndOptionsReturnsConflict(t *testing.T) {
 			return nil, errs.ErrInstanceConflict
 		}
 
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusConflict)
@@ -1226,7 +1623,13 @@ func TestGetUniqueDimensionAndOptionsReturnsInternalError(t *testing.T) {
 			return nil, errs.ErrInternalServer
 		}
 
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -1247,7 +1650,13 @@ func TestGetUniqueDimensionAndOptionsReturnsInternalError(t *testing.T) {
 			return &models.Instance{State: "gobbly gook"}, nil
 		}
 
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 		datasetAPI.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -1255,6 +1664,88 @@ func TestGetUniqueDimensionAndOptionsReturnsInternalError(t *testing.T) {
 		So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 1)
 		validateLock(mockedDataStore, "123")
 		So(*isLocked, ShouldBeFalse)
+	})
+}
+
+func TestPatchDimensionsUnauthorised(t *testing.T) {
+	t.Parallel()
+
+	Convey("Given a Dataset API instance with a mocked data store", t, func() {
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusUnauthorized)
+				}
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+
+		Convey("When calling patch dimension with no authorisation information supplied", func() {
+			body := strings.NewReader(`[
+				{"op": "add", "path": "/-", "value": [{"option": "op1", "dimension": "TestDim"},{"option": "op2", "dimension": "TestDim"}]}
+			]`)
+			r, err := createRequestWithNoToken(http.MethodPatch, "http://localhost:21800/instances/123/dimensions", body)
+			r.Header.Set("If-Match", testIfMatch)
+			So(err, ShouldBeNil)
+
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then the response is 401 unauthorized", func() {
+				So(w.Code, ShouldEqual, http.StatusUnauthorized)
+			})
+
+			Convey("Then the none of the expected database calls are performed", func() {
+				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 0)
+				So(mockedDataStore.UpdateETagForOptionsCalls(), ShouldHaveLength, 0)
+				So(mockedDataStore.UpsertDimensionsToInstanceCalls(), ShouldHaveLength, 0)
+			})
+		})
+	})
+}
+
+func TestPatchDimensionsForbidden(t *testing.T) {
+	t.Parallel()
+
+	Convey("Given a Dataset API instance with a mocked data store, where the auth returns forbidden", t, func() {
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusForbidden)
+				}
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+
+		Convey("When calling patch dimension witn a invalid auth", func() {
+			body := strings.NewReader(`[
+				{"op": "add", "path": "/-", "value": [{"option": "op1", "dimension": "TestDim"},{"option": "op2", "dimension": "TestDim"}]}
+			]`)
+			r, err := createRequestWithToken(http.MethodPatch, "http://localhost:21800/instances/123/dimensions", body)
+			r.Header.Set("If-Match", testIfMatch)
+			So(err, ShouldBeNil)
+
+			datasetAPI.Router.ServeHTTP(w, r)
+
+			Convey("Then the response is 403 forbidden", func() {
+				So(w.Code, ShouldEqual, http.StatusForbidden)
+			})
+
+			Convey("Then the none of the expected database calls are performed", func() {
+				So(mockedDataStore.GetInstanceCalls(), ShouldHaveLength, 0)
+				So(mockedDataStore.UpdateETagForOptionsCalls(), ShouldHaveLength, 0)
+				So(mockedDataStore.UpsertDimensionsToInstanceCalls(), ShouldHaveLength, 0)
+			})
+		})
 	})
 }
 
@@ -1287,7 +1778,13 @@ func TestPatchDimensions(t *testing.T) {
 			return nil
 		}
 
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		Convey("When calling patch dimension with a valid single patch 'upsert' operation", func() {
 			body := strings.NewReader(`[
@@ -1418,7 +1915,13 @@ func TestPatchDimensionsReturnsBadRequest(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore, isLocked := storeMockWithLock(false)
-		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{})
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+		datasetAPI := getAPIWithCMDMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
 
 		bodies := map[string]io.Reader{
 			"Then patch dimensions with an invalid body returns bad request": strings.NewReader(`wrong`),
@@ -1518,7 +2021,7 @@ func TestPatchDimensionsReturnsBadRequest(t *testing.T) {
 	})
 }
 
-func getAPIWithCMDMocks(ctx context.Context, mockedDataStore store.Storer, mockedGeneratedDownloads api.DownloadsGenerator) *api.DatasetAPI {
+func getAPIWithCMDMocks(ctx context.Context, mockedDataStore store.Storer, mockedGeneratedDownloads api.DownloadsGenerator, authorisationMock *authMock.MiddlewareMock) *api.DatasetAPI {
 	downloadGenerators := map[models.DatasetType]api.DownloadsGenerator{
 		models.Filterable: mockedGeneratedDownloads,
 	}
@@ -1531,6 +2034,12 @@ func getAPIWithCMDMocks(ctx context.Context, mockedDataStore store.Storer, mocke
 		DataStore:          store.DataStore{Backend: mockedDataStore},
 		DownloadGenerators: mockedMapSMGeneratedDownloads,
 	}
+
+	permissionsChecker := &authMock.PermissionsCheckerMock{
+		HasPermissionFunc: func(ctx context.Context, entityData permissionsAPISDK.EntityData, permission string, attributes map[string]string) (bool, error) {
+			return true, nil
+		},
+	}
 	mu.Lock()
 	defer mu.Unlock()
 
@@ -1541,14 +2050,7 @@ func getAPIWithCMDMocks(ctx context.Context, mockedDataStore store.Storer, mocke
 	cfg.EnablePrivateEndpoints = true
 	cfg.MaxRequestOptions = testMaxRequestOptions
 
-	datasetPermissions := getAuthorisationHandlerMock()
-	permissions := getAuthorisationHandlerMock()
+	testIdentityClient := clientsidentity.New(cfg.ZebedeeURL)
 
-	return api.Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, downloadGenerators, datasetPermissions, permissions, enableURLRewriting, &mockStatemachineDatasetAPI)
-}
-
-func getAuthorisationHandlerMock() *mocks.AuthHandlerMock {
-	return &mocks.AuthHandlerMock{
-		Required: &mocks.PermissionCheckCalls{Calls: 0},
-	}
+	return api.Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, downloadGenerators, authorisationMock, enableURLRewriting, &mockStatemachineDatasetAPI, permissionsChecker, testIdentityClient)
 }
