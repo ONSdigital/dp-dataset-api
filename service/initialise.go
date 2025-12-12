@@ -18,13 +18,13 @@ import (
 
 // ExternalServiceList holds the initialiser and initialisation state of external services.
 type ExternalServiceList struct {
-	GenerateDownloadsProducer bool
-	AuthorisationMiddleware   bool
-	Graph                     bool
-	HealthCheck               bool
-	MongoDB                   bool
-	FilesAPIClient            bool
-	Init                      Initialiser
+	KafkaProducer           bool
+	AuthorisationMiddleware bool
+	Graph                   bool
+	HealthCheck             bool
+	MongoDB                 bool
+	FilesAPIClient          bool
+	Init                    Initialiser
 }
 
 // NewServiceList creates a new service list with the provided initialiser
@@ -59,7 +59,7 @@ func (e *ExternalServiceList) GetProducer(ctx context.Context, cfg *config.Confi
 	if err != nil {
 		return
 	}
-	e.GenerateDownloadsProducer = true
+	e.KafkaProducer = true
 	return
 }
 

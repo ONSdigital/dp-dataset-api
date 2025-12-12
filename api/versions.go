@@ -15,6 +15,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/utils"
+	kafka "github.com/ONSdigital/dp-kafka/v4"
 	dpresponse "github.com/ONSdigital/dp-net/v3/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v3/http"
 	"github.com/ONSdigital/dp-net/v3/links"
@@ -49,6 +50,10 @@ var (
 		errs.ErrResourceState: true,
 	}
 )
+
+type SearchContentUpdatedProducer struct {
+	Producer KafkaProducer
+}
 
 // getVersions returns a list of versions, the total count of versions that match the query parameters and an error
 // TODO: Refactor this to reduce the complexity
@@ -864,6 +869,30 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 			log.Error(ctx, "putState endpoint: failed to publish distribution files", err, logData)
 			handleVersionAPIErr(ctx, err, w, logData)
 			return
+		}
+	}
+
+	if updatedVersion.State == models.PublishedState {
+		if api.searchContentUpdatedProducer != nil && api.searchContentUpdatedProducer.Producer != nil {
+			searchContentUpdatedEvent := map[string]interface{}{
+				"dataset_id":   updatedVersion.DatasetID,
+				"uri":          updatedVersion.Links.Version.HRef,
+				"title":        updatedVersion.EditionTitle,
+				"edition":      updatedVersion.Edition,
+				"content_type": updatedVersion.Type,
+			}
+
+			jsonBytes, err := json.Marshal(searchContentUpdatedEvent)
+			if err != nil {
+				log.Error(ctx, "failed to marshal searchContentUpdatedEvent for kafka", err, logData)
+			} else {
+				go func() {
+					api.searchContentUpdatedProducer.Producer.Output() <- kafka.BytesMessage{Value: jsonBytes, Context: ctx}
+					log.Info(ctx, "putState endpoint: queued search content update for kafka", logData)
+				}()
+			}
+		} else {
+			log.Info(ctx, "putState endpoint: search content producer not initialized, skipping kafka event", logData)
 		}
 	}
 

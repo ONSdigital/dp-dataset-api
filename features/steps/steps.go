@@ -58,6 +58,7 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the dataset "([^"]*)" should have next equal to current$`, c.theDatasetShouldHaveNextEqualToCurrent)
 	ctx.Step(`^the "([^"]*)" feature flag is "([^"]*)"$`, c.theFeatureFlagIs)
 	ctx.Step(`^I am a publisher user$`, c.publisherJWTToken)
+	ctx.Step(`^these kafka messages are produced:$`, c.theseKafkaMessagesAreProduced)
 }
 
 func (c *DatasetComponent) theFeatureFlagIs(flagName, status string) error {
@@ -274,6 +275,42 @@ func (c *DatasetComponent) theseCantabularGeneratorDownloadsEventsAreProduced(ev
 		return fmt.Errorf("-got +expected)\n%s", diff)
 	}
 
+	return nil
+}
+
+func (c *DatasetComponent) theseKafkaMessagesAreProduced(kafkaJSON *godog.DocString) error {
+	var expectedPayload interface{}
+	if err := json.Unmarshal([]byte(kafkaJSON.Content), &expectedPayload); err != nil {
+		return fmt.Errorf("failed to unmarshal kafkaJSON: %w", err)
+	}
+	expectedJSON, err := json.Marshal(expectedPayload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal expected payload: %w", err)
+	}
+	expected := []string{string(expectedJSON)}
+
+	messages := []string{}
+	listen := true
+
+	for listen {
+		select {
+		case <-time.After(10 * time.Second):
+			listen = false
+		case <-c.consumer.Channels().Closer:
+			return errors.New("closer channel closed")
+		case msg, ok := <-c.consumer.Channels().Upstream:
+			if !ok {
+				return errors.New("upstream channel closed")
+			}
+			messages = append(messages, string(msg.GetData()))
+			msg.Commit()
+			msg.Release()
+		}
+	}
+
+	if diff := cmp.Diff(messages, expected); diff != "" {
+		return fmt.Errorf("-got +expected)\n%s", diff)
+	}
 	return nil
 }
 
