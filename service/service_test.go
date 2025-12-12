@@ -221,11 +221,12 @@ func TestRun(t *testing.T) {
 
 		Convey("Given that initialising Healthcheck returns an error", func() {
 			initMock := &serviceMock.InitialiserMock{
-				DoGetMongoDBFunc:        funcDoGetMongoDBOk,
-				DoGetGraphDBFunc:        funcDoGetGraphDBOk,
-				DoGetFilesAPIClientFunc: funcDoGetFilesAPIClientOk,
-				DoGetKafkaProducerFunc:  funcDoGetKafkaProducerOk,
-				DoGetHealthCheckFunc:    funcDoGetHealthcheckErr,
+				DoGetMongoDBFunc:                 funcDoGetMongoDBOk,
+				DoGetGraphDBFunc:                 funcDoGetGraphDBOk,
+				DoGetFilesAPIClientFunc:          funcDoGetFilesAPIClientOk,
+				DoGetKafkaProducerFunc:           funcDoGetKafkaProducerOk,
+				DoGetHealthCheckFunc:             funcDoGetHealthcheckErr,
+				DoGetAuthorisationMiddlewareFunc: funcDoGetAuthOk,
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
@@ -257,6 +258,7 @@ func TestRun(t *testing.T) {
 				DoGetHealthCheckFunc: func(*config.Configuration, string, string, string) (service.HealthChecker, error) {
 					return hcMockAddFail, nil
 				},
+				DoGetAuthorisationMiddlewareFunc: funcDoGetAuthOk,
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
@@ -328,11 +330,10 @@ func TestRun(t *testing.T) {
 		Convey("Given that all dependencies are successfully initialised, private endpoints are disabled", func() {
 			cfg.EnablePrivateEndpoints = false
 			initMock := &serviceMock.InitialiserMock{
-				DoGetMongoDBFunc:                 funcDoGetMongoDBOk,
-				DoGetKafkaProducerFunc:           funcDoGetKafkaProducerOk,
-				DoGetHealthCheckFunc:             funcDoGetHealthcheckOk,
-				DoGetHTTPServerFunc:              funcDoGetHTTPServer,
-				DoGetAuthorisationMiddlewareFunc: funcDoGetAuthOk,
+				DoGetMongoDBFunc:       funcDoGetMongoDBOk,
+				DoGetKafkaProducerFunc: funcDoGetKafkaProducerOk,
+				DoGetHealthCheckFunc:   funcDoGetHealthcheckOk,
+				DoGetHTTPServerFunc:    funcDoGetHTTPServer,
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
