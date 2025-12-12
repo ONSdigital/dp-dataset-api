@@ -1144,7 +1144,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock)
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{})
 
 		api.Router.ServeHTTP(w, r)
 
