@@ -283,13 +283,8 @@ func (c *DatasetComponent) theseKafkaMessagesAreProduced(kafkaJSON *godog.DocStr
 	if err := json.Unmarshal([]byte(kafkaJSON.Content), &expectedPayload); err != nil {
 		return fmt.Errorf("failed to unmarshal kafkaJSON: %w", err)
 	}
-	expectedJSON, err := json.Marshal(expectedPayload)
-	if err != nil {
-		return fmt.Errorf("failed to marshal expected payload: %w", err)
-	}
-	expected := []string{string(expectedJSON)}
-
-	messages := []string{}
+	expected := []interface{}{expectedPayload}
+	messages := []interface{}{}
 	listen := true
 
 	for listen {
@@ -302,7 +297,13 @@ func (c *DatasetComponent) theseKafkaMessagesAreProduced(kafkaJSON *godog.DocStr
 			if !ok {
 				return errors.New("upstream channel closed")
 			}
-			messages = append(messages, string(msg.GetData()))
+			var gotPayload interface{}
+			if err := json.Unmarshal(msg.GetData(), &gotPayload); err != nil {
+				msg.Commit()
+				msg.Release()
+				return fmt.Errorf("failed to unmarshal kafka message: %w", err)
+			}
+			messages = append(messages, gotPayload)
 			msg.Commit()
 			msg.Release()
 		}
