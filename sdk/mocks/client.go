@@ -29,7 +29,7 @@ var _ sdk.Clienter = &ClienterMock{}
 //			CreateDatasetFunc: func(ctx context.Context, headers sdk.Headers, dataset models.Dataset) (models.DatasetUpdate, error) {
 //				panic("mock out the CreateDataset method")
 //			},
-//			GetDatasetFunc: func(ctx context.Context, headers sdk.Headers, collectionID string, datasetID string) (models.Dataset, error) {
+//			GetDatasetFunc: func(ctx context.Context, headers sdk.Headers, datasetID string) (models.Dataset, error) {
 //				panic("mock out the GetDataset method")
 //			},
 //			GetDatasetByPathFunc: func(ctx context.Context, headers sdk.Headers, path string) (models.Dataset, error) {
@@ -115,7 +115,7 @@ type ClienterMock struct {
 	CreateDatasetFunc func(ctx context.Context, headers sdk.Headers, dataset models.Dataset) (models.DatasetUpdate, error)
 
 	// GetDatasetFunc mocks the GetDataset method.
-	GetDatasetFunc func(ctx context.Context, headers sdk.Headers, collectionID string, datasetID string) (models.Dataset, error)
+	GetDatasetFunc func(ctx context.Context, headers sdk.Headers, datasetID string) (models.Dataset, error)
 
 	// GetDatasetByPathFunc mocks the GetDatasetByPath method.
 	GetDatasetByPathFunc func(ctx context.Context, headers sdk.Headers, path string) (models.Dataset, error)
@@ -210,8 +210,6 @@ type ClienterMock struct {
 			Ctx context.Context
 			// Headers is the headers argument value.
 			Headers sdk.Headers
-			// CollectionID is the collectionID argument value.
-			CollectionID string
 			// DatasetID is the datasetID argument value.
 			DatasetID string
 		}
@@ -592,25 +590,23 @@ func (mock *ClienterMock) CreateDatasetCalls() []struct {
 }
 
 // GetDataset calls GetDatasetFunc.
-func (mock *ClienterMock) GetDataset(ctx context.Context, headers sdk.Headers, collectionID string, datasetID string) (models.Dataset, error) {
+func (mock *ClienterMock) GetDataset(ctx context.Context, headers sdk.Headers, datasetID string) (models.Dataset, error) {
 	if mock.GetDatasetFunc == nil {
 		panic("ClienterMock.GetDatasetFunc: method is nil but Clienter.GetDataset was just called")
 	}
 	callInfo := struct {
-		Ctx          context.Context
-		Headers      sdk.Headers
-		CollectionID string
-		DatasetID    string
+		Ctx       context.Context
+		Headers   sdk.Headers
+		DatasetID string
 	}{
-		Ctx:          ctx,
-		Headers:      headers,
-		CollectionID: collectionID,
-		DatasetID:    datasetID,
+		Ctx:       ctx,
+		Headers:   headers,
+		DatasetID: datasetID,
 	}
 	mock.lockGetDataset.Lock()
 	mock.calls.GetDataset = append(mock.calls.GetDataset, callInfo)
 	mock.lockGetDataset.Unlock()
-	return mock.GetDatasetFunc(ctx, headers, collectionID, datasetID)
+	return mock.GetDatasetFunc(ctx, headers, datasetID)
 }
 
 // GetDatasetCalls gets all the calls that were made to GetDataset.
@@ -618,16 +614,14 @@ func (mock *ClienterMock) GetDataset(ctx context.Context, headers sdk.Headers, c
 //
 //	len(mockedClienter.GetDatasetCalls())
 func (mock *ClienterMock) GetDatasetCalls() []struct {
-	Ctx          context.Context
-	Headers      sdk.Headers
-	CollectionID string
-	DatasetID    string
+	Ctx       context.Context
+	Headers   sdk.Headers
+	DatasetID string
 } {
 	var calls []struct {
-		Ctx          context.Context
-		Headers      sdk.Headers
-		CollectionID string
-		DatasetID    string
+		Ctx       context.Context
+		Headers   sdk.Headers
+		DatasetID string
 	}
 	mock.lockGetDataset.RLock()
 	calls = mock.calls.GetDataset
