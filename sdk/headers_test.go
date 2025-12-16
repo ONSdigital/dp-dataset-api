@@ -8,13 +8,10 @@ import (
 )
 
 func Test_AddHeaders(t *testing.T) {
-
 	Convey("When a request is made to /datasets", t, func() {
-
-		req, err := http.NewRequest(http.MethodGet, "/datasets", nil)
+		req, err := http.NewRequest(http.MethodGet, "/datasets", http.NoBody)
 
 		Convey("With a user token including the Bearer prefix", func() {
-
 			So(err, ShouldBeNil)
 
 			h := Headers{AccessToken: "Bearer 1234555555"}
@@ -26,7 +23,6 @@ func Test_AddHeaders(t *testing.T) {
 		})
 
 		Convey("With a user token with no bearer prefix", func() {
-
 			So(err, ShouldBeNil)
 
 			h := Headers{AccessToken: "1234555555"}
