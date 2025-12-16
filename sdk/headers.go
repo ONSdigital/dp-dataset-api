@@ -46,7 +46,7 @@ func (h *Headers) add(request *http.Request) {
 
 	// Adding the service token header appends the Bearer prefix to the value submitted
 	// If it's present this needs to be removed as otherwise the token provided is not valid
-	if strings.Contains(h.AccessToken, "Bearer") {
+	if strings.Contains(h.AccessToken, "Bearer ") {
 		h.AccessToken = strings.ReplaceAll(h.AccessToken, "Bearer ", "")
 	}
 
