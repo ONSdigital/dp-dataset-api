@@ -501,6 +501,7 @@ func (svc *Service) Close(ctx context.Context) error {
 		// Close KafkaProducer (if it exists)
 		if svc.serviceList.KafkaProducer {
 			log.Info(shutdownContext, "closing generated downloads kafka producer", log.Data{"producer": "DimensionExtracted"})
+			// Only one kafka producer needs to be shutdown as they share the same underlying connections
 			if err := svc.generateCMDDownloadsProducer.Close(shutdownContext); err != nil {
 				log.Warn(shutdownContext, "error while closing generated downloads kafka producer", log.Data{"producer": "DimensionExtracted", "err": err.Error()})
 			}

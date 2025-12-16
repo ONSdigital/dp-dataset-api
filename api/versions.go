@@ -51,10 +51,6 @@ var (
 	}
 )
 
-type SearchContentUpdatedProducer struct {
-	Producer KafkaProducer
-}
-
 // getVersions returns a list of versions, the total count of versions that match the query parameters and an error
 // TODO: Refactor this to reduce the complexity
 //
@@ -873,26 +869,23 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if updatedVersion.State == models.PublishedState {
-		if api.searchContentUpdatedProducer != nil && api.searchContentUpdatedProducer.Producer != nil {
-			searchContentUpdatedEvent := map[string]interface{}{
-				"dataset_id":   updatedVersion.DatasetID,
-				"uri":          updatedVersion.Links.Version.HRef,
-				"title":        updatedVersion.EditionTitle,
-				"edition":      updatedVersion.Edition,
-				"content_type": updatedVersion.Type,
-			}
+		searchContentUpdatedEvent := map[string]interface{}{
+			"dataset_id":   updatedVersion.DatasetID,
+			"uri":          updatedVersion.Links.Version.HRef,
+			"title":        updatedVersion.EditionTitle,
+			"edition":      updatedVersion.Edition,
+			"content_type": updatedVersion.Type,
+		}
 
-			jsonBytes, err := json.Marshal(searchContentUpdatedEvent)
-			if err != nil {
-				log.Error(ctx, "failed to marshal searchContentUpdatedEvent for kafka", err, logData)
-			} else {
-				go func() {
-					api.searchContentUpdatedProducer.Producer.Output() <- kafka.BytesMessage{Value: jsonBytes, Context: ctx}
-					log.Info(ctx, "putState endpoint: queued search content update for kafka", logData)
-				}()
-			}
+		jsonBytes, err := json.Marshal(searchContentUpdatedEvent)
+		logData["search_content_updated_event"] = searchContentUpdatedEvent
+		if err != nil {
+			log.Error(ctx, "failed to marshal searchContentUpdatedEvent for kafka", err, logData)
+			handleVersionAPIErr(ctx, err, w, logData)
+			return
 		} else {
-			log.Info(ctx, "putState endpoint: search content producer not initialized, skipping kafka event", logData)
+			api.searchContentUpdatedProducer.Producer.Output() <- kafka.BytesMessage{Value: jsonBytes, Context: ctx}
+			log.Info(ctx, "putState endpoint: queued search content update for kafka", logData)
 		}
 	}
 

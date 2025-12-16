@@ -13,6 +13,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/application"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/dimension"
+	"github.com/ONSdigital/dp-dataset-api/download"
 	"github.com/ONSdigital/dp-dataset-api/instance"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/pagination"
@@ -60,6 +61,10 @@ type API interface {
 // DownloadsGenerator pre generates full file downloads for the specified dataset/edition/version
 type DownloadsGenerator interface {
 	Generate(ctx context.Context, datasetID, instanceID, edition, version string) error
+}
+
+type SearchContentUpdatedProducer struct {
+	Producer download.KafkaProducer
 }
 
 // DatasetAPI manages importing filters against a dataset
