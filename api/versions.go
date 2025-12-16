@@ -884,7 +884,9 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 			handleVersionAPIErr(ctx, err, w, logData)
 			return
 		} else {
-			api.searchContentUpdatedProducer.Producer.Output() <- kafka.BytesMessage{Value: jsonBytes, Context: ctx}
+			go func() {
+				api.searchContentUpdatedProducer.Producer.Output() <- kafka.BytesMessage{Value: jsonBytes, Context: ctx}
+			}()
 			log.Info(ctx, "putState endpoint: queued search content update for kafka", logData)
 		}
 	}
