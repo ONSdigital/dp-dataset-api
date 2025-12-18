@@ -3,6 +3,7 @@ package sdk
 import (
 	"errors"
 	"net/http"
+	"strings"
 
 	dpNetRequest "github.com/ONSdigital/dp-net/v3/request"
 )
@@ -42,6 +43,13 @@ func (h *Headers) add(request *http.Request) {
 		request.Header.Add(dpNetRequest.CollectionIDHeaderKey, h.CollectionID)
 	}
 	dpNetRequest.AddDownloadServiceTokenHeader(request, h.DownloadServiceToken)
+
+	// Adding the service token header appends the Bearer prefix to the value submitted
+	// If it's present this needs to be removed as otherwise the token provided is not valid
+	if strings.Contains(h.AccessToken, "Bearer ") {
+		h.AccessToken = strings.ReplaceAll(h.AccessToken, "Bearer ", "")
+	}
+
 	dpNetRequest.AddServiceTokenHeader(request, h.AccessToken)
 }
 
