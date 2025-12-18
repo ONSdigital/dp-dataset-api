@@ -867,6 +867,19 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Purge Cloudflare cache if enabled and version is being published
+	if api.cloudflareEnabled && stateUpdate.State == models.PublishedState {
+		prefixes := utils.GeneratePurgePrefixes(api.urlBuilder.GetWebsiteURL().String(), api.urlBuilder.GetAPIRouterPublicURL().String(), datasetID, edition, version)
+		logData["purge_prefixes"] = prefixes
+
+		err := api.cloudflareClient.PurgeByPrefixes(ctx, prefixes)
+		if err != nil {
+			log.Error(ctx, "putState endpoint: failed to purge cache by prefixes", err, logData)
+		} else {
+			log.Info(ctx, "putState endpoint: successfully purged cache by prefixes", logData)
+		}
+	}
+
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusOK)
 	log.Info(ctx, "putState endpoint: request successful", logData)
