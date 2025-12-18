@@ -11,6 +11,7 @@ import (
 
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
 	"github.com/ONSdigital/dp-dataset-api/application"
+	"github.com/ONSdigital/dp-dataset-api/cloudflare"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/dimension"
 	"github.com/ONSdigital/dp-dataset-api/instance"
@@ -85,10 +86,12 @@ type DatasetAPI struct {
 	authToken                 string
 	permissionsChecker        auth.PermissionsChecker
 	idClient                  *clientsidentity.Client
+	cloudflareClient          cloudflare.Clienter
+	cloudflareEnabled         bool
 }
 
 // Setup creates a new Dataset API instance and register the API routes based on the application configuration.
-func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerators map[models.DatasetType]DownloadsGenerator, authMiddleware auth.Middleware, enableURLRewriting bool, smDatasetAPI *application.StateMachineDatasetAPI, permissionsChecker auth.PermissionsChecker, idClient *clientsidentity.Client) *DatasetAPI {
+func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerators map[models.DatasetType]DownloadsGenerator, authMiddleware auth.Middleware, enableURLRewriting bool, smDatasetAPI *application.StateMachineDatasetAPI, permissionsChecker auth.PermissionsChecker, idClient *clientsidentity.Client, cloudflareClient cloudflare.Clienter) *DatasetAPI {
 	api := &DatasetAPI{
 		dataStore:                 dataStore,
 		host:                      cfg.DatasetAPIURL,
@@ -109,6 +112,8 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		smDatasetAPI:              smDatasetAPI,
 		permissionsChecker:        permissionsChecker,
 		idClient:                  idClient,
+		cloudflareClient:          cloudflareClient,
+		cloudflareEnabled:         cfg.CloudflareEnabled,
 	}
 
 	paginator := pagination.NewPaginator(cfg.DefaultLimit, cfg.DefaultOffset, cfg.DefaultMaxLimit)
