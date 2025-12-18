@@ -424,35 +424,35 @@ func (svc *Service) initCloudflareClient(ctx context.Context) error {
 func createURLBuilder(cfg *config.Configuration) (*url.Builder, error) {
 	websiteURL, err := neturl.Parse(cfg.WebsiteURL)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to parse websiteURL from config")
+		return nil, errors.Wrap(err, "unable to parse WebsiteURL from config")
 	}
 
 	downloadServiceURL, err := neturl.Parse(cfg.DownloadServiceURL)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to parse downloadServiceURL from config")
+		return nil, errors.Wrap(err, "unable to parse DownloadServiceURL from config")
 	}
 
 	datasetAPIURL, err := neturl.Parse(cfg.DatasetAPIURL)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to parse datasetAPIURL from config")
+		return nil, errors.Wrap(err, "unable to parse DatasetAPIURL from config")
 	}
 
 	codeListAPIURL, err := neturl.Parse(cfg.CodeListAPIURL)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to parse codeListAPIURL from config")
+		return nil, errors.Wrap(err, "unable to parse CodeListAPIURL from config")
 	}
 
 	importAPIURL, err := neturl.Parse(cfg.ImportAPIURL)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to parse importAPIURL from config")
+		return nil, errors.Wrap(err, "unable to parse ImportAPIURL from config")
 	}
 
-	APIRouterPublicURL, err := neturl.Parse(cfg.APIRouterPublicURL)
+	apiRouterPublicURL, err := neturl.Parse(cfg.APIRouterPublicURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to parse APIRouterPublicURL from config")
 	}
 
-	return url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL, APIRouterPublicURL), nil
+	return url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL, apiRouterPublicURL), nil
 }
 
 // CreateMiddleware creates an Alice middleware chain of handlers
