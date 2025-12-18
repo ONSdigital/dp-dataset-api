@@ -6,6 +6,7 @@ package mock
 import (
 	"context"
 	auth "github.com/ONSdigital/dp-authorisation/v2/authorisation"
+	"github.com/ONSdigital/dp-dataset-api/cloudflare"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/service"
 	"github.com/ONSdigital/dp-dataset-api/store"
@@ -27,6 +28,9 @@ var _ service.Initialiser = &InitialiserMock{}
 //		mockedInitialiser := &InitialiserMock{
 //			DoGetAuthorisationMiddlewareFunc: func(ctx context.Context, authorisationConfig *auth.Config) (auth.Middleware, error) {
 //				panic("mock out the DoGetAuthorisationMiddleware method")
+//			},
+//			DoGetCloudflareClientFunc: func(ctx context.Context, cloudflareConfig *cloudflare.Config) (cloudflare.Clienter, error) {
+//				panic("mock out the DoGetCloudflareClient method")
 //			},
 //			DoGetFilesAPIClientFunc: func(ctx context.Context, cfg *config.Configuration) (filesAPISDK.Clienter, error) {
 //				panic("mock out the DoGetFilesAPIClient method")
@@ -56,6 +60,9 @@ type InitialiserMock struct {
 	// DoGetAuthorisationMiddlewareFunc mocks the DoGetAuthorisationMiddleware method.
 	DoGetAuthorisationMiddlewareFunc func(ctx context.Context, authorisationConfig *auth.Config) (auth.Middleware, error)
 
+	// DoGetCloudflareClientFunc mocks the DoGetCloudflareClient method.
+	DoGetCloudflareClientFunc func(ctx context.Context, cloudflareConfig *cloudflare.Config) (cloudflare.Clienter, error)
+
 	// DoGetFilesAPIClientFunc mocks the DoGetFilesAPIClient method.
 	DoGetFilesAPIClientFunc func(ctx context.Context, cfg *config.Configuration) (filesAPISDK.Clienter, error)
 
@@ -82,6 +89,13 @@ type InitialiserMock struct {
 			Ctx context.Context
 			// AuthorisationConfig is the authorisationConfig argument value.
 			AuthorisationConfig *auth.Config
+		}
+		// DoGetCloudflareClient holds details about calls to the DoGetCloudflareClient method.
+		DoGetCloudflareClient []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// CloudflareConfig is the cloudflareConfig argument value.
+			CloudflareConfig *cloudflare.Config
 		}
 		// DoGetFilesAPIClient holds details about calls to the DoGetFilesAPIClient method.
 		DoGetFilesAPIClient []struct {
@@ -131,6 +145,7 @@ type InitialiserMock struct {
 		}
 	}
 	lockDoGetAuthorisationMiddleware sync.RWMutex
+	lockDoGetCloudflareClient        sync.RWMutex
 	lockDoGetFilesAPIClient          sync.RWMutex
 	lockDoGetGraphDB                 sync.RWMutex
 	lockDoGetHTTPServer              sync.RWMutex
@@ -172,6 +187,42 @@ func (mock *InitialiserMock) DoGetAuthorisationMiddlewareCalls() []struct {
 	mock.lockDoGetAuthorisationMiddleware.RLock()
 	calls = mock.calls.DoGetAuthorisationMiddleware
 	mock.lockDoGetAuthorisationMiddleware.RUnlock()
+	return calls
+}
+
+// DoGetCloudflareClient calls DoGetCloudflareClientFunc.
+func (mock *InitialiserMock) DoGetCloudflareClient(ctx context.Context, cloudflareConfig *cloudflare.Config) (cloudflare.Clienter, error) {
+	if mock.DoGetCloudflareClientFunc == nil {
+		panic("InitialiserMock.DoGetCloudflareClientFunc: method is nil but Initialiser.DoGetCloudflareClient was just called")
+	}
+	callInfo := struct {
+		Ctx              context.Context
+		CloudflareConfig *cloudflare.Config
+	}{
+		Ctx:              ctx,
+		CloudflareConfig: cloudflareConfig,
+	}
+	mock.lockDoGetCloudflareClient.Lock()
+	mock.calls.DoGetCloudflareClient = append(mock.calls.DoGetCloudflareClient, callInfo)
+	mock.lockDoGetCloudflareClient.Unlock()
+	return mock.DoGetCloudflareClientFunc(ctx, cloudflareConfig)
+}
+
+// DoGetCloudflareClientCalls gets all the calls that were made to DoGetCloudflareClient.
+// Check the length with:
+//
+//	len(mockedInitialiser.DoGetCloudflareClientCalls())
+func (mock *InitialiserMock) DoGetCloudflareClientCalls() []struct {
+	Ctx              context.Context
+	CloudflareConfig *cloudflare.Config
+} {
+	var calls []struct {
+		Ctx              context.Context
+		CloudflareConfig *cloudflare.Config
+	}
+	mock.lockDoGetCloudflareClient.RLock()
+	calls = mock.calls.DoGetCloudflareClient
+	mock.lockDoGetCloudflareClient.RUnlock()
 	return calls
 }
 

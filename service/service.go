@@ -13,6 +13,7 @@ import (
 	"github.com/ONSdigital/dp-authorisation/v2/permissions"
 	"github.com/ONSdigital/dp-dataset-api/api"
 	"github.com/ONSdigital/dp-dataset-api/application"
+	"github.com/ONSdigital/dp-dataset-api/cloudflare"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/download"
 	adapter "github.com/ONSdigital/dp-dataset-api/kafka"
@@ -50,6 +51,7 @@ type Service struct {
 	mongoDB                             store.MongoDB
 	generateCMDDownloadsProducer        kafka.IProducer
 	generateCantabularDownloadsProducer kafka.IProducer
+	cloudflareClient                    cloudflare.Clienter
 	identityClient                      *clientsidentity.Client
 	filesAPIClient                      filesAPISDK.Clienter
 	server                              HTTPServer
@@ -235,6 +237,10 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		return err
 	}
 
+	if err := svc.initCloudflareClient(ctx); err != nil {
+		return err
+	}
+
 	ds := store.DataStore{Backend: DatsetAPIStore{svc.mongoDB, svc.graphDB}}
 
 	// Get GenerateDownloads Kafka Producer
@@ -343,7 +349,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	sm := GetStateMachine(ctx, ds)
 	svc.smDS = application.Setup(ds, smDownloadGenerators, sm)
 
-	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, authorisation, enableURLRewriting, svc.smDS, permissionChecker, svc.identityClient)
+	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, authorisation, enableURLRewriting, svc.smDS, permissionChecker, svc.identityClient, svc.cloudflareClient)
 
 	// Set the files API client on the DatasetAPI after initialisation
 	if svc.config.EnablePrivateEndpoints && svc.filesAPIClient != nil {
@@ -398,6 +404,12 @@ func (svc *Service) initFilesAPIClient(ctx context.Context) error {
 	return err
 }
 
+func (svc *Service) initCloudflareClient(ctx context.Context) error {
+	var err error
+	svc.cloudflareClient, err = svc.serviceList.GetCloudflareClient(ctx, svc.config)
+	return err
+}
+
 func createURLBuilder(cfg *config.Configuration) (*url.Builder, error) {
 	websiteURL, err := neturl.Parse(cfg.WebsiteURL)
 	if err != nil {
@@ -424,7 +436,12 @@ func createURLBuilder(cfg *config.Configuration) (*url.Builder, error) {
 		return nil, errors.Wrap(err, "unable to parse importAPIURL from config")
 	}
 
-	return url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL), nil
+	APIRouterPublicURL, err := neturl.Parse(cfg.APIRouterPublicURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to parse APIRouterPublicURL from config")
+	}
+
+	return url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL, APIRouterPublicURL), nil
 }
 
 // CreateMiddleware creates an Alice middleware chain of handlers

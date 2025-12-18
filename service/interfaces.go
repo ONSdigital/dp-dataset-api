@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/ONSdigital/dp-authorisation/v2/authorisation"
+	"github.com/ONSdigital/dp-dataset-api/cloudflare"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
@@ -26,6 +27,7 @@ type Initialiser interface {
 	DoGetMongoDB(ctx context.Context, cfg config.MongoConfig) (store.MongoDB, error)
 	DoGetAuthorisationMiddleware(ctx context.Context, authorisationConfig *authorisation.Config) (authorisation.Middleware, error)
 	DoGetFilesAPIClient(ctx context.Context, cfg *config.Configuration) (filesAPISDK.Clienter, error)
+	DoGetCloudflareClient(ctx context.Context, cloudflareConfig *cloudflare.Config) (cloudflare.Clienter, error)
 }
 
 // HTTPServer defines the required methods from the HTTP server

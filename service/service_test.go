@@ -10,6 +10,8 @@ import (
 	authorisationMock "github.com/ONSdigital/dp-authorisation/v2/authorisation/mock"
 
 	"github.com/ONSdigital/dp-authorisation/v2/authorisation"
+	"github.com/ONSdigital/dp-dataset-api/cloudflare"
+	cloudflareMocks "github.com/ONSdigital/dp-dataset-api/cloudflare/mocks"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/service"
 	serviceMock "github.com/ONSdigital/dp-dataset-api/service/mock"
@@ -32,12 +34,13 @@ var (
 )
 
 var (
-	errMongo          = errors.New("MongoDB error")
-	errGraph          = errors.New("GraphDB error")
-	errFilesAPIClient = errors.New("Files API client error")
-	errKafka          = errors.New("Kafka producer error")
-	errServer         = errors.New("HTTP Server error")
-	errHealthcheck    = errors.New("healthCheck error")
+	errMongo            = errors.New("MongoDB error")
+	errGraph            = errors.New("GraphDB error")
+	errFilesAPIClient   = errors.New("Files API client error")
+	errCloudflareClient = errors.New("Cloudflare client error")
+	errKafka            = errors.New("Kafka producer error")
+	errServer           = errors.New("HTTP Server error")
+	errHealthcheck      = errors.New("healthCheck error")
 )
 
 var funcDoGetMongoDBErr = func(context.Context, config.MongoConfig) (store.MongoDB, error) {
@@ -52,6 +55,10 @@ var funcDoGetFilesAPIClientErr = func(context.Context, *config.Configuration) (f
 	return nil, errFilesAPIClient
 }
 
+var funcDoGetCloudflareClientErr = func(context.Context, *cloudflare.Config) (cloudflare.Clienter, error) {
+	return nil, errCloudflareClient
+}
+
 var funcDoGetKafkaProducerErr = func(context.Context, *config.Configuration, string) (kafka.IProducer, error) {
 	return nil, errKafka
 }
@@ -64,6 +71,7 @@ func TestRun(t *testing.T) {
 	Convey("Having a set of mocked dependencies", t, func() {
 		cfg, err := config.Get()
 		cfg.EnablePrivateEndpoints = true
+		cfg.CloudflareEnabled = true
 		So(err, ShouldBeNil)
 
 		hcMock := &serviceMock.HealthCheckerMock{
@@ -124,6 +132,10 @@ func TestRun(t *testing.T) {
 
 		funcDoGetFilesAPIClientOk := func(context.Context, *config.Configuration) (filesAPISDK.Clienter, error) {
 			return &filesAPISDKMocks.ClienterMock{}, nil
+		}
+
+		funcDoGetCloudflareClientOk := func(context.Context, *cloudflare.Config) (cloudflare.Clienter, error) {
+			return &cloudflareMocks.ClienterMock{}, nil
 		}
 
 		funcDoGetKafkaProducerOk := func(context.Context, *config.Configuration, string) (kafka.IProducer, error) {
@@ -197,12 +209,35 @@ func TestRun(t *testing.T) {
 			})
 		})
 
+		Convey("Given that initialising Cloudflare client returns an error", func() {
+			initMock := &serviceMock.InitialiserMock{
+				DoGetMongoDBFunc:          funcDoGetMongoDBOk,
+				DoGetGraphDBFunc:          funcDoGetGraphDBOk,
+				DoGetFilesAPIClientFunc:   funcDoGetFilesAPIClientOk,
+				DoGetCloudflareClientFunc: funcDoGetCloudflareClientErr,
+			}
+			svcErrors := make(chan error, 1)
+			svcList := service.NewServiceList(initMock)
+			svc := service.New(cfg, svcList)
+			err := svc.Run(ctx, testBuildTime, testGitCommit, testVersion, svcErrors)
+
+			Convey("Then service Run fails with the same error and the flag is not set. No further initialisations are attempted", func() {
+				So(err, ShouldResemble, errCloudflareClient)
+				So(svcList.MongoDB, ShouldBeTrue)
+				So(svcList.Graph, ShouldBeTrue)
+				So(svcList.FilesAPIClient, ShouldBeTrue)
+				So(svcList.GenerateDownloadsProducer, ShouldBeFalse)
+				So(svcList.HealthCheck, ShouldBeFalse)
+			})
+		})
+
 		Convey("Given that initialising Kafka producer returns an error", func() {
 			initMock := &serviceMock.InitialiserMock{
-				DoGetMongoDBFunc:        funcDoGetMongoDBOk,
-				DoGetGraphDBFunc:        funcDoGetGraphDBOk,
-				DoGetFilesAPIClientFunc: funcDoGetFilesAPIClientOk,
-				DoGetKafkaProducerFunc:  funcDoGetKafkaProducerErr,
+				DoGetMongoDBFunc:          funcDoGetMongoDBOk,
+				DoGetGraphDBFunc:          funcDoGetGraphDBOk,
+				DoGetFilesAPIClientFunc:   funcDoGetFilesAPIClientOk,
+				DoGetCloudflareClientFunc: funcDoGetCloudflareClientOk,
+				DoGetKafkaProducerFunc:    funcDoGetKafkaProducerErr,
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
@@ -214,6 +249,7 @@ func TestRun(t *testing.T) {
 				So(svcList.MongoDB, ShouldBeTrue)
 				So(svcList.Graph, ShouldBeTrue)
 				So(svcList.FilesAPIClient, ShouldBeTrue)
+				So(svcList.CloudflareClient, ShouldBeTrue)
 				So(svcList.GenerateDownloadsProducer, ShouldBeFalse)
 				So(svcList.HealthCheck, ShouldBeFalse)
 			})
@@ -224,6 +260,7 @@ func TestRun(t *testing.T) {
 				DoGetMongoDBFunc:                 funcDoGetMongoDBOk,
 				DoGetGraphDBFunc:                 funcDoGetGraphDBOk,
 				DoGetFilesAPIClientFunc:          funcDoGetFilesAPIClientOk,
+				DoGetCloudflareClientFunc:        funcDoGetCloudflareClientOk,
 				DoGetKafkaProducerFunc:           funcDoGetKafkaProducerOk,
 				DoGetHealthCheckFunc:             funcDoGetHealthcheckErr,
 				DoGetAuthorisationMiddlewareFunc: funcDoGetAuthOk,
@@ -238,6 +275,7 @@ func TestRun(t *testing.T) {
 				So(svcList.MongoDB, ShouldBeTrue)
 				So(svcList.Graph, ShouldBeTrue)
 				So(svcList.FilesAPIClient, ShouldBeTrue)
+				So(svcList.CloudflareClient, ShouldBeTrue)
 				So(svcList.GenerateDownloadsProducer, ShouldBeTrue)
 				So(svcList.HealthCheck, ShouldBeFalse)
 			})
@@ -251,10 +289,11 @@ func TestRun(t *testing.T) {
 			}
 
 			initMock := &serviceMock.InitialiserMock{
-				DoGetMongoDBFunc:        funcDoGetMongoDBOk,
-				DoGetGraphDBFunc:        funcDoGetGraphDBOk,
-				DoGetFilesAPIClientFunc: funcDoGetFilesAPIClientOk,
-				DoGetKafkaProducerFunc:  funcDoGetKafkaProducerOk,
+				DoGetMongoDBFunc:          funcDoGetMongoDBOk,
+				DoGetGraphDBFunc:          funcDoGetGraphDBOk,
+				DoGetFilesAPIClientFunc:   funcDoGetFilesAPIClientOk,
+				DoGetCloudflareClientFunc: funcDoGetCloudflareClientOk,
+				DoGetKafkaProducerFunc:    funcDoGetKafkaProducerOk,
 				DoGetHealthCheckFunc: func(*config.Configuration, string, string, string) (service.HealthChecker, error) {
 					return hcMockAddFail, nil
 				},
@@ -288,6 +327,7 @@ func TestRun(t *testing.T) {
 				DoGetMongoDBFunc:                 funcDoGetMongoDBOk,
 				DoGetGraphDBFunc:                 funcDoGetGraphDBOk,
 				DoGetFilesAPIClientFunc:          funcDoGetFilesAPIClientOk,
+				DoGetCloudflareClientFunc:        funcDoGetCloudflareClientOk,
 				DoGetKafkaProducerFunc:           funcDoGetKafkaProducerOk,
 				DoGetHealthCheckFunc:             funcDoGetHealthcheckOk,
 				DoGetHTTPServerFunc:              funcDoGetHTTPServer,
@@ -328,10 +368,11 @@ func TestRun(t *testing.T) {
 		Convey("Given that all dependencies are successfully initialised, private endpoints are disabled", func() {
 			cfg.EnablePrivateEndpoints = false
 			initMock := &serviceMock.InitialiserMock{
-				DoGetMongoDBFunc:       funcDoGetMongoDBOk,
-				DoGetKafkaProducerFunc: funcDoGetKafkaProducerOk,
-				DoGetHealthCheckFunc:   funcDoGetHealthcheckOk,
-				DoGetHTTPServerFunc:    funcDoGetHTTPServer,
+				DoGetMongoDBFunc:          funcDoGetMongoDBOk,
+				DoGetKafkaProducerFunc:    funcDoGetKafkaProducerOk,
+				DoGetCloudflareClientFunc: funcDoGetCloudflareClientOk,
+				DoGetHealthCheckFunc:      funcDoGetHealthcheckOk,
+				DoGetHTTPServerFunc:       funcDoGetHTTPServer,
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
@@ -344,6 +385,7 @@ func TestRun(t *testing.T) {
 				So(svcList.MongoDB, ShouldBeTrue)
 				So(svcList.Graph, ShouldBeFalse)
 				So(svcList.FilesAPIClient, ShouldBeFalse)
+				So(svcList.CloudflareClient, ShouldBeTrue)
 				So(svcList.GenerateDownloadsProducer, ShouldBeFalse)
 				So(svcList.HealthCheck, ShouldBeTrue)
 			})
@@ -364,6 +406,7 @@ func TestRun(t *testing.T) {
 				DoGetMongoDBFunc:                 funcDoGetMongoDBOk,
 				DoGetGraphDBFunc:                 funcDoGetGraphDBOk,
 				DoGetFilesAPIClientFunc:          funcDoGetFilesAPIClientOk,
+				DoGetCloudflareClientFunc:        funcDoGetCloudflareClientOk,
 				DoGetKafkaProducerFunc:           funcDoGetKafkaProducerOk,
 				DoGetHealthCheckFunc:             funcDoGetHealthcheckOk,
 				DoGetHTTPServerFunc:              funcDoGetFailingHTTPServer,
