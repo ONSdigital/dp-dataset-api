@@ -870,11 +870,11 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 
 	if updatedVersion.State == models.PublishedState {
 		searchContentUpdatedEvent := map[string]interface{}{
-			"dataset_id":   updatedVersion.DatasetID,
-			"uri":          updatedVersion.Links.Version.HRef,
-			"title":        updatedVersion.EditionTitle,
-			"edition":      updatedVersion.Edition,
-			"content_type": updatedVersion.Type,
+			"dataset_id":   datasetID,
+			"uri":          currentVersion.Links.Version.HRef,
+			"title":        currentVersion.EditionTitle,
+			"edition":      currentVersion.Edition,
+			"content_type": currentVersion.Type,
 		}
 
 		jsonBytes, err := json.Marshal(searchContentUpdatedEvent)

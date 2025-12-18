@@ -507,9 +507,9 @@ Feature: Static Dataset Versions PUT API
           """
           {
             "content_type": "static",
-            "dataset_id": "",
+            "dataset_id": "static-dataset-published",
             "edition": "2025",
-            "title": "",
+            "title": "2025 Edition",
             "uri": "/datasets/static-dataset-published/editions/2025/versions/1"
           }
           """
