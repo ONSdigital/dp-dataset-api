@@ -260,6 +260,7 @@ Feature: Static Dataset Versions PUT API
 
     Scenario: PUT state endpoint updates successfully
         Given private endpoints are enabled
+        And cloudflare is enabled
         And I am an admin user
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/1/state"
             """
@@ -268,9 +269,11 @@ Feature: Static Dataset Versions PUT API
             }
             """
         Then the HTTP status code should be "200"
+        And there are no cloudflare purge calls
 
     Scenario: PUT state transitions from associated to approved
         Given private endpoints are enabled
+        And cloudflare is enabled
         And I am an admin user
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/1/state"
             """
@@ -279,8 +282,9 @@ Feature: Static Dataset Versions PUT API
             }
             """
         Then the HTTP status code should be "200"
+        And there are no cloudflare purge calls
 
-    Scenario: PUT state transitions from approved to published
+    Scenario: PUT state transitions from approved to published and purges URL's
         Given I have a static dataset with version:
             """
             {
@@ -326,6 +330,7 @@ Feature: Static Dataset Versions PUT API
             }
             """
         And private endpoints are enabled
+        And cloudflare is enabled
         And I am an admin user
         When I PUT "/datasets/static-dataset-publish/editions/2025/versions/1/state"
             """
@@ -334,6 +339,13 @@ Feature: Static Dataset Versions PUT API
             }
             """
         Then the HTTP status code should be "200"
+        And the following URL prefixes are purged by cloudflare:
+            | http://localhost:20000/datasets/static-dataset-publish |
+            | http://localhost:20000/datasets/static-dataset-publish/editions |
+            | http://localhost:20000/datasets/static-dataset-publish/editions/2025/versions |
+            | http://localhost:23200/v1/datasets/static-dataset-publish |
+            | http://localhost:23200/v1/datasets/static-dataset-publish/editions |
+            | http://localhost:23200/v1/datasets/static-dataset-publish/editions/2025/versions |
 
     Scenario: PUT state fails with invalid state transition from associated to published
         Given private endpoints are enabled
@@ -460,7 +472,7 @@ Feature: Static Dataset Versions PUT API
             """
         Then the HTTP status code should be "200"
 
-    Scenario: PUT state handles idempotent transitions correctly
+    Scenario: PUT state handles idempotent transitions correctly and purges URL's
         Given I have a static dataset with version:
             """
             {
@@ -494,6 +506,7 @@ Feature: Static Dataset Versions PUT API
             }
             """
         And private endpoints are enabled
+        And cloudflare is enabled
         And I am an admin user
         When I PUT "/datasets/static-dataset-published/editions/2025/versions/1/state"
             """
@@ -502,6 +515,13 @@ Feature: Static Dataset Versions PUT API
             }
             """
         Then the HTTP status code should be "200"
+        And the following URL prefixes are purged by cloudflare:
+            | http://localhost:20000/datasets/static-dataset-published |
+            | http://localhost:20000/datasets/static-dataset-published/editions |
+            | http://localhost:20000/datasets/static-dataset-published/editions/2025/versions |
+            | http://localhost:23200/v1/datasets/static-dataset-published |
+            | http://localhost:23200/v1/datasets/static-dataset-published/editions |
+            | http://localhost:23200/v1/datasets/static-dataset-published/editions/2025/versions |
 
     Scenario: PUT succeeds when updating edition ID to unique value within series
         Given private endpoints are enabled
