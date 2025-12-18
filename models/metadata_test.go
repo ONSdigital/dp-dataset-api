@@ -198,7 +198,8 @@ func TestCreateMetadata(t *testing.T) {
 			downloadServiceURL := &neturl.URL{Scheme: "http", Host: "localhost:23600"}
 			importAPIURL := &neturl.URL{Scheme: "http", Host: "localhost:21800"}
 			websiteURL := &neturl.URL{Scheme: "http", Host: "localhost:20000"}
-			urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
+			apiRouterPublicURL := &neturl.URL{Scheme: "http", Host: "localhost:23200", Path: "v1"}
+			urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL, apiRouterPublicURL)
 			metaDataDoc := CreateMetaDataDoc(&dataset, &version, urlBuilder)
 
 			Convey("Then it returns a metadata object with canonical topic and subtopics set", func() {
@@ -223,7 +224,8 @@ func TestCreateMetadata(t *testing.T) {
 			downloadServiceURL := &neturl.URL{Scheme: "http", Host: "localhost:23600"}
 			importAPIURL := &neturl.URL{Scheme: "http", Host: "localhost:21800"}
 			websiteURL := &neturl.URL{Scheme: "http", Host: "localhost:20000"}
-			urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL)
+			apiRouterPublicURL := &neturl.URL{Scheme: "http", Host: "localhost:23200", Path: "v1"}
+			urlBuilder := url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL, apiRouterPublicURL)
 			metaDataDoc := CreateMetaDataDoc(&staticDataset, &version, urlBuilder)
 
 			Convey("Then it returns a metadata object with topics populated", func() {
