@@ -33,6 +33,7 @@ func TestSpec(t *testing.T) {
 				So(cfg.KafkaSecSkipVerify, ShouldBeFalse)
 				So(cfg.GenerateDownloadsTopic, ShouldEqual, "filter-job-submitted")
 				So(cfg.CantabularExportStartTopic, ShouldEqual, "cantabular-export-start")
+				So(cfg.SearchContentUpdatedTopic, ShouldEqual, "search-content-updated")
 				So(cfg.APIRouterPublicURL, ShouldEqual, "http://localhost:23200/v1")
 				So(cfg.DatasetAPIURL, ShouldEqual, "http://localhost:22000")
 				So(cfg.CodeListAPIURL, ShouldEqual, "http://localhost:22400")

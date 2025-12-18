@@ -60,6 +60,7 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the dataset "([^"]*)" should have next equal to current$`, c.theDatasetShouldHaveNextEqualToCurrent)
 	ctx.Step(`^the "([^"]*)" feature flag is "([^"]*)"$`, c.theFeatureFlagIs)
 	ctx.Step(`^I am a publisher user$`, c.publisherJWTToken)
+	ctx.Step(`^these kafka messages are produced:$`, c.theseKafkaMessagesAreProduced)
 	ctx.Step(`the following URL prefixes are purged by cloudflare:$`, c.theFollowingURLPrefixesArePurgedByCloudflare)
 	ctx.Step(`there are no cloudflare purge calls`, c.thereAreNoCloudflarePurgeCalls)
 	ctx.Step(`cloudflare is enabled`, c.cloudflareIsEnabled)
@@ -279,6 +280,43 @@ func (c *DatasetComponent) theseCantabularGeneratorDownloadsEventsAreProduced(ev
 		return fmt.Errorf("-got +expected)\n%s", diff)
 	}
 
+	return nil
+}
+
+func (c *DatasetComponent) theseKafkaMessagesAreProduced(kafkaJSON *godog.DocString) error {
+	var expectedPayload interface{}
+	if err := json.Unmarshal([]byte(kafkaJSON.Content), &expectedPayload); err != nil {
+		return fmt.Errorf("failed to unmarshal kafkaJSON: %w", err)
+	}
+	expected := []interface{}{expectedPayload}
+	messages := []interface{}{}
+	listen := true
+
+	for listen {
+		select {
+		case <-time.After(10 * time.Second):
+			listen = false
+		case <-c.consumer.Channels().Closer:
+			return errors.New("closer channel closed")
+		case msg, ok := <-c.consumer.Channels().Upstream:
+			if !ok {
+				return errors.New("upstream channel closed")
+			}
+			var gotPayload interface{}
+			if err := json.Unmarshal(msg.GetData(), &gotPayload); err != nil {
+				msg.Commit()
+				msg.Release()
+				return fmt.Errorf("failed to unmarshal kafka message: %w", err)
+			}
+			messages = append(messages, gotPayload)
+			msg.Commit()
+			msg.Release()
+		}
+	}
+
+	if diff := cmp.Diff(messages, expected); diff != "" {
+		return fmt.Errorf("-got +expected)\n%s", diff)
+	}
 	return nil
 }
 

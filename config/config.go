@@ -31,6 +31,7 @@ type Configuration struct {
 	KafkaSecSkipVerify             bool          `envconfig:"KAFKA_SEC_SKIP_VERIFY"`
 	GenerateDownloadsTopic         string        `envconfig:"GENERATE_DOWNLOADS_TOPIC"`
 	CantabularExportStartTopic     string        `envconfig:"CANTABULAR_EXPORT_START"`
+	SearchContentUpdatedTopic      string        `envconfig:"SEARCH_CONTENT_UPDATED_TOPIC"`
 	APIRouterPublicURL             string        `envconfig:"API_ROUTER_PUBLIC_URL"`
 	CodeListAPIURL                 string        `envconfig:"CODE_LIST_API_URL"`
 	DatasetAPIURL                  string        `envconfig:"DATASET_API_URL"`
@@ -93,6 +94,7 @@ func Get() (*Configuration, error) {
 		KafkaProducerMinBrokersHealthy: 2,
 		GenerateDownloadsTopic:         "filter-job-submitted",
 		CantabularExportStartTopic:     "cantabular-export-start",
+		SearchContentUpdatedTopic:      "search-content-updated",
 		APIRouterPublicURL:             "http://localhost:23200/v1",
 		CodeListAPIURL:                 "http://localhost:22400",
 		DatasetAPIURL:                  "http://localhost:22000",

@@ -15,6 +15,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/utils"
+	kafka "github.com/ONSdigital/dp-kafka/v4"
 	dpresponse "github.com/ONSdigital/dp-net/v3/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v3/http"
 	"github.com/ONSdigital/dp-net/v3/links"
@@ -864,6 +865,29 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 			log.Error(ctx, "putState endpoint: failed to publish distribution files", err, logData)
 			handleVersionAPIErr(ctx, err, w, logData)
 			return
+		}
+	}
+
+	if updatedVersion.State == models.PublishedState {
+		searchContentUpdatedEvent := map[string]interface{}{
+			"dataset_id":   datasetID,
+			"uri":          currentVersion.Links.Version.HRef,
+			"title":        currentVersion.EditionTitle,
+			"edition":      currentVersion.Edition,
+			"content_type": currentVersion.Type,
+		}
+
+		jsonBytes, err := json.Marshal(searchContentUpdatedEvent)
+		logData["search_content_updated_event"] = searchContentUpdatedEvent
+		if err != nil {
+			log.Error(ctx, "failed to marshal searchContentUpdatedEvent for kafka", err, logData)
+			handleVersionAPIErr(ctx, err, w, logData)
+			return
+		} else {
+			go func() {
+				api.searchContentUpdatedProducer.Producer.Output() <- kafka.BytesMessage{Value: jsonBytes, Context: ctx}
+			}()
+			log.Info(ctx, "putState endpoint: queued search content update for kafka", logData)
 		}
 	}
 

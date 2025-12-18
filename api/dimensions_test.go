@@ -20,7 +20,7 @@ import (
 )
 
 func initAPIWithMockedStore(mockedStore *storetest.StorerMock, authorisationMock *authMock.MiddlewareMock, cloudflareMock *cloudflareMocks.ClienterMock) *DatasetAPI {
-	return GetAPIWithCMDMocks(mockedStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, cloudflareMock)
+	return GetAPIWithCMDMocks(mockedStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, cloudflareMock)
 }
 
 func TestGetDimensionsForbidden(t *testing.T) {
@@ -39,7 +39,7 @@ func TestGetDimensionsForbidden(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusForbidden)
@@ -64,7 +64,7 @@ func TestGetDimensionsUnauthorised(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
@@ -97,7 +97,7 @@ func TestGetDimensionsReturnsOk(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
