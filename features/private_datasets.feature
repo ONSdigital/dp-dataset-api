@@ -23,10 +23,10 @@ Feature: Private Dataset API
                 "type": "filterable",
                 "links": {
                     "editions": {
-                        "href":"http://localhost:22000/datasets/ageing-population-estimates/editions"
+                        "href": "http://localhost:22000/datasets/ageing-population-estimates/editions"
                     },
                     "self": {
-                        "href":"http://localhost:22000/datasets/ageing-population-estimates"
+                        "href": "http://localhost:22000/datasets/ageing-population-estimates"
                     }
                 }
             }
@@ -52,10 +52,10 @@ Feature: Private Dataset API
                 "type": "filterable",
                 "links": {
                     "editions": {
-                        "href":"http://localhost:22000/datasets/ageing-population-estimates/editions"
+                        "href": "http://localhost:22000/datasets/ageing-population-estimates/editions"
                     },
                     "self": {
-                        "href":"http://localhost:22000/datasets/ageing-population-estimates"
+                        "href": "http://localhost:22000/datasets/ageing-population-estimates"
                     }
                 }
             }
@@ -94,23 +94,23 @@ Feature: Private Dataset API
         When I PUT "/datasets/population-estimates"
             """
             {
-                    "survey": "mockSurvey"
+                "survey": "mockSurvey"
             }
             """
         Then I should receive the following JSON response with status "200":
             """
             {
                 "survey": "mockSurvey",
-                "last_updated":"0001-01-01T00:00:00Z"
+                "last_updated": "0001-01-01T00:00:00Z"
             }
             """
         And the document in the database for id "population-estimates" should be:
-        """
+            """
             {
                 "id": "population-estimates",
                 "survey": "mockSurvey"
             }
-        """
+            """
 
     Scenario: Successfully change title of a static dataset
         Given I have these datasets:
@@ -130,8 +130,8 @@ Feature: Private Dataset API
                         "title": "example 1",
                         "description": "some description",
                         "license": "Open Government Licence v3.0",
-                        "topics": [ 
-                            "topic-0", 
+                        "topics": [
+                            "topic-0",
                             "topic-1"
                         ]
                     }
@@ -152,8 +152,8 @@ Feature: Private Dataset API
                 "title": "new title",
                 "description": "some description",
                 "license": "Open Government Licence v3.0",
-                "topics": [ 
-                    "topic-0", 
+                "topics": [
+                    "topic-0",
                     "topic-1"
                 ]
             }
@@ -170,8 +170,8 @@ Feature: Private Dataset API
                 "description": "some description",
                 "license": "Open Government Licence v3.0",
                 "title": "new title",
-                "topics": [ 
-                    "topic-0", 
+                "topics": [
+                    "topic-0",
                     "topic-1"
                 ],
                 "id": "static-dataset",
@@ -179,7 +179,7 @@ Feature: Private Dataset API
             }
             """
         And the document in the database for id "static-dataset" should be:
-        """
+            """
             {
                 "id": "static-dataset",
                 "contacts": [
@@ -192,14 +192,14 @@ Feature: Private Dataset API
                 "description": "some description",
                 "license": "Open Government Licence v3.0",
                 "next": {
-                    "topics": [ 
-                        "topic-0", 
+                    "topics": [
+                        "topic-0",
                         "topic-1"
                     ],
                     "type": "static"
                 }
             }
-        """
+            """
 
     Scenario: Adding topic fields to a dataset
         Given I have these datasets:
@@ -213,27 +213,33 @@ Feature: Private Dataset API
         When I PUT "/datasets/population-estimates"
             """
             {
-                    "canonical_topic": "canonical-topic-ID",
-                    "subtopics": ["subtopic-ID"]
+                "canonical_topic": "canonical-topic-ID",
+                "subtopics": [
+                    "subtopic-ID"
+                ]
             }
             """
         Then I should receive the following JSON response with status "200":
             """
             {
-                    "canonical_topic": "canonical-topic-ID",
-                    "subtopics": ["subtopic-ID"],
-                    "last_updated":"0001-01-01T00:00:00Z"
+                "canonical_topic": "canonical-topic-ID",
+                "subtopics": [
+                    "subtopic-ID"
+                ],
+                "last_updated": "0001-01-01T00:00:00Z"
             }
             """
         And the document in the database for id "population-estimates" should be:
-        """
+            """
             {
                 "id": "population-estimates",
                 "canonical_topic": "canonical-topic-ID",
-                "subtopics": ["subtopic-ID"]
+                "subtopics": [
+                    "subtopic-ID"
+                ]
             }
-        """
-    
+            """
+
     Scenario: Adding related content to a dataset
         Given I have these datasets:
             """
@@ -246,35 +252,41 @@ Feature: Private Dataset API
         When I PUT "/datasets/population-estimates"
             """
             {
-                	"related_content": [{
-		                "description": "Related content description",
-		                "href": "http://localhost:22000/datasets/123/relatedContent",
-		                "title": "Related content"
-	                }]
+                "related_content": [
+                    {
+                        "description": "Related content description",
+                        "href": "http://localhost:22000/datasets/123/relatedContent",
+                        "title": "Related content"
+                    }
+                ]
             }
             """
         Then I should receive the following JSON response with status "200":
             """
             {
-                    "related_content": [{
-		                "description": "Related content description",
-		                "href": "http://localhost:22000/datasets/123/relatedContent",
-		                "title": "Related content"
-	                }],
-                    "last_updated":"0001-01-01T00:00:00Z"
+                "related_content": [
+                    {
+                        "description": "Related content description",
+                        "href": "http://localhost:22000/datasets/123/relatedContent",
+                        "title": "Related content"
+                    }
+                ],
+                "last_updated": "0001-01-01T00:00:00Z"
             }
             """
         And the document in the database for id "population-estimates" should be:
-        """
+            """
             {
                 "id": "population-estimates",
-                "related_content": [{
-		                "description": "Related content description",
-		                "href": "http://localhost:22000/datasets/123/relatedContent",
-		                "title": "Related content"
-	                }]
+                "related_content": [
+                    {
+                        "description": "Related content description",
+                        "href": "http://localhost:22000/datasets/123/relatedContent",
+                        "title": "Related content"
+                    }
+                ]
             }
-        """
+            """
 
     Scenario: GET /datasets
         Given I have these datasets:
@@ -295,11 +307,11 @@ Feature: Private Dataset API
                         "id": "population-estimates",
                         "next": {
                             "id": "population-estimates",
-                            "last_updated":"0001-01-01T00:00:00Z"
+                            "last_updated": "0001-01-01T00:00:00Z"
                         },
                         "current": {
                             "id": "population-estimates",
-                            "last_updated":"0001-01-01T00:00:00Z"
+                            "last_updated": "0001-01-01T00:00:00Z"
                         }
                     }
                 ],
@@ -329,11 +341,11 @@ Feature: Private Dataset API
                         "id": "population-estimates",
                         "next": {
                             "id": "population-estimates",
-                            "last_updated":"0001-01-01T00:00:00Z"
+                            "last_updated": "0001-01-01T00:00:00Z"
                         },
                         "current": {
                             "id": "population-estimates",
-                            "last_updated":"0001-01-01T00:00:00Z"
+                            "last_updated": "0001-01-01T00:00:00Z"
                         }
                     }
                 ],
@@ -342,7 +354,7 @@ Feature: Private Dataset API
                 "total_count": 1
             }
             """
-    
+
     Scenario: GET /datasets with topics included
         Given I have these datasets:
             """
@@ -350,7 +362,9 @@ Feature: Private Dataset API
                 {
                     "id": "population-estimates",
                     "canonical_topic": "canonical-topic-ID",
-                    "subtopics": ["subtopic-ID"]
+                    "subtopics": [
+                        "subtopic-ID"
+                    ]
                 }
             ]
             """
@@ -358,27 +372,33 @@ Feature: Private Dataset API
         Then I should receive the following JSON response with status "200":
             """
             {
-            	"count": 1,
-            	"items": [{
-            		"id": "population-estimates",
-            		"next": {
-            			"id": "population-estimates",
-            			"canonical_topic": "canonical-topic-ID",
-            			"subtopics": ["subtopic-ID"],
-                        "last_updated":"0001-01-01T00:00:00Z"
-            		},
-                    "current": {
+                "count": 1,
+                "items": [
+                    {
                         "id": "population-estimates",
-            			"canonical_topic": "canonical-topic-ID",
-            			"subtopics": ["subtopic-ID"],
-                        "last_updated":"0001-01-01T00:00:00Z"
+                        "next": {
+                            "id": "population-estimates",
+                            "canonical_topic": "canonical-topic-ID",
+                            "subtopics": [
+                                "subtopic-ID"
+                            ],
+                            "last_updated": "0001-01-01T00:00:00Z"
+                        },
+                        "current": {
+                            "id": "population-estimates",
+                            "canonical_topic": "canonical-topic-ID",
+                            "subtopics": [
+                                "subtopic-ID"
+                            ],
+                            "last_updated": "0001-01-01T00:00:00Z"
+                        }
                     }
-            	}],
-            	"limit": 20,
-            	"offset": 0,
-            	"total_count": 1
+                ],
+                "limit": 20,
+                "offset": 0,
+                "total_count": 1
             }
-        """
+            """
 
     Scenario: Successfully createing a new dataset document with ID in request body
         When I POST "/datasets"
@@ -386,14 +406,24 @@ Feature: Private Dataset API
             {
                 "id": "ageing-population-estimates",
                 "canonical_topic": "canonical-topic-ID",
-                "subtopics": ["subtopic-ID"],
+                "subtopics": [
+                    "subtopic-ID"
+                ],
                 "state": "anything",
                 "title": "CID",
                 "type": "filterable",
                 "description": "census",
-                "keywords": ["keyword"],
-                "next_release":"2016-04-04",
-                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
+                "keywords": [
+                    "keyword"
+                ],
+                "next_release": "2016-04-04",
+                "contacts": [
+                    {
+                        "email": "testing@hotmail.com",
+                        "name": "John Cox",
+                        "telephone": "01623 456789"
+                    }
+                ]
             }
             """
         Then the HTTP status code should be "201"
@@ -402,22 +432,32 @@ Feature: Private Dataset API
             {
                 "id": "ageing-population-estimates",
                 "canonical_topic": "canonical-topic-ID",
-                "subtopics": ["subtopic-ID"],
+                "subtopics": [
+                    "subtopic-ID"
+                ],
                 "state": "created",
                 "title": "CID",
                 "type": "filterable",
                 "links": {
                     "editions": {
-                        "href":"http://localhost:22000/datasets/ageing-population-estimates/editions"
+                        "href": "http://localhost:22000/datasets/ageing-population-estimates/editions"
                     },
                     "self": {
-                        "href":"http://localhost:22000/datasets/ageing-population-estimates"
+                        "href": "http://localhost:22000/datasets/ageing-population-estimates"
                     }
                 },
                 "description": "census",
-                "keywords": ["keyword"],
-                "next_release":"2016-04-04",
-                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}]
+                "keywords": [
+                    "keyword"
+                ],
+                "next_release": "2016-04-04",
+                "contacts": [
+                    {
+                        "email": "testing@hotmail.com",
+                        "name": "John Cox",
+                        "telephone": "01623 456789"
+                    }
+                ]
             }
             """
 
@@ -437,11 +477,21 @@ Feature: Private Dataset API
                 "title": "title",
                 "type": "static",
                 "description": "description",
-                "keywords": ["keyword"],
-                "next_release":"2016-04-04",
-                "topics": ["topic"],
-                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],
-                "license":"license"
+                "keywords": [
+                    "keyword"
+                ],
+                "next_release": "2016-04-04",
+                "topics": [
+                    "topic"
+                ],
+                "contacts": [
+                    {
+                        "email": "testing@hotmail.com",
+                        "name": "John Cox",
+                        "telephone": "01623 456789"
+                    }
+                ],
+                "license": "license"
             }
             """
         Then the HTTP status code should be "409"
@@ -457,12 +507,22 @@ Feature: Private Dataset API
                 "title": "title",
                 "type": "static",
                 "state": "anything",
-                "next_release":"2016-04-04",
+                "next_release": "2016-04-04",
                 "description": "census",
-                "keywords":["keyword"],
-                "topics": ["topic"],
-                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],
-                "license":"license"
+                "keywords": [
+                    "keyword"
+                ],
+                "topics": [
+                    "topic"
+                ],
+                "contacts": [
+                    {
+                        "email": "testing@hotmail.com",
+                        "name": "John Cox",
+                        "telephone": "01623 456789"
+                    }
+                ],
+                "license": "license"
             }
             """
         Then the HTTP status code should be "400"
@@ -478,12 +538,22 @@ Feature: Private Dataset API
                 "id": "ageing-population-estimates",
                 "type": "static",
                 "state": "anything",
-                "next_release":"2016-04-04",
+                "next_release": "2016-04-04",
                 "description": "census",
-                "keywords":["keyword"],
-                "topics": ["topic"],
-                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],
-                "license":"license"
+                "keywords": [
+                    "keyword"
+                ],
+                "topics": [
+                    "topic"
+                ],
+                "contacts": [
+                    {
+                        "email": "testing@hotmail.com",
+                        "name": "John Cox",
+                        "telephone": "01623 456789"
+                    }
+                ],
+                "license": "license"
             }
             """
         Then the HTTP status code should be "400"
@@ -500,11 +570,21 @@ Feature: Private Dataset API
                 "title": "title",
                 "type": "static",
                 "state": "anything",
-                "next_release":"2016-04-04",
-                "keywords":["keyword"],
-                "topics": ["topic"],
-                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],
-                "license":"license"
+                "next_release": "2016-04-04",
+                "keywords": [
+                    "keyword"
+                ],
+                "topics": [
+                    "topic"
+                ],
+                "contacts": [
+                    {
+                        "email": "testing@hotmail.com",
+                        "name": "John Cox",
+                        "telephone": "01623 456789"
+                    }
+                ],
+                "license": "license"
             }
             """
         Then the HTTP status code should be "400"
@@ -521,11 +601,19 @@ Feature: Private Dataset API
                 "title": "title",
                 "type": "static",
                 "state": "anything",
-                "next_release":"2016-04-04",
+                "next_release": "2016-04-04",
                 "description": "census",
-                "topics": ["topic"],
-                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],
-                "license":"license"
+                "topics": [
+                    "topic"
+                ],
+                "contacts": [
+                    {
+                        "email": "testing@hotmail.com",
+                        "name": "John Cox",
+                        "telephone": "01623 456789"
+                    }
+                ],
+                "license": "license"
             }
             """
         Then the HTTP status code should be "400"
@@ -543,10 +631,20 @@ Feature: Private Dataset API
                 "type": "static",
                 "state": "anything",
                 "description": "census",
-                "keywords":["keyword"],
-                "topics": ["topic"],
-                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],
-                "license":"license"
+                "keywords": [
+                    "keyword"
+                ],
+                "topics": [
+                    "topic"
+                ],
+                "contacts": [
+                    {
+                        "email": "testing@hotmail.com",
+                        "name": "John Cox",
+                        "telephone": "01623 456789"
+                    }
+                ],
+                "license": "license"
             }
             """
         Then the HTTP status code should be "400"
@@ -563,11 +661,19 @@ Feature: Private Dataset API
                 "title": "title",
                 "type": "static",
                 "state": "anything",
-                "next_release":"2016-04-04",
+                "next_release": "2016-04-04",
                 "description": "census",
-                "keywords":["keyword"],
-                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],
-                "license":"license"
+                "keywords": [
+                    "keyword"
+                ],
+                "contacts": [
+                    {
+                        "email": "testing@hotmail.com",
+                        "name": "John Cox",
+                        "telephone": "01623 456789"
+                    }
+                ],
+                "license": "license"
             }
             """
         Then the HTTP status code should be "400"
@@ -584,11 +690,15 @@ Feature: Private Dataset API
                 "title": "title",
                 "type": "static",
                 "state": "anything",
-                "next_release":"2016-04-04",
+                "next_release": "2016-04-04",
                 "description": "census",
-                "keywords":["keyword"],
-                "topics": ["topic"],
-                "license":"license"
+                "keywords": [
+                    "keyword"
+                ],
+                "topics": [
+                    "topic"
+                ],
+                "license": "license"
             }
             """
         Then the HTTP status code should be "400"
@@ -605,15 +715,91 @@ Feature: Private Dataset API
                 "title": "title",
                 "type": "static",
                 "state": "anything",
-                "next_release":"2016-04-04",
+                "next_release": "2016-04-04",
                 "description": "census",
-                "keywords":["keyword"],
-                "contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],
-                "topics": ["topic"]
+                "keywords": [
+                    "keyword"
+                ],
+                "contacts": [
+                    {
+                        "email": "testing@hotmail.com",
+                        "name": "John Cox",
+                        "telephone": "01623 456789"
+                    }
+                ],
+                "topics": [
+                    "topic"
+                ]
             }
             """
         Then the HTTP status code should be "400"
         And I should receive the following response:
             """
             invalid fields: [License]
+            """
+
+    Scenario: Creating a dataset with spaces in the dataset ID should return 400
+        When I POST "/datasets"
+            """
+            {
+                "id": "test dataset id with spaces",
+                "contacts": [
+                    {
+                        "email": "contact@ons.gov.uk",
+                        "name": "Expert Statistical Team",
+                        "telephone": "+44 1234 111111"
+                    }
+                ],
+                "description": "This dataset is for testing",
+                "keywords": [
+                    "dataset"
+                ],
+                "license": "Open Government Licence v3.0",
+                "next_release": "To be announced",
+                "publishers": [
+                    {
+                        "name": "Office for National Statistics",
+                        "href": "https://www.ons.gov.uk"
+                    }
+                ],
+                "qmi": {
+                    "href": "https://www.ons.gov.uk/businessindustryandtrade/retailindustry/methodologies/retailsalesindexrsiqmi"
+                },
+                "title": "testing static title distributions 2",
+                "topics": [
+                    "7779",
+                    "7755"
+                ],
+                "type": "static"
+            }
+            """
+        Then the HTTP status code should be "400"
+        And I should receive the following response:
+            """
+            spaces are not allowed in the ID field
+            """
+
+    Scenario: Updating a dataset with spaces in the dataset ID should return 400
+        Given I have these datasets:
+            """
+            [
+                {
+                    "id": "valid-dataset-id",
+                    "title": "Valid Dataset",
+                    "state": "created",
+                    "type": "static"
+                }
+            ]
+            """
+        When I PUT "/datasets/valid-dataset-id"
+            """
+            {
+                "id": "test dataset id with spaces",
+                "type": "static"
+            }
+            """
+        Then the HTTP status code should be "400"
+        And I should receive the following response:
+            """
+            spaces are not allowed in the ID field
             """

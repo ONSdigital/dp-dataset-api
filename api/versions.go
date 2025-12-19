@@ -310,6 +310,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 	return models.NewSuccessResponse(versionBytes, http.StatusOK, responseHeaders), nil
 }
 
+//nolint:gocyclo // high cyclomactic complexity not in scope for maintenance
 func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	defer dphttp.DrainBody(r)
 

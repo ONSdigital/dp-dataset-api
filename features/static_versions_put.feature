@@ -688,3 +688,37 @@ Feature: Static Dataset Versions PUT API
             """
             distributions[0].format field is invalid
             """
+
+Scenario: PUT Updating an edition field with spaces should return 400
+        Given private endpoints are enabled
+        And I am an admin user
+        When I PUT "/datasets/static-dataset-update/editions/edition%201/versions/1"
+            """
+            {
+                "state": "approved",
+                "type": "static",
+                "edition": "correct-edition-id"
+            }
+            """
+        Then the HTTP status code should be "400"
+        And I should receive the following response:
+            """
+            spaces are not allowed in the ID field
+            """
+    
+Scenario: PUT Updating an edition field with spaces in request body should return 400
+        Given private endpoints are enabled
+        And I am an admin user
+        When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
+            """
+            {
+                "state": "approved",
+                "type": "static",
+                "edition": "edition id with spaces"
+            }
+            """
+        Then the HTTP status code should be "400"
+        And I should receive the following response:
+            """
+            spaces are not allowed in the ID field
+            """
