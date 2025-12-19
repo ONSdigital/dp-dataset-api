@@ -6502,3 +6502,53 @@ func TestPopulateDistributions(t *testing.T) {
 		})
 	})
 }
+
+func TestValidateIDNoSpaces(t *testing.T) {
+	Convey("Given an ID without spaces", t, func() {
+		id := "valid-dataset-id"
+
+		Convey("When ValidateIDNoSpaces is called", func() {
+			err := ValidateIDNoSpaces(id)
+
+			Convey("Then no error should be returned", func() {
+				So(err, ShouldBeNil)
+			})
+		})
+	})
+
+	Convey("Given an ID with spaces", t, func() {
+		id := "invalid dataset id"
+
+		Convey("When ValidateIDNoSpaces is called", func() {
+			err := ValidateIDNoSpaces(id)
+
+			Convey("Then an error should be returned", func() {
+				So(err, ShouldEqual, errs.ErrSpacesNotAllowedInID)
+			})
+		})
+	})
+
+	Convey("Given an empty ID", t, func() {
+		id := ""
+
+		Convey("When ValidateIDNoSpaces is called", func() {
+			err := ValidateIDNoSpaces(id)
+
+			Convey("Then no error should be returned", func() {
+				So(err, ShouldBeNil)
+			})
+		})
+	})
+
+	Convey("Given an ID with multiple spaces", t, func() {
+		id := "invalid  dataset  id"
+
+		Convey("When ValidateIDNoSpaces is called", func() {
+			err := ValidateIDNoSpaces(id)
+
+			Convey("Then an error should be returned", func() {
+				So(err, ShouldEqual, errs.ErrSpacesNotAllowedInID)
+			})
+		})
+	})
+}

@@ -57,6 +57,7 @@ var (
 	ErrEditionAlreadyExists               = errors.New("the edition already exists")
 	ErrEditionTitleAlreadyExists          = errors.New("the edition-title already exists")
 	ErrInvalidDatasetTypeForEditionUpdate = errors.New("unable to update edition-id, invalid dataset type")
+	ErrSpacesNotAllowedInID               = errors.New("spaces are not allowed in the ID field")
 	ErrFileMetadataNotFound               = errors.New("file metadata not found")
 	ErrFileNotInCorrectState              = errors.New("file not in correct state")
 	ErrInvalidParamCombination            = errors.New("cannot request state and published parameters at the same time")
@@ -94,6 +95,7 @@ var (
 		ErrInvalidVersion:                     true,
 		ErrInvalidDatasetTypeForEditionUpdate: true,
 		ErrInvalidParamCombination:            true,
+		ErrSpacesNotAllowedInID:               true,
 	}
 
 	ConflictRequestMap = map[error]bool{

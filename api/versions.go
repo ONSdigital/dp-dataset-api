@@ -42,6 +42,7 @@ var (
 		models.ErrVersionStateInvalid:                  true,
 		errs.ErrInvalidBody:                            true,
 		errs.ErrInvalidQueryParameter:                  true,
+		errs.ErrSpacesNotAllowedInID:                   true,
 	}
 
 	// HTTP 500 responses with a specific message
@@ -320,6 +321,19 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		"version":   vars["version"],
 	}
 
+	// Validate URL path parameters don't contain spaces
+	if err := utils.ValidateIDNoSpaces(vars["dataset_id"]); err != nil {
+		log.Error(ctx, "putVersion endpoint: dataset ID contains spaces", err, data)
+		handleVersionAPIErr(ctx, err, w, data)
+		return
+	}
+
+	if err := utils.ValidateIDNoSpaces(vars["edition"]); err != nil {
+		log.Error(ctx, "putVersion endpoint: edition ID contains spaces", err, data)
+		handleVersionAPIErr(ctx, err, w, data)
+		return
+	}
+
 	// Read body once and validate distributions before unmarshaling
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -338,6 +352,15 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, data)
 		return
+	}
+
+	// Validate edition ID in request body doesn't contain spaces
+	if version.Edition != "" {
+		if err := utils.ValidateIDNoSpaces(version.Edition); err != nil {
+			log.Error(ctx, "putVersion endpoint: edition ID in request body contains spaces", err, data)
+			handleVersionAPIErr(ctx, err, w, data)
+			return
+		}
 	}
 
 	// Populate distributions (static only)

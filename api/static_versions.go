@@ -116,6 +116,16 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 
 	log.Info(ctx, "condensed endpoint called", logData)
 
+	if err := utils.ValidateIDNoSpaces(datasetID); err != nil {
+		log.Error(ctx, "addDatasetVersionCondensed endpoint: dataset ID contains spaces", err, logData)
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, errs.ErrSpacesNotAllowedInID.Error(), errs.ErrSpacesNotAllowedInID.Error()))
+	}
+
+	if err := utils.ValidateIDNoSpaces(edition); err != nil {
+		log.Error(ctx, "addDatasetVersionCondensed endpoint: edition ID contains spaces", err, logData)
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, errs.ErrSpacesNotAllowedInID.Error(), errs.ErrSpacesNotAllowedInID.Error()))
+	}
+
 	// Read body once and validate distributions before unmarshaling
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -255,6 +265,16 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 		"dataset_id": datasetID,
 		"edition":    edition,
 		"version":    version,
+	}
+
+	if err := utils.ValidateIDNoSpaces(datasetID); err != nil {
+		log.Error(ctx, "createVersion endpoint: dataset ID contains spaces", err, logData)
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, errs.ErrSpacesNotAllowedInID.Error(), errs.ErrSpacesNotAllowedInID.Error()))
+	}
+
+	if err := utils.ValidateIDNoSpaces(edition); err != nil {
+		log.Error(ctx, "createVersion endpoint: edition ID contains spaces", err, logData)
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, errs.ErrSpacesNotAllowedInID.Error(), errs.ErrSpacesNotAllowedInID.Error()))
 	}
 
 	// Read body once and validate distributions before unmarshaling

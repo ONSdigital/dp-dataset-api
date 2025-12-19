@@ -18,6 +18,15 @@ const (
 	StaticDatasetType = "static"
 )
 
+// ValidateIDNoSpaces checks if the provided ID contains spaces
+// Returns an error if spaces are found
+func ValidateIDNoSpaces(id string) error {
+	if strings.Contains(id, " ") {
+		return errs.ErrSpacesNotAllowedInID
+	}
+	return nil
+}
+
 // DistributionMediaTypeMap maps distribution formats to their corresponding media types
 var DistributionMediaTypeMap = map[models.DistributionFormat]models.DistributionMediaType{
 	models.DistributionFormatCSV:      models.DistributionMediaTypeCSV,
