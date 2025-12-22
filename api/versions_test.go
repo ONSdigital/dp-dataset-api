@@ -934,7 +934,7 @@ func TestPutVersionForbidden(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		Convey("Then it returns 400 and update is not attempted", func() {
@@ -945,7 +945,6 @@ func TestPutVersionForbidden(t *testing.T) {
 			So(len(mockedDataStore.AcquireInstanceLockCalls()), ShouldEqual, 0)
 		})
 	})
-
 }
 
 func TestPutVersionUnauthorised(t *testing.T) {
