@@ -1293,6 +1293,33 @@ func TestPostDatasetsReturnsError(t *testing.T) {
 			So(err, ShouldEqual, io.EOF)
 		})
 	})
+
+	Convey("When POST dataset calls with id with spaces returns 400 response", t, func() {
+		b := `{"id":"id with spaces","contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","href":"https://www.ons.gov.uk/"},"type":"static","keywords":["keyword","keyword 2"],"topics":["topic-0","topic-1"],"license":"Open Government Licence v3.0"}`
+
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return nil, errs.ErrDatasetNotFound
+			},
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
+				return nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+	})
 }
 
 func TestPostDatasetReturnsError(t *testing.T) {
@@ -2269,6 +2296,33 @@ func TestPutDatasetReturnsError(t *testing.T) {
 			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
+	})
+
+	Convey("When PUT dataset calls with id with spaces returns 400 response", t, func() {
+		b := `{"id":"id with spaces","contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","href":"https://www.ons.gov.uk/"},"type":"static","keywords":["keyword","keyword 2"],"topics":["topic-0","topic-1"],"license":"Open Government Licence v3.0"}`
+
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return nil, errs.ErrDatasetNotFound
+			},
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
+				return nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
 	})
 }
 
