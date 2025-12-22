@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ONSdigital/dp-authorisation/v2/authorisation"
+	"github.com/ONSdigital/dp-dataset-api/cloudflare"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -32,6 +33,8 @@ func TestSpec(t *testing.T) {
 				So(cfg.KafkaSecSkipVerify, ShouldBeFalse)
 				So(cfg.GenerateDownloadsTopic, ShouldEqual, "filter-job-submitted")
 				So(cfg.CantabularExportStartTopic, ShouldEqual, "cantabular-export-start")
+				So(cfg.SearchContentUpdatedTopic, ShouldEqual, "search-content-updated")
+				So(cfg.APIRouterPublicURL, ShouldEqual, "http://localhost:23200/v1")
 				So(cfg.DatasetAPIURL, ShouldEqual, "http://localhost:22000")
 				So(cfg.CodeListAPIURL, ShouldEqual, "http://localhost:22400")
 				So(cfg.DownloadServiceSecretKey, ShouldEqual, "QB0108EZ-825D-412C-9B1D-41EF7747F462")
@@ -63,6 +66,8 @@ func TestSpec(t *testing.T) {
 				So(cfg.DatasetAPIURL, ShouldEqual, "http://localhost:22000")
 				So(cfg.CodeListAPIURL, ShouldEqual, "http://localhost:22400")
 				So(cfg.AuthConfig, ShouldEqual, authorisation.NewDefaultConfig())
+				So(cfg.CloudflareEnabled, ShouldBeFalse)
+				So(cfg.CloudflareConfig, ShouldEqual, cloudflare.NewDefaultConfig())
 			})
 		})
 	})

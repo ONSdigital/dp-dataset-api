@@ -21,6 +21,8 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 
+	cloudflareMocks "github.com/ONSdigital/dp-dataset-api/cloudflare/mocks"
+
 	assistdog "github.com/ONSdigital/dp-assistdog"
 )
 
@@ -58,6 +60,10 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the dataset "([^"]*)" should have next equal to current$`, c.theDatasetShouldHaveNextEqualToCurrent)
 	ctx.Step(`^the "([^"]*)" feature flag is "([^"]*)"$`, c.theFeatureFlagIs)
 	ctx.Step(`^I am a publisher user$`, c.publisherJWTToken)
+	ctx.Step(`^these kafka messages are produced:$`, c.theseKafkaMessagesAreProduced)
+	ctx.Step(`the following URL prefixes are purged by cloudflare:$`, c.theFollowingURLPrefixesArePurgedByCloudflare)
+	ctx.Step(`there are no cloudflare purge calls`, c.thereAreNoCloudflarePurgeCalls)
+	ctx.Step(`cloudflare is enabled`, c.cloudflareIsEnabled)
 }
 
 func (c *DatasetComponent) theFeatureFlagIs(flagName, status string) error {
@@ -274,6 +280,43 @@ func (c *DatasetComponent) theseCantabularGeneratorDownloadsEventsAreProduced(ev
 		return fmt.Errorf("-got +expected)\n%s", diff)
 	}
 
+	return nil
+}
+
+func (c *DatasetComponent) theseKafkaMessagesAreProduced(kafkaJSON *godog.DocString) error {
+	var expectedPayload interface{}
+	if err := json.Unmarshal([]byte(kafkaJSON.Content), &expectedPayload); err != nil {
+		return fmt.Errorf("failed to unmarshal kafkaJSON: %w", err)
+	}
+	expected := []interface{}{expectedPayload}
+	messages := []interface{}{}
+	listen := true
+
+	for listen {
+		select {
+		case <-time.After(10 * time.Second):
+			listen = false
+		case <-c.consumer.Channels().Closer:
+			return errors.New("closer channel closed")
+		case msg, ok := <-c.consumer.Channels().Upstream:
+			if !ok {
+				return errors.New("upstream channel closed")
+			}
+			var gotPayload interface{}
+			if err := json.Unmarshal(msg.GetData(), &gotPayload); err != nil {
+				msg.Commit()
+				msg.Release()
+				return fmt.Errorf("failed to unmarshal kafka message: %w", err)
+			}
+			messages = append(messages, gotPayload)
+			msg.Commit()
+			msg.Release()
+		}
+	}
+
+	if diff := cmp.Diff(messages, expected); diff != "" {
+		return fmt.Errorf("-got +expected)\n%s", diff)
+	}
 	return nil
 }
 
@@ -633,4 +676,37 @@ func (c *DatasetComponent) theResponseHeaderShouldNotBeEmpty(header string) erro
 func (c *DatasetComponent) publisherJWTToken() error {
 	err := c.apiFeature.ISetTheHeaderTo("Authorization", authorisationtest.PublisherJWTToken)
 	return err
+}
+
+func (c *DatasetComponent) theFollowingURLPrefixesArePurgedByCloudflare(prefixes *godog.Table) error {
+	expectedPrefixes := make([]string, len(prefixes.Rows))
+	for i, row := range prefixes.Rows {
+		expectedPrefixes[i] = row.Cells[0].Value
+	}
+
+	calls := c.cloudflareClient.(*cloudflareMocks.ClienterMock).PurgeByPrefixesCalls()
+	if len(calls) == 0 {
+		return fmt.Errorf("expected Cloudflare PurgeByPrefixes to be called, but it was not")
+	}
+
+	actualPrefixes := calls[0].Prefixes
+
+	if diff := cmp.Diff(actualPrefixes, expectedPrefixes); diff != "" {
+		return fmt.Errorf("actual prefixes do not match expected prefixes:\n%s", diff)
+	}
+
+	return nil
+}
+
+func (c *DatasetComponent) thereAreNoCloudflarePurgeCalls() error {
+	calls := c.cloudflareClient.(*cloudflareMocks.ClienterMock).PurgeByPrefixesCalls()
+	if len(calls) != 0 {
+		return fmt.Errorf("expected no Cloudflare PurgeByPrefixes calls, but got %d", len(calls))
+	}
+	return nil
+}
+
+func (c *DatasetComponent) cloudflareIsEnabled() error {
+	c.Config.CloudflareEnabled = true
+	return nil
 }

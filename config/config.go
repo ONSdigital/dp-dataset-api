@@ -7,6 +7,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 
 	"github.com/ONSdigital/dp-authorisation/v2/authorisation"
+	"github.com/ONSdigital/dp-dataset-api/cloudflare"
 	mongodriver "github.com/ONSdigital/dp-mongodb/v3/mongodb"
 )
 
@@ -30,6 +31,8 @@ type Configuration struct {
 	KafkaSecSkipVerify             bool          `envconfig:"KAFKA_SEC_SKIP_VERIFY"`
 	GenerateDownloadsTopic         string        `envconfig:"GENERATE_DOWNLOADS_TOPIC"`
 	CantabularExportStartTopic     string        `envconfig:"CANTABULAR_EXPORT_START"`
+	SearchContentUpdatedTopic      string        `envconfig:"SEARCH_CONTENT_UPDATED_TOPIC"`
+	APIRouterPublicURL             string        `envconfig:"API_ROUTER_PUBLIC_URL"`
 	CodeListAPIURL                 string        `envconfig:"CODE_LIST_API_URL"`
 	DatasetAPIURL                  string        `envconfig:"DATASET_API_URL"`
 	FilesAPIURL                    string        `envconfig:"FILES_API_URL"`
@@ -61,7 +64,9 @@ type Configuration struct {
 	OTBatchTimeout                 time.Duration `envconfig:"OTEL_BATCH_TIMEOUT"`
 	OtelEnabled                    bool          `envconfig:"OTEL_ENABLED"`
 	MongoConfig
-	AuthConfig *authorisation.Config
+	AuthConfig        *authorisation.Config
+	CloudflareEnabled bool `envconfig:"CLOUDFLARE_ENABLED"`
+	CloudflareConfig  *cloudflare.Config
 }
 
 var cfg *Configuration
@@ -89,6 +94,8 @@ func Get() (*Configuration, error) {
 		KafkaProducerMinBrokersHealthy: 2,
 		GenerateDownloadsTopic:         "filter-job-submitted",
 		CantabularExportStartTopic:     "cantabular-export-start",
+		SearchContentUpdatedTopic:      "search-content-updated",
+		APIRouterPublicURL:             "http://localhost:23200/v1",
 		CodeListAPIURL:                 "http://localhost:22400",
 		DatasetAPIURL:                  "http://localhost:22000",
 		FilesAPIURL:                    "http://localhost:26900",
@@ -137,6 +144,8 @@ func Get() (*Configuration, error) {
 		},
 		ComponentTestUseLogFile: false,
 		AuthConfig:              authorisation.NewDefaultConfig(),
+		CloudflareEnabled:       false,
+		CloudflareConfig:        cloudflare.NewDefaultConfig(),
 	}
 
 	return cfg, envconfig.Process("", cfg)

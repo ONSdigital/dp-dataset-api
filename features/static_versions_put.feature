@@ -1,7 +1,7 @@
 Feature: Static Dataset Versions PUT API
 
-    Background: We have static datasets for PUT version testing
-        Given I have a static dataset with version:
+  Background: We have static datasets for PUT version testing
+    Given I have a static dataset with version:
             """
             {
                 "dataset": {
@@ -134,8 +134,8 @@ Feature: Static Dataset Versions PUT API
                 "type": "static"
             }
             """
-        Then the HTTP status code should be "200"
-        And I should receive the following JSON response:
+    Then the HTTP status code should be "200"
+    And I should receive the following JSON response:
             """
             {
                 "dataset_id": "static-dataset-update",
@@ -181,7 +181,7 @@ Feature: Static Dataset Versions PUT API
                 "type": "static"
             }
             """
-        Then the HTTP status code should be "200"
+    Then the HTTP status code should be "200"
 
     Scenario: PUT updates static dataset version distributions
         Given private endpoints are enabled
@@ -208,7 +208,7 @@ Feature: Static Dataset Versions PUT API
                 "type": "static"
             }
             """
-        Then the HTTP status code should be "200"
+    Then the HTTP status code should be "200"
 
     Scenario: PUT updates static dataset version edition
         Given private endpoints are enabled
@@ -221,7 +221,7 @@ Feature: Static Dataset Versions PUT API
                 "type": "static"
             }
             """
-        Then the HTTP status code should be "200"
+    Then the HTTP status code should be "200"
 
     Scenario: PUT fails for non-existent version
         Given private endpoints are enabled
@@ -233,7 +233,7 @@ Feature: Static Dataset Versions PUT API
                 "type": "static"
             }
             """
-        Then the HTTP status code should be "404"
+    Then the HTTP status code should be "404"
 
     Scenario: PUT fails for non-existent dataset
         Given private endpoints are enabled
@@ -245,21 +245,22 @@ Feature: Static Dataset Versions PUT API
                 "type": "static"
             }
             """
-        Then the HTTP status code should be "404"
+    Then the HTTP status code should be "404"
 
-    Scenario: PUT fails when not authorised
-        Given private endpoints are enabled
-        When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
+  Scenario: PUT fails when not authorised
+    Given private endpoints are enabled
+    When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
             """
             {
                 "state": "approved",
                 "type": "static"
             }
             """
-        Then the HTTP status code should be "401"
+    Then the HTTP status code should be "401"
 
     Scenario: PUT state endpoint updates successfully
         Given private endpoints are enabled
+        And cloudflare is enabled
         And I am an admin user
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/1/state"
             """
@@ -268,9 +269,11 @@ Feature: Static Dataset Versions PUT API
             }
             """
         Then the HTTP status code should be "200"
+        And there are no cloudflare purge calls
 
     Scenario: PUT state transitions from associated to approved
         Given private endpoints are enabled
+        And cloudflare is enabled
         And I am an admin user
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/1/state"
             """
@@ -279,9 +282,10 @@ Feature: Static Dataset Versions PUT API
             }
             """
         Then the HTTP status code should be "200"
+        And there are no cloudflare purge calls
 
-    Scenario: PUT state transitions from approved to published
-        Given I have a static dataset with version:
+  Scenario: PUT state transitions from approved to published and purges URL's
+    Given I have a static dataset with version:
             """
             {
                 "dataset": {
@@ -326,6 +330,7 @@ Feature: Static Dataset Versions PUT API
             }
             """
         And private endpoints are enabled
+        And cloudflare is enabled
         And I am an admin user
         When I PUT "/datasets/static-dataset-publish/editions/2025/versions/1/state"
             """
@@ -334,6 +339,13 @@ Feature: Static Dataset Versions PUT API
             }
             """
         Then the HTTP status code should be "200"
+        And the following URL prefixes are purged by cloudflare:
+            | http://localhost:20000/datasets/static-dataset-publish |
+            | http://localhost:20000/datasets/static-dataset-publish/editions |
+            | http://localhost:20000/datasets/static-dataset-publish/editions/2025/versions |
+            | http://localhost:23200/v1/datasets/static-dataset-publish |
+            | http://localhost:23200/v1/datasets/static-dataset-publish/editions |
+            | http://localhost:23200/v1/datasets/static-dataset-publish/editions/2025/versions |
 
     Scenario: PUT state fails with invalid state transition from associated to published
         Given private endpoints are enabled
@@ -344,7 +356,7 @@ Feature: Static Dataset Versions PUT API
                 "state": "published"
             }
             """
-        Then the HTTP status code should be "400"
+    Then the HTTP status code should be "400"
 
     Scenario: PUT state fails with invalid state
         Given private endpoints are enabled
@@ -355,20 +367,20 @@ Feature: Static Dataset Versions PUT API
                 "state": "invalid-state"
             }
             """
-        Then the HTTP status code should be "400"
+    Then the HTTP status code should be "400"
 
-    Scenario: PUT state fails when not authorised
-        Given private endpoints are enabled
-        When I PUT "/datasets/static-dataset-update/editions/2025/versions/1/state"
+  Scenario: PUT state fails when not authorised
+    Given private endpoints are enabled
+    When I PUT "/datasets/static-dataset-update/editions/2025/versions/1/state"
             """
             {
                 "state": "approved"
             }
             """
-        Then the HTTP status code should be "401"
+    Then the HTTP status code should be "401"
 
-    Scenario: PUT fails when updating edition-id to existing edition for static dataset
-        Given I have a static dataset with version:
+  Scenario: PUT fails when updating edition-id to existing edition for static dataset
+    Given I have a static dataset with version:
             """
             {
                 "dataset": {
@@ -400,7 +412,7 @@ Feature: Static Dataset Versions PUT API
                 }
             }
             """
-        And I have a static dataset with version:
+    And I have a static dataset with version:
             """
             {
                 "dataset": {
@@ -441,8 +453,8 @@ Feature: Static Dataset Versions PUT API
                 "type": "static"
             }
             """
-        Then the HTTP status code should be "409"
-        And I should receive the following response:
+    Then the HTTP status code should be "409"
+    And I should receive the following response:
             """
             the edition already exists
             """
@@ -458,9 +470,9 @@ Feature: Static Dataset Versions PUT API
                 "type": "static"
             }
             """
-        Then the HTTP status code should be "200"
+    Then the HTTP status code should be "200"
 
-    Scenario: PUT state handles idempotent transitions correctly
+    Scenario: PUT state handles idempotent transitions correctly and purges URL's
         Given I have a static dataset with version:
             """
             {
@@ -494,7 +506,9 @@ Feature: Static Dataset Versions PUT API
             }
             """
         And private endpoints are enabled
+        And cloudflare is enabled
         And I am an admin user
+        And I have a real kafka container with topic "search-content-updated"
         When I PUT "/datasets/static-dataset-published/editions/2025/versions/1/state"
             """
             {
@@ -502,6 +516,23 @@ Feature: Static Dataset Versions PUT API
             }
             """
         Then the HTTP status code should be "200"
+        And these kafka messages are produced:
+          """
+          {
+            "content_type": "static",
+            "dataset_id": "static-dataset-published",
+            "edition": "2025",
+            "title": "2025 Edition",
+            "uri": "/datasets/static-dataset-published/editions/2025/versions/1"
+          }
+          """
+        And the following URL prefixes are purged by cloudflare:
+            | http://localhost:20000/datasets/static-dataset-published |
+            | http://localhost:20000/datasets/static-dataset-published/editions |
+            | http://localhost:20000/datasets/static-dataset-published/editions/2025/versions |
+            | http://localhost:23200/v1/datasets/static-dataset-published |
+            | http://localhost:23200/v1/datasets/static-dataset-published/editions |
+            | http://localhost:23200/v1/datasets/static-dataset-published/editions/2025/versions |
 
     Scenario: PUT succeeds when updating edition ID to unique value within series
         Given private endpoints are enabled

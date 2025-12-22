@@ -10,6 +10,7 @@ import (
 
 	authMock "github.com/ONSdigital/dp-authorisation/v2/authorisation/mock"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
+	cloudflareMocks "github.com/ONSdigital/dp-dataset-api/cloudflare/mocks"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
@@ -30,7 +31,7 @@ func Test_UpdateInstanceToEditionConfirmedUnauthorised(t *testing.T) {
 			},
 		}
 
-		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{})
 
 		Convey("When the requested state change is to 'edition-confirmed'", func() {
 			body := strings.NewReader(`{"state":"edition-confirmed", "edition": "2017"}`)
@@ -71,7 +72,7 @@ func Test_UpdateInstanceToEditionConfirmedForbidden(t *testing.T) {
 			},
 		}
 
-		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{})
 
 		Convey("When the requested state change is to 'edition-confirmed'", func() {
 			body := strings.NewReader(`{"state":"edition-confirmed", "edition": "2017"}`)
@@ -112,7 +113,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsOk(t *testing.T) {
 			},
 		}
 
-		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{})
 
 		Convey("When the requested state change is to 'edition-confirmed'", func() {
 			body := strings.NewReader(`{"state":"edition-confirmed", "edition": "2017"}`)
@@ -158,7 +159,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsOk(t *testing.T) {
 			},
 		}
 
-		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{})
 
 		Convey("When the requested state change is to 'edition-confirmed'", func() {
 			body := strings.NewReader(`{"state":"edition-confirmed", "edition": "2017"}`)
@@ -234,7 +235,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 					},
 				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -276,7 +277,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 					},
 				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock)
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusForbidden)

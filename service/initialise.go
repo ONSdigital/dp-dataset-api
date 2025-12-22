@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/ONSdigital/dp-authorisation/v2/authorisation"
+	"github.com/ONSdigital/dp-dataset-api/cloudflare"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/store"
@@ -18,13 +19,14 @@ import (
 
 // ExternalServiceList holds the initialiser and initialisation state of external services.
 type ExternalServiceList struct {
-	GenerateDownloadsProducer bool
-	AuthorisationMiddleware   bool
-	Graph                     bool
-	HealthCheck               bool
-	MongoDB                   bool
-	FilesAPIClient            bool
-	Init                      Initialiser
+	KafkaProducer           bool
+	AuthorisationMiddleware bool
+	Graph                   bool
+	HealthCheck             bool
+	MongoDB                 bool
+	FilesAPIClient          bool
+	CloudflareClient        bool
+	Init                    Initialiser
 }
 
 // NewServiceList creates a new service list with the provided initialiser
@@ -59,7 +61,7 @@ func (e *ExternalServiceList) GetProducer(ctx context.Context, cfg *config.Confi
 	if err != nil {
 		return
 	}
-	e.GenerateDownloadsProducer = true
+	e.KafkaProducer = true
 	return
 }
 
@@ -95,6 +97,21 @@ func (e *ExternalServiceList) GetFilesAPIClient(ctx context.Context, cfg *config
 		e.FilesAPIClient = true
 		log.Info(ctx, "files API client created successfully", log.Data{"url": cfg.FilesAPIURL})
 		return filesAPIClient, nil
+	}
+	return nil, nil
+}
+
+// GetCloudflareClient returns a cloudflare client
+func (e *ExternalServiceList) GetCloudflareClient(ctx context.Context, cfg *config.Configuration) (cloudflare.Clienter, error) {
+	if cfg.CloudflareEnabled {
+		cloudflareClient, err := e.Init.DoGetCloudflareClient(ctx, cfg.CloudflareConfig)
+		if err != nil {
+			log.Error(ctx, "failed to initialise cloudflare client", err)
+			return nil, err
+		}
+		e.CloudflareClient = true
+		log.Info(ctx, "cloudflare client created successfully", log.Data{"base_url": cfg.CloudflareConfig.BaseURL, "zone_id": cfg.CloudflareConfig.ZoneID})
+		return cloudflareClient, nil
 	}
 	return nil, nil
 }
@@ -175,4 +192,9 @@ func (e *Init) DoGetAuthorisationMiddleware(ctx context.Context, authorisationCo
 // DoGetFilesAPIClient returns a files API client
 func (e *Init) DoGetFilesAPIClient(ctx context.Context, cfg *config.Configuration) (filesAPISDK.Clienter, error) {
 	return filesAPISDK.New(cfg.FilesAPIURL, cfg.ServiceAuthToken), nil
+}
+
+// DoGetCloudflareClient returns a cloudflare client
+func (e *Init) DoGetCloudflareClient(ctx context.Context, cloudflareConfig *cloudflare.Config) (cloudflare.Clienter, error) {
+	return cloudflare.New(cloudflareConfig)
 }

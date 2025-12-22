@@ -13,6 +13,7 @@ import (
 	"github.com/ONSdigital/dp-authorisation/v2/permissions"
 	"github.com/ONSdigital/dp-dataset-api/api"
 	"github.com/ONSdigital/dp-dataset-api/application"
+	"github.com/ONSdigital/dp-dataset-api/cloudflare"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/download"
 	adapter "github.com/ONSdigital/dp-dataset-api/kafka"
@@ -50,6 +51,8 @@ type Service struct {
 	mongoDB                             store.MongoDB
 	generateCMDDownloadsProducer        kafka.IProducer
 	generateCantabularDownloadsProducer kafka.IProducer
+	searchContentUpdatedKafkaProducer   kafka.IProducer
+	cloudflareClient                    cloudflare.Clienter
 	identityClient                      *clientsidentity.Client
 	filesAPIClient                      filesAPISDK.Clienter
 	server                              HTTPServer
@@ -235,6 +238,10 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		return err
 	}
 
+	if err := svc.initCloudflareClient(ctx); err != nil {
+		return err
+	}
+
 	ds := store.DataStore{Backend: DatsetAPIStore{svc.mongoDB, svc.graphDB}}
 
 	// Get GenerateDownloads Kafka Producer
@@ -253,6 +260,11 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 			log.Fatal(ctx, "could not obtain generate downloads producer for cantabular", err)
 			return err
 		}
+		svc.searchContentUpdatedKafkaProducer, err = svc.serviceList.GetProducer(ctx, svc.config, svc.config.SearchContentUpdatedTopic)
+		if err != nil {
+			log.Fatal(ctx, "could not obtain search content updated producer", err)
+			return err
+		}
 	}
 
 	downloadGeneratorCantabular := &download.CantabularGenerator{
@@ -263,6 +275,10 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	downloadGeneratorCMD := &download.CMDGenerator{
 		Producer:   adapter.NewProducerAdapter(svc.generateCMDDownloadsProducer),
 		Marshaller: schema.GenerateCMDDownloadsEvent,
+	}
+
+	searchContentUpdatedProducer := &api.SearchContentUpdatedProducer{
+		Producer: adapter.NewProducerAdapter(svc.searchContentUpdatedKafkaProducer),
 	}
 
 	downloadGenerators := map[models.DatasetType]api.DownloadsGenerator{
@@ -338,12 +354,13 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	if svc.config.EnablePrivateEndpoints {
 		svc.generateCMDDownloadsProducer.LogErrors(ctx)
 		svc.generateCantabularDownloadsProducer.LogErrors(ctx)
+		svc.searchContentUpdatedKafkaProducer.LogErrors(ctx)
 	}
 
 	sm := GetStateMachine(ctx, ds)
 	svc.smDS = application.Setup(ds, smDownloadGenerators, sm)
 
-	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, authorisation, enableURLRewriting, svc.smDS, permissionChecker, svc.identityClient)
+	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, authorisation, enableURLRewriting, svc.smDS, permissionChecker, svc.identityClient, searchContentUpdatedProducer, svc.cloudflareClient)
 
 	// Set the files API client on the DatasetAPI after initialisation
 	if svc.config.EnablePrivateEndpoints && svc.filesAPIClient != nil {
@@ -398,33 +415,44 @@ func (svc *Service) initFilesAPIClient(ctx context.Context) error {
 	return err
 }
 
+func (svc *Service) initCloudflareClient(ctx context.Context) error {
+	var err error
+	svc.cloudflareClient, err = svc.serviceList.GetCloudflareClient(ctx, svc.config)
+	return err
+}
+
 func createURLBuilder(cfg *config.Configuration) (*url.Builder, error) {
 	websiteURL, err := neturl.Parse(cfg.WebsiteURL)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to parse websiteURL from config")
+		return nil, errors.Wrap(err, "unable to parse WebsiteURL from config")
 	}
 
 	downloadServiceURL, err := neturl.Parse(cfg.DownloadServiceURL)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to parse downloadServiceURL from config")
+		return nil, errors.Wrap(err, "unable to parse DownloadServiceURL from config")
 	}
 
 	datasetAPIURL, err := neturl.Parse(cfg.DatasetAPIURL)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to parse datasetAPIURL from config")
+		return nil, errors.Wrap(err, "unable to parse DatasetAPIURL from config")
 	}
 
 	codeListAPIURL, err := neturl.Parse(cfg.CodeListAPIURL)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to parse codeListAPIURL from config")
+		return nil, errors.Wrap(err, "unable to parse CodeListAPIURL from config")
 	}
 
 	importAPIURL, err := neturl.Parse(cfg.ImportAPIURL)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to parse importAPIURL from config")
+		return nil, errors.Wrap(err, "unable to parse ImportAPIURL from config")
 	}
 
-	return url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL), nil
+	apiRouterPublicURL, err := neturl.Parse(cfg.APIRouterPublicURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to parse APIRouterPublicURL from config")
+	}
+
+	return url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL, apiRouterPublicURL), nil
 }
 
 // CreateMiddleware creates an Alice middleware chain of handlers
@@ -487,9 +515,10 @@ func (svc *Service) Close(ctx context.Context) error {
 			}
 		}
 
-		// Close GenerateDownloadsProducer (if it exists)
-		if svc.serviceList.GenerateDownloadsProducer {
+		// Close KafkaProducer (if it exists)
+		if svc.serviceList.KafkaProducer {
 			log.Info(shutdownContext, "closing generated downloads kafka producer", log.Data{"producer": "DimensionExtracted"})
+			// Only one kafka producer needs to be shutdown as they share the same underlying connections
 			if err := svc.generateCMDDownloadsProducer.Close(shutdownContext); err != nil {
 				log.Warn(shutdownContext, "error while closing generated downloads kafka producer", log.Data{"producer": "DimensionExtracted", "err": err.Error()})
 			}
@@ -550,6 +579,11 @@ func (svc *Service) registerCheckers(ctx context.Context) (err error) {
 		if err = svc.healthCheck.AddCheck("Kafka Generate Cantabular Downloads Producer", svc.generateCantabularDownloadsProducer.Checker); err != nil {
 			hasErrors = true
 			log.Error(ctx, "error adding check for cantabular kafka downloads producer", err)
+		}
+
+		if err = svc.healthCheck.AddCheck("Kafka Search Content Updated Producer", svc.searchContentUpdatedKafkaProducer.Checker); err != nil {
+			hasErrors = true
+			log.Error(ctx, "error adding check for search content updated kafka producer", err)
 		}
 
 		if err = svc.healthCheck.AddCheck("Files API Client", svc.filesAPIClient.Checker); err != nil {

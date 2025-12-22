@@ -12,6 +12,8 @@ import (
 	"github.com/ONSdigital/dp-authorisation/v2/authorisationtest"
 	componenttest "github.com/ONSdigital/dp-component-test"
 	"github.com/ONSdigital/dp-component-test/utils"
+	"github.com/ONSdigital/dp-dataset-api/cloudflare"
+	cloudflareMocks "github.com/ONSdigital/dp-dataset-api/cloudflare/mocks"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/service"
@@ -33,6 +35,7 @@ type DatasetComponent struct {
 	svc                     *service.Service
 	errorChan               chan error
 	MongoClient             *mongo.Mongo
+	cloudflareClient        cloudflare.Clienter
 	Config                  *config.Configuration
 	HTTPServer              *http.Server
 	ServiceRunning          bool
@@ -102,6 +105,7 @@ func (c *DatasetComponent) Reset() error {
 
 	c.Config.EnablePrivateEndpoints = false
 	c.Config.EnableURLRewriting = false
+	c.Config.CloudflareEnabled = false
 	// Resets back to Mocked Kafka
 	c.setInitialiserMock()
 
@@ -266,11 +270,22 @@ func (c *DatasetComponent) DoGetFilesAPIClientOk(ctx context.Context, cfg *confi
 	}, nil
 }
 
+func (c *DatasetComponent) DoGetCloudflareClientOk(ctx context.Context, cloudflareConfig *cloudflare.Config) (cloudflare.Clienter, error) {
+	cloudflareClient := &cloudflareMocks.ClienterMock{
+		PurgeByPrefixesFunc: func(ctx context.Context, prefixes []string) error {
+			return nil
+		},
+	}
+	c.cloudflareClient = cloudflareClient
+	return cloudflareClient, nil
+}
+
 func (c *DatasetComponent) setInitialiserMock() {
 	c.initialiser = &serviceMock.InitialiserMock{
 		DoGetMongoDBFunc:                 c.DoGetMongoDB,
 		DoGetGraphDBFunc:                 c.DoGetGraphDBOk,
 		DoGetFilesAPIClientFunc:          c.DoGetFilesAPIClientOk,
+		DoGetCloudflareClientFunc:        c.DoGetCloudflareClientOk,
 		DoGetKafkaProducerFunc:           c.DoGetMockedKafkaProducerOk,
 		DoGetHealthCheckFunc:             c.DoGetHealthcheckOk,
 		DoGetHTTPServerFunc:              c.DoGetHTTPServer,
@@ -282,6 +297,7 @@ func (c *DatasetComponent) setInitialiserRealKafka() {
 		DoGetMongoDBFunc:                 c.DoGetMongoDB,
 		DoGetGraphDBFunc:                 c.DoGetGraphDBOk,
 		DoGetFilesAPIClientFunc:          c.DoGetFilesAPIClientOk,
+		DoGetCloudflareClientFunc:        c.DoGetCloudflareClientOk,
 		DoGetKafkaProducerFunc:           c.DoGetKafkaProducer,
 		DoGetHealthCheckFunc:             c.DoGetHealthcheckOk,
 		DoGetHTTPServerFunc:              c.DoGetHTTPServer,
