@@ -1414,6 +1414,89 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 	})
+
+	Convey("When POST dataset version is called with edition ID containing spaces in the JSON body", t, func() {
+		b := `{
+		"type": "static",
+		"edition": "edition with spaces",
+		"edition_title": "Valid Edition Title",
+		"distributions": [
+			{
+				"title": "CSV",
+				"download_url": "http://example.com/file.csv",
+				"byte_size": 123,
+				"format": "csv"
+			}
+		]
+	}`
+
+		r := createRequestWithAuth(
+			"POST",
+			"http://localhost:22000/datasets/123/editions/time-series/versions",
+			bytes.NewBufferString(b),
+		)
+
+		w := httptest.NewRecorder()
+
+		api := GetAPIWithCMDMocks(
+			&storetest.StorerMock{},
+			&mocks.DownloadsGeneratorMock{},
+			&authMock.MiddlewareMock{
+				RequireFunc: func(permission string, handler http.HandlerFunc) http.HandlerFunc {
+					return handler
+				},
+			},
+			SearchContentUpdatedProducer{},
+			&cloudflareMocks.ClienterMock{},
+		)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrSpacesNotAllowedInID.Error())
+	})
+
+	Convey("When POST dataset version is called with dataset_id containing spaces in the JSON body", t, func() {
+		b := `{
+		"type": "static",
+		"dataset_id": "dataset id with spaces",
+		"edition": "valid-edition",
+		"edition_title": "Valid Edition Title",
+		"distributions": [
+			{
+				"title": "CSV",
+				"download_url": "http://example.com/file.csv",
+				"byte_size": 123,
+				"format": "csv"
+			}
+		]
+	}`
+
+		r := createRequestWithAuth(
+			"POST",
+			"http://localhost:22000/datasets/123/editions/time-series/versions",
+			bytes.NewBufferString(b),
+		)
+
+		w := httptest.NewRecorder()
+
+		api := GetAPIWithCMDMocks(
+			&storetest.StorerMock{},
+			&mocks.DownloadsGeneratorMock{},
+			&authMock.MiddlewareMock{
+				RequireFunc: func(permission string, handler http.HandlerFunc) http.HandlerFunc {
+					return handler
+				},
+			},
+			SearchContentUpdatedProducer{},
+			&cloudflareMocks.ClienterMock{},
+		)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrSpacesNotAllowedInID.Error())
+	})
 }
 
 func TestCreateVersion_Success(t *testing.T) {
@@ -2120,5 +2203,110 @@ func TestCreateVersion_Failure(t *testing.T) {
 		So(errResp.Status, ShouldEqual, http.StatusBadRequest)
 		So(errResp.Errors[0].Code, ShouldEqual, models.ErrMissingParameters)
 		So(errResp.Errors[0].Description, ShouldEqual, "distributions[0].format field is invalid")
+	})
+
+	Convey("When the URL edition contains spaces", t, func() {
+		validJSON, err := json.Marshal(validVersion)
+		So(err, ShouldBeNil)
+
+		api := GetAPIWithCMDMocks(
+			&storetest.StorerMock{},
+			&mocks.DownloadsGeneratorMock{},
+			authorisationMock,
+			SearchContentUpdatedProducer{},
+			&cloudflareMocks.ClienterMock{},
+		)
+
+		r := createRequestWithAuth(
+			"POST",
+			"http://localhost:22000/datasets/123/editions/edition%201/versions/1",
+			bytes.NewBuffer(validJSON),
+		)
+
+		r = mux.SetURLVars(r, map[string]string{
+			"dataset_id": "123",
+			"edition":    "edition 1",
+			"version":    "1",
+		})
+
+		w := httptest.NewRecorder()
+
+		success, errResp := api.createVersion(w, r)
+
+		So(success, ShouldBeNil)
+		So(errResp.Status, ShouldEqual, http.StatusBadRequest)
+		So(errResp.Errors[0].Code, ShouldEqual, errs.ErrSpacesNotAllowedInID.Error())
+	})
+
+	Convey("When the JSON body contains an edition with spaces for static type", t, func() {
+		versionWithEditionSpaces := *validVersion
+		versionWithEditionSpaces.Edition = "edition with spaces"
+
+		body, err := json.Marshal(&versionWithEditionSpaces)
+		So(err, ShouldBeNil)
+
+		api := GetAPIWithCMDMocks(
+			&storetest.StorerMock{},
+			&mocks.DownloadsGeneratorMock{},
+			authorisationMock,
+			SearchContentUpdatedProducer{},
+			&cloudflareMocks.ClienterMock{},
+		)
+
+		r := createRequestWithAuth(
+			"POST",
+			"http://localhost:22000/datasets/123/editions/edition1/versions/1",
+			bytes.NewBuffer(body),
+		)
+
+		r = mux.SetURLVars(r, map[string]string{
+			"dataset_id": "123",
+			"edition":    "edition1",
+			"version":    "1",
+		})
+
+		w := httptest.NewRecorder()
+
+		success, errResp := api.createVersion(w, r)
+
+		So(success, ShouldBeNil)
+		So(errResp.Status, ShouldEqual, http.StatusBadRequest)
+		So(errResp.Errors[0].Code, ShouldEqual, errs.ErrSpacesNotAllowedInID.Error())
+	})
+
+	Convey("When the JSON body contains a dataset_id with spaces for static type", t, func() {
+		versionWithDatasetIDSpaces := *validVersion
+		versionWithDatasetIDSpaces.DatasetID = "dataset id with spaces"
+
+		body, err := json.Marshal(&versionWithDatasetIDSpaces)
+		So(err, ShouldBeNil)
+
+		api := GetAPIWithCMDMocks(
+			&storetest.StorerMock{},
+			&mocks.DownloadsGeneratorMock{},
+			authorisationMock,
+			SearchContentUpdatedProducer{},
+			&cloudflareMocks.ClienterMock{},
+		)
+
+		r := createRequestWithAuth(
+			"POST",
+			"http://localhost:22000/datasets/123/editions/edition1/versions/1",
+			bytes.NewBuffer(body),
+		)
+
+		r = mux.SetURLVars(r, map[string]string{
+			"dataset_id": "123",
+			"edition":    "edition1",
+			"version":    "1",
+		})
+
+		w := httptest.NewRecorder()
+
+		success, errResp := api.createVersion(w, r)
+
+		So(success, ShouldBeNil)
+		So(errResp.Status, ShouldEqual, http.StatusBadRequest)
+		So(errResp.Errors[0].Code, ShouldEqual, errs.ErrSpacesNotAllowedInID.Error())
 	})
 }

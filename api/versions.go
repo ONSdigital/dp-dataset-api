@@ -311,7 +311,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 	return models.NewSuccessResponse(versionBytes, http.StatusOK, responseHeaders), nil
 }
 
-//nolint:gocyclo // high cyclomactic complexity not in scope for maintenance
+//nolint:gocognit,gocyclo // high complexity accepted for this handler
 func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	defer dphttp.DrainBody(r)
 
@@ -321,19 +321,6 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		"datasetID": vars["dataset_id"],
 		"edition":   vars["edition"],
 		"version":   vars["version"],
-	}
-
-	// Validate URL path parameters don't contain spaces
-	if err := utils.ValidateIDNoSpaces(vars["dataset_id"]); err != nil {
-		log.Error(ctx, "putVersion endpoint: dataset ID contains spaces", err, data)
-		handleVersionAPIErr(ctx, err, w, data)
-		return
-	}
-
-	if err := utils.ValidateIDNoSpaces(vars["edition"]); err != nil {
-		log.Error(ctx, "putVersion endpoint: edition ID contains spaces", err, data)
-		handleVersionAPIErr(ctx, err, w, data)
-		return
 	}
 
 	// Read body once and validate distributions before unmarshaling
@@ -356,17 +343,24 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate edition ID in request body doesn't contain spaces
-	if version.Edition != "" {
-		if err := utils.ValidateIDNoSpaces(version.Edition); err != nil {
-			log.Error(ctx, "putVersion endpoint: edition ID in request body contains spaces", err, data)
-			handleVersionAPIErr(ctx, err, w, data)
-			return
-		}
-	}
-
-	// Populate distributions (static only)
+	// Populate distributions & validate spaces in IDs(static only)
 	if version.Type == models.Static.String() {
+		if version.Edition != "" {
+			if err := utils.ValidateIDNoSpaces(version.Edition); err != nil {
+				log.Error(ctx, "putVersion endpoint: edition ID in request body contains spaces", err, data)
+				handleVersionAPIErr(ctx, err, w, data)
+				return
+			}
+		}
+
+		if version.DatasetID != "" {
+			if err := utils.ValidateIDNoSpaces(version.DatasetID); err != nil {
+				log.Error(ctx, "putVersion endpoint: edition ID in request body contains spaces", err, data)
+				handleVersionAPIErr(ctx, err, w, data)
+				return
+			}
+		}
+
 		if err := utils.PopulateDistributions(version); err != nil {
 			handleVersionAPIErr(ctx, err, w, data)
 			return

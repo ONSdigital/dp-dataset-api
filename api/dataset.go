@@ -254,26 +254,12 @@ func (api *DatasetAPI) addDataset(w http.ResponseWriter, r *http.Request) {
 
 	logData := log.Data{"dataset_id": datasetID}
 
-	if err := utils.ValidateIDNoSpaces(datasetID); err != nil {
-		log.Error(ctx, "addDataset endpoint: dataset ID contains spaces", err, logData)
-		handleDatasetAPIErr(ctx, err, w, logData)
-		return
-	}
-
 	// TODO Could just do an insert, if dataset already existed we would get a duplicate key error instead of reading then writing doc
 	b, err := func() ([]byte, error) {
 		dataset, err := models.CreateDataset(r.Body)
 		if err != nil {
 			log.Error(ctx, "addDataset endpoint: failed to model dataset resource based on request", err, logData)
 			return nil, errs.ErrAddUpdateDatasetBadRequest
-		}
-
-		// If ID is provided in the request body, validate it doesn't contain spaces
-		if dataset.ID != "" {
-			if err := utils.ValidateIDNoSpaces(dataset.ID); err != nil {
-				log.Error(ctx, "addDataset endpoint: dataset ID in request body contains spaces", err, logData)
-				return nil, err
-			}
 		}
 
 		models.CleanDataset(dataset)
@@ -381,12 +367,13 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := utils.ValidateIDNoSpaces(datasetID); err != nil {
-		log.Error(ctx, "addDatasetNew endpoint: dataset ID contains spaces", err, logData)
-		handleDatasetAPIErr(ctx, err, w, logData)
-		return
+	if dataset.Type == models.Static.String() {
+		if err := utils.ValidateIDNoSpaces(datasetID); err != nil {
+			log.Error(ctx, "addDatasetNew endpoint: dataset ID contains spaces", err, logData)
+			handleDatasetAPIErr(ctx, err, w, logData)
+			return
+		}
 	}
-
 	_, err = api.dataStore.Backend.GetDataset(ctx, datasetID)
 	if err == nil {
 		log.Error(ctx, "addDatasetNew endpoint: unable to create a dataset that already exists", errs.ErrAddDatasetAlreadyExists, logData)
@@ -474,25 +461,11 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 	datasetID := vars["dataset_id"]
 	data := log.Data{"dataset_id": datasetID}
 
-	if err := utils.ValidateIDNoSpaces(datasetID); err != nil {
-		log.Error(ctx, "putDataset endpoint: dataset ID contains spaces", err, data)
-		handleDatasetAPIErr(ctx, err, w, data)
-		return
-	}
-
 	b, err := func() ([]byte, error) {
 		dataset, err := models.CreateDataset(r.Body)
 		if err != nil {
 			log.Error(ctx, "putDataset endpoint: failed to model dataset resource based on request", err, data)
 			return nil, errs.ErrAddUpdateDatasetBadRequest
-		}
-
-		// If ID is provided in the request body, validate it doesn't contain spaces
-		if dataset.ID != "" {
-			if err := utils.ValidateIDNoSpaces(dataset.ID); err != nil {
-				log.Error(ctx, "putDataset endpoint: dataset ID in request body contains spaces", err, data)
-				return nil, err
-			}
 		}
 
 		currentDataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
@@ -502,6 +475,13 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 		}
 
 		dataset.Type = currentDataset.Next.Type
+
+		if dataset.Type == models.Static.String() && dataset.ID != "" {
+			if err := utils.ValidateIDNoSpaces(dataset.ID); err != nil {
+				log.Error(ctx, "putDataset endpoint: dataset ID in request body contains spaces", err, data)
+				return nil, err
+			}
+		}
 
 		models.CleanDataset(dataset)
 

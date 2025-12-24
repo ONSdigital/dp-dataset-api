@@ -2321,7 +2321,9 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return nil, errs.ErrDatasetNotFound
+				return &models.DatasetUpdate{
+					ID:   "123",
+					Next: &models.Dataset{Type: models.Static.String()}}, nil
 			},
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil

@@ -116,14 +116,9 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 
 	log.Info(ctx, "condensed endpoint called", logData)
 
-	if err := utils.ValidateIDNoSpaces(datasetID); err != nil {
-		log.Error(ctx, "addDatasetVersionCondensed endpoint: dataset ID contains spaces", err, logData)
-		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, errs.ErrSpacesNotAllowedInID.Error(), errs.ErrSpacesNotAllowedInID.Error()))
-	}
-
 	if err := utils.ValidateIDNoSpaces(edition); err != nil {
 		log.Error(ctx, "addDatasetVersionCondensed endpoint: edition ID contains spaces", err, logData)
-		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, errs.ErrSpacesNotAllowedInID.Error(), errs.ErrSpacesNotAllowedInID.Error()))
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, errs.ErrSpacesNotAllowedInID.Error(), err.Error()))
 	}
 
 	// Read body once and validate distributions before unmarshaling
@@ -142,6 +137,29 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	if err := json.Unmarshal(bodyBytes, versionRequest); err != nil {
 		log.Error(ctx, "failed to unmarshal version", err, logData)
 		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, models.JSONUnmarshalError, "failed to unmarshal version"))
+	}
+
+	// Validate dataset_id in body (if provided)
+	if versionRequest.DatasetID != "" {
+		if err := utils.ValidateIDNoSpaces(versionRequest.DatasetID); err != nil {
+			log.Error(ctx, "addDatasetVersionCondensed endpoint: dataset ID in request body contains spaces", err, logData)
+			return nil, models.NewErrorResponse(
+				http.StatusBadRequest,
+				nil,
+				models.NewError(err, errs.ErrSpacesNotAllowedInID.Error(), err.Error()),
+			)
+		}
+	}
+	// Validate edition in body (if provided)
+	if versionRequest.Edition != "" {
+		if err := utils.ValidateIDNoSpaces(versionRequest.Edition); err != nil {
+			log.Error(ctx, "addDatasetVersionCondensed endpoint: edition ID in request body contains spaces", err, logData)
+			return nil, models.NewErrorResponse(
+				http.StatusBadRequest,
+				nil,
+				models.NewError(err, errs.ErrSpacesNotAllowedInID.Error(), err.Error()),
+			)
+		}
 	}
 
 	if missingFields := validateVersionFields(versionRequest); len(missingFields) > 0 {
@@ -253,6 +271,7 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	return models.NewSuccessResponse(response, http.StatusCreated, headers), nil
 }
 
+//nolint:gocyclo // high cyclomatic complexity not in scope for maintenance
 func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*models.SuccessResponse, *models.ErrorResponse) {
 	ctx := r.Context()
 
@@ -269,12 +288,12 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 
 	if err := utils.ValidateIDNoSpaces(datasetID); err != nil {
 		log.Error(ctx, "createVersion endpoint: dataset ID contains spaces", err, logData)
-		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, errs.ErrSpacesNotAllowedInID.Error(), errs.ErrSpacesNotAllowedInID.Error()))
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, errs.ErrSpacesNotAllowedInID.Error(), err.Error()))
 	}
 
 	if err := utils.ValidateIDNoSpaces(edition); err != nil {
 		log.Error(ctx, "createVersion endpoint: edition ID contains spaces", err, logData)
-		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, errs.ErrSpacesNotAllowedInID.Error(), errs.ErrSpacesNotAllowedInID.Error()))
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, errs.ErrSpacesNotAllowedInID.Error(), err.Error()))
 	}
 
 	// Read body once and validate distributions before unmarshaling
@@ -293,6 +312,28 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 	if err := json.Unmarshal(bodyBytes, newVersion); err != nil {
 		log.Error(ctx, "createVersion endpoint: failed to unmarshal version", err, logData)
 		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, models.JSONUnmarshalError, "failed to unmarshal version"))
+	}
+
+	if newVersion.Type == models.Static.String() {
+		if newVersion.DatasetID != "" {
+			if err := utils.ValidateIDNoSpaces(newVersion.DatasetID); err != nil {
+				log.Error(ctx, "createVersion endpoint: dataset_id in request body contains spaces", err, logData)
+				return nil, models.NewErrorResponse(
+					http.StatusBadRequest, nil,
+					models.NewError(err, errs.ErrSpacesNotAllowedInID.Error(), err.Error()),
+				)
+			}
+		}
+
+		if newVersion.Edition != "" {
+			if err := utils.ValidateIDNoSpaces(newVersion.Edition); err != nil {
+				log.Error(ctx, "createVersion endpoint: edition in request body contains spaces", err, logData)
+				return nil, models.NewErrorResponse(
+					http.StatusBadRequest, nil,
+					models.NewError(err, errs.ErrSpacesNotAllowedInID.Error(), err.Error()),
+				)
+			}
+		}
 	}
 
 	if err := utils.PopulateDistributions(newVersion); err != nil {
