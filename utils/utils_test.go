@@ -3,6 +3,7 @@ package utils
 import (
 	"testing"
 
+	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -265,6 +266,56 @@ func TestPopulateDistributions(t *testing.T) {
 			Convey("Then an error should be returned for the third distribution", func() {
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldContainSubstring, "distributions[2].format field is missing")
+			})
+		})
+	})
+}
+
+func TestValidateIDNoSpaces(t *testing.T) {
+	Convey("Given an ID without spaces", t, func() {
+		id := "valid-dataset-id"
+
+		Convey("When ValidateIDNoSpaces is called", func() {
+			err := ValidateIDNoSpaces(id)
+
+			Convey("Then no error should be returned", func() {
+				So(err, ShouldBeNil)
+			})
+		})
+	})
+
+	Convey("Given an ID with spaces", t, func() {
+		id := "invalid dataset id"
+
+		Convey("When ValidateIDNoSpaces is called", func() {
+			err := ValidateIDNoSpaces(id)
+
+			Convey("Then an error should be returned", func() {
+				So(err, ShouldEqual, errs.ErrSpacesNotAllowedInID)
+			})
+		})
+	})
+
+	Convey("Given an empty ID", t, func() {
+		id := ""
+
+		Convey("When ValidateIDNoSpaces is called", func() {
+			err := ValidateIDNoSpaces(id)
+
+			Convey("Then no error should be returned", func() {
+				So(err, ShouldBeNil)
+			})
+		})
+	})
+
+	Convey("Given an ID with multiple spaces", t, func() {
+		id := "invalid  dataset  id"
+
+		Convey("When ValidateIDNoSpaces is called", func() {
+			err := ValidateIDNoSpaces(id)
+
+			Convey("Then an error should be returned", func() {
+				So(err, ShouldEqual, errs.ErrSpacesNotAllowedInID)
 			})
 		})
 	})

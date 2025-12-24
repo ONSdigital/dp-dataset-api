@@ -901,6 +901,50 @@ func TestPutVersionForbidden(t *testing.T) {
 			})
 		})
 	})
+
+	Convey("When edition ID in request body contains spaces, return 400 Bad Request", t, func() {
+		b := `{
+		"edition": "edition 8",
+		"edition_title": "Valid Title",
+		"release_date": "2024-05-01",
+		"type": "static"
+		}`
+
+		r := createRequestWithAuth(
+			"PUT",
+			"http://localhost:22000/datasets/123/editions/2017/versions/1",
+			bytes.NewBufferString(b),
+		)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					ID:      "789",
+					Edition: "2017",
+					State:   models.EditionConfirmedState,
+					ETag:    testETag,
+				}, nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
+		api.Router.ServeHTTP(w, r)
+
+		Convey("Then it returns 400 and update is not attempted", func() {
+			So(w.Code, ShouldEqual, http.StatusBadRequest)
+			So(w.Body.String(), ShouldContainSubstring, errs.ErrSpacesNotAllowedInID.Error())
+
+			So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
+			So(len(mockedDataStore.AcquireInstanceLockCalls()), ShouldEqual, 0)
+		})
+	})
 }
 
 func TestPutVersionUnauthorised(t *testing.T) {

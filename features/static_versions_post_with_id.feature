@@ -524,3 +524,55 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                 ]
             }
             """
+
+Scenario: POST Creating an edition with spaces in the edition ID should return 400
+        Given private endpoints are enabled
+        And I am an admin user
+        When I POST "/datasets/static-dataset-test/editions/edition%201/versions/2"
+            """
+            {
+                "distributions": [
+                    {
+                        "title": "Full Dataset (CSV)",
+                        "download_url": "https://download.ons.gov.uk/my-dataset-download.csv",
+                        "byte_size": 4300000,
+                        "format": "csv"
+                    },
+                    {
+                        "title": "Full Dataset (CSV)",
+                        "download_url": "https://download.ons.gov.uk/my-dataset-download.csv",
+                        "byte_size": 4300000,
+                        "format": "csv"
+                    },
+                    {
+                        "title": "Full Dataset (CSV)",
+                        "download_url": "https://download.ons.gov.uk/my-dataset-download.csv",
+                        "byte_size": 4300000,
+                        "format": "sdmx"
+                    }
+                ],
+                "quality_designation": "accredited-official",
+                "release_date": "2025-03-06T14:49:23.354Z",
+                "type": "static",
+                "edition_title": "edition title of this editionss 5",
+                "usage_notes": [
+                    {
+                        "title": "This dataset",
+                        "note": "Please use it wisely"
+                    }
+                ]
+            }
+            """
+
+        Then the HTTP status code should be "400"
+        And I should receive the following JSON response:
+            """
+            {
+                "errors": [
+                    {
+                        "code": "spaces are not allowed in the ID field",
+                        "description": "spaces are not allowed in the ID field"
+                    }
+                ]
+            }
+            """
