@@ -343,8 +343,13 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Populate distributions & validate spaces in IDs(static only)
+	// check for edition ID/title conflicts, spaces in IDs for static datasets and Populate distributions (static only)
 	if version.Type == models.Static.String() {
+		if err := utils.PopulateDistributions(version); err != nil {
+			handleVersionAPIErr(ctx, err, w, data)
+			return
+		}
+
 		if version.Edition != "" {
 			if err := utils.ValidateIDNoSpaces(version.Edition); err != nil {
 				log.Error(ctx, "putVersion endpoint: edition ID in request body contains spaces", err, data)
@@ -360,15 +365,6 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
-
-		if err := utils.PopulateDistributions(version); err != nil {
-			handleVersionAPIErr(ctx, err, w, data)
-			return
-		}
-	}
-
-	// Only check for edition ID/title conflicts for static datasets
-	if version.Type == models.Static.String() {
 		if version.Edition != "" || version.EditionTitle != "" {
 			versionStr := vars["version"]
 

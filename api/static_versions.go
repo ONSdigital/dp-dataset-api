@@ -314,25 +314,23 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, models.JSONUnmarshalError, "failed to unmarshal version"))
 	}
 
-	if newVersion.Type == models.Static.String() {
-		if newVersion.DatasetID != "" {
-			if err := utils.ValidateIDNoSpaces(newVersion.DatasetID); err != nil {
-				log.Error(ctx, "createVersion endpoint: dataset_id in request body contains spaces", err, logData)
-				return nil, models.NewErrorResponse(
-					http.StatusBadRequest, nil,
-					models.NewError(err, errs.ErrSpacesNotAllowedInID.Error(), err.Error()),
-				)
-			}
+	if newVersion.DatasetID != "" {
+		if err := utils.ValidateIDNoSpaces(newVersion.DatasetID); err != nil {
+			log.Error(ctx, "createVersion endpoint: dataset_id in request body contains spaces", err, logData)
+			return nil, models.NewErrorResponse(
+				http.StatusBadRequest, nil,
+				models.NewError(err, errs.ErrSpacesNotAllowedInID.Error(), err.Error()),
+			)
 		}
+	}
 
-		if newVersion.Edition != "" {
-			if err := utils.ValidateIDNoSpaces(newVersion.Edition); err != nil {
-				log.Error(ctx, "createVersion endpoint: edition in request body contains spaces", err, logData)
-				return nil, models.NewErrorResponse(
-					http.StatusBadRequest, nil,
-					models.NewError(err, errs.ErrSpacesNotAllowedInID.Error(), err.Error()),
-				)
-			}
+	if newVersion.Edition != "" {
+		if err := utils.ValidateIDNoSpaces(newVersion.Edition); err != nil {
+			log.Error(ctx, "createVersion endpoint: edition in request body contains spaces", err, logData)
+			return nil, models.NewErrorResponse(
+				http.StatusBadRequest, nil,
+				models.NewError(err, errs.ErrSpacesNotAllowedInID.Error(), err.Error()),
+			)
 		}
 	}
 
