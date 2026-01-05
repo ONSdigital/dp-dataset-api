@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
+	"github.com/ONSdigital/dp-authorisation/v2/authorisation"
 	authMock "github.com/ONSdigital/dp-authorisation/v2/authorisation/mock"
 	cloudflareMocks "github.com/ONSdigital/dp-dataset-api/cloudflare/mocks"
 	permissionsAPISDK "github.com/ONSdigital/dp-permissions-api/sdk"
@@ -2041,6 +2042,19 @@ func getAPIWithCMDMocks(ctx context.Context, mockedDataStore store.Storer, mocke
 		HasPermissionFunc: func(ctx context.Context, entityData permissionsAPISDK.EntityData, permission string, attributes map[string]string) (bool, error) {
 			return true, nil
 		},
+	}
+	if authorisationMock == nil {
+		authorisationMock = &authMock.MiddlewareMock{}
+	}
+	if authorisationMock.RequireFunc == nil {
+		authorisationMock.RequireFunc = func(_ string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+			return handlerFunc
+		}
+	}
+	if authorisationMock.RequireWithAttributesFunc == nil {
+		authorisationMock.RequireWithAttributesFunc = func(_ string, handlerFunc http.HandlerFunc, _ authorisation.GetAttributesFromRequest) http.HandlerFunc {
+			return handlerFunc
+		}
 	}
 	mu.Lock()
 	defer mu.Unlock()

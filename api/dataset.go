@@ -60,8 +60,14 @@ const DatasetID = "id"
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit, offset int) (mappedDatasets interface{}, totalCount int, err error) {
 	ctx := r.Context()
 	logData := log.Data{}
-	authorised := api.checkUserPermission(r, logData, datasetReadPermission)
+	// attrs, attrsErr := getPermissionAttributesFromRequest(r)
+	// if attrsErr != nil {
+	// 	log.Error(ctx, "getDataset endpoint: failed to build permission attributes", attrsErr, logData)
+	// 	// safest: treat as not authorised (published-only)
+	// 	attrs = nil
+	// }
 
+	authorised := api.checkUserPermission(r, logData, datasetReadPermission, nil)
 	isBasedOnExists := r.URL.Query().Has(IsBasedOn)
 	isBasedOn := r.URL.Query().Get(IsBasedOn)
 
@@ -165,8 +171,15 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		authorised := api.checkUserPermission(r, logData, datasetReadPermission)
+		attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
+		if attrsErr != nil {
+			log.Error(ctx, "getDataset endpoint: failed to build permission attributes", attrsErr, logData)
+			// safest: treat as not authorised (published-only)
+			attrs = nil
+		}
 
+		fmt.Println("attrs:", attrs)
+		authorised := api.checkUserPermission(r, logData, datasetReadPermission, attrs)
 		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 
 		var datasetResponse interface{}

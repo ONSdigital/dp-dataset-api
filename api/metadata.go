@@ -58,8 +58,14 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 
 		isStaticDataset := (datasetType == models.Static)
 
-		authorised := api.checkUserPermission(r, logData, datasetEditionVersionReadPermission)
+		attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
+		if attrsErr != nil {
+			log.Error(ctx, "getDataset endpoint: failed to build permission attributes", attrsErr, logData)
+			// safest: treat as not authorised (published-only)
+			attrs = nil
+		}
 
+		authorised := api.checkUserPermission(r, logData, datasetReadPermission, attrs)
 		if isStaticDataset {
 			versionDoc, err = api.dataStore.Backend.GetVersionStatic(ctx, datasetID, edition, versionID, "")
 		} else {

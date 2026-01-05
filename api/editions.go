@@ -21,8 +21,14 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 	vars := mux.Vars(r)
 	datasetID := vars["dataset_id"]
 	logData := log.Data{"dataset_id": datasetID}
-	authorised := api.checkUserPermission(r, logData, datasetEditionVersionReadPermission)
+	attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
+	if attrsErr != nil {
+		log.Error(ctx, "getDataset endpoint: failed to build permission attributes", attrsErr, logData)
+		// safest: treat as not authorised (published-only)
+		attrs = nil
+	}
 
+	authorised := api.checkUserPermission(r, logData, datasetReadPermission, attrs)
 	var state string
 	if !authorised {
 		state = models.PublishedState
@@ -148,8 +154,14 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"dataset_id": datasetID, "edition": editionID}
 
 	b, err := func() ([]byte, error) {
-		authorised := api.checkUserPermission(r, logData, datasetEditionVersionReadPermission)
+		attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
+		if attrsErr != nil {
+			log.Error(ctx, "getDataset endpoint: failed to build permission attributes", attrsErr, logData)
+			// safest: treat as not authorised (published-only)
+			attrs = nil
+		}
 
+		authorised := api.checkUserPermission(r, logData, datasetReadPermission, attrs)
 		var state string
 		if !authorised {
 			state = models.PublishedState

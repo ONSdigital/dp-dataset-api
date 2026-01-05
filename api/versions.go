@@ -64,7 +64,14 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 	var err error
 
 	list, totalCount, err := func() ([]models.Version, int, error) {
-		authorised := api.checkUserPermission(r, logData, datasetEditionVersionReadPermission)
+		attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
+		if attrsErr != nil {
+			log.Error(ctx, "getDataset endpoint: failed to build permission attributes", attrsErr, logData)
+			// safest: treat as not authorised (published-only)
+			attrs = nil
+		}
+
+		authorised := api.checkUserPermission(r, logData, datasetReadPermission, attrs)
 		var results []models.Version
 		var totalCount int
 		var state string
@@ -178,8 +185,14 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": versionNumber}
 
 	v, getVersionErr := func() (*models.Version, error) {
-		authorised := api.checkUserPermission(r, logData, datasetEditionVersionReadPermission)
+		attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
+		if attrsErr != nil {
+			log.Error(ctx, "getDataset endpoint: failed to build permission attributes", attrsErr, logData)
+			// safest: treat as not authorised (published-only)
+			attrs = nil
+		}
 
+		authorised := api.checkUserPermission(r, logData, datasetReadPermission, attrs)
 		versionID, err := models.ParseAndValidateVersionNumber(ctx, versionNumber)
 		if err != nil {
 			log.Error(ctx, "getVersion endpoint: invalid version", err, logData)
@@ -456,7 +469,7 @@ func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if !api.checkUserPermission(r, logData, datasetEditionVersionDeletePermission) {
+		if !api.checkUserPermission(r, logData, datasetEditionVersionDeletePermission, nil) {
 			handleVersionAPIErr(ctx, errs.ErrUnauthorised, w, logData)
 			return
 		}
@@ -497,7 +510,7 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
 
 	if err := func() error {
-		authorised := api.checkUserPermission(r, logData, datasetEditionVersionDeletePermission)
+		authorised := api.checkUserPermission(r, logData, datasetEditionVersionDeletePermission, nil)
 		if !authorised {
 			log.Error(ctx, "detachVersion endpoint: User is not authorised to detach a dataset version", errs.ErrUnauthorised, logData)
 			return errs.ErrNotFound

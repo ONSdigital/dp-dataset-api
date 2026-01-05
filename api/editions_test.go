@@ -8,6 +8,7 @@ import (
 
 	"time"
 
+	"github.com/ONSdigital/dp-authorisation/v2/authorisation"
 	authMock "github.com/ONSdigital/dp-authorisation/v2/authorisation/mock"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	cloudflareMocks "github.com/ONSdigital/dp-dataset-api/cloudflare/mocks"
@@ -58,6 +59,11 @@ func TestGetEditionsForbidden(t *testing.T) {
 					w.WriteHeader(http.StatusForbidden)
 				}
 			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttrs authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusForbidden)
+				}
+			},
 		}
 
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
@@ -78,6 +84,11 @@ func TestGetEditionsUnauthorised(t *testing.T) {
 
 		authorisationMock := &authMock.MiddlewareMock{
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusUnauthorized)
+				}
+			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttrs authorisation.GetAttributesFromRequest) http.HandlerFunc {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusUnauthorized)
 				}
@@ -585,6 +596,9 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
 				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttrs authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return handlerFunc
+			},
 		}
 
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
@@ -741,6 +755,11 @@ func TestGetEditionForbidden(t *testing.T) {
 					w.WriteHeader(http.StatusForbidden)
 				}
 			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttrs authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusForbidden)
+				}
+			},
 		}
 
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
@@ -762,6 +781,11 @@ func TestGetEditionUnauthorised(t *testing.T) {
 
 		authorisationMock := &authMock.MiddlewareMock{
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusUnauthorized)
+				}
+			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttrs authorisation.GetAttributesFromRequest) http.HandlerFunc {
 				return func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusUnauthorized)
 				}

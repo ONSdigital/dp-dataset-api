@@ -86,6 +86,9 @@ func TestRun(t *testing.T) {
 			CloseFunc: func(ctx context.Context) error {
 				return nil
 			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return handlerFunc
+			},
 		}
 
 		serverWg := &sync.WaitGroup{}
