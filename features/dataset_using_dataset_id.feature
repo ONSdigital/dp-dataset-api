@@ -163,3 +163,35 @@ Feature: Dataset search by dataset id
             """
             invalid query parameter
             """
+    Scenario: Viewer in preview team receives 200 and unpublished info for static dataset
+        Given private endpoints are enabled
+        Given I am an admin user
+        And viewer has preview access to dataset "static-dataset-4"
+        When I GET "/datasets/static-dataset-4"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "id": "static-dataset-4",
+                "current": {
+                    "id": "static-dataset-4",
+                    "last_updated": "0001-01-01T00:00:00Z",
+                    "state": "created",
+                    "title": "Static Dataset 4",
+                    "type": "static"
+                },
+                "next": {
+                    "id": "static-dataset-4",
+                    "last_updated": "0001-01-01T00:00:00Z",
+                    "state": "created",
+                    "title": "Static Dataset 4",
+                    "type": "static"
+                }
+            }
+            """
+
+    Scenario: Viewer not in preview team receives 403 for static dataset
+        Given private endpoints are enabled
+        And I am a viewer user
+        And viewer does not have preview access to dataset "static-dataset-4"
+        When I GET "/datasets/static-dataset-4"
+        Then the HTTP status code should be "403"

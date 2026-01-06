@@ -43,6 +43,7 @@ type DatasetComponent struct {
 	producer                kafka.IProducer
 	initialiser             service.Initialiser
 	AuthorisationMiddleware authorisation.Middleware
+	allowedDatasetEditions  map[string]bool
 }
 
 func NewDatasetComponent(mongoURI, zebedeeURL string) (*DatasetComponent, error) {

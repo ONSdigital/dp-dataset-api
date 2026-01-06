@@ -64,6 +64,9 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`the following URL prefixes are purged by cloudflare:$`, c.theFollowingURLPrefixesArePurgedByCloudflare)
 	ctx.Step(`there are no cloudflare purge calls`, c.thereAreNoCloudflarePurgeCalls)
 	ctx.Step(`cloudflare is enabled`, c.cloudflareIsEnabled)
+	ctx.Step(`^I am a viewer user$`, c.viewerJWTToken)
+	ctx.Step(`^viewer has preview access to dataset "([^"]*)"$`, c.viewerHasPreviewAccessToDataset)
+	ctx.Step(`^viewer does not have preview access to dataset "([^"]*)"$`, c.viewerDoesNotHavePreviewAccessToDataset)
 }
 
 func (c *DatasetComponent) theFeatureFlagIs(flagName, status string) error {
@@ -708,5 +711,27 @@ func (c *DatasetComponent) thereAreNoCloudflarePurgeCalls() error {
 
 func (c *DatasetComponent) cloudflareIsEnabled() error {
 	c.Config.CloudflareEnabled = true
+	return nil
+}
+
+func (c *DatasetComponent) viewerJWTToken() error {
+	err := c.apiFeature.ISetTheHeaderTo("Authorization", "test viewer token")
+	return err
+}
+
+func (c *DatasetComponent) viewerHasPreviewAccessToDataset(datasetID string) error {
+	if c.allowedDatasetEditions == nil {
+		c.allowedDatasetEditions = map[string]bool{}
+	}
+	// allow dataset-level access (dataset_id)
+	c.allowedDatasetEditions[datasetID] = true
+	return nil
+}
+
+func (c *DatasetComponent) viewerDoesNotHavePreviewAccessToDataset(datasetID string) error {
+	if c.allowedDatasetEditions == nil {
+		c.allowedDatasetEditions = map[string]bool{}
+	}
+	delete(c.allowedDatasetEditions, datasetID)
 	return nil
 }
