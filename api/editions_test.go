@@ -313,14 +313,14 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
-			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
-				return models.Static.String(), nil
-			},
 			GetAllStaticVersionsFunc: func(ctx context.Context, ID, state string, offset, limit int) ([]*models.Version, int, error) {
 				return versions, 2, nil
 			},
 			GetLatestVersionStaticFunc: func(ctx context.Context, datasetID, editionID, state string) (*models.Version, error) {
 				return publishedLatestVersion, nil
+			},
+			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
+				return models.Static.String(), nil
 			},
 		}
 

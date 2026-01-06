@@ -60,12 +60,6 @@ const DatasetID = "id"
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit, offset int) (mappedDatasets interface{}, totalCount int, err error) {
 	ctx := r.Context()
 	logData := log.Data{}
-	// attrs, attrsErr := getPermissionAttributesFromRequest(r)
-	// if attrsErr != nil {
-	// 	log.Error(ctx, "getDataset endpoint: failed to build permission attributes", attrsErr, logData)
-	// 	// safest: treat as not authorised (published-only)
-	// 	attrs = nil
-	// }
 
 	authorised := api.checkUserPermission(r, logData, datasetReadPermission, nil)
 	isBasedOnExists := r.URL.Query().Has(IsBasedOn)
@@ -157,7 +151,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 	return mapResults(datasets), totalCount, nil
 }
 
-//nolint:gocognit // cognitive complexity (> 30) is acceptable for now
+//nolint:gocyclo // cyclomatic complexity (> 30) is acceptable for now
 func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
@@ -165,12 +159,6 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"dataset_id": datasetID}
 
 	b, err := func() ([]byte, error) {
-		dataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
-		if err != nil {
-			log.Error(ctx, "getDataset endpoint: dataStore.Backend.GetDataset returned an error", err, logData)
-			return nil, err
-		}
-
 		attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
 		if attrsErr != nil {
 			log.Error(ctx, "getDataset endpoint: failed to build permission attributes", attrsErr, logData)
@@ -178,8 +166,14 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 			attrs = nil
 		}
 
-		fmt.Println("attrs:", attrs)
 		authorised := api.checkUserPermission(r, logData, datasetReadPermission, attrs)
+
+		dataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
+		if err != nil {
+			log.Error(ctx, "getDataset endpoint: dataStore.Backend.GetDataset returned an error", err, logData)
+			return nil, err
+		}
+
 		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 
 		var datasetResponse interface{}

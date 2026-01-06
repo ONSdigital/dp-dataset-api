@@ -1,7 +1,7 @@
 Feature: Dataset API
 
-  Background: we have a dataset which has an edition with a variety of versions
-    Given I have these datasets:
+    Background: we have a dataset which has an edition with a variety of versions
+        Given I have these datasets:
             """
             [
                 {
@@ -14,10 +14,10 @@ Feature: Dataset API
                     "type": "cantabular_flexible_table",
                     "state": "associated",
                     "links": {
-                      "latest_version": {
-                        "id": "1",
-                        "href": "/datasets/test-cantabular-dataset-2/editions/2021/versions/1"
-                      }
+                        "latest_version": {
+                            "id": "1",
+                            "href": "/datasets/test-cantabular-dataset-2/editions/2021/versions/1"
+                        }
                     }
                 },
                 {
@@ -26,7 +26,7 @@ Feature: Dataset API
                 }
             ]
             """
-    And I have these editions:
+        And I have these editions:
             """
             [
                 {
@@ -87,7 +87,7 @@ Feature: Dataset API
                 }
             ]
             """
-    And I have these versions:
+        And I have these versions:
             """
             [
                 {
@@ -177,22 +177,22 @@ Feature: Dataset API
                     },
                     "edition": "2021",
                     "downloads": {
-                      "csv": {
-                        "public": "",
-                        "size": "1",
-                        "href": "/downloads/datasets/test-cantabular-dataset-2/editions/2021/versions/1.csv"
-                      }
+                        "csv": {
+                            "public": "",
+                            "size": "1",
+                            "href": "/downloads/datasets/test-cantabular-dataset-2/editions/2021/versions/1.csv"
+                        }
                     }
                 }
             ]
             """
 
-  Scenario: GET /datasets/{id}/editions/{edition}/versions in public mode returns published versions
-    And URL rewriting is enabled
-    And I set the "X-Forwarded-Host" header to "api.example.com"
-    And I set the "X-Forwarded-Path-Prefix" header to "v1"
-    When I GET "/datasets/population-estimates/editions/hello/versions"
-    Then I should receive the following JSON response with status "200":
+    Scenario: GET /datasets/{id}/editions/{edition}/versions in public mode returns published versions
+        And URL rewriting is enabled
+        And I set the "X-Forwarded-Host" header to "api.example.com"
+        And I set the "X-Forwarded-Path-Prefix" header to "v1"
+        When I GET "/datasets/population-estimates/editions/hello/versions"
+        Then I should receive the following JSON response with status "200":
             """
             {
                 "count": 2,
@@ -200,7 +200,7 @@ Feature: Dataset API
                     {
                         "dataset_id": "population-estimates",
                         "id": "test-item-4",
-                        "last_updated":"2021-01-01T00:00:03Z",
+                        "last_updated": "2021-01-01T00:00:03Z",
                         "version": 4,
                         "edition": "hello",
                         "state": "published",
@@ -217,7 +217,7 @@ Feature: Dataset API
                     {
                         "dataset_id": "population-estimates",
                         "id": "test-item-1",
-                        "last_updated":"2021-01-01T00:00:00Z",
+                        "last_updated": "2021-01-01T00:00:00Z",
                         "version": 1,
                         "edition": "hello",
                         "state": "published",
@@ -237,9 +237,9 @@ Feature: Dataset API
             }
             """
 
-  Scenario: GET /datasets/{id}/editions/{edition}/versions in public mode returns published versions
-    When I GET "/datasets/population-estimates/editions/hello/versions"
-    Then I should receive the following JSON response with status "200":
+    Scenario: GET /datasets/{id}/editions/{edition}/versions in public mode returns published versions
+        When I GET "/datasets/population-estimates/editions/hello/versions"
+        Then I should receive the following JSON response with status "200":
             """
             {
                 "count": 2,
@@ -247,7 +247,7 @@ Feature: Dataset API
                     {
                         "dataset_id": "population-estimates",
                         "id": "test-item-4",
-                        "last_updated":"2021-01-01T00:00:03Z",
+                        "last_updated": "2021-01-01T00:00:03Z",
                         "version": 4,
                         "edition": "hello",
                         "state": "published",
@@ -264,7 +264,7 @@ Feature: Dataset API
                     {
                         "dataset_id": "population-estimates",
                         "id": "test-item-1",
-                        "last_updated":"2021-01-01T00:00:00Z",
+                        "last_updated": "2021-01-01T00:00:00Z",
                         "version": 1,
                         "edition": "hello",
                         "state": "published",
@@ -284,14 +284,14 @@ Feature: Dataset API
             }
             """
 
-  Scenario: GET /datasets/{id}/editions/{edition}/versions in private mode returns all versions for an admin user
-    Given private endpoints are enabled
-    And URL rewriting is enabled
-    And I set the "X-Forwarded-Host" header to "api.example.com"
-    And I set the "X-Forwarded-Path-Prefix" header to "v1"
-    And I am an admin user
-    When I GET "/datasets/population-estimates/editions/hello/versions"
-    Then I should receive the following JSON response with status "200":
+    Scenario: GET /datasets/{id}/editions/{edition}/versions in private mode returns all versions for an admin user
+        Given private endpoints are enabled
+        And URL rewriting is enabled
+        And I set the "X-Forwarded-Host" header to "api.example.com"
+        And I set the "X-Forwarded-Path-Prefix" header to "v1"
+        And I am an admin user
+        When I GET "/datasets/population-estimates/editions/hello/versions"
+        Then I should receive the following JSON response with status "200":
             """
             {
                 "count": 3,
@@ -299,7 +299,7 @@ Feature: Dataset API
                     {
                         "dataset_id": "population-estimates",
                         "id": "test-item-4",
-                        "last_updated":"2021-01-01T00:00:03Z",
+                        "last_updated": "2021-01-01T00:00:03Z",
                         "version": 4,
                         "state": "published",
                         "links": {
@@ -316,7 +316,7 @@ Feature: Dataset API
                     {
                         "dataset_id": "population-estimates",
                         "id": "test-item-2",
-                        "last_updated":"2021-01-01T00:00:01Z",
+                        "last_updated": "2021-01-01T00:00:01Z",
                         "version": 2,
                         "state": "associated",
                         "links": {
@@ -332,7 +332,7 @@ Feature: Dataset API
                     {
                         "dataset_id": "population-estimates",
                         "id": "test-item-1",
-                        "last_updated":"2021-01-01T00:00:00Z",
+                        "last_updated": "2021-01-01T00:00:00Z",
                         "version": 1,
                         "state": "published",
                         "links": {
@@ -352,14 +352,14 @@ Feature: Dataset API
             }
             """
 
-  Scenario: GET /datasets/{id}/editions/{edition}/versions in private mode returns all versions for a publisher user
-    Given private endpoints are enabled
-    And URL rewriting is enabled
-    And I set the "X-Forwarded-Host" header to "api.example.com"
-    And I set the "X-Forwarded-Path-Prefix" header to "v1"
-    And I am a publisher user
-    When I GET "/datasets/population-estimates/editions/hello/versions"
-    Then I should receive the following JSON response with status "200":
+    Scenario: GET /datasets/{id}/editions/{edition}/versions in private mode returns all versions for a publisher user
+        Given private endpoints are enabled
+        And URL rewriting is enabled
+        And I set the "X-Forwarded-Host" header to "api.example.com"
+        And I set the "X-Forwarded-Path-Prefix" header to "v1"
+        And I am a publisher user
+        When I GET "/datasets/population-estimates/editions/hello/versions"
+        Then I should receive the following JSON response with status "200":
             """
             {
                 "count": 3,
@@ -367,7 +367,7 @@ Feature: Dataset API
                     {
                         "dataset_id": "population-estimates",
                         "id": "test-item-4",
-                        "last_updated":"2021-01-01T00:00:03Z",
+                        "last_updated": "2021-01-01T00:00:03Z",
                         "version": 4,
                         "state": "published",
                         "links": {
@@ -384,7 +384,7 @@ Feature: Dataset API
                     {
                         "dataset_id": "population-estimates",
                         "id": "test-item-2",
-                        "last_updated":"2021-01-01T00:00:01Z",
+                        "last_updated": "2021-01-01T00:00:01Z",
                         "version": 2,
                         "state": "associated",
                         "links": {
@@ -400,7 +400,7 @@ Feature: Dataset API
                     {
                         "dataset_id": "population-estimates",
                         "id": "test-item-1",
-                        "last_updated":"2021-01-01T00:00:00Z",
+                        "last_updated": "2021-01-01T00:00:00Z",
                         "version": 1,
                         "state": "published",
                         "links": {
@@ -420,11 +420,11 @@ Feature: Dataset API
             }
             """
 
-  Scenario: GET /datasets/{id}/editions/{edition}/versions in private mode returns all versions
-    Given private endpoints are enabled
-    And I am an admin user
-    When I GET "/datasets/population-estimates/editions/hello/versions"
-    Then I should receive the following JSON response with status "200":
+    Scenario: GET /datasets/{id}/editions/{edition}/versions in private mode returns all versions
+        Given private endpoints are enabled
+        And I am an admin user
+        When I GET "/datasets/population-estimates/editions/hello/versions"
+        Then I should receive the following JSON response with status "200":
             """
             {
                 "count": 3,
@@ -432,7 +432,7 @@ Feature: Dataset API
                     {
                         "dataset_id": "population-estimates",
                         "id": "test-item-4",
-                        "last_updated":"2021-01-01T00:00:03Z",
+                        "last_updated": "2021-01-01T00:00:03Z",
                         "version": 4,
                         "state": "published",
                         "links": {
@@ -449,7 +449,7 @@ Feature: Dataset API
                     {
                         "dataset_id": "population-estimates",
                         "id": "test-item-2",
-                        "last_updated":"2021-01-01T00:00:01Z",
+                        "last_updated": "2021-01-01T00:00:01Z",
                         "version": 2,
                         "state": "associated",
                         "links": {
@@ -465,7 +465,7 @@ Feature: Dataset API
                     {
                         "dataset_id": "population-estimates",
                         "id": "test-item-1",
-                        "last_updated":"2021-01-01T00:00:00Z",
+                        "last_updated": "2021-01-01T00:00:00Z",
                         "version": 1,
                         "state": "published",
                         "links": {
@@ -485,149 +485,149 @@ Feature: Dataset API
             }
             """
 
-  Scenario: GET versions for unknown dataset returns not found error
-    When I GET "/datasets/unknown-dataset/editions/hello/versions"
-    Then the HTTP status code should be "404"
-    And I should receive the following response:
+    Scenario: GET versions for unknown dataset returns not found error
+        When I GET "/datasets/unknown-dataset/editions/hello/versions"
+        Then the HTTP status code should be "404"
+        And I should receive the following response:
             """
             dataset not found
             """
 
-  Scenario: GET versions for unknown edition returns not found error
-    When I GET "/datasets/population-estimates/editions/unknown/versions"
-    Then the HTTP status code should be "404"
-    And I should receive the following response:
+    Scenario: GET versions for unknown edition returns not found error
+        When I GET "/datasets/population-estimates/editions/unknown/versions"
+        Then the HTTP status code should be "404"
+        And I should receive the following response:
             """
             edition not found
             """
 
-  Scenario: GET versions for edition with no versions returns not found error
-    When I GET "/datasets/population-estimates/editions/edition-with-no-versions/versions"
-    Then the HTTP status code should be "404"
-    And I should receive the following response:
+    Scenario: GET versions for edition with no versions returns not found error
+        When I GET "/datasets/population-estimates/editions/edition-with-no-versions/versions"
+        Then the HTTP status code should be "404"
+        And I should receive the following response:
             """
             version not found
             """
 
-  Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} in public mode returns the version
-    And URL rewriting is enabled
-    And I set the "X-Forwarded-Host" header to "api.example.com"
-    And I set the "X-Forwarded-Path-Prefix" header to "v1"
-    When I GET "/datasets/population-estimates/editions/hello/versions/4"
-    Then I should receive the following JSON response with status "200":
-        """
-        {
-            "id": "test-item-4",
-            "last_updated":"2021-01-01T00:00:03Z",
-            "version": 4,
-            "state": "published",
-            "links": {
-                "dataset": {
-                    "id": "population-estimates"
-                },
-                "self": {
-                    "href": "https://api.example.com/v1/datasets/population-estimates/editions/hello/versions/4"
-                }
-            },
-            "edition": "hello",
-            "lowest_geography": "ltla"
-        }
-        """
-    And the response header "ETag" should be "etag-test-item-4"
-
-  Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} in public mode returns the version
-    When I GET "/datasets/population-estimates/editions/hello/versions/4"
-    Then I should receive the following JSON response with status "200":
-        """
-        {
-            "id": "test-item-4",
-            "last_updated":"2021-01-01T00:00:03Z",
-            "version": 4,
-            "state": "published",
-            "links": {
-                "dataset": {
-                    "id": "population-estimates"
-                },
-                "self": {
-                    "href": "/datasets/population-estimates/editions/hello/versions/4"
-                }
-            },
-            "edition": "hello",
-            "lowest_geography": "ltla"
-        }
-        """
-    And the response header "ETag" should be "etag-test-item-4"
-
-  Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} in private mode returns the version
-    Given private endpoints are enabled
-    And URL rewriting is enabled
-    And I set the "X-Forwarded-Host" header to "api.example.com"
-    And I set the "X-Forwarded-Path-Prefix" header to "v1"
-    And I am an admin user
-    When I GET "/datasets/population-estimates/editions/hello/versions/2"
-    Then I should receive the following JSON response with status "200":
-        """
-        {
-            "id": "test-item-2",
-            "last_updated":"2021-01-01T00:00:01Z",
-            "version": 2,
-            "state": "associated",
-            "links": {
-                "dataset": {
-                    "id": "population-estimates"
-                },
-                "self": {
-                    "href": "https://api.example.com/v1/datasets/population-estimates/editions/hello/versions/2"
-                }
-            },
-            "edition": "hello"
-        }
-        """
-    And the response header "ETag" should be "etag-test-item-2"
-
-  Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} in private mode returns the version
-    Given private endpoints are enabled
-    And I am an admin user
-    When I GET "/datasets/population-estimates/editions/hello/versions/2"
-    Then I should receive the following JSON response with status "200":
-        """
-        {
-            "id": "test-item-2",
-            "last_updated":"2021-01-01T00:00:01Z",
-            "version": 2,
-            "state": "associated",
-            "links": {
-                "dataset": {
-                    "id": "population-estimates"
-                },
-                "self": {
-                    "href": "/datasets/population-estimates/editions/hello/versions/2"
-                }
-            },
-            "edition": "hello"
-        }
-        """
-    And the response header "ETag" should be "etag-test-item-2"
-
-  Scenario: PUT versions for CMD dataset produces Kafka event and returns OK
-    Given private endpoints are enabled
-    And I am an admin user
-    And I have a real kafka container with topic "filter-job-submitted"
-    When I PUT "/datasets/population-estimates/editions/hellov2/versions/3"
+    Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} in public mode returns the version
+        And URL rewriting is enabled
+        And I set the "X-Forwarded-Host" header to "api.example.com"
+        And I set the "X-Forwarded-Path-Prefix" header to "v1"
+        When I GET "/datasets/population-estimates/editions/hello/versions/4"
+        Then I should receive the following JSON response with status "200":
             """
             {
-              "instance_id":"test-item-3",
-              "license":"ONS",
-              "release_date":"2017-04-04",
-              "state":"associated",
-              "collection_id":"bla"
+                "id": "test-item-4",
+                "last_updated": "2021-01-01T00:00:03Z",
+                "version": 4,
+                "state": "published",
+                "links": {
+                    "dataset": {
+                        "id": "population-estimates"
+                    },
+                    "self": {
+                        "href": "https://api.example.com/v1/datasets/population-estimates/editions/hello/versions/4"
+                    }
+                },
+                "edition": "hello",
+                "lowest_geography": "ltla"
             }
             """
-    And these generate downloads events are produced:
-      | InstanceID  | DatasetID            | Edition | Version | FilterOutputID |
-      | test-item-3 | population-estimates | hellov2 | 3       |                |
-    Then I should receive the following JSON response with status "200":
-        """
+        And the response header "ETag" should be "etag-test-item-4"
+
+    Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} in public mode returns the version
+        When I GET "/datasets/population-estimates/editions/hello/versions/4"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "id": "test-item-4",
+                "last_updated": "2021-01-01T00:00:03Z",
+                "version": 4,
+                "state": "published",
+                "links": {
+                    "dataset": {
+                        "id": "population-estimates"
+                    },
+                    "self": {
+                        "href": "/datasets/population-estimates/editions/hello/versions/4"
+                    }
+                },
+                "edition": "hello",
+                "lowest_geography": "ltla"
+            }
+            """
+        And the response header "ETag" should be "etag-test-item-4"
+
+    Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} in private mode returns the version
+        Given private endpoints are enabled
+        And URL rewriting is enabled
+        And I set the "X-Forwarded-Host" header to "api.example.com"
+        And I set the "X-Forwarded-Path-Prefix" header to "v1"
+        And I am an admin user
+        When I GET "/datasets/population-estimates/editions/hello/versions/2"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "id": "test-item-2",
+                "last_updated": "2021-01-01T00:00:01Z",
+                "version": 2,
+                "state": "associated",
+                "links": {
+                    "dataset": {
+                        "id": "population-estimates"
+                    },
+                    "self": {
+                        "href": "https://api.example.com/v1/datasets/population-estimates/editions/hello/versions/2"
+                    }
+                },
+                "edition": "hello"
+            }
+            """
+        And the response header "ETag" should be "etag-test-item-2"
+
+    Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} in private mode returns the version
+        Given private endpoints are enabled
+        And I am an admin user
+        When I GET "/datasets/population-estimates/editions/hello/versions/2"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "id": "test-item-2",
+                "last_updated": "2021-01-01T00:00:01Z",
+                "version": 2,
+                "state": "associated",
+                "links": {
+                    "dataset": {
+                        "id": "population-estimates"
+                    },
+                    "self": {
+                        "href": "/datasets/population-estimates/editions/hello/versions/2"
+                    }
+                },
+                "edition": "hello"
+            }
+            """
+        And the response header "ETag" should be "etag-test-item-2"
+
+    Scenario: PUT versions for CMD dataset produces Kafka event and returns OK
+        Given private endpoints are enabled
+        And I am an admin user
+        And I have a real kafka container with topic "filter-job-submitted"
+        When I PUT "/datasets/population-estimates/editions/hellov2/versions/3"
+            """
+            {
+                "instance_id": "test-item-3",
+                "license": "ONS",
+                "release_date": "2017-04-04",
+                "state": "associated",
+                "collection_id": "bla"
+            }
+            """
+        And these generate downloads events are produced:
+            | InstanceID  | DatasetID            | Edition | Version | FilterOutputID |
+            | test-item-3 | population-estimates | hellov2 | 3       |                |
+        Then I should receive the following JSON response with status "200":
+            """
             {
                 "collection_id": "bla",
                 "dataset_id": "population-estimates",
@@ -635,38 +635,38 @@ Feature: Dataset API
                 "last_updated": "0001-01-01T00:00:00Z",
                 "links": {
                     "dataset": {
-                    "id": "population-estimates"
+                        "id": "population-estimates"
                     },
                     "self": {
-                    "href": "/datasets/population-estimates/editions/hellov2/versions/3"
+                        "href": "/datasets/population-estimates/editions/hellov2/versions/3"
                     }
                 },
                 "release_date": "2017-04-04",
                 "edition": "hellov2",
                 "state": "associated"
             }
-        """
+            """
 
 
-  Scenario: PUT versions for Cantabular dataset produces Kafka event and returns OK
-    Given private endpoints are enabled
-    And I am an admin user
-    And I have a real kafka container with topic "cantabular-export-start"
-    When I PUT "/datasets/test-cantabular-dataset-1/editions/2021/versions/1"
+    Scenario: PUT versions for Cantabular dataset produces Kafka event and returns OK
+        Given private endpoints are enabled
+        And I am an admin user
+        And I have a real kafka container with topic "cantabular-export-start"
+        When I PUT "/datasets/test-cantabular-dataset-1/editions/2021/versions/1"
             """
             {
-              "instance_id":"test-cantabular-version-1",
-              "license":"ONS",
-              "release_date":"2017-04-04",
-              "state":"associated",
-              "collection_id":"bla"
+                "instance_id": "test-cantabular-version-1",
+                "license": "ONS",
+                "release_date": "2017-04-04",
+                "state": "associated",
+                "collection_id": "bla"
             }
             """
-    And these cantabular generator downloads events are produced:
-      | InstanceID                | DatasetID                 | Edition | Version |FilterOutputID| Dimensions |
-      | test-cantabular-version-1 | test-cantabular-dataset-1 | 2021    | 1       |              | []         |
-    Then I should receive the following JSON response with status "200":
-        """
+        And these cantabular generator downloads events are produced:
+            | InstanceID                | DatasetID                 | Edition | Version | FilterOutputID | Dimensions |
+            | test-cantabular-version-1 | test-cantabular-dataset-1 | 2021    | 1       |                | []         |
+        Then I should receive the following JSON response with status "200":
+            """
             {
                 "collection_id": "bla",
                 "dataset_id": "test-cantabular-dataset-1",
@@ -674,134 +674,134 @@ Feature: Dataset API
                 "last_updated": "0001-01-01T00:00:00Z",
                 "links": {
                     "dataset": {
-                    "id": "test-cantabular-dataset-1"
+                        "id": "test-cantabular-dataset-1"
                     },
                     "self": {
-                    "href": "/datasets/test-cantabular-dataset-1/editions/2021/versions/1"
+                        "href": "/datasets/test-cantabular-dataset-1/editions/2021/versions/1"
                     }
                 },
                 "release_date": "2017-04-04",
                 "edition": "2021",
                 "state": "associated"
             }
-        """
+            """
 
 
-  Scenario: PUT published version for Cantabular dataset produces Kafka event and returns OK for an admin user
-    Given private endpoints are enabled
-    And I am an admin user
-    And I have a real kafka container with topic "cantabular-export-start"
-    And these versions need to be published:
+    Scenario: PUT published version for Cantabular dataset produces Kafka event and returns OK for an admin user
+        Given private endpoints are enabled
+        And I am an admin user
+        And I have a real kafka container with topic "cantabular-export-start"
+        And these versions need to be published:
             """
-              [
-               {
-                 "version_id": "test-cantabular-version-2",
-                 "version_number": "1"
-               }
-              ]
+            [
+                {
+                    "version_id": "test-cantabular-version-2",
+                    "version_number": "1"
+                }
+            ]
             """
-    When I PUT "/datasets/test-cantabular-dataset-2/editions/2021/versions/1"
+        When I PUT "/datasets/test-cantabular-dataset-2/editions/2021/versions/1"
             """
             {
-              "instance_id": "test-cantabular-version-2",
-              "license": "ONS",
-              "release_date": "2017-04-04",
-              "state": "published",
-              "collection_id": "bla",
-              "links": {
-                "version": {
-                  "id": "1",
-                  "href": "/datasets/test-cantabular-dataset-2/editions/2021/versions/1"
+                "instance_id": "test-cantabular-version-2",
+                "license": "ONS",
+                "release_date": "2017-04-04",
+                "state": "published",
+                "collection_id": "bla",
+                "links": {
+                    "version": {
+                        "id": "1",
+                        "href": "/datasets/test-cantabular-dataset-2/editions/2021/versions/1"
+                    }
                 }
-              }
             }
             """
-    And these cantabular generator downloads events are produced:
-      | InstanceID                | DatasetID                 | Edition | Version |FilterOutputID| Dimensions |
-      | test-cantabular-version-2 | test-cantabular-dataset-2 | 2021    | 1       |              | []         |
-    Then I should receive the following JSON response with status "200":
-        """
+        And these cantabular generator downloads events are produced:
+            | InstanceID                | DatasetID                 | Edition | Version | FilterOutputID | Dimensions |
+            | test-cantabular-version-2 | test-cantabular-dataset-2 | 2021    | 1       |                | []         |
+        Then I should receive the following JSON response with status "200":
+            """
             {
                 "dataset_id": "test-cantabular-dataset-2",
                 "downloads": {
                     "csv": {
-                    "href": "/downloads/datasets/test-cantabular-dataset-2/editions/2021/versions/1.csv",
-                    "size": "1"
+                        "href": "/downloads/datasets/test-cantabular-dataset-2/editions/2021/versions/1.csv",
+                        "size": "1"
                     }
                 },
                 "id": "test-cantabular-version-2",
                 "last_updated": "0001-01-01T00:00:00Z",
                 "links": {
                     "dataset": {
-                    "id": "test-cantabular-dataset-2"
+                        "id": "test-cantabular-dataset-2"
                     },
                     "self": {
-                    "href": "/datasets/test-cantabular-dataset-2/editions/2021/versions/1"
+                        "href": "/datasets/test-cantabular-dataset-2/editions/2021/versions/1"
                     }
                 },
                 "release_date": "2017-04-04",
                 "edition": "2021",
                 "state": "published"
             }
-        """
+            """
 
     Scenario: PUT published version for Cantabular dataset produces Kafka event and returns OK for a publisher user
-    Given private endpoints are enabled
-    And I am a publisher user
-    And I have a real kafka container with topic "cantabular-export-start"
-    And these versions need to be published:
+        Given private endpoints are enabled
+        And I am a publisher user
+        And I have a real kafka container with topic "cantabular-export-start"
+        And these versions need to be published:
             """
-              [
-               {
-                 "version_id": "test-cantabular-version-2",
-                 "version_number": "1"
-               }
-              ]
+            [
+                {
+                    "version_id": "test-cantabular-version-2",
+                    "version_number": "1"
+                }
+            ]
             """
-    When I PUT "/datasets/test-cantabular-dataset-2/editions/2021/versions/1"
+        When I PUT "/datasets/test-cantabular-dataset-2/editions/2021/versions/1"
             """
             {
-              "instance_id": "test-cantabular-version-2",
-              "license": "ONS",
-              "release_date": "2017-04-04",
-              "state": "published",
-              "collection_id": "bla",
-              "links": {
-                "version": {
-                  "id": "1",
-                  "href": "/datasets/test-cantabular-dataset-2/editions/2021/versions/1"
+                "instance_id": "test-cantabular-version-2",
+                "license": "ONS",
+                "release_date": "2017-04-04",
+                "state": "published",
+                "collection_id": "bla",
+                "links": {
+                    "version": {
+                        "id": "1",
+                        "href": "/datasets/test-cantabular-dataset-2/editions/2021/versions/1"
+                    }
                 }
-              }
             }
             """
-    And these cantabular generator downloads events are produced:
-      | InstanceID                | DatasetID                 | Edition | Version |FilterOutputID| Dimensions |
-      | test-cantabular-version-2 | test-cantabular-dataset-2 | 2021    | 1       |              | []         |
-    Then I should receive the following JSON response with status "200":
-        """
+        And these cantabular generator downloads events are produced:
+            | InstanceID                | DatasetID                 | Edition | Version | FilterOutputID | Dimensions |
+            | test-cantabular-version-2 | test-cantabular-dataset-2 | 2021    | 1       |                | []         |
+        Then I should receive the following JSON response with status "200":
+            """
             {
                 "dataset_id": "test-cantabular-dataset-2",
                 "downloads": {
                     "csv": {
-                    "href": "/downloads/datasets/test-cantabular-dataset-2/editions/2021/versions/1.csv",
-                    "size": "1"
+                        "href": "/downloads/datasets/test-cantabular-dataset-2/editions/2021/versions/1.csv",
+                        "size": "1"
                     }
                 },
                 "id": "test-cantabular-version-2",
                 "last_updated": "0001-01-01T00:00:00Z",
                 "links": {
                     "dataset": {
-                    "id": "test-cantabular-dataset-2"
+                        "id": "test-cantabular-dataset-2"
                     },
                     "self": {
-                    "href": "/datasets/test-cantabular-dataset-2/editions/2021/versions/1"
+                        "href": "/datasets/test-cantabular-dataset-2/editions/2021/versions/1"
                     }
                 },
                 "release_date": "2017-04-04",
                 "edition": "2021",
                 "state": "published"
             }
-        """
+            """
 
     Scenario: PUT version fails when trying to update edition-id on cantabular dataset
         Given private endpoints are enabled
@@ -835,3 +835,35 @@ Feature: Dataset API
             """
             unable to update edition-id, invalid dataset type
             """
+
+    Scenario: Viewer with permission to read the dataset version receives 200
+        Given private endpoints are enabled
+        Given I am a viewer user with permission
+        And I have viewer access to the dataset "population-estimates/hello"
+        When I GET "/datasets/population-estimates/editions/hello/versions/4"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "edition": "hello",
+                "id": "test-item-4",
+                "last_updated": "2021-01-01T00:00:03Z",
+                "links": {
+                    "dataset": {
+                        "id": "population-estimates"
+                    },
+                    "self": {
+                        "href": "/datasets/population-estimates/editions/hello/versions/4"
+                    }
+                },
+                "lowest_geography": "ltla",
+                "state": "published",
+                "version": 4
+            }
+            """
+
+    Scenario: Viewer with no permission to read the dataset version receives 403
+        Given private endpoints are enabled
+        And I am a viewer user without permission
+        And I don't have viewer access to the dataset "population-estimates/hello"
+        When I GET "/datasets/population-estimates/editions/hello/versions/4"
+        Then the HTTP status code should be "403"

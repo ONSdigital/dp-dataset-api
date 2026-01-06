@@ -147,7 +147,7 @@ Feature: GET /dataset-editions
                 }
             ]
             """
-        
+
     Scenario: GET /dataset-editions returns all versions and returns 200 for an admin user
         Given private endpoints are enabled
         And I am an admin user
@@ -157,18 +157,18 @@ Feature: GET /dataset-editions
             {
                 "count": 6,
                 "items": [
-                     {
-                         "dataset_id": "static-dataset-2",
-                         "title": "Static Dataset 2",
-                         "description": "Static Dataset 2 Description",
-                         "edition": "February",
-                         "edition_title": "February Edition Title",
-                         "latest_version": {
+                    {
+                        "dataset_id": "static-dataset-2",
+                        "title": "Static Dataset 2",
+                        "description": "Static Dataset 2 Description",
+                        "edition": "February",
+                        "edition_title": "February Edition Title",
+                        "latest_version": {
                             "href": "/datasets/static-dataset-2/editions/February/versions/1",
                             "id": "1"
                         },
-                         "release_date": "2025-02-01T06:00:00.000Z",
-                         "state": "published"
+                        "release_date": "2025-02-01T06:00:00.000Z",
+                        "state": "published"
                     },
                     {
                         "dataset_id": "static-dataset-4",
@@ -251,18 +251,18 @@ Feature: GET /dataset-editions
             {
                 "count": 6,
                 "items": [
-                     {
-                         "dataset_id": "static-dataset-2",
-                         "title": "Static Dataset 2",
-                         "description": "Static Dataset 2 Description",
-                         "edition": "February",
-                         "edition_title": "February Edition Title",
-                         "latest_version": {
+                    {
+                        "dataset_id": "static-dataset-2",
+                        "title": "Static Dataset 2",
+                        "description": "Static Dataset 2 Description",
+                        "edition": "February",
+                        "edition_title": "February Edition Title",
+                        "latest_version": {
                             "href": "/datasets/static-dataset-2/editions/February/versions/1",
                             "id": "1"
                         },
-                         "release_date": "2025-02-01T06:00:00.000Z",
-                         "state": "published"
+                        "release_date": "2025-02-01T06:00:00.000Z",
+                        "state": "published"
                     },
                     {
                         "dataset_id": "static-dataset-4",
@@ -377,7 +377,7 @@ Feature: GET /dataset-editions
                 "total_count": 2
             }
             """
-    
+
     Scenario: GET /dataset-editions?published=true returns published versions only and returns 200
         Given private endpoints are enabled
         And I am an admin user
@@ -387,18 +387,18 @@ Feature: GET /dataset-editions
             {
                 "count": 1,
                 "items": [
-                     {
-                         "dataset_id": "static-dataset-2",
-                         "title": "Static Dataset 2",
-                         "description": "Static Dataset 2 Description",
-                         "edition": "February",
-                         "edition_title": "February Edition Title",
-                         "latest_version": {
+                    {
+                        "dataset_id": "static-dataset-2",
+                        "title": "Static Dataset 2",
+                        "description": "Static Dataset 2 Description",
+                        "edition": "February",
+                        "edition_title": "February Edition Title",
+                        "latest_version": {
                             "href": "/datasets/static-dataset-2/editions/February/versions/1",
                             "id": "1"
                         },
-                         "release_date": "2025-02-01T06:00:00.000Z",
-                         "state": "published"
+                        "release_date": "2025-02-01T06:00:00.000Z",
+                        "state": "published"
                     }
                 ],
                 "limit": 20,
@@ -497,7 +497,7 @@ Feature: GET /dataset-editions
             """
             invalid query parameter
             """
-    
+
     Scenario: GET /dataset-editions with state and published parameters
         Given private endpoints are enabled
         And I am an admin user
@@ -507,7 +507,7 @@ Feature: GET /dataset-editions
             """
             cannot request state and published parameters at the same time
             """
-    
+
     Scenario: GET /dataset-editions returns 404 when there are no editions of static datasets
         Given private endpoints are enabled
         And I am an admin user
@@ -518,7 +518,7 @@ Feature: GET /dataset-editions
             """
             no versions were found
             """
-    
+
     Scenario: GET /dataset-editions?state=associated returns 404 when there are no editions of static datasets that match the given state
         Given private endpoints are enabled
         And I am an admin user
@@ -552,8 +552,55 @@ Feature: GET /dataset-editions
             """
             no versions were found
             """
-    
+
     Scenario: GET /dataset-editions returns 401 when user is not authorized
         Given private endpoints are enabled
         When I GET "/dataset-editions"
         Then the HTTP status code should be "401"
+
+    Scenario: Viewer with permission to read the dataset editions receives 200
+        Given private endpoints are enabled
+        Given I am a viewer user without permission
+        And I have viewer access to the dataset "static-dataset-4"
+        When I GET "/datasets/static-dataset-4/editions"
+        Then I should receive the following JSON response with status "200":
+            """
+        {
+          "items": [
+            {
+              "next": {
+                "edition": "May",
+                "edition_title": "May Edition Title",
+                "links": {
+                  "dataset": { "id": "static-dataset-4" },
+                  "latest_version": {
+                    "href": "/datasets/static-dataset-4/editions/May/versions/1",
+                    "id": "1"
+                  },
+                  "self": {
+                    "href": "/datasets/static-dataset-4/editions/May",
+                    "id": "May"
+                  },
+                  "versions": {
+                    "href": "/datasets/static-dataset-4/editions/May/versions"
+                  }
+                },
+                "release_date": "2025-05-01T07:00:00.000Z",
+                "state": "associated",
+                "version": 1
+              }
+            }
+          ],
+          "count": 1,
+          "limit": 20,
+          "offset": 0,
+          "total_count": 1
+        }
+        """
+
+    Scenario: Viewer with no permission to read the dataset editions receives 403
+        Given private endpoints are enabled
+        And I am a viewer user without permission
+        And I don't have viewer access to the dataset "static-dataset-3"
+        When I GET "/datasets/static-dataset-3/editions"
+        Then the HTTP status code should be "403"
