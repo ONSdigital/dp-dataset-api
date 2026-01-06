@@ -570,7 +570,7 @@ Scenario: POST Creating an edition with spaces in the edition ID should return 4
             {
                 "errors": [
                     {
-                        "code": "spaces are not allowed in the ID field",
+                        "code": "ErrSpacesNotAllowed",
                         "description": "spaces are not allowed in the ID field"
                     }
                 ]

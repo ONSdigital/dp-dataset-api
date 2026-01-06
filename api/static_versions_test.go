@@ -2235,7 +2235,8 @@ func TestCreateVersion_Failure(t *testing.T) {
 
 		So(success, ShouldBeNil)
 		So(errResp.Status, ShouldEqual, http.StatusBadRequest)
-		So(errResp.Errors[0].Code, ShouldEqual, errs.ErrSpacesNotAllowedInID.Error())
+		So(errResp.Errors[0].Code, ShouldEqual, models.ErrNoSpacesAllowedError)
+		So(errResp.Errors[0].Description, ShouldEqual, errs.ErrSpacesNotAllowedInID.Error())
 	})
 
 	Convey("When the JSON body contains an edition with spaces for static type", t, func() {
@@ -2271,7 +2272,8 @@ func TestCreateVersion_Failure(t *testing.T) {
 
 		So(success, ShouldBeNil)
 		So(errResp.Status, ShouldEqual, http.StatusBadRequest)
-		So(errResp.Errors[0].Code, ShouldEqual, errs.ErrSpacesNotAllowedInID.Error())
+		So(errResp.Errors[0].Code, ShouldEqual, models.ErrNoSpacesAllowedError)
+		So(errResp.Errors[0].Description, ShouldEqual, errs.ErrSpacesNotAllowedInID.Error())
 	})
 
 	Convey("When the JSON body contains a dataset_id with spaces for static type", t, func() {
@@ -2307,6 +2309,7 @@ func TestCreateVersion_Failure(t *testing.T) {
 
 		So(success, ShouldBeNil)
 		So(errResp.Status, ShouldEqual, http.StatusBadRequest)
-		So(errResp.Errors[0].Code, ShouldEqual, errs.ErrSpacesNotAllowedInID.Error())
+		So(errResp.Errors[0].Code, ShouldEqual, models.ErrNoSpacesAllowedError)
+		So(errResp.Errors[0].Description, ShouldEqual, errs.ErrSpacesNotAllowedInID.Error())
 	})
 }

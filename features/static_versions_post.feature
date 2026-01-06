@@ -422,7 +422,7 @@ Feature: Static Dataset Versions POST API
             {
                 "errors": [
                     {
-                        "code": "spaces are not allowed in the ID field",
+                        "code": "ErrSpacesNotAllowed",
                         "description": "spaces are not allowed in the ID field"
                     }
                 ]
