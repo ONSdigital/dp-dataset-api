@@ -519,11 +519,12 @@ Feature: Static Dataset Versions PUT API
         And these kafka messages are produced:
           """
           {
-            "content_type": "static",
+            "content_type": "dataset",
             "dataset_id": "static-dataset-published",
             "edition": "2025",
             "title": "2025 Edition",
-            "uri": "/datasets/static-dataset-published/editions/2025/versions/1"
+            "uri": "/datasets/static-dataset-published/editions/2025/versions/1",
+            "release_date": "2025-01-01T09:00:00.000Z"
           }
           """
         And the following URL prefixes are purged by cloudflare:
