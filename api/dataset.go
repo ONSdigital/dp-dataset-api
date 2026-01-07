@@ -30,6 +30,7 @@ var (
 		errs.ErrTypeMismatch:               true,
 		errs.ErrDatasetTypeInvalid:         true,
 		errs.ErrInvalidQueryParameter:      true,
+		errs.ErrSpacesNotAllowedInID:       true,
 	}
 
 	// errors that should return a 403 status
@@ -366,6 +367,13 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if dataset.Type == models.Static.String() {
+		if err := utils.ValidateIDNoSpaces(datasetID); err != nil {
+			log.Error(ctx, "addDatasetNew endpoint: dataset ID contains spaces", err, logData)
+			handleDatasetAPIErr(ctx, err, w, logData)
+			return
+		}
+	}
 	_, err = api.dataStore.Backend.GetDataset(ctx, datasetID)
 	if err == nil {
 		log.Error(ctx, "addDatasetNew endpoint: unable to create a dataset that already exists", errs.ErrAddDatasetAlreadyExists, logData)
@@ -467,6 +475,13 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 		}
 
 		dataset.Type = currentDataset.Next.Type
+
+		if dataset.Type == models.Static.String() && dataset.ID != "" {
+			if err := utils.ValidateIDNoSpaces(dataset.ID); err != nil {
+				log.Error(ctx, "putDataset endpoint: dataset ID in request body contains spaces", err, data)
+				return nil, err
+			}
+		}
 
 		models.CleanDataset(dataset)
 

@@ -43,6 +43,7 @@ var (
 		models.ErrVersionStateInvalid:                  true,
 		errs.ErrInvalidBody:                            true,
 		errs.ErrInvalidQueryParameter:                  true,
+		errs.ErrSpacesNotAllowedInID:                   true,
 	}
 
 	// HTTP 500 responses with a specific message
@@ -310,6 +311,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 	return models.NewSuccessResponse(versionBytes, http.StatusOK, responseHeaders), nil
 }
 
+//nolint:gocognit,gocyclo // high complexity accepted for this handler
 func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	defer dphttp.DrainBody(r)
 
@@ -341,16 +343,28 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Populate distributions (static only)
+	// check for edition ID/title conflicts, spaces in IDs for static datasets and Populate distributions (static only)
 	if version.Type == models.Static.String() {
 		if err := utils.PopulateDistributions(version); err != nil {
 			handleVersionAPIErr(ctx, err, w, data)
 			return
 		}
-	}
 
-	// Only check for edition ID/title conflicts for static datasets
-	if version.Type == models.Static.String() {
+		if version.Edition != "" {
+			if err := utils.ValidateIDNoSpaces(version.Edition); err != nil {
+				log.Error(ctx, "putVersion endpoint: edition ID in request body contains spaces", err, data)
+				handleVersionAPIErr(ctx, err, w, data)
+				return
+			}
+		}
+
+		if version.DatasetID != "" {
+			if err := utils.ValidateIDNoSpaces(version.DatasetID); err != nil {
+				log.Error(ctx, "putVersion endpoint: edition ID in request body contains spaces", err, data)
+				handleVersionAPIErr(ctx, err, w, data)
+				return
+			}
+		}
 		if version.Edition != "" || version.EditionTitle != "" {
 			versionStr := vars["version"]
 
