@@ -2,12 +2,15 @@ module github.com/ONSdigital/dp-dataset-api
 
 go 1.24.0
 
+// TODO: Remove once dis-bundle-api has been updated to use dp-component-test v1.0.1-alpha
+replace github.com/ONSdigital/dp-component-test => github.com/ONSdigital/dp-component-test v0.28.0
+
 require (
 	github.com/ONSdigital/dp-api-clients-go v1.43.0
 	github.com/ONSdigital/dp-api-clients-go/v2 v2.270.0
 	github.com/ONSdigital/dp-assistdog v0.0.1
-	github.com/ONSdigital/dp-authorisation/v2 v2.32.3
-	github.com/ONSdigital/dp-component-test v0.28.0
+	github.com/ONSdigital/dp-authorisation/v2 v2.33.1
+	github.com/ONSdigital/dp-component-test v1.0.1-alpha
 	github.com/ONSdigital/dp-files-api v1.14.0
 	github.com/ONSdigital/dp-graph/v2 v2.18.0
 	github.com/ONSdigital/dp-healthcheck v1.6.4
@@ -16,7 +19,7 @@ require (
 	github.com/ONSdigital/dp-mongodb/v3 v3.8.0
 	github.com/ONSdigital/dp-net/v3 v3.9.0
 	github.com/ONSdigital/dp-otel-go v0.0.8
-	github.com/ONSdigital/dp-permissions-api v1.3.0
+	github.com/ONSdigital/dp-permissions-api v1.10.1
 	github.com/ONSdigital/log.go/v2 v2.5.0
 	github.com/cloudflare/cloudflare-go/v6 v6.4.0
 	github.com/cucumber/godog v0.15.1
