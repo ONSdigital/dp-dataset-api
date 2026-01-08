@@ -2689,11 +2689,13 @@ definitions:
             * `accredited-official`
             * `official`
             * `official-in-development`
+            * `no-accreditation`
         type: string
         enum:
           - accredited-official
           - official
           - official-in-development
+          - no-accreditation
       release_date:
         description: "The release date of this version of the dataset"
         type: string
