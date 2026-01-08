@@ -60,12 +60,6 @@ const DatasetID = "id"
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit, offset int) (mappedDatasets interface{}, totalCount int, err error) {
 	ctx := r.Context()
 	logData := log.Data{}
-	// attrs, attrsErr := getPermissionAttributesFromRequest(r)
-	// if attrsErr != nil {
-	// 	log.Error(ctx, "getDataset endpoint: failed to build permission attributes", attrsErr, logData)
-	// 	// safest: treat as not authorised (published-only)
-	// 	attrs = nil
-	// }
 
 	authorised := api.checkUserPermission(r, logData, datasetReadPermission, nil)
 	isBasedOnExists := r.URL.Query().Has(IsBasedOn)

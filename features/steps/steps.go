@@ -2,6 +2,10 @@ package steps
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,7 +17,9 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/download"
 	"github.com/ONSdigital/dp-dataset-api/schema"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/uuid"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/cucumber/godog"
@@ -714,9 +720,113 @@ func (c *DatasetComponent) cloudflareIsEnabled() error {
 	return nil
 }
 
+// func GenerateMockIDToken(email string) string {
+
+// 	testSigningKey := []byte("TestSigningKey")
+// 	idClaims := identityApi.IDClaims{
+// 		Sub:           "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+// 		Aud:           "xxxxxxxxxxxxexample",
+// 		EmailVerified: true,
+// 		TokenUse:      "id",
+// 		AuthTime:      1500009400,
+// 		Iss:           "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_example",
+// 		CognitoUser:   "TestONS",
+// 		Exp:           1500013000,
+// 		GivenName:     "Test",
+// 		Iat:           1500009400,
+// 		Email:         email,
+// 	}
+
+// 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, idClaims)
+// 	signedString, err := token.SignedString(testSigningKey)
+// 	if err != nil {
+// 		return ""
+// 	}
+// 	logData := log.Data{}
+
+// 	logData["signedString"] = signedString
+
+// 	fmt.Println("signedString is:", signedString)
+// 	log.Info(context.Background(), "enabling only public endpoints for dataset api", logData)
+
+// 	return signedString
+// }
+
+// func (c *DatasetComponent) viewerJWTToken() error {
+// 	token := "Bearer " + GenerateMockIDToken("viewer1@ons.gov.uk")
+// 	fmt.Println("token is:", token)
+
+// 	err := c.apiFeature.ISetTheHeaderTo("Authorization", token)
+// 	return err
+// }
+
+func (c *DatasetComponent) ensureViewerKeys() error {
+	if c.viewerPrivKey != nil && c.viewerKID != "" {
+		return nil
+	}
+
+	// Generate RSA keypair
+	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return fmt.Errorf("generate viewer RSA key: %w", err)
+	}
+	if err := priv.Validate(); err != nil {
+		return fmt.Errorf("validate viewer RSA key: %w", err)
+	}
+
+	// Create kid
+	kid := uuid.New().String()
+
+	// Convert public key to PKIX DER and base64 encode
+	pubDER, err := x509.MarshalPKIXPublicKey(&priv.PublicKey)
+	if err != nil {
+		return fmt.Errorf("marshal viewer public key: %w", err)
+	}
+
+	if c.Config.AuthConfig.JWTVerificationPublicKeys == nil {
+		c.Config.AuthConfig.JWTVerificationPublicKeys = map[string]string{}
+	}
+	c.Config.AuthConfig.JWTVerificationPublicKeys[kid] = base64.StdEncoding.EncodeToString(pubDER)
+
+	c.viewerPrivKey = priv
+	c.viewerKID = kid
+	return nil
+}
+
+func (c *DatasetComponent) generateViewerAccessToken(email string, groups []string) (string, error) {
+	if err := c.ensureViewerKeys(); err != nil {
+		return "", err
+	}
+
+	now := time.Now().Unix()
+
+	claims := jwt.MapClaims{
+		"sub":            "viewer-sub",
+		"token_use":      "access",
+		"auth_time":      now,
+		"iss":            "https://cognito-idp.eu-west-2.amazonaws.com/eu-west-2_example",
+		"exp":            now + 3600,
+		"iat":            now,
+		"client_id":      "component-test-client",
+		"username":       email,
+		"cognito:groups": groups,
+	}
+
+	t := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	t.Header["kid"] = c.viewerKID
+
+	return t.SignedString(c.viewerPrivKey)
+}
+
 func (c *DatasetComponent) viewerJWTToken() error {
-	err := c.apiFeature.ISetTheHeaderTo("Authorization", "test viewer token")
-	return err
+	token, err := c.generateViewerAccessToken(
+		"viewer1@ons.gov.uk",
+		[]string{"role-viewer"},
+	)
+	if err != nil {
+		return err
+	}
+	return c.apiFeature.ISetTheHeaderTo("Authorization", "Bearer "+token)
 }
 
 func (c *DatasetComponent) viewerHasPreviewAccessToDataset(datasetID string) error {

@@ -2,6 +2,7 @@ package steps
 
 import (
 	"context"
+	"crypto/rsa"
 	"fmt"
 	"net/http"
 	"time"
@@ -44,6 +45,8 @@ type DatasetComponent struct {
 	initialiser             service.Initialiser
 	AuthorisationMiddleware authorisation.Middleware
 	allowedDatasetEditions  map[string]bool
+	viewerPrivKey           *rsa.PrivateKey
+	viewerKID               string
 }
 
 func NewDatasetComponent(mongoURI, zebedeeURL string) (*DatasetComponent, error) {
@@ -330,6 +333,11 @@ func getPermissionsDataset() *permissionsSDK.Bundle {
 					ID: "1",
 				},
 			},
+			"groups/role-viewer": {
+				{
+					ID: "1",
+				},
+			},
 		},
 		"datasets:create": {
 			"groups/role-admin": {
@@ -398,6 +406,11 @@ func getPermissionsDataset() *permissionsSDK.Bundle {
 				},
 			},
 			"groups/role-publisher": {
+				{
+					ID: "1",
+				},
+			},
+			"groups/role-viewer": {
 				{
 					ID: "1",
 				},
