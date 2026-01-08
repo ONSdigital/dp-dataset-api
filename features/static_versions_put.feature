@@ -554,11 +554,12 @@ Feature: Static Dataset Versions PUT API
         And these kafka messages are produced:
           """
           {
-            "content_type": "static",
+            "content_type": "dataset",
             "dataset_id": "static-dataset-published",
             "edition": "2025",
             "title": "2025 Edition",
-            "uri": "/datasets/static-dataset-published/editions/2025/versions/1"
+            "uri": "/datasets/static-dataset-published/editions/2025/versions/1",
+            "release_date": "2025-01-01T09:00:00.000Z"
           }
           """
         And the following URL prefixes are purged by cloudflare:
@@ -753,4 +754,55 @@ Feature: Static Dataset Versions PUT API
         And I should receive the following response:
             """
             distributions[0].format field is invalid
+            """
+
+Scenario: PUT Updating an edition field with spaces should return 404
+        Given private endpoints are enabled
+        And I am an admin user
+        When I PUT "/datasets/static-dataset-update/editions/edition%201/versions/1"
+            """
+            {
+                "state": "approved",
+                "type": "static",
+                "edition": "correct-edition-id"
+            }
+            """
+        Then the HTTP status code should be "404"
+        And I should receive the following response:
+            """
+            version not found
+            """
+    
+Scenario: PUT Updating an edition field with spaces in request body should return 400
+        Given private endpoints are enabled
+        And I am an admin user
+        When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
+            """
+            {
+                "state": "approved",
+                "type": "static",
+                "edition": "edition id with spaces"
+            }
+            """
+        Then the HTTP status code should be "400"
+        And I should receive the following response:
+            """
+            spaces are not allowed in the ID field
+            """
+
+Scenario: PUT Updating an datasetID field with spaces in request body should return 400
+        Given private endpoints are enabled
+        And I am an admin user
+        When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
+            """
+            {
+                "state": "approved",
+                "type": "static",
+                "dataset_id": "dataset id with spaces"
+            }
+            """
+        Then the HTTP status code should be "400"
+        And I should receive the following response:
+            """
+            spaces are not allowed in the ID field
             """
