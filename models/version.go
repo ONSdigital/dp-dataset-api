@@ -225,12 +225,13 @@ const (
 	QualityDesignationAccreditedOfficial    QualityDesignation = "accredited-official"
 	QualityDesignationOfficialInDevelopment QualityDesignation = "official-in-development"
 	QualityDesignationOfficial              QualityDesignation = "official"
+	QualityDesignationNoAccreditation       QualityDesignation = "no-accreditation"
 )
 
 // IsValid validates that the QualityDesignation is a valid enum value
 func (qd *QualityDesignation) IsValid() bool {
 	switch *qd {
-	case QualityDesignationAccreditedOfficial, QualityDesignationOfficialInDevelopment, QualityDesignationOfficial:
+	case QualityDesignationAccreditedOfficial, QualityDesignationOfficialInDevelopment, QualityDesignationOfficial, QualityDesignationNoAccreditation:
 		return true
 	default:
 		return false
