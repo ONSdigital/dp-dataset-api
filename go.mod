@@ -2,7 +2,7 @@ module github.com/ONSdigital/dp-dataset-api
 
 go 1.24.0
 
-// TODO: Remove once dis-bundle-api has been updated to use dp-component-test v1.0.1-alpha
+// TODO: Remove once dp-dataset-api has been updated to use dp-component-test v1.0.1-alpha
 replace github.com/ONSdigital/dp-component-test => github.com/ONSdigital/dp-component-test v0.28.0
 
 require (
