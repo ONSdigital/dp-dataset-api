@@ -172,8 +172,20 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 			attrs = nil
 		}
 
-		fmt.Println("attrs:", attrs)
-		authorised := api.checkUserPermission(r, logData, datasetReadPermission, attrs)
+		authorised := false
+		datasetType := ""
+		if dataset.Next != nil {
+			datasetType = dataset.Next.Type
+		} else {
+			datasetType = dataset.Current.Type
+		}
+
+		if datasetType == models.Static.String() {
+			// static datasets: permission check uses attrs (dataset_edition)
+			authorised = api.checkUserPermission(r, logData, datasetReadPermission, attrs)
+		} else {
+			authorised = api.checkUserPermission(r, logData, datasetReadPermission, nil)
+		}
 		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 
 		var datasetResponse interface{}
