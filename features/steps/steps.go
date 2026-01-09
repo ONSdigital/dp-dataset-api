@@ -70,9 +70,26 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`the following URL prefixes are purged by cloudflare:$`, c.theFollowingURLPrefixesArePurgedByCloudflare)
 	ctx.Step(`there are no cloudflare purge calls`, c.thereAreNoCloudflarePurgeCalls)
 	ctx.Step(`cloudflare is enabled`, c.cloudflareIsEnabled)
-	ctx.Step(`^I am a viewer user$`, c.viewerJWTToken)
-	ctx.Step(`^viewer has preview access to dataset "([^"]*)"$`, c.viewerHasPreviewAccessToDataset)
-	ctx.Step(`^viewer does not have preview access to dataset "([^"]*)"$`, c.viewerDoesNotHavePreviewAccessToDataset)
+	ctx.Step(`^I am a viewer user with permission$`, c.viewerAllowedJWTToken)
+	ctx.Step(`^I am a viewer user without permission$`, c.viewerDeniedJWTToken)
+	ctx.Step(`^I have viewer access to the dataset "([^"]*)"$`, c.viewerHasPreviewAccessToDataset)
+	ctx.Step(`^I don't have viewer access to the dataset "([^"]*)"$`, c.viewerDoesNotHavePreviewAccessToDataset)
+
+}
+
+func (c *DatasetComponent) viewerHasPreviewAccessToDataset(datasetID string) error {
+	if err := c.viewerAllowedJWTToken(); err != nil {
+		return err
+	}
+	return c.updateViewerPreviewPolicies([]string{datasetID})
+}
+
+func (c *DatasetComponent) viewerDoesNotHavePreviewAccessToDataset(datasetID string) error {
+	if err := c.viewerAllowedJWTToken(); err != nil {
+		return err
+	}
+	// no allowed values => permission check should fail for dataset_edition
+	return c.updateViewerPreviewPolicies([]string{})
 }
 
 func (c *DatasetComponent) theFeatureFlagIs(flagName, status string) error {
@@ -687,6 +704,29 @@ func (c *DatasetComponent) publisherJWTToken() error {
 	return err
 }
 
+func (c *DatasetComponent) viewerAllowedJWTToken() error {
+	token, err := c.generateViewerAccessToken(
+		"viewer1@ons.gov.uk",
+		[]string{"role-viewer-allowed"},
+	)
+	if err != nil {
+		return err
+	}
+
+	return c.apiFeature.ISetTheHeaderTo("Authorization", "Bearer "+token)
+}
+
+func (c *DatasetComponent) viewerDeniedJWTToken() error {
+	token, err := c.generateViewerAccessToken(
+		"viewer2@ons.gov.uk",
+		[]string{"role-viewer-denied"},
+	)
+	if err != nil {
+		return err
+	}
+	return c.apiFeature.ISetTheHeaderTo("Authorization", "Bearer "+token)
+}
+
 func (c *DatasetComponent) theFollowingURLPrefixesArePurgedByCloudflare(prefixes *godog.Table) error {
 	expectedPrefixes := make([]string, len(prefixes.Rows))
 	for i, row := range prefixes.Rows {
@@ -816,32 +856,4 @@ func (c *DatasetComponent) generateViewerAccessToken(email string, groups []stri
 	t.Header["kid"] = c.viewerKID
 
 	return t.SignedString(c.viewerPrivKey)
-}
-
-func (c *DatasetComponent) viewerJWTToken() error {
-	token, err := c.generateViewerAccessToken(
-		"viewer1@ons.gov.uk",
-		[]string{"role-viewer"},
-	)
-	if err != nil {
-		return err
-	}
-	return c.apiFeature.ISetTheHeaderTo("Authorization", "Bearer "+token)
-}
-
-func (c *DatasetComponent) viewerHasPreviewAccessToDataset(datasetID string) error {
-	if c.allowedDatasetEditions == nil {
-		c.allowedDatasetEditions = map[string]bool{}
-	}
-	// allow dataset-level access (dataset_id)
-	c.allowedDatasetEditions[datasetID] = true
-	return nil
-}
-
-func (c *DatasetComponent) viewerDoesNotHavePreviewAccessToDataset(datasetID string) error {
-	if c.allowedDatasetEditions == nil {
-		c.allowedDatasetEditions = map[string]bool{}
-	}
-	delete(c.allowedDatasetEditions, datasetID)
-	return nil
 }

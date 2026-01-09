@@ -44,9 +44,9 @@ type DatasetComponent struct {
 	producer                kafka.IProducer
 	initialiser             service.Initialiser
 	AuthorisationMiddleware authorisation.Middleware
-	allowedDatasetEditions  map[string]bool
 	viewerPrivKey           *rsa.PrivateKey
 	viewerKID               string
+	fakePermissionsAPI      *authorisationtest.FakePermissionsAPI
 }
 
 func NewDatasetComponent(mongoURI, zebedeeURL string) (*DatasetComponent, error) {
@@ -72,6 +72,7 @@ func NewDatasetComponent(mongoURI, zebedeeURL string) (*DatasetComponent, error)
 		return nil, err
 	}
 
+	c.fakePermissionsAPI = fakePermissionsAPI
 	c.Config.AuthConfig.PermissionsAPIURL = fakePermissionsAPI.URL()
 
 	c.Config.ZebedeeURL = zebedeeURL
@@ -333,7 +334,7 @@ func getPermissionsDataset() *permissionsSDK.Bundle {
 					ID: "1",
 				},
 			},
-			"groups/role-viewer": {
+			"groups/role-viewer-allowed": {
 				{
 					ID: "1",
 				},
@@ -465,4 +466,33 @@ func getPermissionsDataset() *permissionsSDK.Bundle {
 			},
 		},
 	}
+}
+
+func (c *DatasetComponent) updateViewerPreviewPolicies(values []string) error {
+	if c.fakePermissionsAPI == nil {
+		return fmt.Errorf("fakePermissionsAPI is nil (did you store it on DatasetComponent?)")
+	}
+
+	bundlePtr := getPermissionsDataset()
+	bundle := *bundlePtr
+
+	// Make sure maps exist
+	if bundle["datasets:read"] == nil {
+		bundle["datasets:read"] = map[string][]permissionsSDK.Policy{}
+	}
+
+	// use role-viewer-allowed for preview access since this func is used for the tests
+	bundle["datasets:read"]["groups/role-viewer-allowed"] = []permissionsSDK.Policy{
+		{
+			ID: "viewer-preview-policy",
+			Condition: permissionsSDK.Condition{
+				Attribute: "dataset_edition",
+				Operator:  "StringEquals",
+				Values:    values,
+			},
+		},
+	}
+
+	c.fakePermissionsAPI.Reset()
+	return c.fakePermissionsAPI.UpdatePermissionsBundleResponse(&bundle)
 }
