@@ -30,6 +30,11 @@ import (
 	"github.com/ONSdigital/log.go/v2/log"
 )
 
+const (
+	permissionDatasetsRead                = "datasets:read"
+	permissionDatasetEditionsVersionsRead = "dataset-editions-versions:read"
+)
+
 type DatasetComponent struct {
 	ErrorFeature            componenttest.ErrorFeature
 	apiFeature              *componenttest.APIFeature
@@ -473,25 +478,27 @@ func (c *DatasetComponent) updateViewerPreviewPolicies(values []string) error {
 		return fmt.Errorf("fakePermissionsAPI is nil (did you store it on DatasetComponent?)")
 	}
 
-	bundlePtr := getPermissionsDataset()
-	bundle := *bundlePtr
+	dataset := getPermissionsDataset()
+	bundle := *dataset
 
-	// Make sure maps exist
-	if bundle["datasets:read"] == nil {
-		bundle["datasets:read"] = map[string][]permissionsSDK.Policy{}
-	}
-
-	// use role-viewer-allowed for preview access since this func is used for the tests
-	bundle["datasets:read"]["groups/role-viewer-allowed"] = []permissionsSDK.Policy{
-		{
-			ID: "viewer-preview-policy",
-			Condition: permissionsSDK.Condition{
-				Attribute: "dataset_edition",
-				Operator:  "StringEquals",
-				Values:    values,
+	ensure := func(permission string) {
+		if bundle[permission] == nil {
+			bundle[permission] = map[string][]permissionsSDK.Policy{}
+		}
+		bundle[permission]["groups/role-viewer-allowed"] = []permissionsSDK.Policy{
+			{
+				ID: "viewer-preview-policy-" + permission,
+				Condition: permissionsSDK.Condition{
+					Attribute: "dataset_edition",
+					Operator:  "StringEquals",
+					Values:    values,
+				},
 			},
-		},
+		}
 	}
+
+	ensure(permissionDatasetsRead)                // "datasets:read" (for /datasets/{id})
+	ensure(permissionDatasetEditionsVersionsRead) // "dataset-editions-versions:read" (for /editions and /versions)
 
 	c.fakePermissionsAPI.Reset()
 	return c.fakePermissionsAPI.UpdatePermissionsBundleResponse(&bundle)

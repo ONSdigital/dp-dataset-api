@@ -74,6 +74,8 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I am a viewer user without permission$`, c.viewerDeniedJWTToken)
 	ctx.Step(`^I have viewer access to the dataset "([^"]*)"$`, c.viewerHasPreviewAccessToDataset)
 	ctx.Step(`^I don't have viewer access to the dataset "([^"]*)"$`, c.viewerDoesNotHavePreviewAccessToDataset)
+	ctx.Step(`^I have viewer access to the dataset_edition "([^"]*)"$`, c.viewerHasPreviewAccessToDatasetEdition)
+	ctx.Step(`^I don't have viewer access to the dataset_edition "([^"]*)"$`, c.viewerDoesNotHavePreviewAccessToDatasetEdition)
 
 }
 
@@ -92,6 +94,20 @@ func (c *DatasetComponent) viewerDoesNotHavePreviewAccessToDataset(datasetID str
 	return c.updateViewerPreviewPolicies([]string{})
 }
 
+func (c *DatasetComponent) viewerHasPreviewAccessToDatasetEdition(dataset_edition string) error {
+	if err := c.viewerAllowedJWTToken(); err != nil {
+		return err
+	}
+	return c.updateViewerPreviewPolicies([]string{dataset_edition})
+}
+
+func (c *DatasetComponent) viewerDoesNotHavePreviewAccessToDatasetEdition(dataset_edition string) error {
+	if err := c.viewerAllowedJWTToken(); err != nil {
+		return err
+	}
+	// no allowed values => permission check should fail for dataset_edition
+	return c.updateViewerPreviewPolicies([]string{})
+}
 func (c *DatasetComponent) theFeatureFlagIs(flagName, status string) error {
 	switch flagName {
 	case "ENABLE_DETACH_DATASET":

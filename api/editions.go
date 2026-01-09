@@ -23,12 +23,30 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 	logData := log.Data{"dataset_id": datasetID}
 	attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
 	if attrsErr != nil {
-		log.Error(ctx, "getDataset endpoint: failed to build permission attributes", attrsErr, logData)
-		// safest: treat as not authorised (published-only)
+		log.Error(ctx, "getEditions endpoint: failed to build permission attributes", attrsErr, logData)
 		attrs = nil
 	}
 
-	authorised := api.checkUserPermission(r, logData, datasetReadPermission, attrs)
+	// might need to change this part later, we need Auth to get the dataset type using the exisiting method
+	TempAuthorised := true
+	datasetType, err := api.dataStore.Backend.GetDatasetType(ctx, datasetID, TempAuthorised)
+	if err != nil {
+		log.Error(ctx, "getEditions endpoint: dataStore.Backend.GetDataset returned an error", err, logData)
+		if err == errs.ErrDatasetNotFound {
+			http.Error(w, err.Error(), http.StatusNotFound)
+		} else {
+			http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
+		}
+		return nil, 0, err
+	}
+
+	var authorised bool
+	if datasetType == models.Static.String() {
+		authorised = api.checkUserPermission(r, logData, datasetEditionVersionReadPermission, attrs)
+	} else {
+		authorised = api.checkUserPermission(r, logData, datasetEditionVersionReadPermission, nil)
+	}
+
 	var state string
 	if !authorised {
 		state = models.PublishedState
@@ -43,12 +61,6 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 		} else {
 			http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
 		}
-		return nil, 0, err
-	}
-
-	datasetType, err := api.dataStore.Backend.GetDatasetType(ctx, datasetID, authorised)
-	if err != nil {
-		log.Error(ctx, "getEdition endpoint: unable to find dataset type", err, logData)
 		return nil, 0, err
 	}
 
