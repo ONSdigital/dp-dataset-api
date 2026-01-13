@@ -885,10 +885,10 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 	if updatedVersion.State == models.PublishedState {
 		searchContentUpdatedEvent := map[string]interface{}{
 			"dataset_id":   datasetID,
-			"uri":          fmt.Sprintf("/datasets/%s/editions/%s/versions/%s", datasetID, edition, version),
+			"uri":          fmt.Sprintf("/datasets/%s", datasetID),
 			"title":        currentVersion.EditionTitle,
 			"edition":      currentVersion.Edition,
-			"content_type": "dataset",
+			"content_type": "dataset_landing_page",
 			"release_date": currentVersion.ReleaseDate,
 		}
 
