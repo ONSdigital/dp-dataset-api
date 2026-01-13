@@ -591,6 +591,10 @@ func createVersionUpdateQuery(version *models.Version, newETag string) bson.M {
 		setUpdates["usage_notes"] = version.UsageNotes
 	}
 
+	if version.QualityDesignation.String() != "" {
+		setUpdates["quality_designation"] = version.QualityDesignation
+	}
+
 	if version.Distributions != nil {
 		setUpdates["distributions"] = version.Distributions
 	}

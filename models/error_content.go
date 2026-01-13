@@ -18,6 +18,7 @@ const (
 	ErrInvalidTypeError          = "InvalidType"
 	ErrEditionAlreadyExists      = "ErrEditionAlreadyExists"
 	ErrEditionTitleAlreadyExists = "ErrEditionTitleAlreadyExists"
+	ErrNoSpacesAllowedError      = "ErrSpacesNotAllowed"
 )
 
 // API error descriptions

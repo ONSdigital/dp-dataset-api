@@ -9,8 +9,8 @@ github.com/ONSdigital/dp-api-clients-go/v2 v2.270.0 h1:kTSud/+crx9ijAHb5wOCgVx9L
 github.com/ONSdigital/dp-api-clients-go/v2 v2.270.0/go.mod h1:bLseTP21r8LCStUEeOdVPyqtrTomOFP/azPjKWW4deA=
 github.com/ONSdigital/dp-assistdog v0.0.1 h1:5jzUWZ3EmweVjSx+5c40oLh/+WBJtD3VOErzURy+B8g=
 github.com/ONSdigital/dp-assistdog v0.0.1/go.mod h1:Agb8iTx42/V+eSffc/gD2oXEvOcerN3GER76FAcBr+I=
-github.com/ONSdigital/dp-authorisation/v2 v2.32.3 h1:Tx0uTo/P5oXyYTNqw5m+nKxe+7HvtTqPz320pqWrEoY=
-github.com/ONSdigital/dp-authorisation/v2 v2.32.3/go.mod h1:uDDkQ/HeqeirqXBCVrvyGxbKSO/bKe80wW7V226sB+g=
+github.com/ONSdigital/dp-authorisation/v2 v2.33.1 h1:v2KrjTB1EA4EC3lmfYw1yWpt4+y3dg7dtGkfBCR1KT4=
+github.com/ONSdigital/dp-authorisation/v2 v2.33.1/go.mod h1:3kHKB5LsTc4kqsdp4Ei8oEhBC5hOto2UJHRQTYRpgQM=
 github.com/ONSdigital/dp-component-test v0.28.0 h1:45uMpYmKG07HVi5fZCW4MAq3kbVnyy6gJMq4beNnaHc=
 github.com/ONSdigital/dp-component-test v0.28.0/go.mod h1:3MSQQ/kQl7H4prGk8dPCVmyKgk3eBDyCmI5N2XyRaJY=
 github.com/ONSdigital/dp-files-api v1.14.0 h1:OYXBkni8402DxmSXFTo6o3vq6ts4s9xAnabF389/Z3o=
@@ -46,8 +46,8 @@ github.com/ONSdigital/dp-net/v3 v3.9.0 h1:UJsNd36qXhvuGVJIfd6xdKhhUyZlTsxEuPP/2b
 github.com/ONSdigital/dp-net/v3 v3.9.0/go.mod h1:ur4LLCvd2xW2jpa785pElE6HB2bPvszZxdAjqv0XFGg=
 github.com/ONSdigital/dp-otel-go v0.0.8 h1:jSX32oDmOUKlHyH3FPCBkBpiBKYmWKELoNo6jontKRM=
 github.com/ONSdigital/dp-otel-go v0.0.8/go.mod h1:pCDuFqZX8+7CBQX1nMlLMPj52VsMAN3Y8h0uLmzC3cU=
-github.com/ONSdigital/dp-permissions-api v1.3.0 h1:8ikYTZwNg1K2Q81upLVpUhJRE287/nfZ6pcEskbWaWc=
-github.com/ONSdigital/dp-permissions-api v1.3.0/go.mod h1:3XiUNCUuhTevJBuatmnRh3Ab4hTd1sN7btTMcKxdVxc=
+github.com/ONSdigital/dp-permissions-api v1.10.1 h1:dOyPtS94CpBgS0Y1oZJy84UcKZOHkmDK+Zdg5OClEXs=
+github.com/ONSdigital/dp-permissions-api v1.10.1/go.mod h1:436ej+daY+8+hNCReDvCIsI0iNRWKU/UZsxC09CRMNA=
 github.com/ONSdigital/dp-s3/v3 v3.3.0 h1:l5QrJ4lFHMfhHmk0Cox+0xSNQ6RhkCHJ6ikqq5XNLi4=
 github.com/ONSdigital/dp-s3/v3 v3.3.0/go.mod h1:KT4ZL+3p3RDYv4zfgAKXb4ofPey2eDUFZKk0E/c/jr4=
 github.com/ONSdigital/go-ns v0.0.0-20191104121206-f144c4ec2e58/go.mod h1:iWos35il+NjbvDEqwtB736pyHru0MPFE/LqcwkV1wDc=
