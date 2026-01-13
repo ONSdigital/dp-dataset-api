@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 	"testing"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -493,5 +494,31 @@ func TestVersionDownloadsOrder(t *testing.T) {
 				So(string(b), ShouldResemble, expected)
 			})
 		})
+	})
+}
+
+func TestQualityDesignation_IsValid(t *testing.T) {
+	Convey("Given a QualityDesignation", t, func() {
+		testCases := []struct {
+			qualityDesignation QualityDesignation
+			expectedIsValid    bool
+		}{
+			{QualityDesignationAccreditedOfficial, true},
+			{QualityDesignationOfficialInDevelopment, true},
+			{QualityDesignationOfficial, true},
+			{QualityDesignationNoAccreditation, true},
+			{"invalid-designation", false},
+			{"", false},
+		}
+
+		for _, tc := range testCases {
+			Convey("When QualityDesignation is "+tc.qualityDesignation.String(), func() {
+				isValid := tc.qualityDesignation.IsValid()
+
+				Convey("Then IsValid should return "+strconv.FormatBool(tc.expectedIsValid), func() {
+					So(isValid, ShouldEqual, tc.expectedIsValid)
+				})
+			})
+		}
 	})
 }
