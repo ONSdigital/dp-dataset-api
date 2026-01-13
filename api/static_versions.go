@@ -249,6 +249,10 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 
 	datasetDoc.Next.LastUpdated = newVersion.LastUpdated
 	datasetDoc.Next.State = models.AssociatedState
+	datasetDoc.Next.Links.LatestVersion = &models.LinkObject{
+		HRef: fmt.Sprintf("/datasets/%s/editions/%s/versions/%d", datasetID, edition, nextVersion),
+		ID:   strconv.Itoa(nextVersion),
+	}
 
 	if err := api.dataStore.Backend.UpsertDataset(ctx, datasetID, datasetDoc); err != nil {
 		log.Error(ctx, "failed to update dataset", err, logData)
