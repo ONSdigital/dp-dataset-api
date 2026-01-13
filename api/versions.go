@@ -70,8 +70,19 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 			// safest: treat as not authorised (published-only)
 			attrs = nil
 		}
+		var authorised bool
+		isStatic, err := api.dataStore.Backend.IsStaticDataset(ctx, datasetID)
+		if err != nil {
+			log.Error(ctx, "getEdition endpoint: failed to get file type", err, logData)
+			return nil, 0, err
+		}
 
-		authorised := api.checkUserPermission(r, logData, datasetReadPermission, attrs)
+		if isStatic {
+			authorised = api.checkUserPermission(r, logData, datasetReadPermission, attrs)
+		} else {
+			authorised = api.checkUserPermission(r, logData, datasetReadPermission, nil)
+		}
+
 		var results []models.Version
 		var totalCount int
 		var state string
@@ -192,7 +203,19 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 			attrs = nil
 		}
 
-		authorised := api.checkUserPermission(r, logData, datasetReadPermission, attrs)
+		var authorised bool
+		isStatic, err := api.dataStore.Backend.IsStaticDataset(ctx, datasetID)
+		if err != nil {
+			log.Error(ctx, "getEdition endpoint: failed to get file type", err, logData)
+			return nil, err
+		}
+
+		if isStatic {
+			authorised = api.checkUserPermission(r, logData, datasetReadPermission, attrs)
+		} else {
+			authorised = api.checkUserPermission(r, logData, datasetReadPermission, nil)
+		}
+
 		versionID, err := models.ParseAndValidateVersionNumber(ctx, versionNumber)
 		if err != nil {
 			log.Error(ctx, "getVersion endpoint: invalid version", err, logData)

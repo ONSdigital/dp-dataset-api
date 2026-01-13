@@ -173,22 +173,28 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 			attrs = nil
 		}
 
-		authorised := api.checkUserPermission(r, logData, datasetReadPermission, attrs)
+		var authorised bool
+		isStatic, err := api.dataStore.Backend.IsStaticDataset(ctx, datasetID)
+		if err != nil {
+			log.Error(ctx, "getEdition endpoint: failed to get file type", err, logData)
+			return nil, err
+		}
+
+		if isStatic {
+			authorised = api.checkUserPermission(r, logData, datasetReadPermission, attrs)
+		} else {
+			authorised = api.checkUserPermission(r, logData, datasetReadPermission, nil)
+		}
+
 		var state string
 		if !authorised {
 			state = models.PublishedState
 		}
 
-		datasetType, err := api.dataStore.Backend.GetDatasetType(ctx, datasetID, authorised)
-		if err != nil {
-			log.Error(ctx, "getEdition endpoint: unable to find dataset type", err, logData)
-			return nil, err
-		}
-
 		var edition *models.EditionUpdate
 		var unpublishedVersion *models.Version
 
-		if datasetType == models.Static.String() {
+		if isStatic {
 			publishedVersion, err := api.dataStore.Backend.GetLatestVersionStatic(ctx, datasetID, editionID, models.PublishedState)
 			if err != nil && err != errs.ErrVersionNotFound {
 				log.Error(ctx, "getEdition endpoint: unable to find latest published static version", err, logData)

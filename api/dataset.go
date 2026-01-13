@@ -151,7 +151,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 	return mapResults(datasets), totalCount, nil
 }
 
-//nolint:gocyclo // cyclomatic complexity (> 30) is acceptable for now
+//nolint:gocognit,gocyclo // cyclomatic complexity (> 45) is acceptable for now
 func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
@@ -166,7 +166,18 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 			attrs = nil
 		}
 
-		authorised := api.checkUserPermission(r, logData, datasetReadPermission, attrs)
+		var authorised bool
+		isStatic, err := api.dataStore.Backend.IsStaticDataset(ctx, datasetID)
+		if err != nil {
+			log.Error(ctx, "getEdition endpoint: failed to get file type", err, logData)
+			return nil, err
+		}
+
+		if isStatic {
+			authorised = api.checkUserPermission(r, logData, datasetReadPermission, attrs)
+		} else {
+			authorised = api.checkUserPermission(r, logData, datasetReadPermission, nil)
+		}
 
 		dataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 		if err != nil {

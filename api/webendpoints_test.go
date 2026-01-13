@@ -85,6 +85,9 @@ func TestWebSubnetDatasetEndpoint(t *testing.T) {
 					Next:    next,
 				}, nil
 			},
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return false, nil
+			},
 		}
 
 		Convey("Calling the dataset endpoint should allow only published items", func() {
@@ -165,6 +168,10 @@ func TestWebSubnetEditionEndpoint(t *testing.T) {
 				editionSearchState = state
 				return edition, nil
 			},
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				datasetSearchState = models.PublishedState
+				return false, nil
+			},
 		}
 
 		Convey("Calling the edition endpoint should allow only published items", func() {
@@ -199,6 +206,9 @@ func TestWebSubnetVersionsEndpoint(t *testing.T) {
 			GetVersionsFunc: func(_ context.Context, _ string, _ string, state string, _, _ int) ([]models.Version, int, error) {
 				versionSearchState = state
 				return []models.Version{{ID: "124", State: models.PublishedState}}, 1, nil
+			},
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return true, nil
 			},
 		}
 
@@ -238,6 +248,10 @@ func TestWebSubnetVersionEndpoint(t *testing.T) {
 					Links: &models.VersionLinks{
 						Version: &models.LinkObject{},
 						Self:    &models.LinkObject{}}}, nil
+			},
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				datasetSearchState = models.PublishedState
+				return false, nil
 			},
 		}
 

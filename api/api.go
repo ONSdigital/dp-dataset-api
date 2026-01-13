@@ -5,7 +5,6 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -492,15 +491,12 @@ func (api *DatasetAPI) checkUserPermission(r *http.Request, logData log.Data, pe
 		}
 		logData["entity_data"] = entityData
 		logData["permission_attributes"] = attributes
-		fmt.Println("entity_data :", entityData)
-		fmt.Println("permission_attributes :", attributes)
 
 		hasPermission, err := api.permissionsChecker.HasPermission(r.Context(), *entityData, permission, attributes)
 		if err != nil {
 			log.Error(r.Context(), "permissions check errored", err, logData)
 			return false
 		}
-		fmt.Println("permission :", hasPermission)
 
 		authorised = hasPermission
 		logData["authenticated"] = authorised

@@ -690,8 +690,8 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{ID: "123", Current: &models.Dataset{ID: "123"}}, nil
 			},
-			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
-				return models.Static.String(), nil
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return false, nil
 			},
 		}
 
@@ -722,8 +722,8 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{ID: "123", Next: &models.Dataset{ID: "123"}}, nil
 			},
-			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
-				return models.Static.String(), nil
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return true, nil
 			},
 		}
 
@@ -753,8 +753,8 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return nil, errs.ErrInternalServer
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return false, errs.ErrInternalServer
 			},
 		}
 
@@ -771,7 +771,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.IsStaticDatasetCalls()), ShouldEqual, 1)
 	})
 
 	Convey("When dataset document has only a next sub document return status 404", t, func() {
@@ -780,6 +780,9 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{ID: "123", Next: &models.Dataset{ID: "123"}}, nil
+			},
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return false, nil
 			},
 		}
 
@@ -808,8 +811,8 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return nil, errs.ErrDatasetNotFound
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return false, errs.ErrDatasetNotFound
 			},
 		}
 
@@ -829,7 +832,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.IsStaticDatasetCalls()), ShouldEqual, 1)
 	})
 
 	Convey("Request with empty dataset ID returns 400 Bad Request", t, func() {
@@ -838,9 +841,6 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return nil, errs.ErrDatasetNotFound
-			},
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
