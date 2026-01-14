@@ -7,12 +7,24 @@ Feature: Static Dataset Versions POST API
                 {
                     "id": "static-dataset-test",
                     "title": "Static dataset Test",
+                    "links": {
+                        "self": {
+                            "href": "http://localhost:22000/datasets/static-dataset-test",
+                            "id": "static-test-dataset"
+                        }
+                    },
                     "state": "created",
                     "type": "static"
                 },
                 {
                     "id": "static-dataset-existing",
                     "title": "static dataset with published version",
+                    "links": {
+                        "self": {
+                            "href": "http://localhost:22000/datasets/static-dataset-existing",
+                            "id": "static-test-existing"
+                        }
+                    },
                     "state": "associated",
                     "type": "static"
                 }

@@ -634,7 +634,7 @@ func TestAddDatasetVersionCondensed_Success(t *testing.T) {
 				return nil
 			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated"}}, nil
+				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated", Links: &models.DatasetLinks{}}}, nil
 			},
 			GetLatestVersionStaticFunc: func(context.Context, string, string, string) (*models.Version, error) {
 				return &models.Version{
@@ -713,7 +713,7 @@ func TestAddDatasetVersionCondensed_Success(t *testing.T) {
 				return nil
 			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated"}}, nil
+				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated", Links: &models.DatasetLinks{}}}, nil
 			},
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
@@ -781,7 +781,7 @@ func TestAddDatasetVersionCondensed_Success(t *testing.T) {
 			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{
-					Next: &models.Dataset{State: "associated"},
+					Next: &models.Dataset{State: "associated", Links: &models.DatasetLinks{}},
 				}, nil
 			},
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error { return nil },
@@ -878,7 +878,7 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 				}, nil
 			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated"}}, nil
+				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated", Links: &models.DatasetLinks{}}}, nil
 			},
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
@@ -1116,7 +1116,7 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 				}, nil
 			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated"}}, nil
+				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated", Links: &models.DatasetLinks{}}}, nil
 			},
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
@@ -1205,7 +1205,7 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 				return nil
 			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated"}}, nil
+				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated", Links: &models.DatasetLinks{}}}, nil
 			},
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
@@ -1276,7 +1276,7 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 				return nil
 			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated"}}, nil
+				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated", Links: &models.DatasetLinks{}}}, nil
 			},
 			GetLatestVersionStaticFunc: func(context.Context, string, string, string) (*models.Version, error) {
 				return &models.Version{
