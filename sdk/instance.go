@@ -32,7 +32,7 @@ type UpdateInstance struct {
 }
 
 // PutInstance updates an instance
-func (c *Client) PutInstance(ctx context.Context, headers Headers, instanceID string, i UpdateInstance, ifMatch string) (eTag string, err error) {
+func (c *Client) PutInstance(ctx context.Context, headers Headers, instanceID string, i UpdateInstance) (eTag string, err error) {
 	uri := &url.URL{}
 	uri.Path, err = url.JoinPath(c.hcCli.URL, "instances", instanceID)
 	if err != nil {
@@ -44,7 +44,7 @@ func (c *Client) PutInstance(ctx context.Context, headers Headers, instanceID st
 		return "", errors.Wrap(err, "error while attempting to marshall instance")
 	}
 
-	resp, err := c.doAuthenticatedPutRequestWithEtag(ctx, headers, uri, payload, ifMatch)
+	resp, err := c.doAuthenticatedPutRequest(ctx, headers, uri, payload)
 	if err != nil {
 		return "", errors.Wrap(err, "http client returned error while attempting to make request")
 	}

@@ -39,6 +39,7 @@ var headers = Headers{
 	CollectionID:         collectionID,
 	DownloadServiceToken: downloadServiceToken,
 	AccessToken:          accessToken,
+	IfMatch:              etag,
 }
 
 type MockedHTTPResponse struct {
@@ -129,20 +130,6 @@ func TestClientDoAuthenticatedPutRequest(t *testing.T) {
 		uri, _ := url.Parse("https://not-a-real-domain-this-is-a-test.com/target-path")
 		payload := []byte(`{"testing_key":"testing_value"}`)
 		resp, err := client.doAuthenticatedPutRequest(context.Background(), headers, uri, payload)
-
-		So(err, ShouldBeNil)
-		So(resp, ShouldNotBeNil)
-	})
-}
-
-func TestClientDoAuthenticatedPutRequestWithETag(t *testing.T) {
-	mockHTTPClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, "", nil})
-	client := newDatasetAPIHealthcheckClient(t, mockHTTPClient)
-
-	Convey("Succeeds with valid values", t, func() {
-		uri, _ := url.Parse("https://testing.this.com/a-test")
-		payload := []byte(`{"testing_key":"testing_value"}`)
-		resp, err := client.doAuthenticatedPutRequestWithEtag(context.Background(), headers, uri, payload, "123456")
 
 		So(err, ShouldBeNil)
 		So(resp, ShouldNotBeNil)
