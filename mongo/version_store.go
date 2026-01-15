@@ -262,7 +262,7 @@ func (m *Mongo) GetAllStaticVersions(ctx context.Context, datasetID, state strin
 
 	results := []*models.Version{}
 	totalCount, err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Find(ctx, selector, &results,
-		mongodriver.Sort(bson.M{"last_updated": -1}),
+		mongodriver.Sort(bson.M{"release_date": -1}),
 		mongodriver.Offset(offset),
 		mongodriver.Limit(limit))
 	if err != nil {
