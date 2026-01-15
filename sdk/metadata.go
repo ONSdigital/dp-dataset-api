@@ -12,7 +12,7 @@ import (
 )
 
 // PutMetadata updates the dataset and the version metadata
-func (c *Client) PutMetadata(ctx context.Context, headers Headers, datasetID, edition, version string, metadata models.EditableMetadata, versionEtag string) error {
+func (c *Client) PutMetadata(ctx context.Context, headers Headers, datasetID, edition, version string, metadata models.EditableMetadata) error {
 	var err error
 	uri := &url.URL{}
 	uri.Path, err = url.JoinPath(c.hcCli.URL, "datasets", datasetID, "editions", edition, "versions", version, "metadata")
@@ -25,7 +25,7 @@ func (c *Client) PutMetadata(ctx context.Context, headers Headers, datasetID, ed
 		return errors.Wrap(err, "error while attempting to marshall metadata")
 	}
 
-	resp, err := c.doAuthenticatedPutRequestWithEtag(ctx, headers, uri, payload, versionEtag)
+	resp, err := c.doAuthenticatedPutRequest(ctx, headers, uri, payload)
 	if err != nil {
 		return err
 	}

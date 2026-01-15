@@ -8,29 +8,61 @@ import (
 )
 
 func Test_AddHeaders(t *testing.T) {
-	Convey("When a request is made to /datasets", t, func() {
-		req, err := http.NewRequest(http.MethodGet, "/datasets", http.NoBody)
+	testCases := []struct {
+		name     string
+		headers  Headers
+		expected http.Header
+	}{
+		{
+			name: "all headers set",
+			headers: Headers{
+				CollectionID:         "test-collection-id",
+				DownloadServiceToken: "test-download-token",
+				AccessToken:          "test-access-token",
+				IfMatch:              "test-etag",
+			},
+			expected: http.Header{
+				"Collection-Id":            []string{"test-collection-id"},
+				"X-Download-Service-Token": []string{"test-download-token"},
+				"Authorization":            []string{"Bearer test-access-token"},
+				"If-Match":                 []string{"test-etag"},
+			},
+		},
+		{
+			name:     "no headers set",
+			headers:  Headers{},
+			expected: http.Header{},
+		},
+		{
+			name: "some headers set",
+			headers: Headers{
+				CollectionID: "test-collection-id",
+				AccessToken:  "test-access-token",
+			},
+			expected: http.Header{
+				"Collection-Id": []string{"test-collection-id"},
+				"Authorization": []string{"Bearer test-access-token"},
+			},
+		},
+		{
+			name: "AccessToken with Bearer prefix",
+			headers: Headers{
+				AccessToken: "Bearer test-access-token",
+			},
+			expected: http.Header{
+				"Authorization": []string{"Bearer test-access-token"},
+			},
+		},
+	}
 
-		Convey("With a user token including the Bearer prefix", func() {
+	for _, tc := range testCases {
+		Convey("When Add is called with "+tc.name, t, func() {
+			req, err := http.NewRequest("GET", "http://example.com", http.NoBody)
 			So(err, ShouldBeNil)
 
-			h := Headers{AccessToken: "Bearer 1234555555"}
-			h.add(req)
+			tc.headers.add(req)
 
-			Convey("Then it is removed", func() {
-				So(h.AccessToken, ShouldEqual, "1234555555")
-			})
+			So(req.Header, ShouldResemble, tc.expected)
 		})
-
-		Convey("With a user token with no bearer prefix", func() {
-			So(err, ShouldBeNil)
-
-			h := Headers{AccessToken: "1234555555"}
-			h.add(req)
-
-			Convey("Then the token is not changed", func() {
-				So(h.AccessToken, ShouldEqual, "1234555555")
-			})
-		})
-	})
+	}
 }

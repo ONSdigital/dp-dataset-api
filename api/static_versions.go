@@ -249,6 +249,10 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 
 	datasetDoc.Next.LastUpdated = newVersion.LastUpdated
 	datasetDoc.Next.State = models.AssociatedState
+	datasetDoc.Next.Links.LatestVersion = &models.LinkObject{
+		HRef: fmt.Sprintf("/datasets/%s/editions/%s/versions/%d", datasetID, edition, nextVersion),
+		ID:   strconv.Itoa(nextVersion),
+	}
 
 	if err := api.dataStore.Backend.UpsertDataset(ctx, datasetID, datasetDoc); err != nil {
 		log.Error(ctx, "failed to update dataset", err, logData)
@@ -378,16 +382,6 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 			return nil, models.NewErrorResponse(http.StatusNotFound, nil, models.NewValidationError(models.ErrDatasetNotFound, models.ErrDatasetNotFoundDescription))
 		}
 		log.Error(ctx, "createVersion endpoint: failed to check dataset existence", err, logData)
-		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, models.InternalError, models.InternalErrorDescription))
-	}
-
-	err = api.dataStore.Backend.CheckEditionExistsStatic(ctx, datasetID, edition, "")
-	if err != nil {
-		if err == errs.ErrEditionNotFound {
-			log.Error(ctx, "createVersion endpoint: edition not found", err, logData)
-			return nil, models.NewErrorResponse(http.StatusNotFound, nil, models.NewValidationError(models.ErrEditionNotFound, models.ErrEditionNotFoundDescription))
-		}
-		log.Error(ctx, "createVersion endpoint: failed to check edition existence", err, logData)
 		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, models.InternalError, models.InternalErrorDescription))
 	}
 

@@ -1,7 +1,7 @@
 version: "2"
 run:
   concurrency: 4
-  timeout: 5m
+  timeout: 10m
 linters:
   default: none
   enable:

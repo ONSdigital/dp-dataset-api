@@ -14,7 +14,7 @@ func Test_PutInstance(t *testing.T) {
 
 		Convey("when put instance is called", func() {
 			instance := UpdateInstance{ID: "1234"}
-			str, err := datasetAPIClient.PutInstance(ctx, headers, "666", instance, "1234")
+			str, err := datasetAPIClient.PutInstance(ctx, headers, "666", instance)
 
 			Convey("then no error is returned", func() {
 				So(err, ShouldBeNil)
@@ -32,7 +32,7 @@ func Test_PutInstance(t *testing.T) {
 
 		Convey("when put instance is called", func() {
 			instance := UpdateInstance{ID: "1234"}
-			str, err := datasetAPIClient.PutInstance(ctx, headers, "666", instance, "1234")
+			str, err := datasetAPIClient.PutInstance(ctx, headers, "666", instance)
 
 			Convey("then an error is returned", func() {
 				So(err, ShouldNotBeNil)

@@ -7,7 +7,7 @@ This SDK provides a client for interacting with the dp-dataset-api. It is intend
 ## Available client methods
 
 | Name | Description |
-|------|-------------|
+| ------ | ------------- |
 | [`Checker`](#checker) | Calls the health.Client's Checker method |
 | [`Health`](#health) | Returns the underlying Healthcheck Client for this API client |
 | [`URL`](#url) | returns the URL used by this client |
@@ -403,6 +403,7 @@ import (
 
 headers := sdk.Headers{
     AccessToken: "example-auth-token",
+    IfMatch: "ETag"
 }
 
 instanceToUpdate := models.UpdateInstance{
@@ -411,7 +412,7 @@ instanceToUpdate := models.UpdateInstance{
     // populate other required fields as required
 }
 
-returnedETag, err := client.PutInstance(ctx, headers, "instance-id", instanceToUpdate, "etag-value")
+returnedETag, err := client.PutInstance(ctx, headers, "instance-id", instanceToUpdate)
 ```
 
 ### PutMetadata
@@ -424,6 +425,7 @@ import (
 
 headers := sdk.Headers{
     AccessToken: "example-auth-token",
+    IfMatch: "ETag"
 }
 
 metadataToUpdate := models.EditableMetadata{
@@ -432,7 +434,7 @@ metadataToUpdate := models.EditableMetadata{
     // populate other required fields as required
 }
 
-err := client.PutMetadata(ctx, headers, "dataset-id", "edition-id", "1", metadataToUpdate, "etag-value")
+err := client.PutMetadata(ctx, headers, "dataset-id", "edition-id", "1", metadataToUpdate)
 ```
 
 ### PutVersion
@@ -499,9 +501,16 @@ The dataset-api has multiple formats of which errors can be returned such as a p
 
 ### Headers
 
-The [`Headers`](client.go) struct allows the user to provide an Authorization header if required. This is shown in the [Example usage of client](#example-usage-of-client) section. The `"Bearer "` prefix will be added automatically.
+The [`Headers`](client.go) struct allows the user to provide headers for a request. An example of setting an "Authorization" header can be seen in the [Example usage of client](#example-usage-of-client) section.
 
-This also provides options to add other headers such as `Collection-Id` and `X-Download-Service-Token`.
+#### Available headers
+
+| Struct Field | HTTP Header Name |
+| ------------ | ---------------- |
+| CollectionID | `Collection-Id` |
+| DownloadServiceToken | `X-Download-Service-Token` |
+| AccessToken | `Authorization` |
+| IfMatch | `If-Match` |
 
 ### QueryParams
 
