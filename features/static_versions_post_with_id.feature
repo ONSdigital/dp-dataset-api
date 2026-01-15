@@ -252,14 +252,14 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
             }
             """
 
-    Scenario: Request with an edition that doesn't exist returns 404
+    Scenario: Successfully creating a version when edition doesn't exist returns 201
         Given private endpoints are enabled
         And I am an admin user
-        When I POST "/datasets/static-dataset-1/editions/0/versions/2"
+        When I POST "/datasets/static-dataset-1/editions/new-edition/versions/1"
             """
             {
                 "release_date": "2024-12-01T09:00:00.000Z",
-                "edition_title": "2024",
+                "edition_title": "New Edition Title",
                 "distributions": [
                     {
                         "title": "Full Dataset CSV",
@@ -272,17 +272,42 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                 "type": "static"
             }
             """
-        Then I should receive the following JSON response with status "404":
+        Then I should receive the following JSON response with status "201":
             """
             {
-                "errors": [
+                "dataset_id": "static-dataset-1",
+                "distributions": [
                     {
-                        "code": "ErrEditionNotFound",
-                        "description": "edition not found"
+                        "byte_size": 100,
+                        "download_url": "/uuid/filename.csv",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "title": "Full Dataset CSV"
                     }
-                ]
+                ],
+                "edition": "new-edition",
+                "edition_title": "New Edition Title",
+                "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
+                "links": {
+                    "dataset": {
+                        "href": "http://localhost:22000/datasets/static-dataset-1",
+                        "id": "static-dataset-1"
+                    },
+                    "edition": {
+                        "href": "http://localhost:22000/datasets/static-dataset-1/editions/new-edition",
+                        "id": "new-edition"
+                    },
+                    "self": {
+                        "href": "http://localhost:22000/datasets/static-dataset-1/editions/new-edition/versions/1"
+                    }
+                },
+                "release_date": "2024-12-01T09:00:00.000Z",
+                "state": "associated",
+                "type": "static",
+                "version": 1
             }
             """
+        And the response header "ETag" should not be empty
 
     Scenario: Request with a version that already exists returns 409
         Given private endpoints are enabled
