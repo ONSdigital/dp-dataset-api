@@ -15,7 +15,7 @@ func Test_PutMetadata(t *testing.T) {
 
 		Convey("when put metadata is called", func() {
 			metadata := models.EditableMetadata{Description: "test dataset", Title: "testing 1234"}
-			err := datasetAPIClient.PutMetadata(ctx, headers, "666", "test", "1", metadata, "1234")
+			err := datasetAPIClient.PutMetadata(ctx, headers, "666", "test", "1", metadata)
 
 			Convey("then no error is returned", func() {
 				So(err, ShouldBeNil)
@@ -29,7 +29,7 @@ func Test_PutMetadata(t *testing.T) {
 
 		Convey("when put instance is called", func() {
 			metadata := models.EditableMetadata{Description: "test dataset", Title: "testing 1234"}
-			err := datasetAPIClient.PutMetadata(ctx, headers, "666", "test", "1", metadata, "1234")
+			err := datasetAPIClient.PutMetadata(ctx, headers, "666", "test", "1", metadata)
 
 			Convey("then an error is returned", func() {
 				So(err, ShouldNotBeNil)

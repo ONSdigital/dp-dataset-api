@@ -86,10 +86,10 @@ var _ sdk.Clienter = &ClienterMock{}
 //			PutDatasetFunc: func(ctx context.Context, headers sdk.Headers, datasetID string, d models.Dataset) error {
 //				panic("mock out the PutDataset method")
 //			},
-//			PutInstanceFunc: func(ctx context.Context, headers sdk.Headers, instanceID string, i sdk.UpdateInstance, ifMatch string) (string, error) {
+//			PutInstanceFunc: func(ctx context.Context, headers sdk.Headers, instanceID string, i sdk.UpdateInstance) (string, error) {
 //				panic("mock out the PutInstance method")
 //			},
-//			PutMetadataFunc: func(ctx context.Context, headers sdk.Headers, datasetID string, edition string, version string, metadata models.EditableMetadata, versionEtag string) error {
+//			PutMetadataFunc: func(ctx context.Context, headers sdk.Headers, datasetID string, edition string, version string, metadata models.EditableMetadata) error {
 //				panic("mock out the PutMetadata method")
 //			},
 //			PutVersionFunc: func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, versionID string, version models.Version) (models.Version, error) {
@@ -172,10 +172,10 @@ type ClienterMock struct {
 	PutDatasetFunc func(ctx context.Context, headers sdk.Headers, datasetID string, d models.Dataset) error
 
 	// PutInstanceFunc mocks the PutInstance method.
-	PutInstanceFunc func(ctx context.Context, headers sdk.Headers, instanceID string, i sdk.UpdateInstance, ifMatch string) (string, error)
+	PutInstanceFunc func(ctx context.Context, headers sdk.Headers, instanceID string, i sdk.UpdateInstance) (string, error)
 
 	// PutMetadataFunc mocks the PutMetadata method.
-	PutMetadataFunc func(ctx context.Context, headers sdk.Headers, datasetID string, edition string, version string, metadata models.EditableMetadata, versionEtag string) error
+	PutMetadataFunc func(ctx context.Context, headers sdk.Headers, datasetID string, edition string, version string, metadata models.EditableMetadata) error
 
 	// PutVersionFunc mocks the PutVersion method.
 	PutVersionFunc func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, versionID string, version models.Version) (models.Version, error)
@@ -431,8 +431,6 @@ type ClienterMock struct {
 			InstanceID string
 			// I is the i argument value.
 			I sdk.UpdateInstance
-			// IfMatch is the ifMatch argument value.
-			IfMatch string
 		}
 		// PutMetadata holds details about calls to the PutMetadata method.
 		PutMetadata []struct {
@@ -448,8 +446,6 @@ type ClienterMock struct {
 			Version string
 			// Metadata is the metadata argument value.
 			Metadata models.EditableMetadata
-			// VersionEtag is the versionEtag argument value.
-			VersionEtag string
 		}
 		// PutVersion holds details about calls to the PutVersion method.
 		PutVersion []struct {
@@ -1441,7 +1437,7 @@ func (mock *ClienterMock) PutDatasetCalls() []struct {
 }
 
 // PutInstance calls PutInstanceFunc.
-func (mock *ClienterMock) PutInstance(ctx context.Context, headers sdk.Headers, instanceID string, i sdk.UpdateInstance, ifMatch string) (string, error) {
+func (mock *ClienterMock) PutInstance(ctx context.Context, headers sdk.Headers, instanceID string, i sdk.UpdateInstance) (string, error) {
 	if mock.PutInstanceFunc == nil {
 		panic("ClienterMock.PutInstanceFunc: method is nil but Clienter.PutInstance was just called")
 	}
@@ -1450,18 +1446,16 @@ func (mock *ClienterMock) PutInstance(ctx context.Context, headers sdk.Headers, 
 		Headers    sdk.Headers
 		InstanceID string
 		I          sdk.UpdateInstance
-		IfMatch    string
 	}{
 		Ctx:        ctx,
 		Headers:    headers,
 		InstanceID: instanceID,
 		I:          i,
-		IfMatch:    ifMatch,
 	}
 	mock.lockPutInstance.Lock()
 	mock.calls.PutInstance = append(mock.calls.PutInstance, callInfo)
 	mock.lockPutInstance.Unlock()
-	return mock.PutInstanceFunc(ctx, headers, instanceID, i, ifMatch)
+	return mock.PutInstanceFunc(ctx, headers, instanceID, i)
 }
 
 // PutInstanceCalls gets all the calls that were made to PutInstance.
@@ -1473,14 +1467,12 @@ func (mock *ClienterMock) PutInstanceCalls() []struct {
 	Headers    sdk.Headers
 	InstanceID string
 	I          sdk.UpdateInstance
-	IfMatch    string
 } {
 	var calls []struct {
 		Ctx        context.Context
 		Headers    sdk.Headers
 		InstanceID string
 		I          sdk.UpdateInstance
-		IfMatch    string
 	}
 	mock.lockPutInstance.RLock()
 	calls = mock.calls.PutInstance
@@ -1489,31 +1481,29 @@ func (mock *ClienterMock) PutInstanceCalls() []struct {
 }
 
 // PutMetadata calls PutMetadataFunc.
-func (mock *ClienterMock) PutMetadata(ctx context.Context, headers sdk.Headers, datasetID string, edition string, version string, metadata models.EditableMetadata, versionEtag string) error {
+func (mock *ClienterMock) PutMetadata(ctx context.Context, headers sdk.Headers, datasetID string, edition string, version string, metadata models.EditableMetadata) error {
 	if mock.PutMetadataFunc == nil {
 		panic("ClienterMock.PutMetadataFunc: method is nil but Clienter.PutMetadata was just called")
 	}
 	callInfo := struct {
-		Ctx         context.Context
-		Headers     sdk.Headers
-		DatasetID   string
-		Edition     string
-		Version     string
-		Metadata    models.EditableMetadata
-		VersionEtag string
+		Ctx       context.Context
+		Headers   sdk.Headers
+		DatasetID string
+		Edition   string
+		Version   string
+		Metadata  models.EditableMetadata
 	}{
-		Ctx:         ctx,
-		Headers:     headers,
-		DatasetID:   datasetID,
-		Edition:     edition,
-		Version:     version,
-		Metadata:    metadata,
-		VersionEtag: versionEtag,
+		Ctx:       ctx,
+		Headers:   headers,
+		DatasetID: datasetID,
+		Edition:   edition,
+		Version:   version,
+		Metadata:  metadata,
 	}
 	mock.lockPutMetadata.Lock()
 	mock.calls.PutMetadata = append(mock.calls.PutMetadata, callInfo)
 	mock.lockPutMetadata.Unlock()
-	return mock.PutMetadataFunc(ctx, headers, datasetID, edition, version, metadata, versionEtag)
+	return mock.PutMetadataFunc(ctx, headers, datasetID, edition, version, metadata)
 }
 
 // PutMetadataCalls gets all the calls that were made to PutMetadata.
@@ -1521,22 +1511,20 @@ func (mock *ClienterMock) PutMetadata(ctx context.Context, headers sdk.Headers, 
 //
 //	len(mockedClienter.PutMetadataCalls())
 func (mock *ClienterMock) PutMetadataCalls() []struct {
-	Ctx         context.Context
-	Headers     sdk.Headers
-	DatasetID   string
-	Edition     string
-	Version     string
-	Metadata    models.EditableMetadata
-	VersionEtag string
+	Ctx       context.Context
+	Headers   sdk.Headers
+	DatasetID string
+	Edition   string
+	Version   string
+	Metadata  models.EditableMetadata
 } {
 	var calls []struct {
-		Ctx         context.Context
-		Headers     sdk.Headers
-		DatasetID   string
-		Edition     string
-		Version     string
-		Metadata    models.EditableMetadata
-		VersionEtag string
+		Ctx       context.Context
+		Headers   sdk.Headers
+		DatasetID string
+		Edition   string
+		Version   string
+		Metadata  models.EditableMetadata
 	}
 	mock.lockPutMetadata.RLock()
 	calls = mock.calls.PutMetadata

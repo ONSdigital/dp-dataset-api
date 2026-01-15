@@ -634,7 +634,7 @@ func TestAddDatasetVersionCondensed_Success(t *testing.T) {
 				return nil
 			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated"}}, nil
+				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated", Links: &models.DatasetLinks{}}}, nil
 			},
 			GetLatestVersionStaticFunc: func(context.Context, string, string, string) (*models.Version, error) {
 				return &models.Version{
@@ -713,7 +713,7 @@ func TestAddDatasetVersionCondensed_Success(t *testing.T) {
 				return nil
 			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated"}}, nil
+				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated", Links: &models.DatasetLinks{}}}, nil
 			},
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
@@ -781,7 +781,7 @@ func TestAddDatasetVersionCondensed_Success(t *testing.T) {
 			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{
-					Next: &models.Dataset{State: "associated"},
+					Next: &models.Dataset{State: "associated", Links: &models.DatasetLinks{}},
 				}, nil
 			},
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error { return nil },
@@ -878,7 +878,7 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 				}, nil
 			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated"}}, nil
+				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated", Links: &models.DatasetLinks{}}}, nil
 			},
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
@@ -1116,7 +1116,7 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 				}, nil
 			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated"}}, nil
+				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated", Links: &models.DatasetLinks{}}}, nil
 			},
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
@@ -1205,7 +1205,7 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 				return nil
 			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated"}}, nil
+				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated", Links: &models.DatasetLinks{}}}, nil
 			},
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
@@ -1276,7 +1276,7 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 				return nil
 			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated"}}, nil
+				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated", Links: &models.DatasetLinks{}}}, nil
 			},
 			GetLatestVersionStaticFunc: func(context.Context, string, string, string) (*models.Version, error) {
 				return &models.Version{
@@ -1614,9 +1614,6 @@ func TestCreateVersion_Success(t *testing.T) {
 		CheckDatasetExistsFunc: func(context.Context, string, string) error {
 			return nil
 		},
-		CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
-			return nil
-		},
 		CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
 			return false, nil
 		},
@@ -1637,6 +1634,50 @@ func TestCreateVersion_Success(t *testing.T) {
 
 		returnedVersionJSON, err := json.Marshal(expectedVersion)
 		So(err, ShouldBeNil)
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(validVersionJSON))
+		vars := map[string]string{
+			"dataset_id": "123",
+			"edition":    "edition1",
+			"version":    "1",
+		}
+		r = mux.SetURLVars(r, vars)
+		w := httptest.NewRecorder()
+
+		Convey("When createVersion is called", func() {
+			successResponse, errorResponse := api.createVersion(w, r)
+
+			Convey("Then it should return a 201 status code with the created version", func() {
+				So(errorResponse, ShouldBeNil)
+				So(successResponse.Status, ShouldEqual, http.StatusCreated)
+				So(successResponse.Body, ShouldEqual, returnedVersionJSON)
+			})
+
+			Convey("And the eTag header should be set", func() {
+				So(w.Header().Get("ETag"), ShouldEqual, "etag")
+			})
+		})
+	})
+
+	Convey("When the edition does not exist, the version is still created successfully", t, func() {
+		validVersionJSON, err := json.Marshal(validVersion)
+		So(err, ShouldBeNil)
+
+		returnedVersionJSON, err := json.Marshal(expectedVersion)
+		So(err, ShouldBeNil)
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
+				return false, nil
+			},
+			AddVersionStaticFunc: func(context.Context, *models.Version) (*models.Version, error) {
+				return expectedVersion, nil
+			},
+		}
 
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(validVersionJSON))
@@ -1914,85 +1955,12 @@ func TestCreateVersion_Failure(t *testing.T) {
 		})
 	})
 
-	Convey("When the edition does not exist", t, func() {
-		validVersionJSON, err := json.Marshal(validVersion)
-		So(err, ShouldBeNil)
-
-		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(context.Context, string, string) error {
-				return nil
-			},
-			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
-				return errs.ErrEditionNotFound
-			},
-		}
-
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
-		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(validVersionJSON))
-		vars := map[string]string{
-			"dataset_id": "123",
-			"edition":    "edition1",
-			"version":    "1",
-		}
-		r = mux.SetURLVars(r, vars)
-		w := httptest.NewRecorder()
-
-		Convey("When createVersion is called", func() {
-			successResponse, errorResponse := api.createVersion(w, r)
-
-			Convey("Then it should return a 404 status code with an error message", func() {
-				So(successResponse, ShouldBeNil)
-				So(errorResponse.Status, ShouldEqual, http.StatusNotFound)
-				So(errorResponse.Errors[0].Code, ShouldEqual, models.ErrEditionNotFound)
-				So(errorResponse.Errors[0].Description, ShouldEqual, models.ErrEditionNotFoundDescription)
-			})
-		})
-	})
-
-	Convey("When checking if the edition exists returns an error", t, func() {
-		validVersionJSON, err := json.Marshal(validVersion)
-		So(err, ShouldBeNil)
-
-		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(context.Context, string, string) error {
-				return nil
-			},
-			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
-				return errs.ErrInternalServer
-			},
-		}
-
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
-		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(validVersionJSON))
-		vars := map[string]string{
-			"dataset_id": "123",
-			"edition":    "edition1",
-			"version":    "1",
-		}
-		r = mux.SetURLVars(r, vars)
-		w := httptest.NewRecorder()
-
-		Convey("When createVersion is called", func() {
-			successResponse, errorResponse := api.createVersion(w, r)
-
-			Convey("Then it should return a 500 status code with an error message", func() {
-				So(successResponse, ShouldBeNil)
-				So(errorResponse.Status, ShouldEqual, http.StatusInternalServerError)
-				So(errorResponse.Errors[0].Code, ShouldEqual, models.InternalError)
-				So(errorResponse.Errors[0].Description, ShouldEqual, models.InternalErrorDescription)
-			})
-		})
-	})
-
 	Convey("When the version already exists", t, func() {
 		validVersionJSON, err := json.Marshal(validVersion)
 		So(err, ShouldBeNil)
 
 		mockedDataStore := &storetest.StorerMock{
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
-				return nil
-			},
-			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
 			CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
@@ -2030,9 +1998,6 @@ func TestCreateVersion_Failure(t *testing.T) {
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
-			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
-				return nil
-			},
 			CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
 				return false, errs.ErrInternalServer
 			},
@@ -2066,9 +2031,6 @@ func TestCreateVersion_Failure(t *testing.T) {
 
 		mockedDataStore := &storetest.StorerMock{
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
-				return nil
-			},
-			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
 			CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
@@ -2178,8 +2140,7 @@ func TestCreateVersion_Failure(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc:       func(context.Context, string, string) error { return nil },
-			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error { return nil },
+			CheckDatasetExistsFunc: func(context.Context, string, string) error { return nil },
 			CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
 				return false, nil
 			},
