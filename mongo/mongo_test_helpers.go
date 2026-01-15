@@ -64,21 +64,6 @@ func setupVersionsTestData(ctx context.Context, mongoStore *Mongo) ([]*models.Ve
 
 	versions := []*models.Version{
 		{
-			ID:           "version1",
-			Edition:      "edition1",
-			EditionTitle: "First Edition",
-			LastUpdated:  now,
-			Version:      1,
-			State:        "published",
-			Type:         "static",
-			ETag:         "version1ETag",
-			Links: &models.VersionLinks{
-				Dataset: &models.LinkObject{ID: staticDatasetID},
-				Edition: &models.LinkObject{ID: "edition1"},
-				Version: &models.LinkObject{ID: "1"},
-			},
-		},
-		{
 			ID:           "version2",
 			Edition:      "edition2",
 			EditionTitle: "Second Edition",
@@ -92,6 +77,23 @@ func setupVersionsTestData(ctx context.Context, mongoStore *Mongo) ([]*models.Ve
 				Edition: &models.LinkObject{ID: "edition2"},
 				Version: &models.LinkObject{ID: "2"},
 			},
+			ReleaseDate: "2025-02-02T07:00:00.000Z",
+		},
+		{
+			ID:           "version1",
+			Edition:      "edition1",
+			EditionTitle: "First Edition",
+			LastUpdated:  now,
+			Version:      1,
+			State:        "published",
+			Type:         "static",
+			ETag:         "version1ETag",
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{ID: staticDatasetID},
+				Edition: &models.LinkObject{ID: "edition1"},
+				Version: &models.LinkObject{ID: "1"},
+			},
+			ReleaseDate: "2025-01-01T07:00:00.000Z",
 		},
 		{
 			ID:           "newedition",
@@ -107,6 +109,7 @@ func setupVersionsTestData(ctx context.Context, mongoStore *Mongo) ([]*models.Ve
 				Edition: &models.LinkObject{ID: "newedition"},
 				Version: &models.LinkObject{ID: "1"},
 			},
+			ReleaseDate: "2025-03-03T07:00:00.000Z",
 		},
 		{
 			ID:           "neweditionapproved",
@@ -124,6 +127,7 @@ func setupVersionsTestData(ctx context.Context, mongoStore *Mongo) ([]*models.Ve
 				Version: &models.LinkObject{ID: "1", HRef: "/versions"},
 				Self:    &models.LinkObject{},
 			},
+			ReleaseDate: "2025-04-04T07:00:00.000Z",
 		},
 	}
 
