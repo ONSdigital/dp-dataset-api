@@ -13,6 +13,7 @@ import (
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
 	cloudflareMocks "github.com/ONSdigital/dp-dataset-api/cloudflare/mocks"
 
+	"github.com/ONSdigital/dp-authorisation/v2/authorisation"
 	authMock "github.com/ONSdigital/dp-authorisation/v2/authorisation/mock"
 	permissionsAPISDK "github.com/ONSdigital/dp-permissions-api/sdk"
 
@@ -994,6 +995,20 @@ func getAPIWithCantabularMocks(ctx context.Context, mockedDataStore store.Storer
 	mockStatemachineDatasetAPI := application.StateMachineDatasetAPI{
 		DataStore:          store.DataStore{Backend: mockedDataStore},
 		DownloadGenerators: mockedMapSMGeneratedDownloads,
+	}
+
+	if am == nil {
+		am = &authMock.MiddlewareMock{}
+	}
+	if am.RequireFunc == nil {
+		am.RequireFunc = func(_ string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+			return handlerFunc
+		}
+	}
+	if am.RequireWithAttributesFunc == nil {
+		am.RequireWithAttributesFunc = func(_ string, handlerFunc http.HandlerFunc, _ authorisation.GetAttributesFromRequest) http.HandlerFunc {
+			return handlerFunc
+		}
 	}
 
 	mu.Lock()

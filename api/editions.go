@@ -21,7 +21,25 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 	vars := mux.Vars(r)
 	datasetID := vars["dataset_id"]
 	logData := log.Data{"dataset_id": datasetID}
-	authorised := api.checkUserPermission(r, logData, datasetEditionVersionReadPermission)
+	attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
+	if attrsErr != nil {
+		log.Error(ctx, "getEditions endpoint: failed to build permission attributes", attrsErr, logData)
+		handleVersionAPIErr(ctx, attrsErr, w, logData)
+		return nil, 0, attrsErr
+	}
+
+	var authorised bool
+	isStatic, err := api.dataStore.Backend.IsStaticDataset(ctx, datasetID)
+	if err != nil {
+		handleVersionAPIErr(ctx, err, w, logData)
+		return nil, 0, err
+	}
+
+	if isStatic {
+		authorised = api.checkUserPermission(r, logData, datasetReadPermission, attrs)
+	} else {
+		authorised = api.checkUserPermission(r, logData, datasetReadPermission, nil)
+	}
 
 	var state string
 	if !authorised {
@@ -30,26 +48,9 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 
 	logData["state"] = state
 
-	if err := api.dataStore.Backend.CheckDatasetExists(ctx, datasetID, state); err != nil {
-		log.Error(ctx, "getEditions endpoint: unable to find dataset", err, logData)
-		if err == errs.ErrDatasetNotFound {
-			http.Error(w, err.Error(), http.StatusNotFound)
-		} else {
-			http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
-		}
-		return nil, 0, err
-	}
-
-	datasetType, err := api.dataStore.Backend.GetDatasetType(ctx, datasetID, authorised)
-	if err != nil {
-		log.Error(ctx, "getEdition endpoint: unable to find dataset type", err, logData)
-		return nil, 0, err
-	}
-
 	var results []*models.EditionUpdate
 	var totalCount int
-
-	if datasetType == models.Static.String() {
+	if isStatic {
 		var versionResults []*models.Version
 		var unpublishedVersion *models.Version
 
@@ -148,23 +149,34 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"dataset_id": datasetID, "edition": editionID}
 
 	b, err := func() ([]byte, error) {
-		authorised := api.checkUserPermission(r, logData, datasetEditionVersionReadPermission)
+		attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
+		if attrsErr != nil {
+			handleDatasetAPIErr(ctx, attrsErr, w, logData)
+			return nil, attrsErr
+		}
+
+		var authorised bool
+		isStatic, err := api.dataStore.Backend.IsStaticDataset(ctx, datasetID)
+		if err != nil {
+			handleVersionAPIErr(ctx, err, w, logData)
+			return nil, err
+		}
+
+		if isStatic {
+			authorised = api.checkUserPermission(r, logData, datasetReadPermission, attrs)
+		} else {
+			authorised = api.checkUserPermission(r, logData, datasetReadPermission, nil)
+		}
 
 		var state string
 		if !authorised {
 			state = models.PublishedState
 		}
 
-		datasetType, err := api.dataStore.Backend.GetDatasetType(ctx, datasetID, authorised)
-		if err != nil {
-			log.Error(ctx, "getEdition endpoint: unable to find dataset type", err, logData)
-			return nil, err
-		}
-
 		var edition *models.EditionUpdate
 		var unpublishedVersion *models.Version
 
-		if datasetType == models.Static.String() {
+		if isStatic {
 			publishedVersion, err := api.dataStore.Backend.GetLatestVersionStatic(ctx, datasetID, editionID, models.PublishedState)
 			if err != nil && err != errs.ErrVersionNotFound {
 				log.Error(ctx, "getEdition endpoint: unable to find latest published static version", err, logData)

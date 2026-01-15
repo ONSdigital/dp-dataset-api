@@ -65,17 +65,27 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 	var err error
 
 	list, totalCount, err := func() ([]models.Version, int, error) {
-		authorised := api.checkUserPermission(r, logData, datasetEditionVersionReadPermission)
+		attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
+		if attrsErr != nil {
+			handleVersionAPIErr(ctx, attrsErr, w, logData)
+		}
+		var authorised bool
+		isStatic, err := api.dataStore.Backend.IsStaticDataset(ctx, datasetID)
+		if err != nil {
+			return nil, 0, err
+		}
+
+		if isStatic {
+			authorised = api.checkUserPermission(r, logData, datasetReadPermission, attrs)
+		} else {
+			authorised = api.checkUserPermission(r, logData, datasetReadPermission, nil)
+		}
+
 		var results []models.Version
 		var totalCount int
 		var state string
 		if !authorised {
 			state = models.PublishedState
-		}
-
-		if err := api.dataStore.Backend.CheckDatasetExists(ctx, datasetID, state); err != nil {
-			log.Error(ctx, "failed to find dataset for list of versions", err, logData)
-			return nil, 0, err
 		}
 
 		// Check if dataset exists
@@ -179,7 +189,24 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": versionNumber}
 
 	v, getVersionErr := func() (*models.Version, error) {
-		authorised := api.checkUserPermission(r, logData, datasetEditionVersionReadPermission)
+		attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
+		if attrsErr != nil {
+			handleVersionAPIErr(ctx, attrsErr, w, logData)
+			return nil, attrsErr
+		}
+
+		var authorised bool
+		isStatic, err := api.dataStore.Backend.IsStaticDataset(ctx, datasetID)
+		if err != nil {
+			handleVersionAPIErr(ctx, err, w, logData)
+			return nil, err
+		}
+
+		if isStatic {
+			authorised = api.checkUserPermission(r, logData, datasetReadPermission, attrs)
+		} else {
+			authorised = api.checkUserPermission(r, logData, datasetReadPermission, nil)
+		}
 
 		versionID, err := models.ParseAndValidateVersionNumber(ctx, versionNumber)
 		if err != nil {
@@ -470,7 +497,7 @@ func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if !api.checkUserPermission(r, logData, datasetEditionVersionDeletePermission) {
+		if !api.checkUserPermission(r, logData, datasetEditionVersionDeletePermission, nil) {
 			handleVersionAPIErr(ctx, errs.ErrUnauthorised, w, logData)
 			return
 		}
@@ -511,7 +538,7 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
 
 	if err := func() error {
-		authorised := api.checkUserPermission(r, logData, datasetEditionVersionDeletePermission)
+		authorised := api.checkUserPermission(r, logData, datasetEditionVersionDeletePermission, nil)
 		if !authorised {
 			log.Error(ctx, "detachVersion endpoint: User is not authorised to detach a dataset version", errs.ErrUnauthorised, logData)
 			return errs.ErrNotFound

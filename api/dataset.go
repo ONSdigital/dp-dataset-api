@@ -61,8 +61,8 @@ const DatasetID = "id"
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit, offset int) (mappedDatasets interface{}, totalCount int, err error) {
 	ctx := r.Context()
 	logData := log.Data{}
-	authorised := api.checkUserPermission(r, logData, datasetReadPermission)
 
+	authorised := api.checkUserPermission(r, logData, datasetReadPermission, nil)
 	isBasedOnExists := r.URL.Query().Has(IsBasedOn)
 	isBasedOn := r.URL.Query().Get(IsBasedOn)
 
@@ -152,7 +152,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 	return mapResults(datasets), totalCount, nil
 }
 
-//nolint:gocognit // cognitive complexity (> 30) is acceptable for now
+//nolint:gocognit,gocyclo // cyclomatic complexity (> 45) is acceptable for now
 func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
@@ -160,13 +160,30 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"dataset_id": datasetID}
 
 	b, err := func() ([]byte, error) {
+		attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
+		if attrsErr != nil {
+			handleDatasetAPIErr(ctx, attrsErr, w, logData)
+		}
+
 		dataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 		if err != nil {
 			log.Error(ctx, "getDataset endpoint: dataStore.Backend.GetDataset returned an error", err, logData)
 			return nil, err
 		}
 
-		authorised := api.checkUserPermission(r, logData, datasetReadPermission)
+		datasetType := ""
+		if dataset.Next != nil {
+			datasetType = dataset.Next.Type
+		} else if dataset.Current != nil {
+			datasetType = dataset.Current.Type
+		}
+
+		authorised := false
+		if datasetType == models.Static.String() {
+			authorised = api.checkUserPermission(r, logData, datasetReadPermission, attrs)
+		} else {
+			authorised = api.checkUserPermission(r, logData, datasetReadPermission, nil)
+		}
 
 		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 

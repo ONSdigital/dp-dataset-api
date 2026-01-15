@@ -16,6 +16,7 @@ import (
 
 	cloudflareMocks "github.com/ONSdigital/dp-dataset-api/cloudflare/mocks"
 
+	"github.com/ONSdigital/dp-authorisation/v2/authorisation"
 	authMock "github.com/ONSdigital/dp-authorisation/v2/authorisation/mock"
 	permissionsAPISDK "github.com/ONSdigital/dp-permissions-api/sdk"
 
@@ -185,7 +186,11 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 			return true, nil
 		},
 	}
-
+	if authorisationMock.RequireWithAttributesFunc == nil {
+		authorisationMock.RequireWithAttributesFunc = func(_ string, handler http.HandlerFunc, _ authorisation.GetAttributesFromRequest) http.HandlerFunc {
+			return handler
+		}
+	}
 	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, authorisationMock, enableURLRewriting, &mockStatemachineDatasetAPI, permissionsChecker, testIdentityClient, &searchContentUpdated, cloudflareMock)
 }
 
@@ -336,6 +341,9 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
 				return nil, permissionsAPISDK.ErrFailedToParsePermissionsResponse
 			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return handlerFunc
+			},
 		}
 
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
@@ -368,6 +376,9 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
 				return nil, permissionsAPISDK.ErrFailedToParsePermissionsResponse
 			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return handlerFunc
+			},
 		}
 
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
@@ -399,6 +410,9 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 			},
 			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
 				return nil, permissionsAPISDK.ErrFailedToParsePermissionsResponse
+			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return handlerFunc
 			},
 		}
 
@@ -436,6 +450,11 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 			},
 			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
 				return nil, permissionsAPISDK.ErrFailedToParsePermissionsResponse
+			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusUnauthorized)
+				}
 			},
 		}
 
@@ -477,6 +496,11 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
 				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusUnauthorized)
+				}
+			},
 		}
 
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
@@ -510,6 +534,11 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
 				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusUnauthorized)
+				}
+			},
 		}
 
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
@@ -538,6 +567,11 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 			},
 			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
 				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusUnauthorized)
+				}
 			},
 		}
 
@@ -572,6 +606,11 @@ func TestGetDatasetsReturnsError(t *testing.T) {
 			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
 				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusUnauthorized)
+				}
+			},
 		}
 
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
@@ -599,6 +638,11 @@ func TestGetDatasetUnauthorised(t *testing.T) {
 					w.WriteHeader(http.StatusUnauthorized)
 				}
 			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusUnauthorized)
+				}
+			},
 		}
 
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
@@ -622,6 +666,11 @@ func TestGetDatasetForbidden(t *testing.T) {
 					w.WriteHeader(http.StatusForbidden)
 				}
 			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusForbidden)
+				}
+			},
 		}
 
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
@@ -639,7 +688,7 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{ID: "123", Current: &models.Dataset{ID: "123"}}, nil
+				return &models.DatasetUpdate{ID: "123", Current: &models.Dataset{ID: "123", Type: models.Static.String()}}, nil
 			},
 		}
 
@@ -649,6 +698,9 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 			},
 			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
 				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return handlerFunc
 			},
 		}
 
@@ -667,6 +719,9 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{ID: "123", Next: &models.Dataset{ID: "123"}}, nil
 			},
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return true, nil
+			},
 		}
 
 		authorisationMock := &authMock.MiddlewareMock{
@@ -675,6 +730,9 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 			},
 			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
 				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return handlerFunc
 			},
 		}
 
@@ -692,30 +750,8 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(ctx context.Context, ID string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrInternalServer
-			},
-		}
-
-		authorisationMock := &authMock.MiddlewareMock{
-			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
-				return handlerFunc
-			},
-		}
-
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
-		api.Router.ServeHTTP(w, r)
-
-		assertInternalServerErr(w)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-	})
-
-	Convey("When dataset document has only a next sub document return status 404", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456", http.NoBody)
-		w := httptest.NewRecorder()
-		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{ID: "123", Next: &models.Dataset{ID: "123"}}, nil
 			},
 		}
 
@@ -725,6 +761,36 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			},
 			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
 				return nil, permissionsAPISDK.ErrFailedToParsePermissionsResponse
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
+		api.Router.ServeHTTP(w, r)
+
+		assertInternalServerErr(w)
+	})
+
+	Convey("When dataset document has only a next sub document return status 404", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456", http.NoBody)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{ID: "123", Next: &models.Dataset{ID: "123"}}, nil
+			},
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return false, nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return nil, permissionsAPISDK.ErrFailedToParsePermissionsResponse
+			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return handlerFunc
 			},
 		}
 
@@ -741,7 +807,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+			GetDatasetFunc: func(ctx context.Context, ID string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
 		}
@@ -753,13 +819,15 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
 				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return handlerFunc
+			},
 		}
 
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 	})
 
 	Convey("Request with empty dataset ID returns 400 Bad Request", t, func() {
@@ -768,9 +836,6 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return nil, errs.ErrDatasetNotFound
-			},
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
@@ -782,6 +847,9 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			},
 			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
 				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return handlerFunc
 			},
 		}
 
@@ -817,6 +885,9 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
 				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return handlerFunc
+			},
 		}
 
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
@@ -850,6 +921,9 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			},
 			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
 				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return handlerFunc
 			},
 		}
 
@@ -885,6 +959,9 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
 				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return handlerFunc
+			},
 		}
 
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
@@ -918,6 +995,9 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			},
 			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
 				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return handlerFunc
 			},
 		}
 
@@ -953,6 +1033,9 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
 				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return handlerFunc
+			},
 		}
 
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
@@ -986,6 +1069,9 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			},
 			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
 				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return handlerFunc
 			},
 		}
 
