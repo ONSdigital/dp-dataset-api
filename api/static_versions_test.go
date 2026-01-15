@@ -1614,9 +1614,6 @@ func TestCreateVersion_Success(t *testing.T) {
 		CheckDatasetExistsFunc: func(context.Context, string, string) error {
 			return nil
 		},
-		CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
-			return nil
-		},
 		CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
 			return false, nil
 		},
@@ -1703,10 +1700,6 @@ func TestCreateVersion_Success(t *testing.T) {
 
 			Convey("And the eTag header should be set", func() {
 				So(w.Header().Get("ETag"), ShouldEqual, "etag")
-			})
-
-			Convey("And CheckEditionExistsStatic was never called", func() {
-				So(len(mockedDataStore.CheckEditionExistsStaticCalls()), ShouldEqual, 0)
 			})
 		})
 	})
@@ -1970,9 +1963,6 @@ func TestCreateVersion_Failure(t *testing.T) {
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
-			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
-				return nil
-			},
 			CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
 				return true, nil
 			},
@@ -2008,9 +1998,6 @@ func TestCreateVersion_Failure(t *testing.T) {
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
-			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
-				return nil
-			},
 			CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
 				return false, errs.ErrInternalServer
 			},
@@ -2044,9 +2031,6 @@ func TestCreateVersion_Failure(t *testing.T) {
 
 		mockedDataStore := &storetest.StorerMock{
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
-				return nil
-			},
-			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
 			CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
@@ -2156,8 +2140,7 @@ func TestCreateVersion_Failure(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc:       func(context.Context, string, string) error { return nil },
-			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error { return nil },
+			CheckDatasetExistsFunc: func(context.Context, string, string) error { return nil },
 			CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
 				return false, nil
 			},
