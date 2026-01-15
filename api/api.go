@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
+	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/application"
 	"github.com/ONSdigital/dp-dataset-api/cloudflare"
 	"github.com/ONSdigital/dp-dataset-api/config"
@@ -516,7 +517,7 @@ func (api DatasetAPI) getPermissionAttributesFromRequest(req *http.Request) (map
 	edition := vars["edition"]
 
 	if datasetID == "" {
-		return nil, nil
+		return nil, apierrors.ErrNotFound
 	}
 
 	if edition == "" {

@@ -17,6 +17,7 @@ import (
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/dp-dataset-api/utils"
 	permissionsAPISDK "github.com/ONSdigital/dp-permissions-api/sdk"
+	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -109,18 +110,20 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 	Convey("get editions delegates offset and limit to db func and returns results list", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", http.NoBody)
 		w := httptest.NewRecorder()
+		r = mux.SetURLVars(r, map[string]string{"dataset_id": "123-456"})
+
 		publicResult := &models.Edition{ID: "20"}
 		results := []*models.EditionUpdate{{Current: publicResult}}
 
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
-				return models.CantabularFlexibleTable.String(), nil
-			},
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
 			GetEditionsFunc: func(context.Context, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
 				return results, 2, nil
+			},
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return false, nil
 			},
 		}
 
@@ -137,7 +140,6 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 		list, totalCount, err := api.getEditions(w, r, 20, 0)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
 		So(list, ShouldResemble, []*models.Edition{publicResult})
 		So(totalCount, ShouldEqual, 2)
@@ -147,6 +149,7 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 	Convey("get published editions when the dataset type is static", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", http.NoBody)
 		w := httptest.NewRecorder()
+		r = mux.SetURLVars(r, map[string]string{"dataset_id": "123-456"})
 
 		editionsList := []*models.EditionUpdate{
 			{
@@ -319,8 +322,8 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			GetLatestVersionStaticFunc: func(ctx context.Context, datasetID, editionID, state string) (*models.Version, error) {
 				return publishedLatestVersion, nil
 			},
-			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
-				return models.Static.String(), nil
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return true, nil
 			},
 		}
 
@@ -338,7 +341,6 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 
 		editions, err := utils.MapVersionsToEditionUpdate(publishedLatestVersion, nil)
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetAllStaticVersionsCalls()), ShouldEqual, 1)
 		So([]*models.EditionUpdate{editions}, ShouldEqual, editionsList)
@@ -349,6 +351,7 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 	Convey("get all editions when the dataset type is static", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", http.NoBody)
 		w := httptest.NewRecorder()
+		r = mux.SetURLVars(r, map[string]string{"dataset_id": "123-456"})
 
 		editionsList := []*models.EditionUpdate{
 			{
@@ -541,14 +544,14 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
-			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
-				return models.Static.String(), nil
-			},
 			GetAllStaticVersionsFunc: func(ctx context.Context, ID, state string, offset, limit int) ([]*models.Version, int, error) {
 				return versions, 2, nil
 			},
 			GetLatestVersionStaticFunc: func(ctx context.Context, datasetID, editionID, state string) (*models.Version, error) {
 				return publishedLatestVersion, nil
+			},
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return true, nil
 			},
 		}
 
@@ -566,7 +569,6 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 
 		editions, err := utils.MapVersionsToEditionUpdate(publishedLatestVersion, unpublishedLatestVersion)
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetAllStaticVersionsCalls()), ShouldEqual, 1)
 		So([]*models.EditionUpdate{editions}, ShouldEqual, editionsList)
@@ -581,11 +583,8 @@ func TestGetEditionsReturnsError(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(context.Context, string, string) error {
-				return errs.ErrInternalServer
-			},
-			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
-				return "", nil
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return false, errs.ErrInternalServer
 			},
 		}
 
@@ -606,7 +605,6 @@ func TestGetEditionsReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
 	})
 
@@ -615,11 +613,8 @@ func TestGetEditionsReturnsError(t *testing.T) {
 		r.Header.Add("internal-token", "coffee")
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(context.Context, string, string) error {
-				return errs.ErrDatasetNotFound
-			},
-			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
-				return "", nil
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return false, errs.ErrDatasetNotFound
 			},
 		}
 
@@ -637,7 +632,6 @@ func TestGetEditionsReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
-		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
 	})
 
@@ -652,8 +646,8 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			GetEditionsFunc: func(context.Context, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
 				return nil, 0, errs.ErrEditionNotFound
 			},
-			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
-				return "", nil
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return false, nil
 			},
 		}
 
@@ -671,7 +665,6 @@ func TestGetEditionsReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
-		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
 	})
 
@@ -685,8 +678,8 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			GetEditionsFunc: func(context.Context, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
 				return nil, 0, errs.ErrEditionNotFound
 			},
-			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
-				return "", nil
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return false, nil
 			},
 		}
 
@@ -704,7 +697,6 @@ func TestGetEditionsReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
-		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
 	})
 
@@ -715,8 +707,8 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
-			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
-				return models.Static.String(), nil
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return true, nil
 			},
 			GetAllStaticVersionsFunc: func(ctx context.Context, ID, state string, offset, limit int) ([]*models.Version, int, error) {
 				return nil, 0, errs.ErrVersionsNotFound
@@ -737,7 +729,6 @@ func TestGetEditionsReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionsNotFound.Error())
-		So(len(mockedDataStore.CheckDatasetExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetAllStaticVersionsCalls()), ShouldEqual, 1)
 	})
 }

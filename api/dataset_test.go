@@ -688,10 +688,7 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{ID: "123", Current: &models.Dataset{ID: "123"}}, nil
-			},
-			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
-				return false, nil
+				return &models.DatasetUpdate{ID: "123", Current: &models.Dataset{ID: "123", Type: models.Static.String()}}, nil
 			},
 		}
 
@@ -753,8 +750,8 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
-				return false, errs.ErrInternalServer
+			GetDatasetFunc: func(ctx context.Context, ID string) (*models.DatasetUpdate, error) {
+				return nil, errs.ErrInternalServer
 			},
 		}
 
@@ -771,7 +768,6 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(len(mockedDataStore.IsStaticDatasetCalls()), ShouldEqual, 1)
 	})
 
 	Convey("When dataset document has only a next sub document return status 404", t, func() {
@@ -811,8 +807,8 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
-				return false, errs.ErrDatasetNotFound
+			GetDatasetFunc: func(ctx context.Context, ID string) (*models.DatasetUpdate, error) {
+				return nil, errs.ErrDatasetNotFound
 			},
 		}
 
@@ -832,7 +828,6 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(len(mockedDataStore.IsStaticDatasetCalls()), ShouldEqual, 1)
 	})
 
 	Convey("Request with empty dataset ID returns 400 Bad Request", t, func() {

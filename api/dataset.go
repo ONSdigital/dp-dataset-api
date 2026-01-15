@@ -162,28 +162,27 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	b, err := func() ([]byte, error) {
 		attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
 		if attrsErr != nil {
-			log.Error(ctx, "getDataset endpoint: failed to build permission attributes", attrsErr, logData)
-			// safest: treat as not authorised (published-only)
-			attrs = nil
-		}
-
-		var authorised bool
-		isStatic, err := api.dataStore.Backend.IsStaticDataset(ctx, datasetID)
-		if err != nil {
-			log.Error(ctx, "getEdition endpoint: failed to get file type", err, logData)
-			return nil, err
-		}
-
-		if isStatic {
-			authorised = api.checkUserPermission(r, logData, datasetReadPermission, attrs)
-		} else {
-			authorised = api.checkUserPermission(r, logData, datasetReadPermission, nil)
+			handleDatasetAPIErr(ctx, attrsErr, w, logData)
 		}
 
 		dataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 		if err != nil {
 			log.Error(ctx, "getDataset endpoint: dataStore.Backend.GetDataset returned an error", err, logData)
 			return nil, err
+		}
+
+		datasetType := ""
+		if dataset.Next != nil {
+			datasetType = dataset.Next.Type
+		} else if dataset.Current != nil {
+			datasetType = dataset.Current.Type
+		}
+
+		authorised := false
+		if datasetType == models.Static.String() {
+			authorised = api.checkUserPermission(r, logData, datasetReadPermission, attrs)
+		} else {
+			authorised = api.checkUserPermission(r, logData, datasetReadPermission, nil)
 		}
 
 		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())

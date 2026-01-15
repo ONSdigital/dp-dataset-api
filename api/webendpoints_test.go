@@ -114,13 +114,9 @@ func TestWebSubnetEditionsEndpoint(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
-				if authorised {
-					datasetSearchState = models.SubmittedState
-				} else {
-					datasetSearchState = models.PublishedState
-				}
-				return models.CantabularFlexibleTable.String(), nil
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				datasetSearchState = models.PublishedState
+				return false, nil
 			},
 			CheckDatasetExistsFunc: func(_ context.Context, _, state string) error {
 				datasetSearchState = state
@@ -208,6 +204,7 @@ func TestWebSubnetVersionsEndpoint(t *testing.T) {
 				return []models.Version{{ID: "124", State: models.PublishedState}}, 1, nil
 			},
 			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				datasetSearchState = models.PublishedState
 				return true, nil
 			},
 		}

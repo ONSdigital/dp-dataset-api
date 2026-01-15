@@ -28,6 +28,11 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
 
 	b, err := func() ([]byte, error) {
+		attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
+		if attrsErr != nil {
+			handleDatasetAPIErr(ctx, attrsErr, w, logData)
+		}
+
 		versionID, err := models.ParseAndValidateVersionNumber(ctx, version)
 		if err != nil {
 			log.Error(ctx, "failed due to invalid version request", err, logData)
@@ -58,17 +63,12 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 
 		isStaticDataset := (datasetType == models.Static)
 
-		attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
-		if attrsErr != nil {
-			log.Error(ctx, "getDataset endpoint: failed to build permission attributes", attrsErr, logData)
-			// safest: treat as not authorised (published-only)
-			attrs = nil
-		}
-
-		authorised := api.checkUserPermission(r, logData, datasetReadPermission, attrs)
+		authorised := false
 		if isStaticDataset {
+			authorised = api.checkUserPermission(r, logData, datasetReadPermission, attrs)
 			versionDoc, err = api.dataStore.Backend.GetVersionStatic(ctx, datasetID, edition, versionID, "")
 		} else {
+			authorised = api.checkUserPermission(r, logData, datasetReadPermission, nil)
 			versionDoc, err = api.dataStore.Backend.GetVersion(ctx, datasetID, edition, versionID, "")
 		}
 
