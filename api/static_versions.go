@@ -385,16 +385,6 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, models.InternalError, models.InternalErrorDescription))
 	}
 
-	err = api.dataStore.Backend.CheckEditionExistsStatic(ctx, datasetID, edition, "")
-	if err != nil {
-		if err == errs.ErrEditionNotFound {
-			log.Error(ctx, "createVersion endpoint: edition not found", err, logData)
-			return nil, models.NewErrorResponse(http.StatusNotFound, nil, models.NewValidationError(models.ErrEditionNotFound, models.ErrEditionNotFoundDescription))
-		}
-		log.Error(ctx, "createVersion endpoint: failed to check edition existence", err, logData)
-		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, models.InternalError, models.InternalErrorDescription))
-	}
-
 	versionExists, err := api.dataStore.Backend.CheckVersionExistsStatic(ctx, datasetID, edition, versionNumber)
 	if err != nil {
 		log.Error(ctx, "createVersion endpoint: failed to check version existence", err, logData)
