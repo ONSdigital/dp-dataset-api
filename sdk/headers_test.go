@@ -57,7 +57,7 @@ func Test_AddHeaders(t *testing.T) {
 
 	for _, tc := range testCases {
 		Convey("When Add is called with "+tc.name, t, func() {
-			req, err := http.NewRequest("GET", "http://example.com", nil)
+			req, err := http.NewRequest("GET", "http://example.com", http.NoBody)
 			So(err, ShouldBeNil)
 
 			tc.headers.add(req)
