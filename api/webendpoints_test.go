@@ -127,6 +127,9 @@ func TestWebSubnetEditionsEndpoint(t *testing.T) {
 				editionSearchState = state
 				return []*models.EditionUpdate{&edition}, 0, nil
 			},
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return false, nil
+			},
 		}
 
 		Convey("Calling the editions endpoint should allow only published items", func() {
@@ -165,6 +168,9 @@ func TestWebSubnetEditionEndpoint(t *testing.T) {
 				editionSearchState = state
 				return edition, nil
 			},
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return false, nil
+			},
 		}
 
 		Convey("Calling the edition endpoint should allow only published items", func() {
@@ -182,15 +188,11 @@ func TestWebSubnetVersionsEndpoint(t *testing.T) {
 	Convey("When the API is started with private endpoints disabled", t, func() {
 		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234/editions/1234/versions", nil)
 
-		var versionSearchState, editionSearchState, datasetSearchState string
+		var versionSearchState, editionSearchState string
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{ID: "123", Next: &models.Dataset{ID: "1234"}}, nil
-			},
-			CheckDatasetExistsFunc: func(_ context.Context, _, state string) error {
-				datasetSearchState = state
-				return nil
 			},
 			CheckEditionExistsFunc: func(_ context.Context, _, _, state string) error {
 				editionSearchState = state
@@ -207,7 +209,6 @@ func TestWebSubnetVersionsEndpoint(t *testing.T) {
 
 			api.Router.ServeHTTP(w, r)
 			So(w.Code, ShouldEqual, http.StatusOK)
-			So(datasetSearchState, ShouldEqual, models.PublishedState)
 			So(editionSearchState, ShouldEqual, models.PublishedState)
 			So(versionSearchState, ShouldEqual, models.PublishedState)
 		})
@@ -218,15 +219,11 @@ func TestWebSubnetVersionEndpoint(t *testing.T) {
 	Convey("When the API is started with private endpoints disabled", t, func() {
 		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234/editions/1234/versions/1234", nil)
 
-		var versionSearchState, editionSearchState, datasetSearchState string
+		var versionSearchState, editionSearchState string
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{ID: "123-456", Next: &models.Dataset{ID: "123-456"}}, nil
-			},
-			CheckDatasetExistsFunc: func(_ context.Context, _, state string) error {
-				datasetSearchState = state
-				return nil
 			},
 			CheckEditionExistsFunc: func(_ context.Context, _, _, state string) error {
 				editionSearchState = state
@@ -239,6 +236,9 @@ func TestWebSubnetVersionEndpoint(t *testing.T) {
 						Version: &models.LinkObject{},
 						Self:    &models.LinkObject{}}}, nil
 			},
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return false, nil
+			},
 		}
 
 		Convey("Calling the version endpoint should allow only published items", func() {
@@ -247,7 +247,6 @@ func TestWebSubnetVersionEndpoint(t *testing.T) {
 			api.Router.ServeHTTP(w, r)
 
 			So(w.Code, ShouldEqual, http.StatusOK)
-			So(datasetSearchState, ShouldEqual, models.PublishedState)
 			So(editionSearchState, ShouldEqual, models.PublishedState)
 			So(versionSearchState, ShouldEqual, models.PublishedState)
 		})

@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
+	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/application"
 	"github.com/ONSdigital/dp-dataset-api/cloudflare"
 	"github.com/ONSdigital/dp-dataset-api/config"
@@ -260,32 +261,32 @@ func (api *DatasetAPI) enablePrivateDatasetEndpoints(paginator *pagination.Pagin
 
 	api.get(
 		"/datasets/{dataset_id}",
-		api.authMiddleware.Require(datasetReadPermission, api.getDataset),
+		api.authMiddleware.RequireWithAttributes(datasetReadPermission, api.getDataset, api.getPermissionAttributesFromRequest),
 	)
 
 	api.get(
 		"/datasets/{dataset_id}/editions",
-		api.authMiddleware.Require(datasetEditionVersionReadPermission, paginator.Paginate(api.getEditions)),
+		api.authMiddleware.RequireWithAttributes(datasetEditionVersionReadPermission, paginator.Paginate(api.getEditions), api.getPermissionAttributesFromRequest),
 	)
 
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}",
-		api.authMiddleware.Require(datasetEditionVersionReadPermission, api.getEdition),
+		api.authMiddleware.RequireWithAttributes(datasetEditionVersionReadPermission, api.getEdition, api.getPermissionAttributesFromRequest),
 	)
 
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}/versions",
-		api.authMiddleware.Require(datasetEditionVersionReadPermission, paginator.Paginate(api.getVersions)),
+		api.authMiddleware.RequireWithAttributes(datasetEditionVersionReadPermission, paginator.Paginate(api.getVersions), api.getPermissionAttributesFromRequest),
 	)
 
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}",
-		api.authMiddleware.Require(datasetEditionVersionReadPermission, contextAndErrors(api.getVersion)),
+		api.authMiddleware.RequireWithAttributes(datasetEditionVersionReadPermission, contextAndErrors(api.getVersion), api.getPermissionAttributesFromRequest),
 	)
 
 	api.get(
 		"/datasets/{dataset_id}/editions/{edition}/versions/{version}/metadata",
-		api.authMiddleware.Require(datasetEditionVersionReadPermission, api.getMetadata),
+		api.authMiddleware.RequireWithAttributes(datasetEditionVersionReadPermission, api.getMetadata, api.getPermissionAttributesFromRequest),
 	)
 
 	api.get(
@@ -473,7 +474,7 @@ func (api *DatasetAPI) delete(path string, handler http.HandlerFunc) {
 }
 
 // checks the user permission within a function to determine access to pre-publish data
-func (api *DatasetAPI) checkUserPermission(r *http.Request, logData log.Data, permission string) bool {
+func (api *DatasetAPI) checkUserPermission(r *http.Request, logData log.Data, permission string, attributes map[string]string) bool {
 	var authorised bool
 
 	if api.EnablePrePublishView {
@@ -491,7 +492,7 @@ func (api *DatasetAPI) checkUserPermission(r *http.Request, logData log.Data, pe
 		}
 		logData["entity_data"] = entityData
 
-		hasPermission, err := api.permissionsChecker.HasPermission(r.Context(), *entityData, permission, nil)
+		hasPermission, err := api.permissionsChecker.HasPermission(r.Context(), *entityData, permission, attributes)
 		if err != nil {
 			log.Error(r.Context(), "permissions check errored", err, logData)
 			return false
@@ -510,4 +511,25 @@ func (api *DatasetAPI) checkUserPermission(r *http.Request, logData log.Data, pe
 
 func setJSONContentType(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
+}
+
+func (api DatasetAPI) getPermissionAttributesFromRequest(req *http.Request) (map[string]string, error) {
+	vars := mux.Vars(req)
+
+	datasetID := vars["dataset_id"]
+	edition := vars["edition"]
+
+	if datasetID == "" {
+		return nil, apierrors.ErrNotFound
+	}
+
+	if edition == "" {
+		return map[string]string{
+			"dataset_edition": datasetID,
+		}, nil
+	}
+
+	return map[string]string{
+		"dataset_edition": datasetID + "/" + edition,
+	}, nil
 }

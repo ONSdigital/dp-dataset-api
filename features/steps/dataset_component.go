@@ -2,6 +2,7 @@ package steps
 
 import (
 	"context"
+	"crypto/rsa"
 	"fmt"
 	"net/http"
 	"time"
@@ -29,6 +30,11 @@ import (
 	"github.com/ONSdigital/log.go/v2/log"
 )
 
+const (
+	permissionDatasetsRead                = "datasets:read"
+	permissionDatasetEditionsVersionsRead = "dataset-editions-versions:read"
+)
+
 type DatasetComponent struct {
 	ErrorFeature            componenttest.ErrorFeature
 	apiFeature              *componenttest.APIFeature
@@ -43,6 +49,9 @@ type DatasetComponent struct {
 	producer                kafka.IProducer
 	initialiser             service.Initialiser
 	AuthorisationMiddleware authorisation.Middleware
+	viewerPrivKey           *rsa.PrivateKey
+	viewerKID               string
+	fakePermissionsAPI      *authorisationtest.FakePermissionsAPI
 }
 
 func NewDatasetComponent(mongoURI, zebedeeURL string) (*DatasetComponent, error) {
@@ -67,7 +76,7 @@ func NewDatasetComponent(mongoURI, zebedeeURL string) (*DatasetComponent, error)
 	if err != nil {
 		return nil, err
 	}
-
+	c.fakePermissionsAPI = fakePermissionsAPI
 	c.Config.AuthConfig.PermissionsAPIURL = fakePermissionsAPI.URL()
 
 	c.Config.ZebedeeURL = zebedeeURL
@@ -329,6 +338,11 @@ func getPermissionsDataset() *permissionsSDK.Bundle {
 					ID: "1",
 				},
 			},
+			"groups/role-viewer-allowed": {
+				{
+					ID: "1",
+				},
+			},
 		},
 		"datasets:create": {
 			"groups/role-admin": {
@@ -401,6 +415,11 @@ func getPermissionsDataset() *permissionsSDK.Bundle {
 					ID: "1",
 				},
 			},
+			"groups/role-viewer": {
+				{
+					ID: "1",
+				},
+			},
 		},
 		"dataset-editions-versions:update": {
 			"groups/role-admin": {
@@ -451,4 +470,33 @@ func getPermissionsDataset() *permissionsSDK.Bundle {
 			},
 		},
 	}
+}
+
+func (c *DatasetComponent) updateViewerPreviewPolicies(values []string) error {
+	if c.fakePermissionsAPI == nil {
+		return fmt.Errorf("fakePermissionsAPI is nil (did you store it on DatasetComponent?)")
+	}
+
+	dataset := getPermissionsDataset()
+	bundle := *dataset
+
+	ensure := func(permission string) {
+		if bundle[permission] == nil {
+			bundle[permission] = map[string][]permissionsSDK.Policy{}
+		}
+		bundle[permission]["groups/role-viewer-allowed"] = []permissionsSDK.Policy{
+			{
+				ID: "viewer-preview-policy-" + permission,
+				Condition: permissionsSDK.Condition{
+					Attribute: "dataset_edition",
+					Operator:  "StringEquals",
+					Values:    values,
+				},
+			},
+		}
+	}
+	ensure(permissionDatasetsRead)                // "datasets:read" (for /datasets/{id})
+	ensure(permissionDatasetEditionsVersionsRead) // "dataset-editions-versions:read" (for /editions, /versions and metadata)
+	c.fakePermissionsAPI.Reset()
+	return c.fakePermissionsAPI.UpdatePermissionsBundleResponse(&bundle)
 }

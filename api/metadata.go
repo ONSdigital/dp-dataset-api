@@ -33,6 +33,10 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 			log.Error(ctx, "failed due to invalid version request", err, logData)
 			return nil, err
 		}
+		attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
+		if attrsErr != nil {
+			handleDatasetAPIErr(ctx, attrsErr, w, logData)
+		}
 
 		datasetDoc, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 		if err != nil {
@@ -58,11 +62,12 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 
 		isStaticDataset := (datasetType == models.Static)
 
-		authorised := api.checkUserPermission(r, logData, datasetEditionVersionReadPermission)
-
+		var authorised bool
 		if isStaticDataset {
+			authorised = api.checkUserPermission(r, logData, datasetEditionVersionReadPermission, nil)
 			versionDoc, err = api.dataStore.Backend.GetVersionStatic(ctx, datasetID, edition, versionID, "")
 		} else {
+			authorised = api.checkUserPermission(r, logData, datasetEditionVersionReadPermission, attrs)
 			versionDoc, err = api.dataStore.Backend.GetVersion(ctx, datasetID, edition, versionID, "")
 		}
 

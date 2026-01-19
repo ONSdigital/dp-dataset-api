@@ -2,6 +2,10 @@ package steps
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,7 +17,9 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/download"
 	"github.com/ONSdigital/dp-dataset-api/schema"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/uuid"
 
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/cucumber/godog"
@@ -64,6 +70,121 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`the following URL prefixes are purged by cloudflare:$`, c.theFollowingURLPrefixesArePurgedByCloudflare)
 	ctx.Step(`there are no cloudflare purge calls`, c.thereAreNoCloudflarePurgeCalls)
 	ctx.Step(`cloudflare is enabled`, c.cloudflareIsEnabled)
+	ctx.Step(`^I am a viewer user with permission$`, c.viewerAllowedJWTToken)
+	ctx.Step(`^I am a viewer user without permission$`, c.viewerDeniedJWTToken)
+	ctx.Step(`^I have viewer access to the dataset "([^"]*)"$`, c.viewerHasPreviewAccessToDataset)
+	ctx.Step(`^I don't have viewer access to the dataset "([^"]*)"$`, c.viewerDoesNotHavePreviewAccessToDataset)
+	ctx.Step(`^I have viewer access to the dataset edition "([^"]*)"$`, c.viewerHasPreviewAccessToDatasetEdition)
+	ctx.Step(`^I don't have viewer access to the dataset edition "([^"]*)"$`, c.viewerDoesNotHavePreviewAccessToDatasetEdition)
+}
+
+func (c *DatasetComponent) viewerHasPreviewAccessToDataset(datasetID string) error {
+	if err := c.viewerAllowedJWTToken(); err != nil {
+		return err
+	}
+	return c.updateViewerPreviewPolicies([]string{datasetID})
+}
+
+func (c *DatasetComponent) viewerDoesNotHavePreviewAccessToDataset(datasetID string) error {
+	if err := c.viewerAllowedJWTToken(); err != nil {
+		return err
+	}
+	return c.updateViewerPreviewPolicies([]string{})
+}
+
+func (c *DatasetComponent) viewerHasPreviewAccessToDatasetEdition(dataset_edition string) error {
+	if err := c.viewerAllowedJWTToken(); err != nil {
+		return err
+	}
+	return c.updateViewerPreviewPolicies([]string{dataset_edition})
+}
+
+func (c *DatasetComponent) viewerDoesNotHavePreviewAccessToDatasetEdition(dataset_edition string) error {
+	if err := c.viewerAllowedJWTToken(); err != nil {
+		return err
+	}
+	return c.updateViewerPreviewPolicies([]string{})
+}
+
+func (c *DatasetComponent) viewerAllowedJWTToken() error {
+	token, err := c.generateViewerAccessToken(
+		"viewer1@ons.gov.uk",
+		[]string{"role-viewer-allowed"},
+	)
+	if err != nil {
+		return err
+	}
+
+	return c.apiFeature.ISetTheHeaderTo("Authorization", "Bearer "+token)
+}
+
+func (c *DatasetComponent) viewerDeniedJWTToken() error {
+	token, err := c.generateViewerAccessToken(
+		"viewer2@ons.gov.uk",
+		[]string{"role-viewer-denied"},
+	)
+	if err != nil {
+		return err
+	}
+	return c.apiFeature.ISetTheHeaderTo("Authorization", "Bearer "+token)
+}
+
+func (c *DatasetComponent) ensureViewerKeys() error {
+	if c.viewerPrivKey != nil && c.viewerKID != "" {
+		return nil
+	}
+
+	// Generate RSA keypair
+	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return fmt.Errorf("generate viewer RSA key: %w", err)
+	}
+	if err := priv.Validate(); err != nil {
+		return fmt.Errorf("validate viewer RSA key: %w", err)
+	}
+
+	// Create kid
+	kid := uuid.New().String()
+
+	// Convert public key to PKIX DER and base64 encode
+	pubDER, err := x509.MarshalPKIXPublicKey(&priv.PublicKey)
+	if err != nil {
+		return fmt.Errorf("marshal viewer public key: %w", err)
+	}
+
+	if c.Config.AuthConfig.JWTVerificationPublicKeys == nil {
+		c.Config.AuthConfig.JWTVerificationPublicKeys = map[string]string{}
+	}
+	c.Config.AuthConfig.JWTVerificationPublicKeys[kid] = base64.StdEncoding.EncodeToString(pubDER)
+
+	c.viewerPrivKey = priv
+	c.viewerKID = kid
+	return nil
+}
+
+func (c *DatasetComponent) generateViewerAccessToken(email string, groups []string) (string, error) {
+	if err := c.ensureViewerKeys(); err != nil {
+		return "", err
+	}
+
+	now := time.Now().Unix()
+
+	claims := jwt.MapClaims{
+		"sub":            "viewer-sub",
+		"token_use":      "access",
+		"auth_time":      now,
+		"iss":            "https://cognito-idp.eu-west-2.amazonaws.com/eu-west-2_example",
+		"exp":            now + 3600,
+		"iat":            now,
+		"client_id":      "component-test-client",
+		"username":       email,
+		"cognito:groups": groups,
+	}
+
+	t := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	t.Header["kid"] = c.viewerKID
+
+	return t.SignedString(c.viewerPrivKey)
 }
 
 func (c *DatasetComponent) theFeatureFlagIs(flagName, status string) error {
