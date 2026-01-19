@@ -172,13 +172,9 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var datasetType string
-		if dataset.Next != nil {
-			datasetType = dataset.Next.Type
-		} else if dataset.Current != nil {
-			datasetType = dataset.Current.Type
-		}
-
 		var authorised bool
+
+		datasetType = dataset.Next.Type
 		if datasetType == models.Static.String() {
 			authorised = api.checkUserPermission(r, logData, datasetReadPermission, attrs)
 		} else {

@@ -64,10 +64,10 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 
 		var authorised bool
 		if isStaticDataset {
-			authorised = api.checkUserPermission(r, logData, datasetEditionVersionReadPermission, nil)
+			authorised = api.checkUserPermission(r, logData, datasetEditionVersionReadPermission, attrs)
 			versionDoc, err = api.dataStore.Backend.GetVersionStatic(ctx, datasetID, edition, versionID, "")
 		} else {
-			authorised = api.checkUserPermission(r, logData, datasetEditionVersionReadPermission, attrs)
+			authorised = api.checkUserPermission(r, logData, datasetEditionVersionReadPermission, nil)
 			versionDoc, err = api.dataStore.Backend.GetVersion(ctx, datasetID, edition, versionID, "")
 		}
 

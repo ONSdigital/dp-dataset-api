@@ -83,7 +83,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 		datasetType := dataset.Next.Type
 
 		var authorised bool
-		if datasetType != models.Static.String() {
+		if datasetType == models.Static.String() {
 			authorised = api.checkUserPermission(r, logData, datasetEditionVersionReadPermission, attrs)
 		} else {
 			authorised = api.checkUserPermission(r, logData, datasetEditionVersionReadPermission, nil)
@@ -196,18 +196,17 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 		}
 
 		var authorised bool
-		isStaticTemp, err := api.dataStore.Backend.IsStaticDataset(ctx, datasetID)
+		isStatic, err := api.dataStore.Backend.IsStaticDataset(ctx, datasetID)
 		if err != nil {
 			if err == errs.ErrDatasetNotFound {
 				http.Error(w, err.Error(), http.StatusNotFound)
-				return nil, err
 			} else {
 				http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
-				return nil, err
 			}
+			return nil, err
 		}
 
-		if isStaticTemp {
+		if isStatic {
 			authorised = api.checkUserPermission(r, logData, datasetEditionVersionReadPermission, attrs)
 		} else {
 			authorised = api.checkUserPermission(r, logData, datasetEditionVersionReadPermission, nil)

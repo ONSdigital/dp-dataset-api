@@ -32,11 +32,10 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 	if err != nil {
 		if err == errs.ErrDatasetNotFound {
 			http.Error(w, err.Error(), http.StatusNotFound)
-			return nil, 0, err
 		} else {
 			http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
-			return nil, 0, err
 		}
+		return nil, 0, err
 	}
 
 	if isStatic {

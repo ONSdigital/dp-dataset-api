@@ -55,7 +55,7 @@ Feature: Dataset API - Versions Permissions
             ]
             """
 
-    Scenario: GET /datasets/{id}/editions/{edition}/versions returns 200 for autharized viewer
+    Scenario: GET /datasets/{id}/editions/{edition}/versions returns 200 for autharised viewer
         Given private endpoints are enabled
         And I am a viewer user with permission
         And I have viewer access to the dataset edition "test-dataset/2021"
@@ -63,8 +63,29 @@ Feature: Dataset API - Versions Permissions
         Then I should receive the following JSON response with status "200":
             """
             {
-                "count": 1,
+                "count": 2,
                 "items": [
+                    {
+                        "dataset_id": "test-dataset",
+                        "edition": "2021",
+                        "id": "version-002",
+                        "last_updated": "2021-01-01T00:00:01Z",
+                        "links": {
+                            "dataset": {
+                                "id": "test-dataset"
+                            },
+                            "edition": {
+                                "href": "/datasets/test-dataset/editions/2021",
+                                "id": "2021"
+                            },
+                            "self": {
+                                "href": "/datasets/test-dataset/editions/2021/versions/2"
+                            }
+                        },
+                        "state": "associated",
+                        "type": "static",
+                        "version": 2
+                    },
                     {
                         "dataset_id": "test-dataset",
                         "edition": "2021",
@@ -89,28 +110,28 @@ Feature: Dataset API - Versions Permissions
                 ],
                 "limit": 20,
                 "offset": 0,
-                "total_count": 1
+                "total_count": 2
             }
             """
 
-    Scenario: GET /datasets/{id}/editions/{edition}/versions returns 403 for unautharized viewer
+    Scenario: GET /datasets/{id}/editions/{edition}/versions returns 403 for unautharised viewer
         Given private endpoints are enabled
         And I am a viewer user with permission
         And I don't have viewer access to the dataset edition "test-dataset/2021"
         When I GET "/datasets/test-dataset/editions/2021/versions"
         Then the HTTP status code should be "403"
 
-    Scenario: GET /datasets/{id}/editions/{edition}/versions/1 returns 200 for autharized viewer
+    Scenario: GET /datasets/{id}/editions/{edition}/versions/2 returns 200 for autharised viewer
         Given private endpoints are enabled
         And I am a viewer user with permission
         And I have viewer access to the dataset edition "test-dataset/2021"
-        When I GET "/datasets/test-dataset/editions/2021/versions/1"
+        When I GET "/datasets/test-dataset/editions/2021/versions/2"
         Then I should receive the following JSON response with status "200":
             """
             {
                 "edition": "2021",
-                "id": "version-001",
-                "last_updated": "2021-01-01T00:00:00Z",
+                "id": "version-002",
+                "last_updated": "2021-01-01T00:00:01Z",
                 "links": {
                     "dataset": {
                         "id": "test-dataset"
@@ -120,18 +141,18 @@ Feature: Dataset API - Versions Permissions
                         "id": "2021"
                     },
                     "self": {
-                        "href": "/datasets/test-dataset/editions/2021/versions/1"
+                        "href": "/datasets/test-dataset/editions/2021/versions/2"
                     }
                 },
-                "state": "published",
+                "state": "associated",
                 "type": "static",
-                "version": 1
+                "version": 2
             }
             """
 
-    Scenario: GET /datasets/{id}/editions/{edition}/versions/1 returns 403 for unautharized viewer
-        Given private endpoints are enabled
-        And I am a viewer user with permission
-        And I don't have viewer access to the dataset edition "test-dataset/2021"
-        When I GET "/datasets/test-dataset/editions/2021/versions/1"
-        Then the HTTP status code should be "403"
+Scenario: GET /datasets/{id}/editions/{edition}/versions/1 returns 403 for unautharised viewer
+    Given private endpoints are enabled
+    And I am a viewer user with permission
+    And I don't have viewer access to the dataset edition "test-dataset/2021"
+    When I GET "/datasets/test-dataset/editions/2021/versions/1"
+    Then the HTTP status code should be "403"

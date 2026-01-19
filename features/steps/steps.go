@@ -92,14 +92,14 @@ func (c *DatasetComponent) viewerDoesNotHavePreviewAccessToDataset(datasetID str
 	return c.updateViewerPreviewPolicies([]string{})
 }
 
-func (c *DatasetComponent) viewerHasPreviewAccessToDatasetEdition(dataset_edition string) error {
+func (c *DatasetComponent) viewerHasPreviewAccessToDatasetEdition(datasetEdition string) error {
 	if err := c.viewerAllowedJWTToken(); err != nil {
 		return err
 	}
-	return c.updateViewerPreviewPolicies([]string{dataset_edition})
+	return c.updateViewerPreviewPolicies([]string{datasetEdition})
 }
 
-func (c *DatasetComponent) viewerDoesNotHavePreviewAccessToDatasetEdition(dataset_edition string) error {
+func (c *DatasetComponent) viewerDoesNotHavePreviewAccessToDatasetEdition(datasetEdition string) error {
 	if err := c.viewerAllowedJWTToken(); err != nil {
 		return err
 	}

@@ -13,10 +13,10 @@ Feature: Dataset API - Metadata Permissions
                     "license": "Open Government License v3.0"
                 },
                 "version": {
-                    "id": "v1-published",
+                    "id": "v1-approved",
                     "version": 1,
                     "edition": "time-series",
-                    "state": "published",
+                    "state": "approved",
                     "type": "static",
                     "release_date": "2023-05-20",
                     "links": {
@@ -41,7 +41,7 @@ Feature: Dataset API - Metadata Permissions
             }
             """
 
-    Scenario: GET /datasets/{id}/editions/{edition}/versions/1/metadata returns 200 for autharized viewer
+    Scenario: GET /datasets/{id}/editions/{edition}/versions/1/metadata returns 200 for autharised viewer
         Given private endpoints are enabled
         And I am a viewer user with permission
         And I have viewer access to the dataset edition "static-test-dataset/time-series"
@@ -74,14 +74,14 @@ Feature: Dataset API - Metadata Permissions
                     }
                 },
                 "release_date": "2023-05-20",
-                "state": "published",
+                "state": "approved",
                 "title": "Published Static Title",
                 "type": "static",
                 "version": 1
             }
             """
 
-    Scenario: GET /datasets/{id}/editions/{edition}/versions/1 returns 403 for unautharized viewer
+    Scenario: GET /datasets/{id}/editions/{edition}/versions/1 returns 403 for unautharised viewer
         Given private endpoints are enabled
         And I am a viewer user with permission
         And I don't have viewer access to the dataset edition "static-test-dataset/time-series"

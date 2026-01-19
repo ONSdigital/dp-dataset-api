@@ -1,4 +1,4 @@
-Feature: Dataset API - Static Editions Admin Access
+Feature: Dataset API - Static Editions Permissions
 
     Background:
         Given I have these datasets:
@@ -6,32 +6,51 @@ Feature: Dataset API - Static Editions Admin Access
             [
                 {
                     "id": "population-estimates",
-                    "state": "published"
+                    "title": "Static Dataset 3",
+                    "description": "Static Dataset 3 Description",
+                    "state": "published",
+                    "type": "static"
                 }
             ]
             """
-        And I have these editions:
+        And I have these static versions:
             """
             [
                 {
-                    "id": "1",
-                    "edition": "2019",
-                    "state": "published",
+                    "id": "test-version-population-1",
+                    "edition": "January",
+                    "edition_title": "January Edition Title",
                     "links": {
                         "dataset": {
                             "id": "population-estimates"
+                        },
+                        "edition": {
+                            "href": "/datasets/population-estimates/editions/January",
+                            "id": "January"
                         }
-                    }
+                    },
+                    "version": 1,
+                    "release_date": "2025-01-01T07:00:00.000Z",
+                    "state": "published",
+                    "type": "static"
                 },
                 {
-                    "id": "2",
-                    "edition": "time-series",
-                    "state": "associated",
+                    "id": "test-version-population-2",
+                    "edition": "February",
+                    "edition_title": "February Edition Title",
                     "links": {
                         "dataset": {
                             "id": "population-estimates"
+                        },
+                        "edition": {
+                            "href": "/datasets/population-estimates/editions/February",
+                            "id": "February"
                         }
-                    }
+                    },
+                    "version": 1,
+                    "release_date": "2025-02-01T07:00:00.000Z",
+                    "state": "edition-confirmed",
+                    "type": "static"
                 }
             ]
             """
@@ -46,49 +65,76 @@ Feature: Dataset API - Static Editions Admin Access
                 "count": 2,
                 "items": [
                     {
-                        "id": "1",
-                        "current": {
-                            "id": "1",
-                            "edition": "2019",
-                            "state": "published",
-                            "links": {
-                                "dataset": {
-                                    "id": "population-estimates"
-                                }
-                            }
-                        },
                         "next": {
-                            "id": "1",
-                            "edition": "2019",
-                            "state": "published",
+                            "edition": "February",
+                            "edition_title": "February Edition Title",
                             "links": {
                                 "dataset": {
                                     "id": "population-estimates"
+                                },
+                                "latest_version": {
+                                    "href": "/datasets/population-estimates/editions/February/versions/1",
+                                    "id": "1"
+                                },
+                                "self": {
+                                    "href": "/datasets/population-estimates/editions/February",
+                                    "id": "February"
+                                },
+                                "versions": {
+                                    "href": "/datasets/population-estimates/editions/February/versions"
                                 }
-                            }
+                            },
+                            "release_date": "2025-02-01T07:00:00.000Z",
+                            "state": "edition-confirmed",
+                            "version": 1
                         }
                     },
                     {
-                        "id": "2",
                         "current": {
-                            "id": "2",
-                            "edition": "time-series",
-                            "state": "associated",
+                            "edition": "January",
+                            "edition_title": "January Edition Title",
                             "links": {
                                 "dataset": {
                                     "id": "population-estimates"
+                                },
+                                "latest_version": {
+                                    "href": "/datasets/population-estimates/editions/January/versions/1",
+                                    "id": "1"
+                                },
+                                "self": {
+                                    "href": "/datasets/population-estimates/editions/January",
+                                    "id": "January"
+                                },
+                                "versions": {
+                                    "href": "/datasets/population-estimates/editions/January/versions"
                                 }
-                            }
+                            },
+                            "release_date": "2025-01-01T07:00:00.000Z",
+                            "state": "published",
+                            "version": 1
                         },
                         "next": {
-                            "id": "2",
-                            "edition": "time-series",
-                            "state": "associated",
+                            "edition": "January",
+                            "edition_title": "January Edition Title",
                             "links": {
                                 "dataset": {
                                     "id": "population-estimates"
+                                },
+                                "latest_version": {
+                                    "href": "/datasets/population-estimates/editions/January/versions/1",
+                                    "id": "1"
+                                },
+                                "self": {
+                                    "href": "/datasets/population-estimates/editions/January",
+                                    "id": "January"
+                                },
+                                "versions": {
+                                    "href": "/datasets/population-estimates/editions/January/versions"
                                 }
-                            }
+                            },
+                            "release_date": "2025-01-01T07:00:00.000Z",
+                            "state": "published",
+                            "version": 1
                         }
                     }
                 ],
@@ -98,7 +144,7 @@ Feature: Dataset API - Static Editions Admin Access
             }
             """
 
-    Scenario: GET /datasets/{id}/editions returns 200 for autharized viewer
+    Scenario: GET /datasets/{id}/editions returns 200 for autharised viewer
         Given private endpoints are enabled
         And I am a viewer user with permission
         And I have viewer access to the dataset "population-estimates"
@@ -106,55 +152,132 @@ Feature: Dataset API - Static Editions Admin Access
         Then I should receive the following JSON response with status "200":
             """
             {
-                "count": 1,
+                "count": 2,
                 "items": [
                     {
-                        "id": "1",
-                        "edition": "2019",
-                        "state": "published",
-                        "links": {
-                            "dataset": {
-                                "id": "population-estimates"
-                            }
+                        "next": {
+                            "edition": "February",
+                            "edition_title": "February Edition Title",
+                            "links": {
+                                "dataset": {
+                                    "id": "population-estimates"
+                                },
+                                "latest_version": {
+                                    "href": "/datasets/population-estimates/editions/February/versions/1",
+                                    "id": "1"
+                                },
+                                "self": {
+                                    "href": "/datasets/population-estimates/editions/February",
+                                    "id": "February"
+                                },
+                                "versions": {
+                                    "href": "/datasets/population-estimates/editions/February/versions"
+                                }
+                            },
+                            "release_date": "2025-02-01T07:00:00.000Z",
+                            "state": "edition-confirmed",
+                            "version": 1
+                        }
+                    },
+                    {
+                        "current": {
+                            "edition": "January",
+                            "edition_title": "January Edition Title",
+                            "links": {
+                                "dataset": {
+                                    "id": "population-estimates"
+                                },
+                                "latest_version": {
+                                    "href": "/datasets/population-estimates/editions/January/versions/1",
+                                    "id": "1"
+                                },
+                                "self": {
+                                    "href": "/datasets/population-estimates/editions/January",
+                                    "id": "January"
+                                },
+                                "versions": {
+                                    "href": "/datasets/population-estimates/editions/January/versions"
+                                }
+                            },
+                            "release_date": "2025-01-01T07:00:00.000Z",
+                            "state": "published",
+                            "version": 1
+                        },
+                        "next": {
+                            "edition": "January",
+                            "edition_title": "January Edition Title",
+                            "links": {
+                                "dataset": {
+                                    "id": "population-estimates"
+                                },
+                                "latest_version": {
+                                    "href": "/datasets/population-estimates/editions/January/versions/1",
+                                    "id": "1"
+                                },
+                                "self": {
+                                    "href": "/datasets/population-estimates/editions/January",
+                                    "id": "January"
+                                },
+                                "versions": {
+                                    "href": "/datasets/population-estimates/editions/January/versions"
+                                }
+                            },
+                            "release_date": "2025-01-01T07:00:00.000Z",
+                            "state": "published",
+                            "version": 1
                         }
                     }
                 ],
                 "limit": 20,
                 "offset": 0,
-                "total_count": 1
+                "total_count": 2
             }
             """
 
-    Scenario: GET /datasets/{id}/editions returns 403 for unautharized viewer
+    Scenario: GET /datasets/{id}/editions returns 403 for unautharised viewer
         Given private endpoints are enabled
         And I am a viewer user with permission
         And I don't have viewer access to the dataset "population-estimates"
         When I GET "/datasets/population-estimates/editions"
         Then the HTTP status code should be "403"
 
-
-    Scenario: GET /datasets/{id}/editions/{edition} returns 200 for autharized viewer
+    Scenario: GET /datasets/{id}/editions/{edition} returns 200 for autharised viewer
         Given private endpoints are enabled
         And I am a viewer user with permission
-        And I have viewer access to the dataset "population-estimates/2019"
-        When I GET "/datasets/population-estimates/editions/2019"
+        And I have viewer access to the dataset "population-estimates/February"
+        When I GET "/datasets/population-estimates/editions/February"
         Then I should receive the following JSON response with status "200":
             """
             {
-                "id": "1",
-                "edition": "2019",
-                "state": "published",
-                "links": {
-                    "dataset": {
-                        "id": "population-estimates"
-                    }
+                "next": {
+                    "edition": "February",
+                    "edition_title": "February Edition Title",
+                    "links": {
+                        "dataset": {
+                            "id": "population-estimates"
+                        },
+                        "latest_version": {
+                            "href": "/datasets/population-estimates/editions/February/versions/1",
+                            "id": "1"
+                        },
+                        "self": {
+                            "href": "/datasets/population-estimates/editions/February",
+                            "id": "February"
+                        },
+                        "versions": {
+                            "href": "/datasets/population-estimates/editions/February/versions"
+                        }
+                    },
+                    "release_date": "2025-02-01T07:00:00.000Z",
+                    "state": "edition-confirmed",
+                    "version": 1
                 }
             }
             """
-    
-    Scenario: GET /datasets/{id}/editions/{edition} returns 403 for unautharized viewer
+
+    Scenario: GET /datasets/{id}/editions/{edition} returns 403 for unautharised viewer
         Given private endpoints are enabled
         And I am a viewer user without permission
-        And I don't have viewer access to the dataset "population-estimates/2019"
-        When I GET "/datasets/population-estimates/editions/2019"
+        And I don't have viewer access to the dataset "population-estimates/January"
+        When I GET "/datasets/population-estimates/editions/January"
         Then the HTTP status code should be "403"

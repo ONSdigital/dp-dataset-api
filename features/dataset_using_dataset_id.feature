@@ -166,7 +166,7 @@ Feature: Dataset search by dataset id
 
     Scenario: Viewer with permission to read the dataset receives 200
         Given private endpoints are enabled
-        Given I am a viewer user with permission
+        And I am a viewer user with permission
         And I have viewer access to the dataset "static-dataset-4"
         When I GET "/datasets/static-dataset-4"
         Then I should receive the following JSON response with status "200":
