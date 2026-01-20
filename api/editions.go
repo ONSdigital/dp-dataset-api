@@ -76,11 +76,16 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 		}
 
 		editionMap := make(map[string][]*models.Version)
+		editionOrder := make([]string, 0) // maps are unordered, so a separate slice is needed to maintain the order returned from MongoDB
+
 		for _, version := range versionResults {
+			if _, exists := editionMap[version.Edition]; !exists {
+				editionOrder = append(editionOrder, version.Edition)
+			}
 			editionMap[version.Edition] = append(editionMap[version.Edition], version)
 		}
 
-		for editionID := range editionMap {
+		for _, editionID := range editionOrder {
 			publishedVersion, err := api.dataStore.Backend.GetLatestVersionStatic(ctx, datasetID, editionID, models.PublishedState)
 			if err != nil && err != errs.ErrVersionNotFound {
 				log.Error(ctx, "getEdition endpoint: unable to find latest published static version", err, logData)
@@ -100,6 +105,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 				log.Error(ctx, "getEditions endpoint: failed to map versions to edition", err, logData)
 				return nil, 0, err
 			}
+
 			results = append(results, edition)
 		}
 	} else {
