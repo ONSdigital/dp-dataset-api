@@ -41,7 +41,7 @@ Feature: Dataset API - Metadata Permissions
             }
             """
 
-    Scenario: GET /datasets/{id}/editions/{edition}/versions/1/metadata returns 200 for an autharised viewer
+    Scenario: GET /datasets/{id}/editions/{edition}/versions/1/metadata returns 200 for an authorised viewer
         Given private endpoints are enabled
         And I am a viewer user with permission
         And I have viewer access to the dataset edition "static-test-dataset/time-series"
@@ -81,7 +81,7 @@ Feature: Dataset API - Metadata Permissions
             }
             """
 
-    Scenario: GET /datasets/{id}/editions/{edition}/versions/1 returns 403 for an unautharised viewer
+    Scenario: GET /datasets/{id}/editions/{edition}/versions/1 returns 403 for an unauthorised viewer
         Given private endpoints are enabled
         And I am a viewer user with permission
         And I don't have viewer access to the dataset edition "static-test-dataset/time-series"
