@@ -27,6 +27,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/dp-dataset-api/url"
+	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	filesAPISDKMocks "github.com/ONSdigital/dp-files-api/sdk/mocks"
 	kafka "github.com/ONSdigital/dp-kafka/v4"
 	dprequest "github.com/ONSdigital/dp-net/v3/request"
@@ -2489,7 +2490,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 		}
 
 		mockFilesAPIClient := filesAPISDKMocks.ClienterMock{
-			DeleteFileFunc: func(ctx context.Context, filePath string) error {
+			DeleteFileFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) error {
 				return nil
 			},
 		}
@@ -2823,7 +2824,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		}
 
 		mockFilesAPIClient := filesAPISDKMocks.ClienterMock{
-			DeleteFileFunc: func(ctx context.Context, filePath string) error {
+			DeleteFileFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) error {
 				return errors.New("files api returned an error")
 			},
 		}

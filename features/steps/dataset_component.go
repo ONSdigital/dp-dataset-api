@@ -270,7 +270,7 @@ func (c *DatasetComponent) DoGetAuthorisationMiddleware(ctx context.Context, cfg
 
 func (c *DatasetComponent) DoGetFilesAPIClientOk(ctx context.Context, cfg *config.Configuration) (filesAPISDK.Clienter, error) {
 	return &filesAPISDKMocks.ClienterMock{
-		DeleteFileFunc: func(ctx context.Context, filePath string) error {
+		DeleteFileFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) error {
 			if filePath == "/fail/to/delete.csv" {
 				return fmt.Errorf("failed to delete file at path: %s", filePath)
 			}

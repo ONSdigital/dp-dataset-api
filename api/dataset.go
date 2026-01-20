@@ -12,6 +12,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/utils"
+	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	dphttp "github.com/ONSdigital/dp-net/v3/http"
 	"github.com/ONSdigital/dp-net/v3/links"
 	"github.com/ONSdigital/log.go/v2/log"
@@ -625,7 +626,10 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 						logData["distribution_title"] = distribution.Title
 						logData["distribution_download_url"] = distribution.DownloadURL
 
-						err := api.filesAPIClient.DeleteFile(ctx, distribution.DownloadURL)
+						authHeader := r.Header.Get(filesAPISDK.Authorization)
+						headers := filesAPISDK.Headers{Authorization: authHeader}
+
+						err := api.filesAPIClient.DeleteFile(ctx, distribution.DownloadURL, headers)
 						if err != nil {
 							log.Error(ctx, "deleteDataset endpoint: failed to delete distribution file from files API", err, logData)
 							return err

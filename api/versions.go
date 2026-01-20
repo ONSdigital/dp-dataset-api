@@ -15,6 +15,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/utils"
+	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	kafka "github.com/ONSdigital/dp-kafka/v4"
 	dpresponse "github.com/ONSdigital/dp-net/v3/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v3/http"
@@ -495,7 +496,8 @@ func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if err := api.smDatasetAPI.DeleteStaticVersion(ctx, datasetID, edition, versionNum, api.filesAPIClient); err != nil {
+		authHeader := r.Header.Get(filesAPISDK.Authorization)
+		if err := api.smDatasetAPI.DeleteStaticVersion(ctx, datasetID, edition, versionNum, api.filesAPIClient, authHeader); err != nil {
 			handleVersionAPIErr(ctx, err, w, logData)
 			return
 		}
@@ -972,7 +974,11 @@ func (api *DatasetAPI) publishDistributionFiles(ctx context.Context, version *mo
 		}
 		maps.Copy(fileLogData, logData)
 
-		_, err := api.filesAPIClient.GetFile(ctx, filepath)
+		h := filesAPISDK.Headers{
+			Authorization: api.authToken,
+		}
+
+		_, err := api.filesAPIClient.GetFile(ctx, filepath, h)
 		if err != nil {
 			log.Error(ctx, "failed to get file metadata", err, fileLogData)
 
@@ -985,7 +991,7 @@ func (api *DatasetAPI) publishDistributionFiles(ctx context.Context, version *mo
 			continue
 		}
 
-		err = api.filesAPIClient.MarkFilePublished(ctx, filepath)
+		err = api.filesAPIClient.MarkFilePublished(ctx, filepath, h)
 		if err != nil {
 			log.Error(ctx, "failed to publish file", err, fileLogData)
 

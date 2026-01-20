@@ -191,7 +191,7 @@ func (e *Init) DoGetAuthorisationMiddleware(ctx context.Context, authorisationCo
 
 // DoGetFilesAPIClient returns a files API client
 func (e *Init) DoGetFilesAPIClient(ctx context.Context, cfg *config.Configuration) (filesAPISDK.Clienter, error) {
-	return filesAPISDK.New(cfg.FilesAPIURL, cfg.ServiceAuthToken), nil
+	return filesAPISDK.New(cfg.FilesAPIURL), nil
 }
 
 // DoGetCloudflareClient returns a cloudflare client

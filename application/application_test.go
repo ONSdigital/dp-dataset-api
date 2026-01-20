@@ -10,6 +10,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	filesAPISDKMocks "github.com/ONSdigital/dp-files-api/sdk/mocks"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -3043,7 +3044,7 @@ func TestDeleteStaticVersion_ReturnSuccess(t *testing.T) {
 		}
 
 		mockFilesAPIClient := &filesAPISDKMocks.ClienterMock{
-			DeleteFileFunc: func(ctx context.Context, filePath string) error {
+			DeleteFileFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) error {
 				return nil
 			},
 		}
@@ -3051,7 +3052,7 @@ func TestDeleteStaticVersion_ReturnSuccess(t *testing.T) {
 		sm := &StateMachine{}
 		smDS := Setup(store.DataStore{Backend: mocked}, map[models.DatasetType]DownloadsGenerator{}, sm)
 
-		err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 1, mockFilesAPIClient)
+		err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 1, mockFilesAPIClient, "test-token")
 		So(err, ShouldBeNil)
 		So(len(mocked.CheckEditionExistsStaticCalls()), ShouldEqual, 1)
 		So(len(mocked.GetVersionStaticCalls()), ShouldEqual, 1)
@@ -3070,7 +3071,7 @@ func TestDeleteStaticVersion_Errors(t *testing.T) {
 			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error { return errs.ErrEditionNotFound },
 		}
 		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{})
-		err := smDS.DeleteStaticVersion(context.Background(), "ds1", "missing", 1, nil)
+		err := smDS.DeleteStaticVersion(context.Background(), "ds1", "missing", 1, nil, "test-token")
 		So(err, ShouldEqual, errs.ErrEditionNotFound)
 		So(len(mocked.CheckEditionExistsStaticCalls()), ShouldEqual, 1)
 	})
@@ -3083,7 +3084,7 @@ func TestDeleteStaticVersion_Errors(t *testing.T) {
 			},
 		}
 		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{})
-		err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 10, nil)
+		err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 10, nil, "test-token")
 		So(err, ShouldEqual, errs.ErrVersionNotFound)
 		So(len(mocked.CheckEditionExistsStaticCalls()), ShouldEqual, 1)
 		So(len(mocked.GetVersionStaticCalls()), ShouldEqual, 1)
@@ -3097,7 +3098,7 @@ func TestDeleteStaticVersion_Errors(t *testing.T) {
 			},
 		}
 		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{})
-		err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 3, nil)
+		err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 3, nil, "test-token")
 		So(err, ShouldEqual, errs.ErrDeletePublishedVersionForbidden)
 	})
 
@@ -3120,13 +3121,13 @@ func TestDeleteStaticVersion_Errors(t *testing.T) {
 		}
 
 		mockFilesAPIClient := &filesAPISDKMocks.ClienterMock{
-			DeleteFileFunc: func(ctx context.Context, filePath string) error {
+			DeleteFileFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) error {
 				return expectedError
 			},
 		}
 
 		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{})
-		err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 2, mockFilesAPIClient)
+		err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 2, mockFilesAPIClient, "test-token")
 		So(err, ShouldEqual, expectedError)
 		So(len(mockFilesAPIClient.DeleteFileCalls()), ShouldEqual, 1)
 	})
@@ -3148,13 +3149,13 @@ func TestDeleteStaticVersion_Errors(t *testing.T) {
 		}
 
 		mockFilesAPIClient := &filesAPISDKMocks.ClienterMock{
-			DeleteFileFunc: func(ctx context.Context, filePath string) error {
+			DeleteFileFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) error {
 				return nil
 			},
 		}
 
 		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{})
-		err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 4, mockFilesAPIClient)
+		err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 4, mockFilesAPIClient, "test-token")
 		So(err, ShouldEqual, errs.ErrInternalServer)
 		So(len(mockFilesAPIClient.DeleteFileCalls()), ShouldEqual, 1)
 	})
@@ -3179,13 +3180,13 @@ func TestDeleteStaticVersion_Errors(t *testing.T) {
 		}
 
 		mockFilesAPIClient := &filesAPISDKMocks.ClienterMock{
-			DeleteFileFunc: func(ctx context.Context, filePath string) error {
+			DeleteFileFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) error {
 				return nil
 			},
 		}
 
 		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{})
-		err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 5, mockFilesAPIClient)
+		err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 5, mockFilesAPIClient, "test-token")
 		So(err, ShouldEqual, errs.ErrInternalServer)
 		So(len(mockFilesAPIClient.DeleteFileCalls()), ShouldEqual, 1)
 		So(len(mocked.DeleteStaticDatasetVersionCalls()), ShouldEqual, 1)
@@ -3212,13 +3213,13 @@ func TestDeleteStaticVersion_Errors(t *testing.T) {
 		}
 
 		mockFilesAPIClient := &filesAPISDKMocks.ClienterMock{
-			DeleteFileFunc: func(ctx context.Context, filePath string) error {
+			DeleteFileFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) error {
 				return nil
 			},
 		}
 
 		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{})
-		err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 6, mockFilesAPIClient)
+		err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 6, mockFilesAPIClient, "test-token")
 		So(err, ShouldEqual, errs.ErrInternalServer)
 		So(len(mockFilesAPIClient.DeleteFileCalls()), ShouldEqual, 1)
 		So(len(mocked.DeleteStaticDatasetVersionCalls()), ShouldEqual, 1)
