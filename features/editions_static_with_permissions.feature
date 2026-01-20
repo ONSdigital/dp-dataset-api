@@ -49,7 +49,7 @@ Feature: Dataset API - Static Editions Permissions
                     },
                     "version": 1,
                     "release_date": "2025-02-01T07:00:00.000Z",
-                    "state": "edition-confirmed",
+                    "state": "associated",
                     "type": "static"
                 }
             ]
@@ -85,7 +85,7 @@ Feature: Dataset API - Static Editions Permissions
                                 }
                             },
                             "release_date": "2025-02-01T07:00:00.000Z",
-                            "state": "edition-confirmed",
+                            "state": "associated",
                             "version": 1
                         }
                     },
@@ -144,7 +144,7 @@ Feature: Dataset API - Static Editions Permissions
             }
             """
 
-    Scenario: GET /datasets/{id}/editions returns 200 for autharised viewer
+    Scenario: GET /datasets/{id}/editions returns 200 for an autharised viewer
         Given private endpoints are enabled
         And I am a viewer user with permission
         And I have viewer access to the dataset "population-estimates"
@@ -175,7 +175,7 @@ Feature: Dataset API - Static Editions Permissions
                                 }
                             },
                             "release_date": "2025-02-01T07:00:00.000Z",
-                            "state": "edition-confirmed",
+                            "state": "associated",
                             "version": 1
                         }
                     },
@@ -234,14 +234,14 @@ Feature: Dataset API - Static Editions Permissions
             }
             """
 
-    Scenario: GET /datasets/{id}/editions returns 403 for unautharised viewer
+    Scenario: GET /datasets/{id}/editions returns 403 for an unautharised viewer
         Given private endpoints are enabled
         And I am a viewer user with permission
         And I don't have viewer access to the dataset "population-estimates"
         When I GET "/datasets/population-estimates/editions"
         Then the HTTP status code should be "403"
 
-    Scenario: GET /datasets/{id}/editions/{edition} returns 200 for autharised viewer
+    Scenario: GET /datasets/{id}/editions/{edition} returns 200 for an autharised viewer
         Given private endpoints are enabled
         And I am a viewer user with permission
         And I have viewer access to the dataset "population-estimates/February"
@@ -269,13 +269,13 @@ Feature: Dataset API - Static Editions Permissions
                         }
                     },
                     "release_date": "2025-02-01T07:00:00.000Z",
-                    "state": "edition-confirmed",
+                    "state": "associated",
                     "version": 1
                 }
             }
             """
 
-    Scenario: GET /datasets/{id}/editions/{edition} returns 403 for unautharised viewer
+    Scenario: GET /datasets/{id}/editions/{edition} returns 403 for an unautharised viewer
         Given private endpoints are enabled
         And I am a viewer user without permission
         And I don't have viewer access to the dataset "population-estimates/January"
