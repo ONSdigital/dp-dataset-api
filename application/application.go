@@ -736,7 +736,7 @@ func PublishDataset(ctx context.Context, smDS *StateMachineDatasetAPI,
 	return nil
 }
 
-func (smDS *StateMachineDatasetAPI) DeleteStaticVersion(ctx context.Context, datasetID, edition string, version int, filesAPIClient filesAPISDK.Clienter, token string) error {
+func (smDS *StateMachineDatasetAPI) DeleteStaticVersion(ctx context.Context, datasetID, edition string, version int, filesAPIClient filesAPISDK.Clienter, accessToken string) error {
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
 
 	// Validate edition exists for the dataset (static context)
@@ -764,9 +764,7 @@ func (smDS *StateMachineDatasetAPI) DeleteStaticVersion(ctx context.Context, dat
 			logData["distribution_title"] = distribution.Title
 			logData["distribution_download_url"] = distribution.DownloadURL
 
-			h := filesAPISDK.Headers{Authorization: token}
-
-			err := filesAPIClient.DeleteFile(ctx, distribution.DownloadURL, h)
+			err := filesAPIClient.DeleteFile(ctx, distribution.DownloadURL, filesAPISDK.Headers{Authorization: accessToken})
 			if err != nil {
 				log.Error(ctx, "DeleteStaticVersion: failed to delete distribution file from files API", err, logData)
 				return err

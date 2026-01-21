@@ -23,6 +23,8 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	filesAPIModels "github.com/ONSdigital/dp-files-api/files"
+	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
+	filesAPISDKMocks "github.com/ONSdigital/dp-files-api/sdk/mocks"
 	filesAPIErrors "github.com/ONSdigital/dp-files-api/store"
 	permissionsAPISDK "github.com/ONSdigital/dp-permissions-api/sdk"
 	"github.com/ONSdigital/log.go/v2/log"
@@ -4005,6 +4007,69 @@ func TestDeleteVersionStaticDatasetReturnOK(t *testing.T) {
 
 func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
 	t.Parallel()
+	Convey("When the access token is incorrect and deleting a static version returns an error from Files API", t, func() {
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
+		r.Header.Set("Authorization", "Bearer invalid-token")
+
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return true, nil
+			},
+			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID string, edition string, lang string) error {
+				return nil
+			},
+			GetVersionStaticFunc: func(ctx context.Context, datasetID, editionID string, version int, state string) (*models.Version, error) {
+				return &models.Version{
+					State: models.AssociatedState,
+					Distributions: &[]models.Distribution{
+						{
+							Title:       "Test File",
+							DownloadURL: "http://files/test.csv",
+						},
+					},
+				}, nil
+			},
+			GetDatasetFunc: func(ctx context.Context, ID string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					Next: &models.Dataset{ID: ID},
+				}, nil
+			},
+		}
+
+		mockFilesAPIClient := &filesAPISDKMocks.ClienterMock{
+			DeleteFileFunc: func(ctx context.Context, path string, headers filesAPISDK.Headers) error {
+				return errors.New("unauthorized: invalid access token")
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "viewer"}, nil
+			},
+		}
+
+		permissionsMock := &authMock.PermissionsCheckerMock{
+			HasPermissionFunc: func(ctx context.Context, data permissionsAPISDK.EntityData, permission string, attributes map[string]string) (bool, error) {
+				return true, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
+		api.enableDeleteStaticVersion = true
+		api.filesAPIClient = mockFilesAPIClient
+		api.permissionsChecker = permissionsMock
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(len(mockFilesAPIClient.DeleteFileCalls()), ShouldEqual, 1)
+		So(mockFilesAPIClient.DeleteFileCalls()[0].Headers.Authorization, ShouldEqual, "invalid-token")
+	})
 
 	Convey("When deleteVersionStatic is called against invalid version, return an invalid version error", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
@@ -4662,7 +4727,7 @@ func TestPublishDistributionFiles(t *testing.T) {
 
 		Convey("When publishDistributionFiles is called on an API with no files client", func() {
 			api := &DatasetAPI{}
-			err := api.publishDistributionFiles(ctx, version, logData)
+			err := api.publishDistributionFiles(ctx, version, logData, "test-token")
 
 			Convey("Then an error should be returned", func() {
 				So(err, ShouldNotBeNil)

@@ -2843,4 +2843,58 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockFilesAPIClient.DeleteFileCalls()), ShouldEqual, 1)
 	})
+
+	Convey("When the access token is incorrect and files API returns an error, return internal server error", t, func() {
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/456", nil)
+		r.Header.Set("Authorization", "Bearer invalid-token")
+
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					Next: &models.Dataset{
+						ID:    "456",
+						Type:  models.Static.String(),
+						State: models.CreatedState,
+					},
+				}, nil
+			},
+			GetAllStaticVersionsFunc: func(context.Context, string, string, int, int) ([]*models.Version, int, error) {
+				versions := []*models.Version{
+					{
+						ID: "1",
+						Distributions: &[]models.Distribution{
+							{
+								Title:       "Distribution1",
+								DownloadURL: "path/to/file.txt",
+							},
+						},
+					},
+				}
+				return versions, 1, nil
+			},
+		}
+
+		mockFilesAPIClient := filesAPISDKMocks.ClienterMock{
+			DeleteFileFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) error {
+				return errors.New("unauthorized: invalid access token")
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
+		api.filesAPIClient = &mockFilesAPIClient
+
+		api.Router.ServeHTTP(w, r)
+
+		assertInternalServerErr(w)
+		So(len(mockFilesAPIClient.DeleteFileCalls()), ShouldEqual, 1)
+		So(mockFilesAPIClient.DeleteFileCalls()[0].Headers.Authorization, ShouldEqual, "invalid-token")
+	})
 }

@@ -3066,6 +3066,43 @@ func TestDeleteStaticVersion_ReturnSuccess(t *testing.T) {
 func TestDeleteStaticVersion_Errors(t *testing.T) {
 	t.Parallel()
 
+	Convey("When an invalid access token is provided, the filesAPIClient receives the token and returns an error", t, func() {
+		invalidToken := "invalid-token"
+		expectedError := errors.New("unauthorized: invalid access token")
+
+		mocked := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error { return nil },
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					State: models.AssociatedState,
+					Distributions: &[]models.Distribution{
+						{
+							Title:       "Test File",
+							DownloadURL: "/test/path.csv",
+						},
+					},
+				}, nil
+			},
+		}
+
+		mockFilesAPIClient := &filesAPISDKMocks.ClienterMock{
+			DeleteFileFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) error {
+				if headers.Authorization == invalidToken {
+					return expectedError
+				}
+				return nil
+			},
+		}
+
+		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{})
+
+		err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 1, mockFilesAPIClient, invalidToken)
+
+		So(err, ShouldEqual, expectedError)
+		So(len(mockFilesAPIClient.DeleteFileCalls()), ShouldEqual, 1)
+		So(mockFilesAPIClient.DeleteFileCalls()[0].Headers.Authorization, ShouldEqual, invalidToken)
+	})
+
 	Convey("When edition doesn't exist, return edition not found", t, func() {
 		mocked := &storetest.StorerMock{
 			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error { return errs.ErrEditionNotFound },

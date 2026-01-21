@@ -533,3 +533,10 @@ func (api DatasetAPI) getPermissionAttributesFromRequest(req *http.Request) (map
 		"dataset_edition": datasetID + "/" + edition,
 	}, nil
 }
+
+func (api DatasetAPI) fetchAccessTokenFromHeader(req *http.Request) string {
+	AuthHeader := req.Header.Get(filesAPISDK.Authorization)
+	accessToken := strings.TrimPrefix(AuthHeader, dprequest.BearerPrefix)
+
+	return accessToken
+}

@@ -496,8 +496,7 @@ func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		authHeader := r.Header.Get(filesAPISDK.Authorization)
-		if err := api.smDatasetAPI.DeleteStaticVersion(ctx, datasetID, edition, versionNum, api.filesAPIClient, authHeader); err != nil {
+		if err := api.smDatasetAPI.DeleteStaticVersion(ctx, datasetID, edition, versionNum, api.filesAPIClient, api.fetchAccessTokenFromHeader(r)); err != nil {
 			handleVersionAPIErr(ctx, err, w, logData)
 			return
 		}
@@ -894,9 +893,9 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 		handleVersionAPIErr(ctx, err, w, logData)
 		return
 	}
-
+	accessToken := api.fetchAccessTokenFromHeader(r)
 	if stateUpdate.State == models.PublishedState && updatedVersion.Distributions != nil && len(*updatedVersion.Distributions) > 0 {
-		err = api.publishDistributionFiles(ctx, updatedVersion, logData)
+		err = api.publishDistributionFiles(ctx, updatedVersion, logData, accessToken)
 		if err != nil {
 			log.Error(ctx, "putState endpoint: failed to publish distribution files", err, logData)
 			handleVersionAPIErr(ctx, err, w, logData)
@@ -946,7 +945,7 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 	log.Info(ctx, "putState endpoint: request successful", logData)
 }
 
-func (api *DatasetAPI) publishDistributionFiles(ctx context.Context, version *models.Version, logData log.Data) error {
+func (api *DatasetAPI) publishDistributionFiles(ctx context.Context, version *models.Version, logData log.Data, accessToken string) error {
 	if api.filesAPIClient == nil {
 		return fmt.Errorf("files API client not configured")
 	}
@@ -975,7 +974,7 @@ func (api *DatasetAPI) publishDistributionFiles(ctx context.Context, version *mo
 		maps.Copy(fileLogData, logData)
 
 		h := filesAPISDK.Headers{
-			Authorization: api.authToken,
+			Authorization: accessToken,
 		}
 
 		_, err := api.filesAPIClient.GetFile(ctx, filepath, h)
