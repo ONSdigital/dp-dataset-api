@@ -629,8 +629,7 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 						logData["distribution_title"] = distribution.Title
 						logData["distribution_download_url"] = distribution.DownloadURL
 
-						accessToken := fetchAccessTokenFromHeader(r)
-						err := api.filesAPIClient.DeleteFile(ctx, distribution.DownloadURL, filesAPISDK.Headers{Authorization: accessToken})
+						err := api.filesAPIClient.DeleteFile(ctx, distribution.DownloadURL, filesAPISDK.Headers{Authorization: fetchAccessTokenFromHeader(r)})
 						if err != nil {
 							log.Error(ctx, "deleteDataset endpoint: failed to delete distribution file from files API", err, logData)
 							return err

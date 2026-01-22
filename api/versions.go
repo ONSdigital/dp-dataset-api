@@ -973,11 +973,9 @@ func (api *DatasetAPI) publishDistributionFiles(ctx context.Context, version *mo
 		}
 		maps.Copy(fileLogData, logData)
 
-		h := filesAPISDK.Headers{
+		_, err := api.filesAPIClient.GetFile(ctx, filepath, filesAPISDK.Headers{
 			Authorization: accessToken,
-		}
-
-		_, err := api.filesAPIClient.GetFile(ctx, filepath, h)
+		})
 		if err != nil {
 			log.Error(ctx, "failed to get file metadata", err, fileLogData)
 
@@ -990,7 +988,7 @@ func (api *DatasetAPI) publishDistributionFiles(ctx context.Context, version *mo
 			continue
 		}
 
-		err = api.filesAPIClient.MarkFilePublished(ctx, filepath, h)
+		err = api.filesAPIClient.MarkFilePublished(ctx, filepath, filesAPISDK.Headers{Authorization: accessToken})
 		if err != nil {
 			log.Error(ctx, "failed to publish file", err, fileLogData)
 
