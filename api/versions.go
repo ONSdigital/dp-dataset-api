@@ -496,7 +496,7 @@ func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if err := api.smDatasetAPI.DeleteStaticVersion(ctx, datasetID, edition, versionNum, api.filesAPIClient, api.fetchAccessTokenFromHeader(r)); err != nil {
+		if err := api.smDatasetAPI.DeleteStaticVersion(ctx, datasetID, edition, versionNum, api.filesAPIClient, fetchAccessTokenFromHeader(r)); err != nil {
 			handleVersionAPIErr(ctx, err, w, logData)
 			return
 		}
@@ -893,9 +893,9 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 		handleVersionAPIErr(ctx, err, w, logData)
 		return
 	}
-	accessToken := api.fetchAccessTokenFromHeader(r)
+
 	if stateUpdate.State == models.PublishedState && updatedVersion.Distributions != nil && len(*updatedVersion.Distributions) > 0 {
-		err = api.publishDistributionFiles(ctx, updatedVersion, logData, accessToken)
+		err = api.publishDistributionFiles(ctx, updatedVersion, logData, fetchAccessTokenFromHeader(r))
 		if err != nil {
 			log.Error(ctx, "putState endpoint: failed to publish distribution files", err, logData)
 			handleVersionAPIErr(ctx, err, w, logData)
