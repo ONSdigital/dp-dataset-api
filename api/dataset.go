@@ -561,7 +561,10 @@ func (api *DatasetAPI) publishDataset(ctx context.Context, currentDataset *model
 	}
 
 	currentDataset.Next.State = models.PublishedState
-	currentDataset.Next.LastUpdated = time.Now()
+
+	if currentDataset.Next.Type != models.Static.String() {
+		currentDataset.Next.LastUpdated = time.Now()
+	}
 
 	// newDataset.Next will not be cleaned up due to keeping request to mongo
 	// idempotent; for instance if an authorised user double clicked to update
