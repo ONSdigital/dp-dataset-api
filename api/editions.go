@@ -21,17 +21,15 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 	vars := mux.Vars(r)
 	datasetID := vars["dataset_id"]
 	logData := log.Data{"dataset_id": datasetID}
-	authorised := api.checkUserPermission(r, logData, datasetEditionVersionReadPermission)
 
-	var state string
-	if !authorised {
-		state = models.PublishedState
+	attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
+	if attrsErr != nil {
+		handleVersionAPIErr(ctx, attrsErr, w, logData)
 	}
 
-	logData["state"] = state
-
-	if err := api.dataStore.Backend.CheckDatasetExists(ctx, datasetID, state); err != nil {
-		log.Error(ctx, "getEditions endpoint: unable to find dataset", err, logData)
+	var authorised bool
+	isStatic, err := api.dataStore.Backend.IsStaticDataset(ctx, datasetID)
+	if err != nil {
 		if err == errs.ErrDatasetNotFound {
 			http.Error(w, err.Error(), http.StatusNotFound)
 		} else {
@@ -39,6 +37,19 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 		}
 		return nil, 0, err
 	}
+
+	if isStatic {
+		authorised = api.checkUserPermission(r, logData, datasetEditionVersionReadPermission, attrs)
+	} else {
+		authorised = api.checkUserPermission(r, logData, datasetEditionVersionReadPermission, nil)
+	}
+
+	var state string
+	if !authorised {
+		state = models.PublishedState
+	}
+
+	logData["state"] = state
 
 	datasetType, err := api.dataStore.Backend.GetDatasetType(ctx, datasetID, authorised)
 	if err != nil {
@@ -154,7 +165,26 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"dataset_id": datasetID, "edition": editionID}
 
 	b, err := func() ([]byte, error) {
-		authorised := api.checkUserPermission(r, logData, datasetEditionVersionReadPermission)
+		attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
+		if attrsErr != nil {
+			handleVersionAPIErr(ctx, attrsErr, w, logData)
+		}
+
+		var authorised bool
+		isStatic, err := api.dataStore.Backend.IsStaticDataset(ctx, datasetID)
+		if err != nil {
+			if err == errs.ErrDatasetNotFound {
+				handleVersionAPIErr(ctx, err, w, logData)
+			} else {
+				handleVersionAPIErr(ctx, errs.ErrInternalServer, w, logData)
+			}
+		}
+
+		if isStatic {
+			authorised = api.checkUserPermission(r, logData, datasetEditionVersionReadPermission, attrs)
+		} else {
+			authorised = api.checkUserPermission(r, logData, datasetEditionVersionReadPermission, nil)
+		}
 
 		var state string
 		if !authorised {

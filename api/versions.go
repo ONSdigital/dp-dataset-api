@@ -15,6 +15,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/utils"
+	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	kafka "github.com/ONSdigital/dp-kafka/v4"
 	dpresponse "github.com/ONSdigital/dp-net/v3/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v3/http"
@@ -65,17 +66,12 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 	var err error
 
 	list, totalCount, err := func() ([]models.Version, int, error) {
-		authorised := api.checkUserPermission(r, logData, datasetEditionVersionReadPermission)
 		var results []models.Version
 		var totalCount int
 		var state string
-		if !authorised {
-			state = models.PublishedState
-		}
-
-		if err := api.dataStore.Backend.CheckDatasetExists(ctx, datasetID, state); err != nil {
-			log.Error(ctx, "failed to find dataset for list of versions", err, logData)
-			return nil, 0, err
+		attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
+		if attrsErr != nil {
+			handleVersionAPIErr(ctx, attrsErr, w, logData)
 		}
 
 		// Check if dataset exists
@@ -87,6 +83,16 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 
 		datasetType := dataset.Next.Type
 
+		var authorised bool
+		if datasetType == models.Static.String() {
+			authorised = api.checkUserPermission(r, logData, datasetEditionVersionReadPermission, attrs)
+		} else {
+			authorised = api.checkUserPermission(r, logData, datasetEditionVersionReadPermission, nil)
+		}
+
+		if !authorised {
+			state = models.PublishedState
+		}
 		// Check if edition exists based on dataset type
 		if datasetType == models.Static.String() {
 			err = api.dataStore.Backend.CheckEditionExistsStatic(ctx, datasetID, edition, state)
@@ -179,22 +185,37 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": versionNumber}
 
 	v, getVersionErr := func() (*models.Version, error) {
-		authorised := api.checkUserPermission(r, logData, datasetEditionVersionReadPermission)
-
 		versionID, err := models.ParseAndValidateVersionNumber(ctx, versionNumber)
 		if err != nil {
 			log.Error(ctx, "getVersion endpoint: invalid version", err, logData)
 			return nil, err
 		}
 
+		attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
+		if attrsErr != nil {
+			return nil, attrsErr
+		}
+
+		var authorised bool
+		isStatic, err := api.dataStore.Backend.IsStaticDataset(ctx, datasetID)
+		if err != nil {
+			if err == errs.ErrDatasetNotFound {
+				http.Error(w, err.Error(), http.StatusNotFound)
+			} else {
+				http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
+			}
+			return nil, err
+		}
+
+		if isStatic {
+			authorised = api.checkUserPermission(r, logData, datasetEditionVersionReadPermission, attrs)
+		} else {
+			authorised = api.checkUserPermission(r, logData, datasetEditionVersionReadPermission, nil)
+		}
+
 		var state string
 		if !authorised {
 			state = models.PublishedState
-		}
-
-		if err := api.dataStore.Backend.CheckDatasetExists(ctx, datasetID, state); err != nil {
-			log.Error(ctx, "failed to find dataset", err, logData)
-			return nil, err
 		}
 
 		// get dataset if dataset exists
@@ -470,12 +491,12 @@ func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if !api.checkUserPermission(r, logData, datasetEditionVersionDeletePermission) {
+		if !api.checkUserPermission(r, logData, datasetEditionVersionDeletePermission, nil) {
 			handleVersionAPIErr(ctx, errs.ErrUnauthorised, w, logData)
 			return
 		}
 
-		if err := api.smDatasetAPI.DeleteStaticVersion(ctx, datasetID, edition, versionNum, api.filesAPIClient); err != nil {
+		if err := api.smDatasetAPI.DeleteStaticVersion(ctx, datasetID, edition, versionNum, api.filesAPIClient, fetchAccessTokenFromHeader(r)); err != nil {
 			handleVersionAPIErr(ctx, err, w, logData)
 			return
 		}
@@ -511,7 +532,7 @@ func (api *DatasetAPI) detachVersion(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
 
 	if err := func() error {
-		authorised := api.checkUserPermission(r, logData, datasetEditionVersionDeletePermission)
+		authorised := api.checkUserPermission(r, logData, datasetEditionVersionDeletePermission, nil)
 		if !authorised {
 			log.Error(ctx, "detachVersion endpoint: User is not authorised to detach a dataset version", errs.ErrUnauthorised, logData)
 			return errs.ErrNotFound
@@ -874,7 +895,7 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if stateUpdate.State == models.PublishedState && updatedVersion.Distributions != nil && len(*updatedVersion.Distributions) > 0 {
-		err = api.publishDistributionFiles(ctx, updatedVersion, logData)
+		err = api.publishDistributionFiles(ctx, updatedVersion, logData, fetchAccessTokenFromHeader(r))
 		if err != nil {
 			log.Error(ctx, "putState endpoint: failed to publish distribution files", err, logData)
 			handleVersionAPIErr(ctx, err, w, logData)
@@ -924,7 +945,7 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 	log.Info(ctx, "putState endpoint: request successful", logData)
 }
 
-func (api *DatasetAPI) publishDistributionFiles(ctx context.Context, version *models.Version, logData log.Data) error {
+func (api *DatasetAPI) publishDistributionFiles(ctx context.Context, version *models.Version, logData log.Data, accessToken string) error {
 	if api.filesAPIClient == nil {
 		return fmt.Errorf("files API client not configured")
 	}
@@ -952,7 +973,9 @@ func (api *DatasetAPI) publishDistributionFiles(ctx context.Context, version *mo
 		}
 		maps.Copy(fileLogData, logData)
 
-		_, err := api.filesAPIClient.GetFile(ctx, filepath)
+		_, err := api.filesAPIClient.GetFile(ctx, filepath, filesAPISDK.Headers{
+			Authorization: accessToken,
+		})
 		if err != nil {
 			log.Error(ctx, "failed to get file metadata", err, fileLogData)
 
@@ -965,7 +988,7 @@ func (api *DatasetAPI) publishDistributionFiles(ctx context.Context, version *mo
 			continue
 		}
 
-		err = api.filesAPIClient.MarkFilePublished(ctx, filepath)
+		err = api.filesAPIClient.MarkFilePublished(ctx, filepath, filesAPISDK.Headers{Authorization: accessToken})
 		if err != nil {
 			log.Error(ctx, "failed to publish file", err, fileLogData)
 

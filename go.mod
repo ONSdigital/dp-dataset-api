@@ -11,7 +11,7 @@ require (
 	github.com/ONSdigital/dp-assistdog v0.0.1
 	github.com/ONSdigital/dp-authorisation/v2 v2.33.1
 	github.com/ONSdigital/dp-component-test v1.0.1-alpha
-	github.com/ONSdigital/dp-files-api v1.14.0
+	github.com/ONSdigital/dp-files-api v1.16.0
 	github.com/ONSdigital/dp-graph/v2 v2.18.0
 	github.com/ONSdigital/dp-healthcheck v1.6.4
 	github.com/ONSdigital/dp-kafka/v4 v4.2.0
@@ -23,8 +23,10 @@ require (
 	github.com/ONSdigital/log.go/v2 v2.5.0
 	github.com/cloudflare/cloudflare-go/v6 v6.4.0
 	github.com/cucumber/godog v0.15.1
+	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/glog v1.2.5
 	github.com/google/go-cmp v0.7.0
+	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/jinzhu/copier v0.4.0
 	github.com/justinas/alice v1.2.0
@@ -83,9 +85,7 @@ require (
 	github.com/gobwas/pool v0.2.1 // indirect
 	github.com/gobwas/ws v1.4.0 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible // indirect
-	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.3 // indirect

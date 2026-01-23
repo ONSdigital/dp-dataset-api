@@ -346,7 +346,12 @@ func buildVersionQuery(id, editionID, state string, versionID int) bson.M {
 // UpdateDataset updates an existing dataset document
 func (m *Mongo) UpdateDataset(ctx context.Context, id string, dataset *models.Dataset, currentState string) (err error) {
 	updates := createDatasetUpdateQuery(ctx, id, dataset, currentState)
-	update := bson.M{"$set": updates, "$setOnInsert": bson.M{"next.last_updated": time.Now()}}
+	update := bson.M{"$set": updates}
+
+	if dataset.Type != models.Static.String() {
+		update["$setOnInsert"] = bson.M{"next.last_updated": time.Now()}
+	}
+
 	if _, err = m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).Must().UpdateOne(ctx, bson.M{"_id": id}, update); err != nil {
 		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
 			return errs.ErrDatasetNotFound
@@ -685,11 +690,10 @@ func (m *Mongo) UpdateMetadata(ctx context.Context, datasetID, versionID, versio
 
 // UpsertDataset adds or overrides an existing dataset document
 func (m *Mongo) UpsertDataset(ctx context.Context, id string, datasetDoc *models.DatasetUpdate) (err error) {
-	update := bson.M{
-		"$set": datasetDoc,
-		"$setOnInsert": bson.M{
-			"last_updated": time.Now(),
-		},
+	update := bson.M{"$set": datasetDoc}
+
+	if datasetDoc.Next.Type != "static" {
+		update["$setOnInsert"] = bson.M{"last_updated": time.Now()}
 	}
 
 	_, err = m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).UpsertById(ctx, id, update)

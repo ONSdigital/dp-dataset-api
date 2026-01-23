@@ -12,6 +12,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/utils"
+	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	dphttp "github.com/ONSdigital/dp-net/v3/http"
 	"github.com/ONSdigital/dp-net/v3/links"
 	"github.com/ONSdigital/log.go/v2/log"
@@ -61,7 +62,7 @@ const DatasetID = "id"
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit, offset int) (mappedDatasets interface{}, totalCount int, err error) {
 	ctx := r.Context()
 	logData := log.Data{}
-	authorised := api.checkUserPermission(r, logData, datasetReadPermission)
+	authorised := api.checkUserPermission(r, logData, datasetReadPermission, nil)
 
 	isBasedOnExists := r.URL.Query().Has(IsBasedOn)
 	isBasedOn := r.URL.Query().Get(IsBasedOn)
@@ -152,7 +153,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 	return mapResults(datasets), totalCount, nil
 }
 
-//nolint:gocognit // cognitive complexity (> 30) is acceptable for now
+//nolint:gocognit,gocyclo // This handler has high complexity (46) because it contains logic for both static and non-static datasets, including permission checks, state-based document merging, and conditional URL rewriting.
 func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
@@ -160,13 +161,26 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"dataset_id": datasetID}
 
 	b, err := func() ([]byte, error) {
+		attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
+		if attrsErr != nil {
+			handleDatasetAPIErr(ctx, attrsErr, w, logData)
+		}
+
 		dataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 		if err != nil {
 			log.Error(ctx, "getDataset endpoint: dataStore.Backend.GetDataset returned an error", err, logData)
 			return nil, err
 		}
 
-		authorised := api.checkUserPermission(r, logData, datasetReadPermission)
+		var datasetType string
+		var authorised bool
+
+		datasetType = dataset.Next.Type
+		if datasetType == models.Static.String() {
+			authorised = api.checkUserPermission(r, logData, datasetReadPermission, attrs)
+		} else {
+			authorised = api.checkUserPermission(r, logData, datasetReadPermission, nil)
+		}
 
 		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 
@@ -547,7 +561,10 @@ func (api *DatasetAPI) publishDataset(ctx context.Context, currentDataset *model
 	}
 
 	currentDataset.Next.State = models.PublishedState
-	currentDataset.Next.LastUpdated = time.Now()
+
+	if currentDataset.Next.Type != models.Static.String() {
+		currentDataset.Next.LastUpdated = time.Now()
+	}
 
 	// newDataset.Next will not be cleaned up due to keeping request to mongo
 	// idempotent; for instance if an authorised user double clicked to update
@@ -612,7 +629,7 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 						logData["distribution_title"] = distribution.Title
 						logData["distribution_download_url"] = distribution.DownloadURL
 
-						err := api.filesAPIClient.DeleteFile(ctx, distribution.DownloadURL)
+						err := api.filesAPIClient.DeleteFile(ctx, distribution.DownloadURL, filesAPISDK.Headers{Authorization: fetchAccessTokenFromHeader(r)})
 						if err != nil {
 							log.Error(ctx, "deleteDataset endpoint: failed to delete distribution file from files API", err, logData)
 							return err
