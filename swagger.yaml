@@ -671,7 +671,7 @@ paths:
         - Authorization: []
           DownloadServiceAPIKey: []
       responses:
-        201:
+        200:
           description: "A json object containing a version"
           schema:
             $ref: "#/definitions/Version"
@@ -1871,7 +1871,7 @@ definitions:
       resource:
         description: The path of the API resource that was called.
         type: string
-        example: /datasets/cpi/editions/march/version/1
+        example: /datasets/cpi/editions/march/versions/1
       data:
         description: |
           The state of the resource following a change action, or the state of the record when the user viewed it.
@@ -2153,7 +2153,7 @@ definitions:
             properties:
               href:
                 description: "The URL for the dataset version associated with this instance"
-                example: "https://api.beta.ons.gov.uk/v1/dataset/my-dataset/edition/july-september-2017/version/1"
+                example: "https://api.beta.ons.gov.uk/v1/dataset/my-dataset/edition/july-september-2017/versions/1"
                 type: string
               id:
                 description: "The ID of the dataset version associated with this instance"
@@ -2328,11 +2328,13 @@ definitions:
             * `accredited-official`
             * `official`
             * `official-in-development`
+            * `no-accreditation`
         type: string
         enum:
           - accredited-official
           - official
           - official-in-development
+          - no-accreditation
       related_content:
         description: "A list of website content related to this dataset."
         type: array
