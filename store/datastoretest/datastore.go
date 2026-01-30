@@ -57,6 +57,9 @@ var _ store.Storer = &StorerMock{}
 //			CheckVersionExistsStaticFunc: func(ctx context.Context, datasetID string, editionID string, version int) (bool, error) {
 //				panic("mock out the CheckVersionExistsStatic method")
 //			},
+//			CreateAuditEventFunc: func(ctx context.Context, event *models.AuditEvent) error {
+//				panic("mock out the CreateAuditEvent method")
+//			},
 //			DeleteDatasetFunc: func(ctx context.Context, ID string) error {
 //				panic("mock out the DeleteDataset method")
 //			},
@@ -240,6 +243,9 @@ type StorerMock struct {
 
 	// CheckVersionExistsStaticFunc mocks the CheckVersionExistsStatic method.
 	CheckVersionExistsStaticFunc func(ctx context.Context, datasetID string, editionID string, version int) (bool, error)
+
+	// CreateAuditEventFunc mocks the CreateAuditEvent method.
+	CreateAuditEventFunc func(ctx context.Context, event *models.AuditEvent) error
 
 	// DeleteDatasetFunc mocks the DeleteDataset method.
 	DeleteDatasetFunc func(ctx context.Context, ID string) error
@@ -493,6 +499,13 @@ type StorerMock struct {
 			EditionID string
 			// Version is the version argument value.
 			Version int
+		}
+		// CreateAuditEvent holds details about calls to the CreateAuditEvent method.
+		CreateAuditEvent []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Event is the event argument value.
+			Event *models.AuditEvent
 		}
 		// DeleteDataset holds details about calls to the DeleteDataset method.
 		DeleteDataset []struct {
@@ -1004,6 +1017,7 @@ type StorerMock struct {
 	lockCheckEditionExistsStatic            sync.RWMutex
 	lockCheckEditionTitleExistsStatic       sync.RWMutex
 	lockCheckVersionExistsStatic            sync.RWMutex
+	lockCreateAuditEvent                    sync.RWMutex
 	lockDeleteDataset                       sync.RWMutex
 	lockDeleteEdition                       sync.RWMutex
 	lockDeleteStaticDatasetVersion          sync.RWMutex
@@ -1534,6 +1548,42 @@ func (mock *StorerMock) CheckVersionExistsStaticCalls() []struct {
 	mock.lockCheckVersionExistsStatic.RLock()
 	calls = mock.calls.CheckVersionExistsStatic
 	mock.lockCheckVersionExistsStatic.RUnlock()
+	return calls
+}
+
+// CreateAuditEvent calls CreateAuditEventFunc.
+func (mock *StorerMock) CreateAuditEvent(ctx context.Context, event *models.AuditEvent) error {
+	if mock.CreateAuditEventFunc == nil {
+		panic("StorerMock.CreateAuditEventFunc: method is nil but Storer.CreateAuditEvent was just called")
+	}
+	callInfo := struct {
+		Ctx   context.Context
+		Event *models.AuditEvent
+	}{
+		Ctx:   ctx,
+		Event: event,
+	}
+	mock.lockCreateAuditEvent.Lock()
+	mock.calls.CreateAuditEvent = append(mock.calls.CreateAuditEvent, callInfo)
+	mock.lockCreateAuditEvent.Unlock()
+	return mock.CreateAuditEventFunc(ctx, event)
+}
+
+// CreateAuditEventCalls gets all the calls that were made to CreateAuditEvent.
+// Check the length with:
+//
+//	len(mockedStorer.CreateAuditEventCalls())
+func (mock *StorerMock) CreateAuditEventCalls() []struct {
+	Ctx   context.Context
+	Event *models.AuditEvent
+} {
+	var calls []struct {
+		Ctx   context.Context
+		Event *models.AuditEvent
+	}
+	mock.lockCreateAuditEvent.RLock()
+	calls = mock.calls.CreateAuditEvent
+	mock.lockCreateAuditEvent.RUnlock()
 	return calls
 }
 

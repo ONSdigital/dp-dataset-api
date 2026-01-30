@@ -61,6 +61,9 @@ var _ store.MongoDB = &MongoDBMock{}
 //			CloseFunc: func(contextMoqParam context.Context) error {
 //				panic("mock out the Close method")
 //			},
+//			CreateAuditEventFunc: func(ctx context.Context, event *models.AuditEvent) error {
+//				panic("mock out the CreateAuditEvent method")
+//			},
 //			DeleteDatasetFunc: func(ctx context.Context, ID string) error {
 //				panic("mock out the DeleteDataset method")
 //			},
@@ -244,6 +247,9 @@ type MongoDBMock struct {
 
 	// CloseFunc mocks the Close method.
 	CloseFunc func(contextMoqParam context.Context) error
+
+	// CreateAuditEventFunc mocks the CreateAuditEvent method.
+	CreateAuditEventFunc func(ctx context.Context, event *models.AuditEvent) error
 
 	// DeleteDatasetFunc mocks the DeleteDataset method.
 	DeleteDatasetFunc func(ctx context.Context, ID string) error
@@ -493,6 +499,13 @@ type MongoDBMock struct {
 		Close []struct {
 			// ContextMoqParam is the contextMoqParam argument value.
 			ContextMoqParam context.Context
+		}
+		// CreateAuditEvent holds details about calls to the CreateAuditEvent method.
+		CreateAuditEvent []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Event is the event argument value.
+			Event *models.AuditEvent
 		}
 		// DeleteDataset holds details about calls to the DeleteDataset method.
 		DeleteDataset []struct {
@@ -998,6 +1011,7 @@ type MongoDBMock struct {
 	lockCheckVersionExistsStatic            sync.RWMutex
 	lockChecker                             sync.RWMutex
 	lockClose                               sync.RWMutex
+	lockCreateAuditEvent                    sync.RWMutex
 	lockDeleteDataset                       sync.RWMutex
 	lockDeleteEdition                       sync.RWMutex
 	lockDeleteStaticDatasetVersion          sync.RWMutex
@@ -1547,6 +1561,42 @@ func (mock *MongoDBMock) CloseCalls() []struct {
 	mock.lockClose.RLock()
 	calls = mock.calls.Close
 	mock.lockClose.RUnlock()
+	return calls
+}
+
+// CreateAuditEvent calls CreateAuditEventFunc.
+func (mock *MongoDBMock) CreateAuditEvent(ctx context.Context, event *models.AuditEvent) error {
+	if mock.CreateAuditEventFunc == nil {
+		panic("MongoDBMock.CreateAuditEventFunc: method is nil but MongoDB.CreateAuditEvent was just called")
+	}
+	callInfo := struct {
+		Ctx   context.Context
+		Event *models.AuditEvent
+	}{
+		Ctx:   ctx,
+		Event: event,
+	}
+	mock.lockCreateAuditEvent.Lock()
+	mock.calls.CreateAuditEvent = append(mock.calls.CreateAuditEvent, callInfo)
+	mock.lockCreateAuditEvent.Unlock()
+	return mock.CreateAuditEventFunc(ctx, event)
+}
+
+// CreateAuditEventCalls gets all the calls that were made to CreateAuditEvent.
+// Check the length with:
+//
+//	len(mockedMongoDB.CreateAuditEventCalls())
+func (mock *MongoDBMock) CreateAuditEventCalls() []struct {
+	Ctx   context.Context
+	Event *models.AuditEvent
+} {
+	var calls []struct {
+		Ctx   context.Context
+		Event *models.AuditEvent
+	}
+	mock.lockCreateAuditEvent.RLock()
+	calls = mock.calls.CreateAuditEvent
+	mock.lockCreateAuditEvent.RUnlock()
 	return calls
 }
 
