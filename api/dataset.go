@@ -358,9 +358,16 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
+	authEntityData, err := api.getAuthEntityData(getAccessTokenFromRequest(r))
+	if err != nil {
+		log.Error(ctx, "addDatasetNew endpoint: failed to get auth entity data from request", err)
+		handleDatasetAPIErr(ctx, err, w, nil)
+		return
+	}
+
 	dataset, err := models.CreateDataset(r.Body)
 	if err != nil {
-		log.Error(ctx, "addDatasetNew endpoint: failed to model dataset resource based on request", err, nil)
+		log.Error(ctx, "addDatasetNew endpoint: failed to model dataset resource based on request", err)
 		handleDatasetAPIErr(ctx, errs.ErrAddUpdateDatasetBadRequest, w, nil)
 		return
 	}
@@ -442,6 +449,13 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 	datasetDoc := &models.DatasetUpdate{
 		ID:   datasetID,
 		Next: dataset,
+	}
+
+	// ID and Email are the same as auth middleware can only provide userID
+	if err := api.smDatasetAPI.RecordDatasetAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionCreate, "/datasets/"+datasetID, dataset); err != nil {
+		log.Error(ctx, "addDatasetNew endpoint: failed to record dataset audit event", err, logData)
+		handleDatasetAPIErr(ctx, err, w, logData)
+		return
 	}
 
 	if err = api.dataStore.Backend.UpsertDataset(ctx, datasetID, datasetDoc); err != nil {
