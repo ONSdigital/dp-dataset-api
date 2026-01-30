@@ -54,8 +54,16 @@ func TestSpec(t *testing.T) {
 				So(cfg.HealthCheckInterval, ShouldEqual, 30*time.Second)
 				So(cfg.ClusterEndpoint, ShouldEqual, "localhost:27017")
 				So(cfg.Database, ShouldEqual, "datasets")
-				So(cfg.Collections, ShouldResemble, map[string]string{"DatasetsCollection": "datasets", "ContactsCollection": "contacts",
-					"EditionsCollection": "editions", "InstanceCollection": "instances", "DimensionOptionsCollection": "dimension.options", "InstanceLockCollection": "instances_locks", "VersionsCollection": "versions"})
+				So(cfg.Collections, ShouldResemble, map[string]string{
+					"DatasetsCollection":         "datasets",
+					"ContactsCollection":         "contacts",
+					"EditionsCollection":         "editions",
+					"InstanceCollection":         "instances",
+					"DimensionOptionsCollection": "dimension.options",
+					"InstanceLockCollection":     "instances_locks",
+					"VersionsCollection":         "versions",
+					"DatasetEventsCollection":    "dataset_events"},
+				)
 				So(cfg.Username, ShouldEqual, "")
 				So(cfg.Password, ShouldEqual, "")
 				So(cfg.IsSSL, ShouldEqual, false)

@@ -141,6 +141,8 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
             }
             """
         And the response header "ETag" should not be empty
+        And the total number of audit events should be 1
+        And the number of events with action "CREATE" and resource "/datasets/static-dataset-1/editions/2024/versions/2" should be 1
 
     Scenario: Successfully creating a new version for a publisher user
         Given private endpoints are enabled
@@ -198,6 +200,8 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
             }
             """
         And the response header "ETag" should not be empty
+        And the total number of audit events should be 1
+        And the number of events with action "CREATE" and resource "/datasets/static-dataset-1/editions/2024/versions/2" should be 1
 
     Scenario: Request without Authorization header returns 401
         Given private endpoints are enabled
@@ -308,6 +312,8 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
             }
             """
         And the response header "ETag" should not be empty
+        And the total number of audit events should be 1
+        And the number of events with action "CREATE" and resource "/datasets/static-dataset-1/editions/new-edition/versions/1" should be 1
 
     Scenario: Request with a version that already exists returns 409
         Given private endpoints are enabled
@@ -488,6 +494,8 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                 "version": 3
             }
             """
+        And the total number of audit events should be 1
+        And the number of events with action "CREATE" and resource "/datasets/static-dataset-1/editions/2024/versions/3" should be 1
 
     Scenario: Request with missing distribution format returns 400
         Given private endpoints are enabled

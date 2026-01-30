@@ -460,6 +460,8 @@ Feature: Private Dataset API
                 ]
             }
             """
+        And the total number of audit events should be 1
+        And the number of events with action "CREATE" and resource "/datasets/ageing-population-estimates" should be 1
 
     Scenario: A document with the same ID already exists in the database
         Given I have these datasets:

@@ -116,6 +116,12 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 
 	log.Info(ctx, "condensed endpoint called", logData)
 
+	authEntityData, err := api.getAuthEntityData(getAccessTokenFromRequest(r))
+	if err != nil {
+		log.Error(ctx, "addDatasetVersionCondensed endpoint: failed to get auth entity data from request", err, logData)
+		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, models.InternalError, models.InternalErrorDescription))
+	}
+
 	if err := utils.ValidateIDNoSpaces(edition); err != nil {
 		log.Error(ctx, "addDatasetVersionCondensed endpoint: edition ID contains spaces", err, logData)
 		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, models.ErrNoSpacesAllowedError, err.Error()))
@@ -234,6 +240,12 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	versionRequest.Links = api.generateVersionLinks(datasetID, edition, nextVersion, versionRequest.Links)
 	versionRequest.Type = models.Static.String()
 
+	// ID and Email are the same as auth middleware can only provide userID
+	if err := api.smDatasetAPI.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionCreate, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+strconv.Itoa(nextVersion), versionRequest); err != nil {
+		log.Error(ctx, "addDatasetVersionCondensed endpoint: failed to record version audit event", err, logData)
+		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, models.InternalError, models.InternalErrorDescription))
+	}
+
 	// Store version in 'versions' collection
 	newVersion, err := api.dataStore.Backend.AddVersionStatic(ctx, versionRequest)
 	if err != nil {
@@ -288,6 +300,12 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 		"dataset_id": datasetID,
 		"edition":    edition,
 		"version":    version,
+	}
+
+	authEntityData, err := api.getAuthEntityData(getAccessTokenFromRequest(r))
+	if err != nil {
+		log.Error(ctx, "createVersion endpoint: failed to get auth entity data from request", err, logData)
+		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, models.InternalError, models.InternalErrorDescription))
 	}
 
 	if err := utils.ValidateIDNoSpaces(datasetID); err != nil {
@@ -393,6 +411,12 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 	if versionExists {
 		log.Error(ctx, "createVersion endpoint: version already exists", errs.ErrVersionAlreadyExists, logData)
 		return nil, models.NewErrorResponse(http.StatusConflict, nil, models.NewValidationError(models.ErrVersionAlreadyExists, models.ErrVersionAlreadyExistsDescription))
+	}
+
+	// ID and Email are the same as auth middleware can only provide userID
+	if err := api.smDatasetAPI.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionCreate, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+strconv.Itoa(versionNumber), newVersion); err != nil {
+		log.Error(ctx, "createVersion endpoint: failed to record version audit event", err, logData)
+		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, models.InternalError, models.InternalErrorDescription))
 	}
 
 	createdVersion, err := api.dataStore.Backend.AddVersionStatic(ctx, newVersion)

@@ -79,6 +79,7 @@ const (
 	DimensionOptionsCollection = "DimensionOptionsCollection"
 	InstanceLockCollection     = "InstanceLockCollection"
 	VersionsCollection         = "VersionsCollection"
+	DatasetEventsCollection    = "DatasetEventsCollection"
 )
 
 // Get the application and returns the configuration structure, and initialises with default values.
@@ -125,11 +126,20 @@ func Get() (*Configuration, error) {
 		MaxRequestOptions:              100, // Maximum number of options acceptable in an incoming Patch request. Compromise between one option per call (inefficient) and an order of 100k options per call, for census data (memory and computationally expensive)
 		MongoConfig: MongoConfig{
 			MongoDriverConfig: mongodriver.MongoDriverConfig{
-				ClusterEndpoint:               "localhost:27017",
-				Username:                      "",
-				Password:                      "",
-				Database:                      "datasets",
-				Collections:                   map[string]string{DatasetsCollection: "datasets", ContactsCollection: "contacts", EditionsCollection: "editions", InstanceCollection: "instances", DimensionOptionsCollection: "dimension.options", InstanceLockCollection: "instances_locks", VersionsCollection: "versions"},
+				ClusterEndpoint: "localhost:27017",
+				Username:        "",
+				Password:        "",
+				Database:        "datasets",
+				Collections: map[string]string{
+					DatasetsCollection:         "datasets",
+					ContactsCollection:         "contacts",
+					EditionsCollection:         "editions",
+					InstanceCollection:         "instances",
+					DimensionOptionsCollection: "dimension.options",
+					InstanceLockCollection:     "instances_locks",
+					VersionsCollection:         "versions",
+					DatasetEventsCollection:    "dataset_events",
+				},
 				ReplicaSet:                    "",
 				IsStrongReadConcernEnabled:    false,
 				IsWriteConcernMajorityEnabled: true,
