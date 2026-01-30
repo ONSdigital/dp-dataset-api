@@ -780,241 +780,6 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 	})
-
-	Convey("Request with empty dataset ID returns 400 Bad Request", t, func() {
-		b := datasetPayloadWithEmptyID
-		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
-		w := httptest.NewRecorder()
-
-		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return nil, errs.ErrDatasetNotFound
-			},
-			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
-				return nil
-			},
-		}
-
-		authorisationMock := &authMock.MiddlewareMock{
-			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
-				return handlerFunc
-			},
-			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
-				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
-			},
-		}
-
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
-		api.Router.ServeHTTP(w, r)
-
-		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
-	})
-
-	Convey("Request with empty dataset title returns 400 Bad Request", t, func() {
-		b := datasetPayloadWithEmptyTitle
-		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
-		w := httptest.NewRecorder()
-
-		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return nil, errs.ErrDatasetNotFound
-			},
-			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
-				return nil
-			},
-			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
-				return false, nil
-			},
-		}
-
-		authorisationMock := &authMock.MiddlewareMock{
-			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
-				return handlerFunc
-			},
-			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
-				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
-			},
-		}
-
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
-		api.Router.ServeHTTP(w, r)
-
-		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
-	})
-
-	Convey("Request with empty dataset description returns 400 Bad Request", t, func() {
-		b := datasetPayloadWithEmptyDescription
-		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
-		w := httptest.NewRecorder()
-
-		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return nil, errs.ErrDatasetNotFound
-			},
-			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
-				return nil
-			},
-			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
-				return false, nil
-			},
-		}
-
-		authorisationMock := &authMock.MiddlewareMock{
-			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
-				return handlerFunc
-			},
-			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
-				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
-			},
-		}
-
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
-		api.Router.ServeHTTP(w, r)
-
-		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
-	})
-
-	Convey("Request with empty dataset next release returns 400 Bad Request", t, func() {
-		b := datasetPayloadWithEmptyNextRelease
-		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
-		w := httptest.NewRecorder()
-
-		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return nil, errs.ErrDatasetNotFound
-			},
-			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
-				return nil
-			},
-			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
-				return false, nil
-			},
-		}
-
-		authorisationMock := &authMock.MiddlewareMock{
-			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
-				return handlerFunc
-			},
-			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
-				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
-			},
-		}
-
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
-		api.Router.ServeHTTP(w, r)
-
-		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
-	})
-
-	Convey("Request with empty dataset keywords returns 400 Bad Request", t, func() {
-		b := datasetPayloadWithEmptyKeywords
-		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
-		w := httptest.NewRecorder()
-
-		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return nil, errs.ErrDatasetNotFound
-			},
-			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
-				return nil
-			},
-			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
-				return false, nil
-			},
-		}
-
-		authorisationMock := &authMock.MiddlewareMock{
-			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
-				return handlerFunc
-			},
-			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
-				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
-			},
-		}
-
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
-		api.Router.ServeHTTP(w, r)
-
-		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
-	})
-
-	Convey("Request with empty topics returns 400 Bad Request", t, func() {
-		b := datasetPayloadWithEmptyTopicsAndTypeStatic
-		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
-		w := httptest.NewRecorder()
-
-		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return nil, errs.ErrDatasetNotFound
-			},
-			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
-				return nil
-			},
-			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
-				return false, nil
-			},
-		}
-
-		authorisationMock := &authMock.MiddlewareMock{
-			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
-				return handlerFunc
-			},
-			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
-				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
-			},
-		}
-
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
-		api.Router.ServeHTTP(w, r)
-
-		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
-	})
-
-	Convey("Request with empty dataset contacts returns 400 Bad Request", t, func() {
-		b := datasetPayloadWithEmptyContacts
-		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
-		w := httptest.NewRecorder()
-
-		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return nil, errs.ErrDatasetNotFound
-			},
-			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
-				return nil
-			},
-			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
-				return false, nil
-			},
-		}
-
-		authorisationMock := &authMock.MiddlewareMock{
-			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
-				return handlerFunc
-			},
-			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
-				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
-			},
-		}
-
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
-		api.Router.ServeHTTP(w, r)
-
-		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
-	})
 }
 
 func TestPostDatasetsReturnsCreated(t *testing.T) {
@@ -1220,139 +985,6 @@ func TestPostDatasetsReturnsCreated(t *testing.T) {
 			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
-	})
-
-	Convey("A successful request to post a dataset returns 201 Created response", t, func() {
-		b := datasetPayloadWithID
-		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
-		w := httptest.NewRecorder()
-
-		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return nil, errs.ErrDatasetNotFound
-			},
-			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
-				return nil
-			},
-			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
-				return false, nil
-			},
-		}
-
-		authorisationMock := &authMock.MiddlewareMock{
-			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
-				return handlerFunc
-			},
-		}
-
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
-		api.Router.ServeHTTP(w, r)
-
-		So(w.Code, ShouldEqual, http.StatusCreated)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
-
-		Convey("then the request body has been drained", func() {
-			_, err := r.Body.Read(make([]byte, 1))
-			So(err, ShouldEqual, io.EOF)
-		})
-	})
-}
-
-func TestPostDatasetsReturnsError(t *testing.T) {
-	Convey("When the request contains duplicate dataset title a conflict request status is returned", t, func() {
-		b := datasetPayloadWithID
-		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
-
-		w := httptest.NewRecorder()
-		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return nil, errs.ErrDatasetNotFound
-			},
-			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
-				return true, nil
-			},
-		}
-
-		authorisationMock := &authMock.MiddlewareMock{
-			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
-				return handlerFunc
-			},
-		}
-
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
-		api.Router.ServeHTTP(w, r)
-
-		So(w.Code, ShouldEqual, http.StatusConflict)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrAddDatasetTitleAlreadyExists.Error())
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.CheckDatasetTitleExistCalls()), ShouldEqual, 1)
-
-		Convey("then the request body has been drained", func() {
-			_, err := r.Body.Read(make([]byte, 1))
-			So(err, ShouldEqual, io.EOF)
-		})
-	})
-
-	Convey("When CheckDatasetTitleExistFunc return an error, an internal server error status is returned", t, func() {
-		b := datasetPayloadWithID
-		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
-
-		w := httptest.NewRecorder()
-		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return nil, errs.ErrDatasetNotFound
-			},
-			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
-				return false, errors.New("internal error")
-			},
-		}
-
-		authorisationMock := &authMock.MiddlewareMock{
-			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
-				return handlerFunc
-			},
-		}
-
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
-		api.Router.ServeHTTP(w, r)
-
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.CheckDatasetTitleExistCalls()), ShouldEqual, 1)
-
-		Convey("then the request body has been drained", func() {
-			_, err := r.Body.Read(make([]byte, 1))
-			So(err, ShouldEqual, io.EOF)
-		})
-	})
-
-	Convey("When POST dataset calls with id with spaces returns 400 response", t, func() {
-		b := `{"id":"id with spaces","contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","href":"https://www.ons.gov.uk/"},"type":"static","keywords":["keyword","keyword 2"],"topics":["topic-0","topic-1"],"license":"Open Government Licence v3.0"}`
-
-		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
-
-		w := httptest.NewRecorder()
-		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return nil, errs.ErrDatasetNotFound
-			},
-			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
-				return nil
-			},
-		}
-
-		authorisationMock := &authMock.MiddlewareMock{
-			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
-				return handlerFunc
-			},
-		}
-
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
-		api.Router.ServeHTTP(w, r)
-
-		So(w.Code, ShouldEqual, http.StatusBadRequest)
 	})
 }
 
@@ -1685,6 +1317,288 @@ func TestPostDatasetReturnsError(t *testing.T) {
 			_, err := r.Body.Read(make([]byte, 1))
 			So(err, ShouldEqual, io.EOF)
 		})
+	})
+}
+
+func TestAddDatasetNew(t *testing.T) {
+	Convey("A successful request to post a dataset returns 201 Created response", t, func() {
+		b := datasetPayloadWithID
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return nil, errs.ErrDatasetNotFound
+			},
+			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
+				return false, nil
+			},
+			CreateAuditEventFunc: func(ctx context.Context, event *models.AuditEvent) error {
+				return nil
+			},
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
+				return nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusCreated)
+
+		So(len(authorisationMock.ParseCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckDatasetTitleExistCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CreateAuditEventCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
+
+		Convey("then the request body has been drained", func() {
+			_, err := r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
+	})
+
+	Convey("Request with empty dataset ID returns 400 Bad Request", t, func() {
+		b := datasetPayloadWithEmptyID
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(&storetest.StorerMock{}, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+	})
+
+	Convey("Request with empty dataset title returns 400 Bad Request", t, func() {
+		b := datasetPayloadWithEmptyTitle
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(&storetest.StorerMock{}, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+	})
+
+	Convey("Request with empty dataset description returns 400 Bad Request", t, func() {
+		b := datasetPayloadWithEmptyDescription
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(&storetest.StorerMock{}, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+	})
+
+	Convey("Request with empty dataset next release returns 400 Bad Request", t, func() {
+		b := datasetPayloadWithEmptyNextRelease
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(&storetest.StorerMock{}, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+	})
+
+	Convey("Request with empty dataset keywords returns 400 Bad Request", t, func() {
+		b := datasetPayloadWithEmptyKeywords
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(&storetest.StorerMock{}, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+	})
+
+	Convey("Request with empty topics returns 400 Bad Request", t, func() {
+		b := datasetPayloadWithEmptyTopicsAndTypeStatic
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(&storetest.StorerMock{}, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+	})
+
+	Convey("Request with empty dataset contacts returns 400 Bad Request", t, func() {
+		b := datasetPayloadWithEmptyContacts
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(&storetest.StorerMock{}, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+	})
+
+	Convey("When the request contains duplicate dataset title a conflict request status is returned", t, func() {
+		b := datasetPayloadWithID
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return nil, errs.ErrDatasetNotFound
+			},
+			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
+				return true, nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusConflict)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrAddDatasetTitleAlreadyExists.Error())
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckDatasetTitleExistCalls()), ShouldEqual, 1)
+
+		Convey("then the request body has been drained", func() {
+			_, err := r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
+	})
+
+	Convey("When CheckDatasetTitleExistFunc return an error, an internal server error status is returned", t, func() {
+		b := datasetPayloadWithID
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return nil, errs.ErrDatasetNotFound
+			},
+			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
+				return false, errors.New("internal error")
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckDatasetTitleExistCalls()), ShouldEqual, 1)
+
+		Convey("then the request body has been drained", func() {
+			_, err := r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
+	})
+
+	Convey("When POST dataset calls with id with spaces returns 400 response", t, func() {
+		b := `{"id":"id with spaces","contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","href":"https://www.ons.gov.uk/"},"type":"static","keywords":["keyword","keyword 2"],"topics":["topic-0","topic-1"],"license":"Open Government Licence v3.0"}`
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(&storetest.StorerMock{}, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{})
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
 	})
 }
 
