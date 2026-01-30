@@ -76,6 +76,8 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I don't have viewer access to the dataset "([^"]*)"$`, c.viewerDoesNotHavePreviewAccessToDataset)
 	ctx.Step(`^I have viewer access to the dataset edition "([^"]*)"$`, c.viewerHasPreviewAccessToDatasetEdition)
 	ctx.Step(`^I don't have viewer access to the dataset edition "([^"]*)"$`, c.viewerDoesNotHavePreviewAccessToDatasetEdition)
+	ctx.Step(`the total number of audit events should be (\d+)`, c.theTotalNumberOfAuditEventsShouldBe)
+	ctx.Step(`the number of events with action "([^"]*)" and resource "([^"]*)" should be (\d+)`, c.theNumberOfEventsWithActionAndResourceShouldBe)
 }
 
 func (c *DatasetComponent) viewerHasPreviewAccessToDataset(datasetID string) error {
@@ -829,5 +831,40 @@ func (c *DatasetComponent) thereAreNoCloudflarePurgeCalls() error {
 
 func (c *DatasetComponent) cloudflareIsEnabled() error {
 	c.Config.CloudflareEnabled = true
+	return nil
+}
+
+func (c *DatasetComponent) theTotalNumberOfAuditEventsShouldBe(expectedCount int) error {
+	ctx := context.Background()
+	collectionName := c.MongoClient.ActualCollectionName(config.DatasetEventsCollection)
+
+	count, err := c.MongoClient.Connection.Collection(collectionName).Count(ctx, bson.M{})
+	if err != nil {
+		return fmt.Errorf("failed to count events: %w", err)
+	}
+
+	if count != expectedCount {
+		return fmt.Errorf("expected %d audit events, but found %d", expectedCount, count)
+	}
+	return nil
+}
+
+func (c *DatasetComponent) theNumberOfEventsWithActionAndResourceShouldBe(action, resource string, expectedCount int) error {
+	ctx := context.Background()
+	collectionName := c.MongoClient.ActualCollectionName(config.DatasetEventsCollection)
+
+	filter := bson.M{
+		"action":   action,
+		"resource": resource,
+	}
+
+	count, err := c.MongoClient.Connection.Collection(collectionName).Count(ctx, filter)
+	if err != nil {
+		return fmt.Errorf("failed to count events: %w", err)
+	}
+
+	if count != expectedCount {
+		return fmt.Errorf("expected %d events with action '%s' and resource '%s', but found %d", expectedCount, action, resource, count)
+	}
 	return nil
 }
