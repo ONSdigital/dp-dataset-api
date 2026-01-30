@@ -84,6 +84,8 @@ Feature: Static Dataset Versions POST API
             }
             """
         Then the HTTP status code should be "201"
+        And the total number of audit events should be 1
+        And the number of events with action "CREATE" and resource "/datasets/static-dataset-test/editions/2024/versions/1" should be 1
 
     Scenario: POST creates a new static dataset version successfully for a publisher user
         Given private endpoints are enabled
@@ -140,6 +142,8 @@ Feature: Static Dataset Versions POST API
                 "version": 1
             }
             """
+        And the total number of audit events should be 1
+        And the number of events with action "CREATE" and resource "/datasets/static-dataset-test/editions/2024/versions/1" should be 1
 
     Scenario: POST creates version 2 when version 1 is published
         Given private endpoints are enabled
@@ -162,6 +166,8 @@ Feature: Static Dataset Versions POST API
             }
             """
         Then the HTTP status code should be "201"
+        And the total number of audit events should be 1
+        And the number of events with action "CREATE" and resource "/datasets/static-dataset-existing/editions/2024/versions/2" should be 1
 
     Scenario: POST fails with missing mandatory fields
         Given private endpoints are enabled
@@ -324,6 +330,8 @@ Feature: Static Dataset Versions POST API
             }
             """
         Then the HTTP status code should be "201"
+        And the total number of audit events should be 1
+        And the number of events with action "CREATE" and resource "/datasets/static-dataset-test/editions/2024/versions/1" should be 1
 
     Scenario: POST fails when the distribution format field is missing
         Given private endpoints are enabled
