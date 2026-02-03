@@ -17,3 +17,7 @@ ignore:
     reason: "Indirect dependency via Go 1.24.6-bullseye; cannot upgrade due to mongo-in-memory incompatibility."
   - id: GO-2025-4175
     reason: "Indirect dependency via Go 1.24.6-bullseye; cannot upgrade due to mongo-in-memory incompatibility."
+  - id: GO-2026-4340
+    reason: "Indirect dependency via Go 1.24.6-bullseye; cannot upgrade due to mongo-in-memory incompatibility."
+  - id: GO-2026-4341
+    reason: "Indirect dependency via Go 1.24.6-bullseye; cannot upgrade due to mongo-in-memory incompatibility."
