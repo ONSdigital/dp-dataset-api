@@ -360,7 +360,9 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	sm := GetStateMachine(ctx, ds)
 	svc.smDS = application.Setup(ds, smDownloadGenerators, sm)
 
-	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, authorisation, enableURLRewriting, svc.smDS, permissionChecker, svc.identityClient, searchContentUpdatedProducer, svc.cloudflareClient)
+	auditService := application.NewAuditService(ds)
+
+	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, authorisation, enableURLRewriting, svc.smDS, auditService, permissionChecker, svc.identityClient, searchContentUpdatedProducer, svc.cloudflareClient)
 
 	// Set the files API client on the DatasetAPI after initialisation
 	if svc.config.EnablePrivateEndpoints && svc.filesAPIClient != nil {

@@ -88,6 +88,7 @@ type DatasetAPI struct {
 	MaxRequestOptions            int
 	defaultLimit                 int
 	smDatasetAPI                 *application.StateMachineDatasetAPI
+	auditService                 application.AuditService
 	filesAPIClient               filesAPISDK.Clienter
 	authToken                    string
 	permissionsChecker           auth.PermissionsChecker
@@ -98,7 +99,7 @@ type DatasetAPI struct {
 }
 
 // Setup creates a new Dataset API instance and register the API routes based on the application configuration.
-func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerators map[models.DatasetType]DownloadsGenerator, authMiddleware auth.Middleware, enableURLRewriting bool, smDatasetAPI *application.StateMachineDatasetAPI, permissionsChecker auth.PermissionsChecker, idClient *clientsidentity.Client, searchContentUpdatedProducer *SearchContentUpdatedProducer, cloudflareClient cloudflare.Clienter) *DatasetAPI {
+func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerators map[models.DatasetType]DownloadsGenerator, authMiddleware auth.Middleware, enableURLRewriting bool, smDatasetAPI *application.StateMachineDatasetAPI, auditService application.AuditService, permissionsChecker auth.PermissionsChecker, idClient *clientsidentity.Client, searchContentUpdatedProducer *SearchContentUpdatedProducer, cloudflareClient cloudflare.Clienter) *DatasetAPI {
 	api := &DatasetAPI{
 		dataStore:                    dataStore,
 		host:                         cfg.DatasetAPIURL,
@@ -118,6 +119,7 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		defaultLimit:                 cfg.DefaultLimit,
 		smDatasetAPI:                 smDatasetAPI,
 		permissionsChecker:           permissionsChecker,
+		auditService:                 auditService,
 		idClient:                     idClient,
 		searchContentUpdatedProducer: searchContentUpdatedProducer,
 		cloudflareClient:             cloudflareClient,
