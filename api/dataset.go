@@ -452,7 +452,7 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// ID and Email are the same as auth middleware can only provide userID
-	if err := api.smDatasetAPI.RecordDatasetAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionCreate, "/datasets/"+datasetID, dataset); err != nil {
+	if err := api.auditService.RecordDatasetAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionCreate, "/datasets/"+datasetID, dataset); err != nil {
 		log.Error(ctx, "addDatasetNew endpoint: failed to record dataset audit event", err, logData)
 		handleDatasetAPIErr(ctx, err, w, logData)
 		return
