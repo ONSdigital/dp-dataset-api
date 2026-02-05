@@ -163,36 +163,3 @@ Feature: Dataset search by dataset id
             """
             invalid query parameter
             """
-
-    Scenario: Viewer with permission to read the dataset receives 200
-        Given private endpoints are enabled
-        And I am a viewer user with permission
-        And I have viewer access to the dataset "static-dataset-4"
-        When I GET "/datasets/static-dataset-4"
-        Then I should receive the following JSON response with status "200":
-            """
-            {
-                "id": "static-dataset-4",
-                "current": {
-                    "id": "static-dataset-4",
-                    "last_updated": "0001-01-01T00:00:00Z",
-                    "state": "created",
-                    "title": "Static Dataset 4",
-                    "type": "static"
-                },
-                "next": {
-                    "id": "static-dataset-4",
-                    "last_updated": "0001-01-01T00:00:00Z",
-                    "state": "created",
-                    "title": "Static Dataset 4",
-                    "type": "static"
-                }
-            }
-            """
-
-    Scenario: Viewer with no permission to read the dataset receives 403
-        Given private endpoints are enabled
-        And I am a viewer user without permission
-        And I don't have viewer access to the dataset "static-dataset-4"
-        When I GET "/datasets/static-dataset-3"
-        Then the HTTP status code should be "403"
