@@ -802,7 +802,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 	})
 
-	Convey("When the AuditService returns an when logging the audit event, return 500", t, func() {
+	Convey("When the AuditService returns an error when logging the audit event, return 500", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456", http.NoBody)
 		w := httptest.NewRecorder()
 
