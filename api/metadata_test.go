@@ -165,9 +165,18 @@ func TestPutMetadata(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, version *models.Version) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
 
 		edition := version.Edition
 		versionNo := strconv.Itoa(version.Version)
@@ -253,6 +262,7 @@ func TestPutMetadata(t *testing.T) {
 						So(dataset.Next.Survey, ShouldEqual, metadata.Survey)
 						So(version.ReleaseDate, ShouldEqual, metadata.ReleaseDate)
 						So(version.LatestChanges, ShouldResemble, metadata.LatestChanges)
+						So(auditServiceMock.RecordVersionAuditEventCalls(), ShouldHaveLength, 1)
 					})
 				})
 			})
@@ -277,6 +287,7 @@ func TestPutMetadata(t *testing.T) {
 						So(dataset.Next.Survey, ShouldEqual, metadata.Survey)
 						So(version.ReleaseDate, ShouldEqual, metadata.ReleaseDate)
 						So(version.LatestChanges, ShouldResemble, metadata.LatestChanges)
+						So(auditServiceMock.RecordVersionAuditEventCalls(), ShouldHaveLength, 1)
 					})
 				})
 			})
@@ -361,6 +372,7 @@ func TestPutMetadata(t *testing.T) {
 						So(dataset.Next.Survey, ShouldEqual, metadata.Survey)
 						So(version.ReleaseDate, ShouldEqual, metadata.ReleaseDate)
 						So(version.LatestChanges, ShouldResemble, metadata.LatestChanges)
+						So(auditServiceMock.RecordVersionAuditEventCalls(), ShouldHaveLength, 1)
 					})
 				})
 			})

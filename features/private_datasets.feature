@@ -111,6 +111,8 @@ Feature: Private Dataset API
                 "survey": "mockSurvey"
             }
             """
+        And the total number of audit events should be 1
+        And the number of events with action "UPDATE" and resource "/datasets/population-estimates" should be 1
 
     Scenario: Successfully change title of a static dataset
         Given I have these datasets:
@@ -200,6 +202,8 @@ Feature: Private Dataset API
                 }
             }
             """
+        And the total number of audit events should be 1
+        And the number of events with action "UPDATE" and resource "/datasets/static-dataset" should be 1
 
     Scenario: Adding topic fields to a dataset
         Given I have these datasets:
@@ -239,6 +243,8 @@ Feature: Private Dataset API
                 ]
             }
             """
+        And the total number of audit events should be 1
+        And the number of events with action "UPDATE" and resource "/datasets/population-estimates" should be 1
 
     Scenario: Adding related content to a dataset
         Given I have these datasets:
@@ -287,6 +293,8 @@ Feature: Private Dataset API
                 ]
             }
             """
+        And the total number of audit events should be 1
+        And the number of events with action "UPDATE" and resource "/datasets/population-estimates" should be 1
 
     Scenario: GET /datasets
         Given I have these datasets:

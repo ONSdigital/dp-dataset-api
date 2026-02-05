@@ -1,7 +1,7 @@
 Feature: Static Dataset Versions PUT API
 
-  Background: We have static datasets for PUT version testing
-    Given I have a static dataset with version:
+    Background: We have static datasets for PUT version testing
+        Given I have a static dataset with version:
             """
             {
                 "dataset": {
@@ -42,42 +42,42 @@ Feature: Static Dataset Versions PUT API
                 }
             }
             """
-            
-    And I have these static versions:
-        """
-        [
-            {
-                "id": "static-version-2024",
-                "edition": "2024",
-                "edition_title": "2024 Edition",
-                "links": {
-                    "dataset": {
-                        "id": "static-dataset-update"
+
+        And I have these static versions:
+            """
+            [
+                {
+                    "id": "static-version-2024",
+                    "edition": "2024",
+                    "edition_title": "2024 Edition",
+                    "links": {
+                        "dataset": {
+                            "id": "static-dataset-update"
+                        },
+                        "edition": {
+                            "href": "/datasets/static-dataset-update/editions/2024",
+                            "id": "2024"
+                        },
+                        "self": {
+                            "href": "/datasets/static-dataset-update/editions/2024/versions/1"
+                        }
                     },
-                    "edition": {
-                        "href": "/datasets/static-dataset-update/editions/2024",
-                        "id": "2024"
-                    },
-                    "self": {
-                        "href": "/datasets/static-dataset-update/editions/2024/versions/1"
-                    }
-                },
-                "version": 1,
-                "release_date": "2024-01-01T09:00:00.000Z",
-                "state": "associated",
-                "type": "static",
-                "distributions": [
-                    {
-                        "title": "csv",
-                        "format": "csv",
-                        "media_type": "text/csv",
-                        "download_url": "/uuid/filename2.csv",
-                        "byte_size": 125000
-                    }
-                ]
-            }
-        ]
-        """
+                    "version": 1,
+                    "release_date": "2024-01-01T09:00:00.000Z",
+                    "state": "associated",
+                    "type": "static",
+                    "distributions": [
+                        {
+                            "title": "csv",
+                            "format": "csv",
+                            "media_type": "text/csv",
+                            "download_url": "/uuid/filename2.csv",
+                            "byte_size": 125000
+                        }
+                    ]
+                }
+            ]
+            """
 
     Scenario: PUT updates static dataset version successfully for an admin user
         Given private endpoints are enabled
@@ -123,6 +123,8 @@ Feature: Static Dataset Versions PUT API
                 "type": "static"
             }
             """
+        And the total number of audit events should be 1
+        And the number of events with action "UPDATE" and resource "/datasets/static-dataset-update/editions/2025/versions/1" should be 1
 
     Scenario: PUT updates static dataset version successfully for a publisher user
         Given private endpoints are enabled
@@ -134,8 +136,8 @@ Feature: Static Dataset Versions PUT API
                 "type": "static"
             }
             """
-    Then the HTTP status code should be "200"
-    And I should receive the following JSON response:
+        Then the HTTP status code should be "200"
+        And I should receive the following JSON response:
             """
             {
                 "dataset_id": "static-dataset-update",
@@ -168,6 +170,8 @@ Feature: Static Dataset Versions PUT API
                 "type": "static"
             }
             """
+        And the total number of audit events should be 1
+        And the number of events with action "UPDATE" and resource "/datasets/static-dataset-update/editions/2025/versions/1" should be 1
 
     Scenario: PUT updates static dataset version with new data
         Given private endpoints are enabled
@@ -182,41 +186,43 @@ Feature: Static Dataset Versions PUT API
                 "type": "static"
             }
             """
-    Then I should receive the following JSON response with status "200":
-        """
-        {
-            "dataset_id": "static-dataset-update",
-            "distributions": [
-                {
-                    "byte_size": 125000,
-                    "download_url": "/uuid/filename.csv",
-                    "format": "csv",
-                    "media_type": "text/csv",
-                    "title": "csv"
-                }
-            ],
-            "edition": "2025",
-            "edition_title": "Updated 2025 Edition",
-            "id": "static-version-update",
-            "last_updated": "0001-01-01T00:00:00Z",
-            "links": {
-                "dataset": {
-                    "id": "static-dataset-update"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "dataset_id": "static-dataset-update",
+                "distributions": [
+                    {
+                        "byte_size": 125000,
+                        "download_url": "/uuid/filename.csv",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "title": "csv"
+                    }
+                ],
+                "edition": "2025",
+                "edition_title": "Updated 2025 Edition",
+                "id": "static-version-update",
+                "last_updated": "0001-01-01T00:00:00Z",
+                "links": {
+                    "dataset": {
+                        "id": "static-dataset-update"
+                    },
+                    "edition": {
+                        "href": "/datasets/static-dataset-update/editions/2025",
+                        "id": "2025"
+                    },
+                    "self": {
+                        "href": "/datasets/static-dataset-update/editions/2025/versions/1"
+                    }
                 },
-                "edition": {
-                    "href": "/datasets/static-dataset-update/editions/2025",
-                    "id": "2025"
-                },
-                "self": {
-                    "href": "/datasets/static-dataset-update/editions/2025/versions/1"
-                }
-            },
-            "quality_designation": "no-accreditation",
-            "release_date": "2025-03-01T09:00:00.000Z",
-            "state": "approved",
-            "type": "static"
-        }
-        """
+                "quality_designation": "no-accreditation",
+                "release_date": "2025-03-01T09:00:00.000Z",
+                "state": "approved",
+                "type": "static"
+            }
+            """
+        And the total number of audit events should be 1
+        And the number of events with action "UPDATE" and resource "/datasets/static-dataset-update/editions/2025/versions/1" should be 1
 
     Scenario: PUT updates static dataset version distributions
         Given private endpoints are enabled
@@ -243,7 +249,9 @@ Feature: Static Dataset Versions PUT API
                 "type": "static"
             }
             """
-    Then the HTTP status code should be "200"
+        Then the HTTP status code should be "200"
+        And the total number of audit events should be 1
+        And the number of events with action "UPDATE" and resource "/datasets/static-dataset-update/editions/2025/versions/1" should be 1
 
     Scenario: PUT updates static dataset version edition
         Given private endpoints are enabled
@@ -256,7 +264,9 @@ Feature: Static Dataset Versions PUT API
                 "type": "static"
             }
             """
-    Then the HTTP status code should be "200"
+        Then the HTTP status code should be "200"
+        And the total number of audit events should be 1
+        And the number of events with action "UPDATE" and resource "/datasets/static-dataset-update/editions/2025/versions/1" should be 1
 
     Scenario: PUT fails for non-existent version
         Given private endpoints are enabled
@@ -268,7 +278,9 @@ Feature: Static Dataset Versions PUT API
                 "type": "static"
             }
             """
-    Then the HTTP status code should be "404"
+        Then the HTTP status code should be "404"
+        And the total number of audit events should be 0
+        And the number of events with action "UPDATE" and resource "/datasets/static-dataset-update/editions/2025/versions/999" should be 0
 
     Scenario: PUT fails for non-existent dataset
         Given private endpoints are enabled
@@ -280,18 +292,18 @@ Feature: Static Dataset Versions PUT API
                 "type": "static"
             }
             """
-    Then the HTTP status code should be "404"
+        Then the HTTP status code should be "404"
 
-  Scenario: PUT fails when not authorised
-    Given private endpoints are enabled
-    When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
+    Scenario: PUT fails when not authorised
+        Given private endpoints are enabled
+        When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
             """
             {
                 "state": "approved",
                 "type": "static"
             }
             """
-    Then the HTTP status code should be "401"
+        Then the HTTP status code should be "401"
 
     Scenario: PUT state endpoint updates successfully
         Given private endpoints are enabled
@@ -304,6 +316,8 @@ Feature: Static Dataset Versions PUT API
             }
             """
         Then the HTTP status code should be "200"
+        And the total number of audit events should be 1
+        And the number of events with action "UPDATE" and resource "/datasets/static-dataset-update/editions/2025/versions/1" should be 1
         And there are no cloudflare purge calls
 
     Scenario: PUT state transitions from associated to approved
@@ -317,10 +331,12 @@ Feature: Static Dataset Versions PUT API
             }
             """
         Then the HTTP status code should be "200"
+        And the total number of audit events should be 1
+        And the number of events with action "UPDATE" and resource "/datasets/static-dataset-update/editions/2025/versions/1" should be 1
         And there are no cloudflare purge calls
 
-  Scenario: PUT state transitions from approved to published and purges URL's
-    Given I have a static dataset with version:
+    Scenario: PUT state transitions from approved to published and purges URL's
+        Given I have a static dataset with version:
             """
             {
                 "dataset": {
@@ -374,12 +390,14 @@ Feature: Static Dataset Versions PUT API
             }
             """
         Then the HTTP status code should be "200"
+        And the total number of audit events should be 1
+        And the number of events with action "UPDATE" and resource "/datasets/static-dataset-publish/editions/2025/versions/1" should be 1
         And the following URL prefixes are purged by cloudflare:
-            | http://localhost:20000/datasets/static-dataset-publish |
-            | http://localhost:20000/datasets/static-dataset-publish/editions |
-            | http://localhost:20000/datasets/static-dataset-publish/editions/2025/versions |
-            | http://localhost:23200/v1/datasets/static-dataset-publish |
-            | http://localhost:23200/v1/datasets/static-dataset-publish/editions |
+            | http://localhost:20000/datasets/static-dataset-publish                           |
+            | http://localhost:20000/datasets/static-dataset-publish/editions                  |
+            | http://localhost:20000/datasets/static-dataset-publish/editions/2025/versions    |
+            | http://localhost:23200/v1/datasets/static-dataset-publish                        |
+            | http://localhost:23200/v1/datasets/static-dataset-publish/editions               |
             | http://localhost:23200/v1/datasets/static-dataset-publish/editions/2025/versions |
 
     Scenario: PUT state fails with invalid state transition from associated to published
@@ -391,7 +409,7 @@ Feature: Static Dataset Versions PUT API
                 "state": "published"
             }
             """
-    Then the HTTP status code should be "400"
+        Then the HTTP status code should be "400"
 
     Scenario: PUT state fails with invalid state
         Given private endpoints are enabled
@@ -402,20 +420,20 @@ Feature: Static Dataset Versions PUT API
                 "state": "invalid-state"
             }
             """
-    Then the HTTP status code should be "400"
+        Then the HTTP status code should be "400"
 
-  Scenario: PUT state fails when not authorised
-    Given private endpoints are enabled
-    When I PUT "/datasets/static-dataset-update/editions/2025/versions/1/state"
+    Scenario: PUT state fails when not authorised
+        Given private endpoints are enabled
+        When I PUT "/datasets/static-dataset-update/editions/2025/versions/1/state"
             """
             {
                 "state": "approved"
             }
             """
-    Then the HTTP status code should be "401"
+        Then the HTTP status code should be "401"
 
-  Scenario: PUT fails when updating edition-id to existing edition for static dataset
-    Given I have a static dataset with version:
+    Scenario: PUT fails when updating edition-id to existing edition for static dataset
+        Given I have a static dataset with version:
             """
             {
                 "dataset": {
@@ -447,7 +465,7 @@ Feature: Static Dataset Versions PUT API
                 }
             }
             """
-    And I have a static dataset with version:
+        And I have a static dataset with version:
             """
             {
                 "dataset": {
@@ -488,8 +506,8 @@ Feature: Static Dataset Versions PUT API
                 "type": "static"
             }
             """
-    Then the HTTP status code should be "409"
-    And I should receive the following response:
+        Then the HTTP status code should be "409"
+        And I should receive the following response:
             """
             the edition already exists
             """
@@ -505,7 +523,7 @@ Feature: Static Dataset Versions PUT API
                 "type": "static"
             }
             """
-    Then the HTTP status code should be "200"
+        Then the HTTP status code should be "200"
 
     Scenario: PUT state handles idempotent transitions correctly and purges URL's
         Given I have a static dataset with version:
@@ -551,23 +569,25 @@ Feature: Static Dataset Versions PUT API
             }
             """
         Then the HTTP status code should be "200"
+        And the total number of audit events should be 1
+        And the number of events with action "UPDATE" and resource "/datasets/static-dataset-published/editions/2025/versions/1" should be 1
         And these kafka messages are produced:
-          """
-          {
-            "content_type": "dataset_landing_page",
-            "dataset_id": "static-dataset-published",
-            "edition": "2025",
-            "title": "2025 Edition",
-            "uri": "/datasets/static-dataset-published",
-            "release_date": "2025-01-01T09:00:00.000Z"
-          }
-          """
+            """
+            {
+                "content_type": "dataset_landing_page",
+                "dataset_id": "static-dataset-published",
+                "edition": "2025",
+                "title": "2025 Edition",
+                "uri": "/datasets/static-dataset-published",
+                "release_date": "2025-01-01T09:00:00.000Z"
+            }
+            """
         And the following URL prefixes are purged by cloudflare:
-            | http://localhost:20000/datasets/static-dataset-published |
-            | http://localhost:20000/datasets/static-dataset-published/editions |
-            | http://localhost:20000/datasets/static-dataset-published/editions/2025/versions |
-            | http://localhost:23200/v1/datasets/static-dataset-published |
-            | http://localhost:23200/v1/datasets/static-dataset-published/editions |
+            | http://localhost:20000/datasets/static-dataset-published                           |
+            | http://localhost:20000/datasets/static-dataset-published/editions                  |
+            | http://localhost:20000/datasets/static-dataset-published/editions/2025/versions    |
+            | http://localhost:23200/v1/datasets/static-dataset-published                        |
+            | http://localhost:23200/v1/datasets/static-dataset-published/editions               |
             | http://localhost:23200/v1/datasets/static-dataset-published/editions/2025/versions |
 
     Scenario: PUT succeeds when updating edition ID to unique value within series
@@ -613,7 +633,7 @@ Feature: Static Dataset Versions PUT API
         And I should receive the following response:
             """
             the edition already exists
-        """
+            """
 
     Scenario: PUT succeeds when updating both edition ID and title to unique values within the series
         Given private endpoints are enabled
@@ -756,7 +776,7 @@ Feature: Static Dataset Versions PUT API
             distributions[0].format field is invalid
             """
 
-Scenario: PUT Updating an edition field with spaces should return 404
+    Scenario: PUT Updating an edition field with spaces should return 404
         Given private endpoints are enabled
         And I am an admin user
         When I PUT "/datasets/static-dataset-update/editions/edition%201/versions/1"
@@ -772,8 +792,8 @@ Scenario: PUT Updating an edition field with spaces should return 404
             """
             version not found
             """
-    
-Scenario: PUT Updating an edition field with spaces in request body should return 400
+
+    Scenario: PUT Updating an edition field with spaces in request body should return 400
         Given private endpoints are enabled
         And I am an admin user
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
@@ -790,7 +810,7 @@ Scenario: PUT Updating an edition field with spaces in request body should retur
             spaces are not allowed in the ID field
             """
 
-Scenario: PUT Updating an datasetID field with spaces in request body should return 400
+    Scenario: PUT Updating an datasetID field with spaces in request body should return 400
         Given private endpoints are enabled
         And I am an admin user
         When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"

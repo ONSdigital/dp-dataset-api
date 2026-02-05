@@ -489,6 +489,13 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 	datasetID := vars["dataset_id"]
 	data := log.Data{"dataset_id": datasetID}
 
+	authEntityData, err := api.getAuthEntityData(r)
+	if err != nil {
+		log.Error(ctx, "putDataset endpoint: failed to get auth entity data from request", err, data)
+		handleDatasetAPIErr(ctx, err, w, data)
+		return
+	}
+
 	b, err := func() ([]byte, error) {
 		dataset, err := models.CreateDataset(r.Body)
 		if err != nil {
@@ -510,7 +517,6 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 				return nil, err
 			}
 		}
-
 		models.CleanDataset(dataset)
 
 		if err = models.ValidateDataset(dataset); err != nil {
@@ -541,6 +547,12 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 				log.Error(ctx, "putDataset endpoint: failed to update dataset resource", err, data)
 				return nil, err
 			}
+		}
+
+		// ID and Email are the same as auth middleware can only provide userID
+		if err := api.auditService.RecordDatasetAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionUpdate, "/datasets/"+datasetID, dataset); err != nil {
+			log.Error(ctx, "putDataset endpoint: failed to record dataset audit event", err, data)
+			return nil, err
 		}
 
 		b, err := json.Marshal(dataset)

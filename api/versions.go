@@ -344,6 +344,12 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		"version":   vars["version"],
 	}
 
+	authEntityData, err := api.getAuthEntityData(r)
+	if err != nil {
+		log.Error(ctx, "putVersion endpoint: failed to get auth entity data from request", err, data)
+		handleVersionAPIErr(ctx, err, w, data)
+		return
+	}
 	// Read body once and validate distributions before unmarshaling
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -436,6 +442,13 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 
 	amendedVersion, err = api.smDatasetAPI.AmendVersion(r.Context(), vars, version)
 	if err != nil {
+		handleVersionAPIErr(ctx, err, w, data)
+		return
+	}
+
+	// ID and Email are the same as auth middleware can only provide userID
+	if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionUpdate, "/datasets/"+vars["dataset_id"]+"/editions/"+vars["edition"]+"/versions/"+vars["version"], amendedVersion); err != nil {
+		log.Error(ctx, "putVersion endpoint: failed to record version audit event", err, data)
 		handleVersionAPIErr(ctx, err, w, data)
 		return
 	}
@@ -854,6 +867,13 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 
 	log.Info(ctx, "putState endpoint: endpoint called", logData)
 
+	authEntityData, err := api.getAuthEntityData(r)
+	if err != nil {
+		log.Error(ctx, "putState endpoint: failed to get auth entity data from request", err, logData)
+		handleVersionAPIErr(ctx, err, w, logData)
+		return
+	}
+
 	versionID, err := models.ParseAndValidateVersionNumber(ctx, version)
 	if err != nil {
 		log.Error(ctx, "putState endpoint: invalid version request", err, logData)
@@ -938,6 +958,13 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 		} else {
 			log.Info(ctx, "putState endpoint: successfully purged cache by prefixes", logData)
 		}
+	}
+
+	// ID and Email are the same as auth middleware can only provide userID
+	if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionUpdate, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+version, updatedVersion); err != nil {
+		log.Error(ctx, "putState endpoint: failed to record version audit event", err, logData)
+		handleVersionAPIErr(ctx, err, w, logData)
+		return
 	}
 
 	setJSONContentType(w)

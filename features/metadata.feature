@@ -131,6 +131,8 @@ Feature: Dataset API - metadata
                 "release_date": "today"
             }
             """
+        And the total number of audit events should be 1
+        And the number of events with action "UPDATE" and resource "/datasets/population-estimates/editions/hello/versions/1" should be 1
 
     Scenario: Successful PUT metadata with valid etag for a publisher user
         When I set the "If-Match" header to "etag-test-item-1"
@@ -173,6 +175,8 @@ Feature: Dataset API - metadata
                 "release_date": "today"
             }
             """
+        And the total number of audit events should be 1
+        And the number of events with action "UPDATE" and resource "/datasets/population-estimates/editions/hello/versions/1" should be 1
 
 
     Scenario: Successful PUT metadata with no etag
@@ -214,6 +218,8 @@ Feature: Dataset API - metadata
                 "release_date": "today"
             }
             """
+        And the total number of audit events should be 1
+        And the number of events with action "UPDATE" and resource "/datasets/population-estimates/editions/hello/versions/1" should be 1
 
     Scenario: Successful PUT metadata with * etag
         When I set the "If-Match" header to "*"
@@ -255,6 +261,8 @@ Feature: Dataset API - metadata
                 "release_date": "today"
             }
             """
+        And the total number of audit events should be 1
+        And the number of events with action "UPDATE" and resource "/datasets/population-estimates/editions/hello/versions/1" should be 1
 
     Scenario: PUT metadata on a dataset that is published
         When I set the "If-Match" header to "etag-test-item-2"
