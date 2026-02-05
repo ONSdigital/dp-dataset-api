@@ -24,6 +24,10 @@ var (
 		UserID: "user-1",
 		Groups: []string{"group1", "group2"},
 	}
+
+	testServiceEntityData = &permissionsAPISDK.EntityData{
+		UserID: "service-1",
+	}
 )
 
 func newMockHTTPClient(retCode int, retBody interface{}) *dphttp.ClienterMock {
@@ -44,6 +48,10 @@ func newMockHTTPClient(retCode int, retBody interface{}) *dphttp.ClienterMock {
 
 var testIdentityResponse = &dprequest.IdentityResponse{
 	Identifier: "myIdentity",
+}
+
+var testServiceIdentityResponse = &dprequest.IdentityResponse{
+	Identifier: "service-1",
 }
 
 func TestGetAuthEntityData(t *testing.T) {
@@ -99,6 +107,36 @@ func TestGetAuthEntityData(t *testing.T) {
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldEqual, "failed to parse access token: unexpected status code returned from AuthAPI: unable to determine the user or service making the request")
 				So(entityData, ShouldBeNil)
+			})
+		})
+	})
+
+	Convey("Given a DatasetAPI instance with a mocked auth middleware that fails jwt auth", t, func() {
+		mockAuthMiddleware := &authMock.MiddlewareMock{
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return nil, errors.New("parse error")
+			},
+		}
+
+		httpClient := newMockHTTPClient(200, testServiceIdentityResponse)
+		idClient := clientsidentity.NewWithHealthClient(healthcheck.NewClientWithClienter("", "http://localhost:8082", httpClient))
+
+		api := &DatasetAPI{
+			authMiddleware: mockAuthMiddleware,
+			idClient:       idClient,
+		}
+
+		rValid := http.Request{
+			Header: http.Header{},
+		}
+		rValid.Header.Set("Authorization", "Bearer valid-service-token")
+
+		Convey("When getAuthEntityData is called with a valid service token", func() {
+			entityData, err := api.getAuthEntityData(&rValid)
+
+			Convey("Then it should return the expected EntityData and no error", func() {
+				So(err, ShouldBeNil)
+				So(entityData, ShouldResemble, testServiceEntityData)
 			})
 		})
 	})
