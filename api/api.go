@@ -23,7 +23,6 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/url"
 	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	dprequest "github.com/ONSdigital/dp-net/v3/request"
-	permissionsAPISDK "github.com/ONSdigital/dp-permissions-api/sdk"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 
@@ -480,17 +479,9 @@ func (api *DatasetAPI) checkUserPermission(r *http.Request, logData log.Data, pe
 	var authorised bool
 
 	if api.EnablePrePublishView {
-		bearerToken := strings.TrimPrefix(r.Header.Get(dprequest.AuthHeaderKey), dprequest.BearerPrefix)
-
-		entityData, err := api.authMiddleware.Parse(bearerToken)
+		entityData, err := api.getAuthEntityData(r)
 		if err != nil {
-			// check service id token is valid
-			resp, err := api.idClient.CheckTokenIdentity(r.Context(), bearerToken, clientsidentity.TokenTypeService)
-			if err != nil {
-				return false
-			}
-			// valid
-			entityData = &permissionsAPISDK.EntityData{UserID: resp.Identifier}
+			return false
 		}
 		logData["entity_data"] = entityData
 
