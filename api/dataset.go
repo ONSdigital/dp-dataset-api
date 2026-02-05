@@ -358,7 +358,7 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	authEntityData, err := api.getAuthEntityData(r)
+	authEntityData, err := api.getAuthEntityData(ctx, getAccessTokenFromRequest(r))
 	if err != nil {
 		log.Error(ctx, "addDatasetNew endpoint: failed to get auth entity data from request", err)
 		handleDatasetAPIErr(ctx, err, w, nil)

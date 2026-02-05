@@ -1,11 +1,12 @@
 package api
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 
-	"github.com/ONSdigital/dp-net/v2/request"
 	dprequest "github.com/ONSdigital/dp-net/v3/request"
 	permissionsAPISDK "github.com/ONSdigital/dp-permissions-api/sdk"
 
@@ -13,16 +14,14 @@ import (
 )
 
 // getAuthEntityData returns the EntityData associated with the provided access token
-func (api *DatasetAPI) getAuthEntityData(r *http.Request) (*permissionsAPISDK.EntityData, error) {
-	accessToken := strings.TrimPrefix(r.Header.Get(request.AuthHeaderKey), request.BearerPrefix)
+func (api *DatasetAPI) getAuthEntityData(ctx context.Context, accessToken string) (*permissionsAPISDK.EntityData, error) {
 	entityData, err := api.authMiddleware.Parse(accessToken)
 	if err != nil {
-		// check service id token is valid
-		resp, err := api.idClient.CheckTokenIdentity(r.Context(), accessToken, clientsidentity.TokenTypeService)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse access token: %w", err)
+		// check if token is a service token
+		resp, errIdentityClient := api.idClient.CheckTokenIdentity(ctx, accessToken, clientsidentity.TokenTypeService)
+		if errIdentityClient != nil {
+			return nil, errors.Join(err, errIdentityClient, fmt.Errorf("failed to check token identity: %w", errIdentityClient))
 		}
-		// valid
 		entityData = &permissionsAPISDK.EntityData{UserID: resp.Identifier}
 	}
 	return entityData, nil

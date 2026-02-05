@@ -1,22 +1,17 @@
 package api
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
-	"io"
 	"net/http"
 	"testing"
 
-	healthcheck "github.com/ONSdigital/dp-api-clients-go/v2/health"
+	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
+	identityClientMock "github.com/ONSdigital/dp-api-clients-go/v2/identity/mock"
 	authMock "github.com/ONSdigital/dp-authorisation/v2/authorisation/mock"
-	dphttp "github.com/ONSdigital/dp-net/v3/http"
 	dprequest "github.com/ONSdigital/dp-net/v3/request"
 	permissionsAPISDK "github.com/ONSdigital/dp-permissions-api/sdk"
 	. "github.com/smartystreets/goconvey/convey"
-
-	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
 )
 
 var (
@@ -24,30 +19,14 @@ var (
 		UserID: "user-1",
 		Groups: []string{"group1", "group2"},
 	}
+
+	testIdentityResponse = &dprequest.IdentityResponse{
+		Identifier: "identifier",
+	}
 )
 
-func newMockHTTPClient(retCode int, retBody interface{}) *dphttp.ClienterMock {
-	return &dphttp.ClienterMock{
-		SetPathsWithNoRetriesFunc: func(paths []string) {},
-		GetPathsWithNoRetriesFunc: func() []string {
-			return []string{"/healthcheck"}
-		},
-		DoFunc: func(ctx context.Context, req *http.Request) (*http.Response, error) {
-			body, _ := json.Marshal(retBody)
-			return &http.Response{
-				StatusCode: retCode,
-				Body:       io.NopCloser(bytes.NewReader(body)),
-			}, nil
-		},
-	}
-}
-
-var testIdentityResponse = &dprequest.IdentityResponse{
-	Identifier: "myIdentity",
-}
-
 func TestGetAuthEntityData(t *testing.T) {
-	Convey("Given a DatasetAPI instance with a mocked auth middleware", t, func() {
+	Convey("Given a DatasetAPI instance with a mocked dependencies", t, func() {
 		mockAuthMiddleware := &authMock.MiddlewareMock{
 			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
 				if token == "valid-token" {
@@ -57,48 +36,56 @@ func TestGetAuthEntityData(t *testing.T) {
 			},
 		}
 
-		httpClient := newMockHTTPClient(200, testIdentityResponse)
-		idClient := clientsidentity.NewWithHealthClient(healthcheck.NewClientWithClienter("", "http://localhost:8082", httpClient))
+		mockIdentityClient := &identityClientMock.TokenIdentityMock{
+			CheckTokenIdentityFunc: func(ctx context.Context, token string, tokenType clientsidentity.TokenType) (*dprequest.IdentityResponse, error) {
+				if token == "service-token" {
+					return testIdentityResponse, nil
+				}
+				return nil, errors.New("identity check error")
+			},
+		}
 
 		api := &DatasetAPI{
 			authMiddleware: mockAuthMiddleware,
-			idClient:       idClient,
+			idClient:       mockIdentityClient,
 		}
 
-		rValid := http.Request{
-			Header: http.Header{},
-		}
-		rValid.Header.Set("Authorization", "Bearer valid-token")
+		ctx := context.Background()
 
-		Convey("When getAuthEntityData is called with a valid access token", func() {
-			entityData, err := api.getAuthEntityData(&rValid)
+		Convey("When getAuthEntityData is called with a valid user access token", func() {
+			entityData, err := api.getAuthEntityData(ctx, "valid-token")
 
 			Convey("Then it should return the expected EntityData and no error", func() {
 				So(err, ShouldBeNil)
 				So(entityData, ShouldResemble, testEntityData)
+				So(mockAuthMiddleware.ParseCalls(), ShouldHaveLength, 1)
+				So(mockIdentityClient.CheckTokenIdentityCalls(), ShouldHaveLength, 0)
 			})
 		})
 
-		httpClientUnauthorised := newMockHTTPClient(403, testIdentityResponse)
-		idClientUnauthorised := clientsidentity.NewWithHealthClient(healthcheck.NewClientWithClienter("", "http://localhost:8082", httpClientUnauthorised))
+		Convey("When getAuthEntityData is called with a valid service access token", func() {
+			entityData, err := api.getAuthEntityData(ctx, "service-token")
 
-		api = &DatasetAPI{
-			authMiddleware: mockAuthMiddleware,
-			idClient:       idClientUnauthorised,
-		}
-
-		rNotValid := http.Request{
-			Header: http.Header{},
-		}
-		rNotValid.Header.Set("Authorization", "Bearer invalid-token")
+			Convey("Then it should return EntityData with the UserID set to the identifier from the identity response and no error", func() {
+				So(err, ShouldBeNil)
+				So(entityData, ShouldNotBeNil)
+				So(entityData.UserID, ShouldEqual, testIdentityResponse.Identifier)
+				So(mockAuthMiddleware.ParseCalls(), ShouldHaveLength, 1)
+				So(mockIdentityClient.CheckTokenIdentityCalls(), ShouldHaveLength, 1)
+			})
+		})
 
 		Convey("When getAuthEntityData is called with an invalid access token", func() {
-			entityData, err := api.getAuthEntityData(&rNotValid)
+			entityData, err := api.getAuthEntityData(ctx, "invalid-token")
 
 			Convey("Then it should return an error indicating a parse failure", func() {
 				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldEqual, "failed to parse access token: unexpected status code returned from AuthAPI: unable to determine the user or service making the request")
+				// Parse error and identity check error are wrapped
+				So(err.Error(), ShouldContainSubstring, "parse error")
+				So(err.Error(), ShouldContainSubstring, "failed to check token identity: identity check error")
 				So(entityData, ShouldBeNil)
+				So(mockAuthMiddleware.ParseCalls(), ShouldHaveLength, 1)
+				So(mockIdentityClient.CheckTokenIdentityCalls(), ShouldHaveLength, 1)
 			})
 		})
 	})

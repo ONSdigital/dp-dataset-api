@@ -91,7 +91,7 @@ type DatasetAPI struct {
 	filesAPIClient               filesAPISDK.Clienter
 	authToken                    string
 	permissionsChecker           auth.PermissionsChecker
-	idClient                     *clientsidentity.Client
+	idClient                     clientsidentity.TokenIdentity
 	searchContentUpdatedProducer *SearchContentUpdatedProducer
 	cloudflareClient             cloudflare.Clienter
 	cloudflareEnabled            bool
@@ -479,7 +479,7 @@ func (api *DatasetAPI) checkUserPermission(r *http.Request, logData log.Data, pe
 	var authorised bool
 
 	if api.EnablePrePublishView {
-		entityData, err := api.getAuthEntityData(r)
+		entityData, err := api.getAuthEntityData(r.Context(), getAccessTokenFromRequest(r))
 		if err != nil {
 			return false
 		}

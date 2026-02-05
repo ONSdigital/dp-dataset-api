@@ -116,7 +116,7 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 
 	log.Info(ctx, "condensed endpoint called", logData)
 
-	authEntityData, err := api.getAuthEntityData(r)
+	authEntityData, err := api.getAuthEntityData(ctx, getAccessTokenFromRequest(r))
 	if err != nil {
 		log.Error(ctx, "addDatasetVersionCondensed endpoint: failed to get auth entity data from request", err, logData)
 		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, models.InternalError, models.InternalErrorDescription))
@@ -302,7 +302,7 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 		"version":    version,
 	}
 
-	authEntityData, err := api.getAuthEntityData(r)
+	authEntityData, err := api.getAuthEntityData(ctx, getAccessTokenFromRequest(r))
 	if err != nil {
 		log.Error(ctx, "createVersion endpoint: failed to get auth entity data from request", err, logData)
 		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, models.InternalError, models.InternalErrorDescription))
