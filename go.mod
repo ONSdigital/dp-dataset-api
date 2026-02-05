@@ -17,6 +17,7 @@ require (
 	github.com/ONSdigital/dp-kafka/v4 v4.2.0
 	github.com/ONSdigital/dp-mongodb-in-memory v1.8.1
 	github.com/ONSdigital/dp-mongodb/v3 v3.8.0
+	github.com/ONSdigital/dp-net/v2 v2.22.0
 	github.com/ONSdigital/dp-net/v3 v3.9.0
 	github.com/ONSdigital/dp-otel-go v0.0.8
 	github.com/ONSdigital/dp-permissions-api v1.10.1
@@ -43,7 +44,6 @@ require (
 require (
 	github.com/ONSdigital/dis-redis v0.3.0 // indirect
 	github.com/ONSdigital/dp-kafka/v3 v3.11.0 // indirect
-	github.com/ONSdigital/dp-net/v2 v2.22.0 // indirect
 	github.com/ONSdigital/golang-neo4j-bolt-driver v0.0.0-20241121114036-9f4b82bb9d37 // indirect
 	github.com/ONSdigital/graphson v0.3.0 // indirect
 	github.com/ONSdigital/gremgo-neptune v1.1.0 // indirect

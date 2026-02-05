@@ -183,7 +183,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if authorised {
-			authEntityData, err := api.getAuthEntityData(getAccessTokenFromRequest(r))
+			authEntityData, err := api.getAuthEntityData(r)
 			if err != nil {
 				log.Error(ctx, "getDataset endpoint: failed to get auth entity data from request", err, logData)
 				return nil, err
