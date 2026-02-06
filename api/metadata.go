@@ -200,10 +200,17 @@ func (api *DatasetAPI) putMetadata(w http.ResponseWriter, r *http.Request) {
 	versionEtag := getIfMatch(r)
 	datasetID := vars["dataset_id"]
 	edition := vars["edition"]
-	version := vars["version"]
-	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version, "version etag": versionEtag}
+	versionID := vars["version"]
+	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": versionID, "version etag": versionEtag}
 
-	err := func() error {
+	authEntityData, err := api.getAuthEntityData(r)
+	if err != nil {
+		log.Error(ctx, "putMetadata endpoint: failed to get auth entity data from request", err, logData)
+		handleMetadataErr(w, err)
+		return
+	}
+
+	err = func() error {
 		var metadata models.EditableMetadata
 		payload, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -215,7 +222,7 @@ func (api *DatasetAPI) putMetadata(w http.ResponseWriter, r *http.Request) {
 			return errs.ErrUnableToParseJSON
 		}
 
-		versionNumber, err := models.ParseAndValidateVersionNumber(ctx, version)
+		versionNumber, err := models.ParseAndValidateVersionNumber(ctx, versionID)
 		if err != nil {
 			log.Error(ctx, "putMetadata endpoint: failed due to invalid version request", err, logData)
 			return err
@@ -264,6 +271,13 @@ func (api *DatasetAPI) putMetadata(w http.ResponseWriter, r *http.Request) {
 			log.Error(ctx, "putMetadata endpoint: failed to update version resource", err, logData)
 			return err
 		}
+
+		// ID and Email are the same as auth middleware can only provide userID
+		if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionUpdate, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+versionID, version); err != nil {
+			log.Error(ctx, "putMetadata endpoint: failed to record version audit event", err, logData)
+			return err
+		}
+
 		return err
 	}()
 
