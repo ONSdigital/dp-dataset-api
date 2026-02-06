@@ -182,6 +182,20 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 			authorised = api.checkUserPermission(r, logData, datasetReadPermission, nil)
 		}
 
+		if authorised {
+			authEntityData, err := api.getAuthEntityData(r)
+			if err != nil {
+				log.Error(ctx, "getDataset endpoint: failed to get auth entity data from request", err, logData)
+				return nil, err
+			}
+
+			// ID and Email are the same as auth middleware can only provide userID
+			if err := api.auditService.RecordDatasetAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionRead, "/datasets/"+datasetID, dataset.Next); err != nil {
+				log.Error(ctx, "getDataset endpoint: failed to record dataset audit event", err, logData)
+				return nil, err
+			}
+		}
+
 		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 
 		var datasetResponse interface{}
