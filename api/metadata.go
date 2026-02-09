@@ -273,7 +273,7 @@ func (api *DatasetAPI) putMetadata(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// ID and Email are the same as auth middleware can only provide userID
-		if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionUpdate, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+versionID, version); err != nil {
+		if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionUpdate, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+versionID+"/metadata", version); err != nil {
 			log.Error(ctx, "putMetadata endpoint: failed to record version audit event", err, logData)
 			return err
 		}

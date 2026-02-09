@@ -4767,6 +4767,8 @@ func TestPutStateReturnsOk(t *testing.T) {
 		So(mockedDataStore.CheckEditionExistsStaticCalls(), ShouldHaveLength, 1)
 		So(len(scuProducerMock.OutputCalls()), ShouldEqual, 1)
 		So(cloudflareMock.PurgeByPrefixesCalls(), ShouldHaveLength, 1)
+		So(auditServiceMock.RecordVersionAuditEventCalls(), ShouldHaveLength, 1)
+		So(auditServiceMock.RecordVersionAuditEventCalls()[0].Resource, ShouldEqual, "/datasets/test-static-dataset/editions/test-edition-1/versions/1/state")
 
 		Convey("And the correct URL's should have been purged", func() {
 			expectedPrefixes := []string{

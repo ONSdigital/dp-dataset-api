@@ -317,7 +317,7 @@ Feature: Static Dataset Versions PUT API
             """
         Then the HTTP status code should be "200"
         And the total number of audit events should be 1
-        And the number of events with action "UPDATE" and resource "/datasets/static-dataset-update/editions/2025/versions/1" should be 1
+        And the number of events with action "UPDATE" and resource "/datasets/static-dataset-update/editions/2025/versions/1/state" should be 1
         And there are no cloudflare purge calls
 
     Scenario: PUT state transitions from associated to approved
@@ -332,7 +332,7 @@ Feature: Static Dataset Versions PUT API
             """
         Then the HTTP status code should be "200"
         And the total number of audit events should be 1
-        And the number of events with action "UPDATE" and resource "/datasets/static-dataset-update/editions/2025/versions/1" should be 1
+        And the number of events with action "UPDATE" and resource "/datasets/static-dataset-update/editions/2025/versions/1/state" should be 1
         And there are no cloudflare purge calls
 
     Scenario: PUT state transitions from approved to published and purges URL's
@@ -391,7 +391,7 @@ Feature: Static Dataset Versions PUT API
             """
         Then the HTTP status code should be "200"
         And the total number of audit events should be 1
-        And the number of events with action "UPDATE" and resource "/datasets/static-dataset-publish/editions/2025/versions/1" should be 1
+        And the number of events with action "UPDATE" and resource "/datasets/static-dataset-publish/editions/2025/versions/1/state" should be 1
         And the following URL prefixes are purged by cloudflare:
             | http://localhost:20000/datasets/static-dataset-publish                           |
             | http://localhost:20000/datasets/static-dataset-publish/editions                  |
@@ -570,7 +570,7 @@ Feature: Static Dataset Versions PUT API
             """
         Then the HTTP status code should be "200"
         And the total number of audit events should be 1
-        And the number of events with action "UPDATE" and resource "/datasets/static-dataset-published/editions/2025/versions/1" should be 1
+        And the number of events with action "UPDATE" and resource "/datasets/static-dataset-published/editions/2025/versions/1/state" should be 1
         And these kafka messages are produced:
             """
             {
