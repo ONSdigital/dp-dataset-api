@@ -77,6 +77,35 @@ Feature: Static versions GET /versions
                             "byte_size": 100000
                         }
                     ]
+                },
+                {
+                    "id": "test-static-version-published",
+                    "version": 1,
+                    "edition": "test-edition-published",
+                    "edition_title": "Test Edition Published Title",
+                    "links": {
+                        "dataset": {
+                            "id": "test-static"
+                        },
+                        "edition": {
+                            "href": "/datasets/test-static/editions/test-edition-published",
+                            "id": "test-edition-published"
+                        },
+                        "self": {
+                            "href": "/datasets/test-static/editions/test-edition-published/versions/1"
+                        }
+                    },
+                    "state": "published",
+                    "type": "static",
+                    "distributions": [
+                        {
+                            "title": "Distribution 1",
+                            "format": "csv",
+                            "media_type": "text/csv",
+                            "download_url": "/uuid/filename.csv",
+                            "byte_size": 100000
+                        }
+                    ]
                 }
             ]
             """
@@ -127,3 +156,16 @@ Feature: Static versions GET /versions
                 "total_count": 1
             }
             """
+    
+    Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} records audit event with authorised user
+        Given private endpoints are enabled
+        And I am a publisher user
+        When I GET "/datasets/test-static/editions/test-edition-static-approved/versions/1"
+        Then the HTTP status code should be "200"
+        And the total number of audit events should be 1
+        And the number of events with action "READ" and resource "/datasets/test-static/editions/test-edition-static-approved/versions/1" should be 1
+
+    Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} does not record audit event without auth
+        When I GET "/datasets/test-static/editions/test-edition-published/versions/1"
+        Then the HTTP status code should be "200"
+        And the total number of audit events should be 0

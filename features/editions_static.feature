@@ -148,6 +148,7 @@ Feature: GET editions static
                 "total_count": 2
             }
             """
+        And the total number of audit events should be 0
 
     Scenario: GET /datasets/{id}/editions/{edition_id}
         When I GET "/datasets/static-dataset/editions/2025"
@@ -186,3 +187,12 @@ Feature: GET editions static
                 "release_date": "2025-01-01T07:00:00.000Z"
             }
             """
+        And the total number of audit events should be 0
+    
+    Scenario: GET /datasets/{id}/editions records audit event with authorised user
+        Given private endpoints are enabled
+        And I am a publisher user
+        When I GET "/datasets/static-dataset/editions/2025"
+        Then the HTTP status code should be "200"
+        And the total number of audit events should be 1
+        And the number of events with action "READ" and resource "/datasets/static-dataset/editions/2025" should be 1

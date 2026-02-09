@@ -258,6 +258,20 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 			return nil, errs.ErrResourceState
 		}
 
+		if authorised && isStatic {
+			authEntityData, err := api.getAuthEntityData(r)
+			if err != nil {
+				log.Error(ctx, "getVersion endpoint: failed to get auth entity data from request", err, logData)
+				return nil, err
+			}
+
+			// ID and Email are the same as auth middleware can only provide userID
+			if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+versionNumber, version); err != nil {
+				log.Error(ctx, "getVersion endpoint: failed to record version audit event", err, logData)
+				return nil, err
+			}
+		}
+
 		// Only the download service should not have access to the public/private download
 		// fields
 		if r.Header.Get(downloadServiceToken) != api.downloadServiceToken {

@@ -1087,6 +1087,8 @@ Scenario: GET metadata for a static dataset
             ]
         }
         """
+    And the total number of audit events should be 1
+    And the number of events with action "READ" and resource "/datasets/static-dataset/editions/time-series/versions/1" should be 1
 
 Scenario: GET metadata for a static dataset with URL rewriting enabled
     Given I have a static dataset with version:
@@ -1206,6 +1208,8 @@ Scenario: GET metadata for a static dataset with URL rewriting enabled
             ]
         }
         """
+    And the total number of audit events should be 1
+    And the number of events with action "READ" and resource "/datasets/static-dataset/editions/time-series/versions/1" should be 1
 
 Scenario: GET metadata for an unpublished static dataset
     Given I have a static dataset with version:
@@ -1322,3 +1326,5 @@ Scenario: GET metadata for an unpublished static dataset
             ]
         }
         """
+    And the total number of audit events should be 1
+    And the number of events with action "READ" and resource "/datasets/static-dataset/editions/time-series/versions/1" should be 1

@@ -220,6 +220,27 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 				log.Error(ctx, "getEdition endpoint: failed to map version to edition", err, logData)
 				return nil, err
 			}
+
+			if authorised && isStatic {
+				authEntityData, err := api.getAuthEntityData(r)
+				if err != nil {
+					log.Error(ctx, "getEdition endpoint: failed to get auth entity data from request", err, logData)
+					return nil, err
+				}
+
+				versionToAudit := publishedVersion
+				if unpublishedVersion != nil {
+					versionToAudit = unpublishedVersion
+				}
+
+				if versionToAudit != nil {
+					// ID and Email are the same as auth middleware can only provide userID
+					if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+editionID, versionToAudit); err != nil {
+						log.Error(ctx, "getEdition endpoint: failed to record version audit event", err, logData)
+						return nil, err
+					}
+				}
+			}
 		} else {
 			edition, err = api.dataStore.Backend.GetEdition(ctx, datasetID, editionID, state)
 			if err != nil {

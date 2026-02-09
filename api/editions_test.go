@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -890,7 +891,13 @@ func TestGetEditionReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, versionDoc *models.Version) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -1066,5 +1073,441 @@ func TestGetEditionReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetLatestVersionStaticCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestGetEditionRecordsAuditEvent(t *testing.T) {
+	t.Parallel()
+
+	Convey("Given an authorised request to get an edition for a static dataset", t, func() {
+		publishedVersion := &models.Version{
+			DatasetID:   "123-456",
+			Edition:     "678",
+			Version:     1,
+			State:       models.PublishedState,
+			ReleaseDate: "1996-04-01",
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123-456",
+					ID:   "123-456",
+				},
+				Self: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123-456/editions/678/versions/1",
+				},
+				Edition: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123-456/editions/678",
+					ID:   "678",
+				},
+				Version: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123-456/editions/678/versions/1",
+					ID:   "1",
+				},
+			},
+			LastUpdated: time.Date(2025, 3, 11, 0, 0, 0, 0, time.UTC),
+		}
+
+		unpublishedVersion := &models.Version{
+			DatasetID:   "123-456",
+			Edition:     "678",
+			Version:     2,
+			State:       models.AssociatedState,
+			ReleaseDate: "1996-04-01",
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123-456",
+					ID:   "123-456",
+				},
+				Self: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123-456/editions/678/versions/2",
+				},
+				Edition: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123-456/editions/678",
+					ID:   "678",
+				},
+				Version: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123-456/editions/678/versions/2",
+					ID:   "2",
+				},
+			},
+			LastUpdated: time.Date(2025, 3, 11, 0, 0, 0, 0, time.UTC),
+		}
+
+		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/123-456/editions/678", nil)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return true, nil
+			},
+			GetDatasetTypeFunc: func(context.Context, string, bool) (string, error) {
+				return models.Static.String(), nil
+			},
+			GetLatestVersionStaticFunc: func(ctx context.Context, datasetID, editionID, state string) (*models.Version, error) {
+				if state == models.PublishedState {
+					return publishedVersion, nil
+				}
+				return unpublishedVersion, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, versionDoc *models.Version) error {
+				return nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "test-user-id"}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+
+		Convey("When we call the GET edition endpoint", func() {
+			api.Router.ServeHTTP(w, r)
+
+			Convey("Then it returns a 200 OK", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+			})
+
+			Convey("And the audit service is called with the correct parameters", func() {
+				So(len(auditServiceMock.RecordVersionAuditEventCalls()), ShouldEqual, 1)
+
+				call := auditServiceMock.RecordVersionAuditEventCalls()[0]
+				So(call.RequestedBy.ID, ShouldEqual, "test-user-id")
+				So(call.RequestedBy.Email, ShouldEqual, "test-user-id")
+				So(call.Action, ShouldEqual, models.ActionRead)
+				So(call.Resource, ShouldEqual, "/datasets/123-456/editions/678")
+				So(call.Version, ShouldEqual, unpublishedVersion)
+			})
+
+			Convey("And the relevant calls have been made", func() {
+				So(len(mockedDataStore.IsStaticDatasetCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetLatestVersionStaticCalls()), ShouldEqual, 2)
+			})
+		})
+	})
+}
+
+func TestGetEditionRecordsAuditEventWithPublishedVersionOnly(t *testing.T) {
+	t.Parallel()
+
+	Convey("Given an authorised request where only published version exists", t, func() {
+		publishedVersion := &models.Version{
+			DatasetID:   "123-456",
+			Edition:     "678",
+			Version:     1,
+			State:       models.PublishedState,
+			ReleaseDate: "1996-04-01",
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123-456",
+					ID:   "123-456",
+				},
+				Self: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123-456/editions/678/versions/1",
+				},
+				Edition: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123-456/editions/678",
+					ID:   "678",
+				},
+				Version: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123-456/editions/678/versions/1",
+					ID:   "1",
+				},
+			},
+			LastUpdated: time.Date(2025, 3, 11, 0, 0, 0, 0, time.UTC),
+		}
+
+		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/123-456/editions/678", nil)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return true, nil
+			},
+			GetDatasetTypeFunc: func(context.Context, string, bool) (string, error) {
+				return models.Static.String(), nil
+			},
+			GetLatestVersionStaticFunc: func(ctx context.Context, datasetID, editionID, state string) (*models.Version, error) {
+				if state == models.PublishedState {
+					return publishedVersion, nil
+				}
+				return nil, errs.ErrVersionNotFound
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, versionDoc *models.Version) error {
+				return nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "test-user-id"}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+
+		Convey("When we call the GET edition endpoint", func() {
+			api.Router.ServeHTTP(w, r)
+
+			Convey("Then it returns a 200 OK", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+			})
+
+			Convey("And the audit service is called with the published version", func() {
+				So(len(auditServiceMock.RecordVersionAuditEventCalls()), ShouldEqual, 1)
+
+				call := auditServiceMock.RecordVersionAuditEventCalls()[0]
+				So(call.RequestedBy.ID, ShouldEqual, "test-user-id")
+				So(call.RequestedBy.Email, ShouldEqual, "test-user-id")
+				So(call.Action, ShouldEqual, models.ActionRead)
+				So(call.Resource, ShouldEqual, "/datasets/123-456/editions/678")
+				So(call.Version, ShouldEqual, publishedVersion)
+			})
+		})
+	})
+}
+
+func TestGetEditionDoesNotRecordAuditEventForNonStaticDataset(t *testing.T) {
+	t.Parallel()
+
+	Convey("Given an authorised request to get an edition for a non-static dataset", t, func() {
+		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/123-456/editions/678", nil)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return false, nil
+			},
+			GetDatasetTypeFunc: func(context.Context, string, bool) (string, error) {
+				return models.CantabularFlexibleTable.String(), nil
+			},
+			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
+				return &models.EditionUpdate{}, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, versionDoc *models.Version) error {
+				return nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "test-user-id"}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+
+		Convey("When we call the GET edition endpoint", func() {
+			api.Router.ServeHTTP(w, r)
+
+			Convey("Then it returns a 200 OK", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+			})
+
+			Convey("And the audit service is NOT called", func() {
+				So(len(auditServiceMock.RecordVersionAuditEventCalls()), ShouldEqual, 0)
+			})
+
+			Convey("And the relevant calls have been made", func() {
+				So(len(mockedDataStore.IsStaticDatasetCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
+			})
+		})
+	})
+}
+
+func TestGetEditionDoesNotRecordAuditEventForUnauthorisedUser(t *testing.T) {
+	t.Parallel()
+
+	Convey("Given an unauthorised request to get an edition for a static dataset", t, func() {
+		publishedVersion := &models.Version{
+			DatasetID:   "123-456",
+			Edition:     "678",
+			Version:     1,
+			State:       models.PublishedState,
+			ReleaseDate: "1996-04-01",
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123-456",
+					ID:   "123-456",
+				},
+				Self: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123-456/editions/678/versions/1",
+				},
+				Edition: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123-456/editions/678",
+					ID:   "678",
+				},
+				Version: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123-456/editions/678/versions/1",
+					ID:   "1",
+				},
+			},
+			LastUpdated: time.Date(2025, 3, 11, 0, 0, 0, 0, time.UTC),
+		}
+
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678", http.NoBody)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return true, nil
+			},
+			GetDatasetTypeFunc: func(context.Context, string, bool) (string, error) {
+				return models.Static.String(), nil
+			},
+			GetLatestVersionStaticFunc: func(ctx context.Context, datasetID, editionID, state string) (*models.Version, error) {
+				return publishedVersion, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, versionDoc *models.Version) error {
+				return nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return nil, permissionsAPISDK.ErrFailedToParsePermissionsResponse
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+
+		Convey("When we call the GET edition endpoint", func() {
+			api.Router.ServeHTTP(w, r)
+
+			Convey("Then it returns a 200 OK", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+			})
+
+			Convey("And the audit service is NOT called", func() {
+				So(len(auditServiceMock.RecordVersionAuditEventCalls()), ShouldEqual, 0)
+			})
+
+			Convey("And the relevant calls have been made", func() {
+				So(len(mockedDataStore.IsStaticDatasetCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetLatestVersionStaticCalls()), ShouldEqual, 1)
+			})
+		})
+	})
+}
+
+func TestGetEditionAuditEventLogsErrorButContinues(t *testing.T) {
+	t.Parallel()
+
+	Convey("Given an authorised request where the audit service fails", t, func() {
+		publishedVersion := &models.Version{
+			DatasetID:   "123-456",
+			Edition:     "678",
+			Version:     1,
+			State:       models.PublishedState,
+			ReleaseDate: "1996-04-01",
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123-456",
+					ID:   "123-456",
+				},
+				Self: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123-456/editions/678/versions/1",
+				},
+				Edition: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123-456/editions/678",
+					ID:   "678",
+				},
+				Version: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123-456/editions/678/versions/1",
+					ID:   "1",
+				},
+			},
+			LastUpdated: time.Date(2025, 3, 11, 0, 0, 0, 0, time.UTC),
+		}
+
+		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/123-456/editions/678", nil)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return true, nil
+			},
+			GetDatasetTypeFunc: func(context.Context, string, bool) (string, error) {
+				return models.Static.String(), nil
+			},
+			GetLatestVersionStaticFunc: func(ctx context.Context, datasetID, editionID, state string) (*models.Version, error) {
+				if state == models.PublishedState {
+					return publishedVersion, nil
+				}
+				return nil, errs.ErrVersionNotFound
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, versionDoc *models.Version) error {
+				return errors.New("audit service error")
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "test-user-id"}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+
+		Convey("When we call the GET edition endpoint", func() {
+			api.Router.ServeHTTP(w, r)
+
+			Convey("Then it returns a 500 internal server error", func() {
+				So(w.Code, ShouldEqual, http.StatusInternalServerError)
+			})
+
+			Convey("And the audit service was called", func() {
+				So(len(auditServiceMock.RecordVersionAuditEventCalls()), ShouldEqual, 1)
+			})
+		})
 	})
 }
