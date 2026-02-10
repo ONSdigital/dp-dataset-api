@@ -258,7 +258,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 			return nil, errs.ErrResourceState
 		}
 
-		if authorised && isStatic {
+		if authorised {
 			authEntityData, err := api.getAuthEntityData(r)
 			if err != nil {
 				log.Error(ctx, "getVersion endpoint: failed to get auth entity data from request", err, logData)

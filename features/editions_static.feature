@@ -189,7 +189,7 @@ Feature: GET editions static
             """
         And the total number of audit events should be 0
     
-    Scenario: GET /datasets/{id}/editions records audit event with authorised user
+    Scenario: GET /datasets/{id}/editions/{edition} records audit event with authorised user
         Given private endpoints are enabled
         And I am a publisher user
         When I GET "/datasets/static-dataset/editions/2025"

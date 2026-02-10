@@ -497,7 +497,13 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, versionDoc *models.Version) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -562,7 +568,13 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, versionDoc *models.Version) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -1216,80 +1228,13 @@ func TestGetMetadataRecordsAuditEvent(t *testing.T) {
 				So(call.RequestedBy.ID, ShouldEqual, "test-user-id")
 				So(call.RequestedBy.Email, ShouldEqual, "test-user-id")
 				So(call.Action, ShouldEqual, models.ActionRead)
-				So(call.Resource, ShouldEqual, "/datasets/123/editions/2017/versions/1")
+				So(call.Resource, ShouldEqual, "/datasets/123/editions/2017/versions/1/metadata")
 			})
 
 			Convey("And the relevant calls have been made", func() {
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsStaticCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetVersionStaticCalls()), ShouldEqual, 1)
-			})
-		})
-	})
-}
-
-func TestGetMetadataDoesNotRecordAuditEventForNonStaticDataset(t *testing.T) {
-	t.Parallel()
-
-	Convey("Given an authorised request to get metadata for a non-static dataset", t, func() {
-		datasetDoc := createDatasetDoc()
-		datasetDoc.Current.Type = "filterable"
-		if datasetDoc.Next != nil {
-			datasetDoc.Next.Type = "filterable"
-		}
-
-		versionDoc := createUnpublishedVersionDoc()
-
-		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
-		w := httptest.NewRecorder()
-
-		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return datasetDoc, nil
-			},
-			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
-				return nil
-			},
-			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
-				return versionDoc, nil
-			},
-		}
-
-		auditServiceMock := &applicationMocks.AuditServiceMock{
-			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, versionDoc *models.Version) error {
-				return nil
-			},
-		}
-
-		authorisationMock := &authMock.MiddlewareMock{
-			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
-				return handlerFunc
-			},
-			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
-				return handlerFunc
-			},
-			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
-				return &permissionsAPISDK.EntityData{UserID: "test-user-id"}, nil
-			},
-		}
-
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
-
-		Convey("When we call the GET metadata endpoint", func() {
-			api.Router.ServeHTTP(w, r)
-
-			Convey("Then it returns a 200 OK", func() {
-				So(w.Code, ShouldEqual, http.StatusOK)
-			})
-
-			Convey("And the audit service is NOT called", func() {
-				So(len(auditServiceMock.RecordVersionAuditEventCalls()), ShouldEqual, 0)
-			})
-
-			Convey("And the relevant calls have been made", func() {
-				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-				So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
-				So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 			})
 		})
 	})

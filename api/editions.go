@@ -221,7 +221,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 				return nil, err
 			}
 
-			if authorised && isStatic {
+			if authorised {
 				authEntityData, err := api.getAuthEntityData(r)
 				if err != nil {
 					log.Error(ctx, "getEdition endpoint: failed to get auth entity data from request", err, logData)
