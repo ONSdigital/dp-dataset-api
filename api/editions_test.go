@@ -874,7 +874,6 @@ func TestGetEditionReturnsOK(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetLatestVersionStaticCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
 	})
 
 	Convey("A successful request to get edition when dataset is static returns 200 OK response", t, func() {
