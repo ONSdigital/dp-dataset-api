@@ -172,6 +172,9 @@ func TestWebSubnetEditionEndpoint(t *testing.T) {
 			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
 				return false, nil
 			},
+			GetVersionsFunc: func(context.Context, string, string, string, int, int) ([]models.Version, int, error) {
+				return []models.Version{{Version: 1}}, 1, nil
+			},
 		}
 
 		Convey("Calling the edition endpoint should allow only published items", func() {

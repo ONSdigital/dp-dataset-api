@@ -847,6 +847,9 @@ func TestGetEditionReturnsOK(t *testing.T) {
 			GetDatasetTypeFunc: func(context.Context, string, bool) (string, error) {
 				return models.CantabularFlexibleTable.String(), nil
 			},
+			GetVersionsFunc: func(context.Context, string, string, string, int, int) ([]models.Version, int, error) {
+				return []models.Version{{Version: 1}}, 1, nil
+			},
 		}
 
 		authorisationMock := &authMock.MiddlewareMock{
@@ -858,13 +861,20 @@ func TestGetEditionReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, versionDoc *models.Version) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetLatestVersionStaticCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
 	})
 
 	Convey("A successful request to get edition when dataset is static returns 200 OK response", t, func() {
@@ -1281,65 +1291,6 @@ func TestGetEditionRecordsAuditEventWithPublishedVersionOnly(t *testing.T) {
 				So(call.Action, ShouldEqual, models.ActionRead)
 				So(call.Resource, ShouldEqual, "/datasets/123-456/editions/678")
 				So(call.Version, ShouldEqual, publishedVersion)
-			})
-		})
-	})
-}
-
-func TestGetEditionDoesNotRecordAuditEventForNonStaticDataset(t *testing.T) {
-	t.Parallel()
-
-	Convey("Given an authorised request to get an edition for a non-static dataset", t, func() {
-		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/123-456/editions/678", nil)
-		w := httptest.NewRecorder()
-
-		mockedDataStore := &storetest.StorerMock{
-			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
-				return false, nil
-			},
-			GetDatasetTypeFunc: func(context.Context, string, bool) (string, error) {
-				return models.CantabularFlexibleTable.String(), nil
-			},
-			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
-				return &models.EditionUpdate{}, nil
-			},
-		}
-
-		auditServiceMock := &applicationMocks.AuditServiceMock{
-			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, versionDoc *models.Version) error {
-				return nil
-			},
-		}
-
-		authorisationMock := &authMock.MiddlewareMock{
-			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
-				return handlerFunc
-			},
-			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
-				return handlerFunc
-			},
-			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
-				return &permissionsAPISDK.EntityData{UserID: "test-user-id"}, nil
-			},
-		}
-
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
-
-		Convey("When we call the GET edition endpoint", func() {
-			api.Router.ServeHTTP(w, r)
-
-			Convey("Then it returns a 200 OK", func() {
-				So(w.Code, ShouldEqual, http.StatusOK)
-			})
-
-			Convey("And the audit service is NOT called", func() {
-				So(len(auditServiceMock.RecordVersionAuditEventCalls()), ShouldEqual, 0)
-			})
-
-			Convey("And the relevant calls have been made", func() {
-				So(len(mockedDataStore.IsStaticDatasetCalls()), ShouldEqual, 1)
-				So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
-				So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 			})
 		})
 	})

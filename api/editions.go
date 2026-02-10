@@ -199,6 +199,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 
 		var edition *models.EditionUpdate
 		var unpublishedVersion *models.Version
+		var versionToAudit *models.Version
 
 		if datasetType == models.Static.String() {
 			publishedVersion, err := api.dataStore.Backend.GetLatestVersionStatic(ctx, datasetID, editionID, models.PublishedState)
@@ -221,30 +222,34 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 				return nil, err
 			}
 
-			if authorised {
-				authEntityData, err := api.getAuthEntityData(r)
-				if err != nil {
-					log.Error(ctx, "getEdition endpoint: failed to get auth entity data from request", err, logData)
-					return nil, err
-				}
-
-				versionToAudit := publishedVersion
-				if unpublishedVersion != nil {
-					versionToAudit = unpublishedVersion
-				}
-
-				if versionToAudit != nil {
-					// ID and Email are the same as auth middleware can only provide userID
-					if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+editionID, versionToAudit); err != nil {
-						log.Error(ctx, "getEdition endpoint: failed to record version audit event", err, logData)
-						return nil, err
-					}
-				}
+			versionToAudit = publishedVersion
+			if unpublishedVersion != nil {
+				versionToAudit = unpublishedVersion
 			}
 		} else {
 			edition, err = api.dataStore.Backend.GetEdition(ctx, datasetID, editionID, state)
 			if err != nil {
 				log.Error(ctx, "getEdition endpoint: unable to find edition", err, logData)
+				return nil, err
+			}
+
+			// get the latest version just for audit purposes
+			versions, _, err := api.dataStore.Backend.GetVersions(ctx, datasetID, editionID, state, 0, 1)
+			if err == nil && len(versions) > 0 {
+				versionToAudit = &versions[0]
+			}
+		}
+
+		if authorised && versionToAudit != nil {
+			authEntityData, err := api.getAuthEntityData(r)
+			if err != nil {
+				log.Error(ctx, "getEdition endpoint: failed to get auth entity data from request", err, logData)
+				return nil, err
+			}
+
+			// ID and Email are the same as auth middleware can only provide userID
+			if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+editionID, versionToAudit); err != nil {
+				log.Error(ctx, "getEdition endpoint: failed to record version audit event", err, logData)
 				return nil, err
 			}
 		}

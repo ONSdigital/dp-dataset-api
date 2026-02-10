@@ -184,6 +184,8 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 	versionNumber := vars["version"]
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": versionNumber}
 
+	var authorised bool // Declare at function scope so audit can access it
+
 	v, getVersionErr := func() (*models.Version, error) {
 		versionID, err := models.ParseAndValidateVersionNumber(ctx, versionNumber)
 		if err != nil {
@@ -196,7 +198,6 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 			return nil, attrsErr
 		}
 
-		var authorised bool
 		isStatic, err := api.dataStore.Backend.IsStaticDataset(ctx, datasetID)
 		if err != nil {
 			if err == errs.ErrDatasetNotFound {
@@ -256,20 +257,6 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 		if err = models.CheckState("version", version.State); err != nil {
 			log.Error(ctx, "unpublished version has an invalid state", err, log.Data{"state": version.State})
 			return nil, errs.ErrResourceState
-		}
-
-		if authorised {
-			authEntityData, err := api.getAuthEntityData(r)
-			if err != nil {
-				log.Error(ctx, "getVersion endpoint: failed to get auth entity data from request", err, logData)
-				return nil, err
-			}
-
-			// ID and Email are the same as auth middleware can only provide userID
-			if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+versionNumber, version); err != nil {
-				log.Error(ctx, "getVersion endpoint: failed to record version audit event", err, logData)
-				return nil, err
-			}
 		}
 
 		// Only the download service should not have access to the public/private download
@@ -337,6 +324,22 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 	if err != nil {
 		log.Error(ctx, "failed to marshal version resource into bytes", err, logData)
 		return nil, models.NewErrorResponse(getVersionAPIErrStatusCode(err), nil, models.NewError(err, "failed to marshal version into bytes", "internal error"))
+	}
+
+	if authorised {
+		authEntityData, err := api.getAuthEntityData(r)
+		if err != nil {
+			log.Error(ctx, "getVersion endpoint: failed to get auth entity data from request", err, logData)
+			responseError := models.NewError(err, err.Error(), "internal error")
+			return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, responseError)
+		}
+
+		// ID and Email are the same as auth middleware can only provide userID
+		if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+versionNumber, v); err != nil {
+			log.Error(ctx, "getVersion endpoint: failed to record version audit event", err, logData)
+			responseError := models.NewError(err, err.Error(), "internal error")
+			return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, responseError)
+		}
 	}
 
 	responseHeaders := map[string]string{

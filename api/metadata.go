@@ -117,20 +117,6 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		if authorised {
-			authEntityData, err := api.getAuthEntityData(r)
-			if err != nil {
-				log.Error(ctx, "getMetadata endpoint: failed to get auth entity data from request", err, logData)
-				return nil, err
-			}
-
-			// ID and Email are the same as auth middleware can only provide userID
-			if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+version+"/metadata", versionDoc); err != nil {
-				log.Error(ctx, "getMetadata endpoint: failed to record version audit event", err, logData)
-				return nil, err
-			}
-		}
-
 		var metaDataDoc *models.Metadata
 
 		if datasetType == models.CantabularFlexibleTable || datasetType == models.CantabularMultivariateTable {
@@ -189,6 +175,21 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 			log.Error(ctx, "getMetadata endpoint: failed to marshal metadata resource into bytes", err, logData)
 			return nil, err
 		}
+
+		if authorised {
+			authEntityData, err := api.getAuthEntityData(r)
+			if err != nil {
+				log.Error(ctx, "getMetadata endpoint: failed to get auth entity data from request", err, logData)
+				return nil, err
+			}
+
+			// ID and Email are the same as auth middleware can only provide userID
+			if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+version+"/metadata", versionDoc); err != nil {
+				log.Error(ctx, "getMetadata endpoint: failed to record version audit event", err, logData)
+				return nil, err
+			}
+		}
+
 		return b, err
 	}()
 
