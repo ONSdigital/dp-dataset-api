@@ -232,10 +232,10 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 				log.Error(ctx, "getEdition endpoint: unable to find edition", err, logData)
 				return nil, err
 			}
-			// For non-static datasets, we'll audit the edition object (no version fetching needed)
 		}
 
 		var editionResponse interface{}
+		var b []byte
 
 		if api.enableURLRewriting {
 			datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
@@ -255,8 +255,13 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 				}
 				log.Info(ctx, "getEdition endpoint: get edition without auth", logData)
 			}
+
+			b, err = json.Marshal(editionResponse)
+			if err != nil {
+				log.Error(ctx, "getEdition endpoint: failed to marshal edition resource into bytes", err, logData)
+				return nil, err
+			}
 		} else {
-			var b []byte
 			if authorised {
 				// User has valid authentication to get raw edition document
 				b, err = json.Marshal(edition)
@@ -274,41 +279,6 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 				}
 				log.Info(ctx, "getEdition endpoint: get edition without auth", logData)
 			}
-
-			// Record audit event just before returning the record to the user
-			if authorised {
-				authEntityData, err := api.getAuthEntityData(r)
-				if err != nil {
-					log.Error(ctx, "getEdition endpoint: failed to get auth entity data from request", err, logData)
-					return nil, err
-				}
-
-				if datasetType == models.Static.String() {
-					// Static dataset - audit version
-					if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+editionID, versionToAudit); err != nil {
-						log.Error(ctx, "getEdition endpoint: failed to record version audit event", err, logData)
-						return nil, err
-					}
-				} else {
-					// Non-static dataset - audit edition
-					editionToAudit := edition.Current
-					if editionToAudit == nil {
-						editionToAudit = edition.Next
-					}
-					if err := api.auditService.RecordEditionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+editionID, editionToAudit); err != nil {
-						log.Error(ctx, "getEdition endpoint: failed to record edition audit event", err, logData)
-						return nil, err
-					}
-				}
-			}
-
-			return b, nil
-		}
-
-		b, err := json.Marshal(editionResponse)
-		if err != nil {
-			log.Error(ctx, "getEdition endpoint: failed to marshal edition resource into bytes", err, logData)
-			return nil, err
 		}
 
 		if authorised {
@@ -324,10 +294,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 					return nil, err
 				}
 			} else {
-				editionToAudit := edition.Current
-				if editionToAudit == nil {
-					editionToAudit = edition.Next
-				}
+				editionToAudit := edition.Next
 				if err := api.auditService.RecordEditionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+editionID, editionToAudit); err != nil {
 					log.Error(ctx, "getEdition endpoint: failed to record edition audit event", err, logData)
 					return nil, err
