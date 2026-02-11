@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// AuditEvent represents an audit log entry for actions performed on a dataset, version, or metadata
+// AuditEvent represents an audit log entry for actions performed on a dataset, version, edition, or metadata
 type AuditEvent struct {
 	CreatedAt   time.Time   `bson:"created_at" json:"created_at"`
 	RequestedBy RequestedBy `bson:"requested_by" json:"requested_by"`
@@ -13,6 +13,7 @@ type AuditEvent struct {
 	Resource    string      `bson:"resource" json:"resource"`
 	Dataset     *Dataset    `bson:"dataset,omitempty" json:"dataset,omitempty"`
 	Version     *Version    `bson:"version,omitempty" json:"version,omitempty"`
+	Edition     *Edition    `bson:"edition,omitempty" json:"edition,omitempty"`
 	Metadata    *Metadata   `bson:"metadata,omitempty" json:"metadata,omitempty"`
 }
 
@@ -33,13 +34,24 @@ const (
 )
 
 // NewAuditEvent creates a new AuditEvent instance
-// It requires one of dataset, version, or metadata to be provided
-func NewAuditEvent(requestedBy RequestedBy, action Action, resource string, dataset *Dataset, version *Version, metadata *Metadata) (*AuditEvent, error) {
-	if (dataset == nil && version == nil && metadata == nil) ||
-		(dataset != nil && version != nil) ||
-		(dataset != nil && metadata != nil) ||
-		(version != nil && metadata != nil) {
-		return nil, errors.New("one of dataset, version, or metadata must be provided")
+// It requires exactly one of dataset, version, edition, or metadata to be provided
+func NewAuditEvent(requestedBy RequestedBy, action Action, resource string, dataset *Dataset, version *Version, edition *Edition, metadata *Metadata) (*AuditEvent, error) {
+	provided := 0
+	if dataset != nil {
+		provided++
+	}
+	if version != nil {
+		provided++
+	}
+	if edition != nil {
+		provided++
+	}
+	if metadata != nil {
+		provided++
+	}
+
+	if provided != 1 {
+		return nil, errors.New("exactly one of dataset, version, edition, or metadata must be provided")
 	}
 
 	return &AuditEvent{
@@ -49,6 +61,7 @@ func NewAuditEvent(requestedBy RequestedBy, action Action, resource string, data
 		Resource:    resource,
 		Dataset:     dataset,
 		Version:     version,
+		Edition:     edition,
 		Metadata:    metadata,
 	}, nil
 }

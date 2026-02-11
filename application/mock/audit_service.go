@@ -23,6 +23,9 @@ var _ application.AuditService = &AuditServiceMock{}
 //			RecordDatasetAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, dataset *models.Dataset) error {
 //				panic("mock out the RecordDatasetAuditEvent method")
 //			},
+//			RecordEditionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, edition *models.Edition) error {
+//				panic("mock out the RecordEditionAuditEvent method")
+//			},
 //			RecordMetadataAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, metadata *models.Metadata) error {
 //				panic("mock out the RecordMetadataAuditEvent method")
 //			},
@@ -38,6 +41,9 @@ var _ application.AuditService = &AuditServiceMock{}
 type AuditServiceMock struct {
 	// RecordDatasetAuditEventFunc mocks the RecordDatasetAuditEvent method.
 	RecordDatasetAuditEventFunc func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, dataset *models.Dataset) error
+
+	// RecordEditionAuditEventFunc mocks the RecordEditionAuditEvent method.
+	RecordEditionAuditEventFunc func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, edition *models.Edition) error
 
 	// RecordMetadataAuditEventFunc mocks the RecordMetadataAuditEvent method.
 	RecordMetadataAuditEventFunc func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, metadata *models.Metadata) error
@@ -59,6 +65,19 @@ type AuditServiceMock struct {
 			Resource string
 			// Dataset is the dataset argument value.
 			Dataset *models.Dataset
+		}
+		// RecordEditionAuditEvent holds details about calls to the RecordEditionAuditEvent method.
+		RecordEditionAuditEvent []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// RequestedBy is the requestedBy argument value.
+			RequestedBy models.RequestedBy
+			// Action is the action argument value.
+			Action models.Action
+			// Resource is the resource argument value.
+			Resource string
+			// Edition is the edition argument value.
+			Edition *models.Edition
 		}
 		// RecordMetadataAuditEvent holds details about calls to the RecordMetadataAuditEvent method.
 		RecordMetadataAuditEvent []struct {
@@ -88,6 +107,7 @@ type AuditServiceMock struct {
 		}
 	}
 	lockRecordDatasetAuditEvent  sync.RWMutex
+	lockRecordEditionAuditEvent  sync.RWMutex
 	lockRecordMetadataAuditEvent sync.RWMutex
 	lockRecordVersionAuditEvent  sync.RWMutex
 }
@@ -137,6 +157,54 @@ func (mock *AuditServiceMock) RecordDatasetAuditEventCalls() []struct {
 	mock.lockRecordDatasetAuditEvent.RLock()
 	calls = mock.calls.RecordDatasetAuditEvent
 	mock.lockRecordDatasetAuditEvent.RUnlock()
+	return calls
+}
+
+// RecordEditionAuditEvent calls RecordEditionAuditEventFunc.
+func (mock *AuditServiceMock) RecordEditionAuditEvent(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, edition *models.Edition) error {
+	if mock.RecordEditionAuditEventFunc == nil {
+		panic("AuditServiceMock.RecordEditionAuditEventFunc: method is nil but AuditService.RecordEditionAuditEvent was just called")
+	}
+	callInfo := struct {
+		Ctx         context.Context
+		RequestedBy models.RequestedBy
+		Action      models.Action
+		Resource    string
+		Edition     *models.Edition
+	}{
+		Ctx:         ctx,
+		RequestedBy: requestedBy,
+		Action:      action,
+		Resource:    resource,
+		Edition:     edition,
+	}
+	mock.lockRecordEditionAuditEvent.Lock()
+	mock.calls.RecordEditionAuditEvent = append(mock.calls.RecordEditionAuditEvent, callInfo)
+	mock.lockRecordEditionAuditEvent.Unlock()
+	return mock.RecordEditionAuditEventFunc(ctx, requestedBy, action, resource, edition)
+}
+
+// RecordEditionAuditEventCalls gets all the calls that were made to RecordEditionAuditEvent.
+// Check the length with:
+//
+//	len(mockedAuditService.RecordEditionAuditEventCalls())
+func (mock *AuditServiceMock) RecordEditionAuditEventCalls() []struct {
+	Ctx         context.Context
+	RequestedBy models.RequestedBy
+	Action      models.Action
+	Resource    string
+	Edition     *models.Edition
+} {
+	var calls []struct {
+		Ctx         context.Context
+		RequestedBy models.RequestedBy
+		Action      models.Action
+		Resource    string
+		Edition     *models.Edition
+	}
+	mock.lockRecordEditionAuditEvent.RLock()
+	calls = mock.calls.RecordEditionAuditEvent
+	mock.lockRecordEditionAuditEvent.RUnlock()
 	return calls
 }
 

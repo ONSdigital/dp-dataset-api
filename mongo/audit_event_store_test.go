@@ -20,7 +20,7 @@ func TestCreateAuditEvent(t *testing.T) {
 				models.ActionCreate,
 				"/datasets/dataset-1",
 				&models.Dataset{ID: "dataset-1"},
-				nil, nil,
+				nil, nil, nil,
 			)
 			So(err, ShouldBeNil)
 

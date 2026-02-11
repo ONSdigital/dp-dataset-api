@@ -24,7 +24,7 @@ func TestNewAuditEvent(t *testing.T) {
 			resource:    "/datasets/dataset-1",
 			dataset:     nil,
 			version:     nil,
-			expectedErr: errors.New("one of dataset, version, or metadata must be provided"),
+			expectedErr: errors.New("exactly one of dataset, version, edition, or metadata must be provided"),
 		},
 		{
 			name:        "both dataset and version are provided",
@@ -33,7 +33,7 @@ func TestNewAuditEvent(t *testing.T) {
 			resource:    "/datasets/dataset-1",
 			dataset:     &Dataset{ID: "dataset-1"},
 			version:     &Version{ID: "version-1"},
-			expectedErr: errors.New("one of dataset, version, or metadata must be provided"),
+			expectedErr: errors.New("exactly one of dataset, version, edition, or metadata must be provided"),
 		},
 		{
 			name:        "only dataset is provided",
@@ -58,7 +58,7 @@ func TestNewAuditEvent(t *testing.T) {
 	Convey("NewAuditEvent input validation", t, func() {
 		for _, tc := range testCases {
 			Convey(tc.name, func() {
-				_, err := NewAuditEvent(tc.requestedBy, tc.action, tc.resource, tc.dataset, tc.version, nil)
+				_, err := NewAuditEvent(tc.requestedBy, tc.action, tc.resource, tc.dataset, tc.version, nil, nil)
 				So(err, ShouldEqual, tc.expectedErr)
 			})
 		}
@@ -70,7 +70,7 @@ func TestNewAuditEvent(t *testing.T) {
 		resource := "/datasets/dataset-1"
 		dataset := &Dataset{ID: "dataset-1"}
 
-		auditEvent, err := NewAuditEvent(requestedBy, action, resource, dataset, nil, nil)
+		auditEvent, err := NewAuditEvent(requestedBy, action, resource, dataset, nil, nil, nil)
 		So(err, ShouldBeNil)
 		So(auditEvent.CreatedAt.IsZero(), ShouldBeFalse)
 		So(auditEvent.RequestedBy, ShouldResemble, requestedBy)

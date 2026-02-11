@@ -842,13 +842,15 @@ func TestGetEditionReturnsOK(t *testing.T) {
 				return false, nil
 			},
 			GetEditionFunc: func(context.Context, string, string, string) (*models.EditionUpdate, error) {
-				return &models.EditionUpdate{}, nil
+				return &models.EditionUpdate{
+					Current: &models.Edition{
+						Edition: "678",
+						State:   models.PublishedState,
+					},
+				}, nil
 			},
 			GetDatasetTypeFunc: func(context.Context, string, bool) (string, error) {
 				return models.CantabularFlexibleTable.String(), nil
-			},
-			GetVersionsFunc: func(context.Context, string, string, string, int, int) ([]models.Version, int, error) {
-				return []models.Version{{Version: 1}}, 1, nil
 			},
 		}
 
@@ -862,7 +864,7 @@ func TestGetEditionReturnsOK(t *testing.T) {
 		}
 
 		auditServiceMock := &applicationMocks.AuditServiceMock{
-			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, versionDoc *models.Version) error {
+			RecordEditionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, edition *models.Edition) error {
 				return nil
 			},
 		}
