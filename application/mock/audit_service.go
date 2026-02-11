@@ -23,6 +23,9 @@ var _ application.AuditService = &AuditServiceMock{}
 //			RecordDatasetAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, dataset *models.Dataset) error {
 //				panic("mock out the RecordDatasetAuditEvent method")
 //			},
+//			RecordMetadataAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, metadata *models.Metadata) error {
+//				panic("mock out the RecordMetadataAuditEvent method")
+//			},
 //			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, version *models.Version) error {
 //				panic("mock out the RecordVersionAuditEvent method")
 //			},
@@ -35,6 +38,9 @@ var _ application.AuditService = &AuditServiceMock{}
 type AuditServiceMock struct {
 	// RecordDatasetAuditEventFunc mocks the RecordDatasetAuditEvent method.
 	RecordDatasetAuditEventFunc func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, dataset *models.Dataset) error
+
+	// RecordMetadataAuditEventFunc mocks the RecordMetadataAuditEvent method.
+	RecordMetadataAuditEventFunc func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, metadata *models.Metadata) error
 
 	// RecordVersionAuditEventFunc mocks the RecordVersionAuditEvent method.
 	RecordVersionAuditEventFunc func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, version *models.Version) error
@@ -54,6 +60,19 @@ type AuditServiceMock struct {
 			// Dataset is the dataset argument value.
 			Dataset *models.Dataset
 		}
+		// RecordMetadataAuditEvent holds details about calls to the RecordMetadataAuditEvent method.
+		RecordMetadataAuditEvent []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// RequestedBy is the requestedBy argument value.
+			RequestedBy models.RequestedBy
+			// Action is the action argument value.
+			Action models.Action
+			// Resource is the resource argument value.
+			Resource string
+			// Metadata is the metadata argument value.
+			Metadata *models.Metadata
+		}
 		// RecordVersionAuditEvent holds details about calls to the RecordVersionAuditEvent method.
 		RecordVersionAuditEvent []struct {
 			// Ctx is the ctx argument value.
@@ -68,8 +87,9 @@ type AuditServiceMock struct {
 			Version *models.Version
 		}
 	}
-	lockRecordDatasetAuditEvent sync.RWMutex
-	lockRecordVersionAuditEvent sync.RWMutex
+	lockRecordDatasetAuditEvent  sync.RWMutex
+	lockRecordMetadataAuditEvent sync.RWMutex
+	lockRecordVersionAuditEvent  sync.RWMutex
 }
 
 // RecordDatasetAuditEvent calls RecordDatasetAuditEventFunc.
@@ -117,6 +137,54 @@ func (mock *AuditServiceMock) RecordDatasetAuditEventCalls() []struct {
 	mock.lockRecordDatasetAuditEvent.RLock()
 	calls = mock.calls.RecordDatasetAuditEvent
 	mock.lockRecordDatasetAuditEvent.RUnlock()
+	return calls
+}
+
+// RecordMetadataAuditEvent calls RecordMetadataAuditEventFunc.
+func (mock *AuditServiceMock) RecordMetadataAuditEvent(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, metadata *models.Metadata) error {
+	if mock.RecordMetadataAuditEventFunc == nil {
+		panic("AuditServiceMock.RecordMetadataAuditEventFunc: method is nil but AuditService.RecordMetadataAuditEvent was just called")
+	}
+	callInfo := struct {
+		Ctx         context.Context
+		RequestedBy models.RequestedBy
+		Action      models.Action
+		Resource    string
+		Metadata    *models.Metadata
+	}{
+		Ctx:         ctx,
+		RequestedBy: requestedBy,
+		Action:      action,
+		Resource:    resource,
+		Metadata:    metadata,
+	}
+	mock.lockRecordMetadataAuditEvent.Lock()
+	mock.calls.RecordMetadataAuditEvent = append(mock.calls.RecordMetadataAuditEvent, callInfo)
+	mock.lockRecordMetadataAuditEvent.Unlock()
+	return mock.RecordMetadataAuditEventFunc(ctx, requestedBy, action, resource, metadata)
+}
+
+// RecordMetadataAuditEventCalls gets all the calls that were made to RecordMetadataAuditEvent.
+// Check the length with:
+//
+//	len(mockedAuditService.RecordMetadataAuditEventCalls())
+func (mock *AuditServiceMock) RecordMetadataAuditEventCalls() []struct {
+	Ctx         context.Context
+	RequestedBy models.RequestedBy
+	Action      models.Action
+	Resource    string
+	Metadata    *models.Metadata
+} {
+	var calls []struct {
+		Ctx         context.Context
+		RequestedBy models.RequestedBy
+		Action      models.Action
+		Resource    string
+		Metadata    *models.Metadata
+	}
+	mock.lockRecordMetadataAuditEvent.RLock()
+	calls = mock.calls.RecordMetadataAuditEvent
+	mock.lockRecordMetadataAuditEvent.RUnlock()
 	return calls
 }
 

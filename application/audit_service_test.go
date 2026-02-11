@@ -58,7 +58,7 @@ func TestAuditService_RecordAuditEvent(t *testing.T) {
 
 			Convey("Then an error is returned", func() {
 				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "recordAuditEvent: failed to create audit event model: either dataset or version must be provided, but not both")
+				So(err.Error(), ShouldContainSubstring, "recordAuditEvent: failed to create audit event model: one of dataset, version, or metadata must be provided")
 			})
 		})
 

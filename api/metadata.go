@@ -184,8 +184,8 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 			}
 
 			// ID and Email are the same as auth middleware can only provide userID
-			if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+version+"/metadata", versionDoc); err != nil {
-				log.Error(ctx, "getMetadata endpoint: failed to record version audit event", err, logData)
+			if err := api.auditService.RecordMetadataAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+version+"/metadata", metaDataDoc); err != nil {
+				log.Error(ctx, "getMetadata endpoint: failed to record metadata audit event", err, logData)
 				return nil, err
 			}
 		}

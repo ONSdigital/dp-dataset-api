@@ -498,7 +498,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		}
 
 		auditServiceMock := &applicationMocks.AuditServiceMock{
-			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, versionDoc *models.Version) error {
+			RecordMetadataAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, metadata *models.Metadata) error {
 				return nil
 			},
 		}
@@ -569,7 +569,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		}
 
 		auditServiceMock := &applicationMocks.AuditServiceMock{
-			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, versionDoc *models.Version) error {
+			RecordMetadataAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, metadata *models.Metadata) error {
 				return nil
 			},
 		}
@@ -642,7 +642,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		}
 
 		auditServiceMock := &applicationMocks.AuditServiceMock{
-			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, versionDoc *models.Version) error {
+			RecordMetadataAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, metadata *models.Metadata) error {
 				return nil
 			},
 		}
@@ -1195,7 +1195,7 @@ func TestGetMetadataRecordsAuditEvent(t *testing.T) {
 		}
 
 		auditServiceMock := &applicationMocks.AuditServiceMock{
-			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, versionDoc *models.Version) error {
+			RecordMetadataAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, metadata *models.Metadata) error {
 				return nil
 			},
 		}
@@ -1222,9 +1222,9 @@ func TestGetMetadataRecordsAuditEvent(t *testing.T) {
 			})
 
 			Convey("And the audit service is called with the correct parameters", func() {
-				So(len(auditServiceMock.RecordVersionAuditEventCalls()), ShouldEqual, 1)
+				So(len(auditServiceMock.RecordMetadataAuditEventCalls()), ShouldEqual, 1)
 
-				call := auditServiceMock.RecordVersionAuditEventCalls()[0]
+				call := auditServiceMock.RecordMetadataAuditEventCalls()[0]
 				So(call.RequestedBy.ID, ShouldEqual, "test-user-id")
 				So(call.RequestedBy.Email, ShouldEqual, "test-user-id")
 				So(call.Action, ShouldEqual, models.ActionRead)
@@ -1335,7 +1335,7 @@ func TestGetMetadataAuditEventLogsErrorButContinues(t *testing.T) {
 		}
 
 		auditServiceMock := &applicationMocks.AuditServiceMock{
-			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, versionDoc *models.Version) error {
+			RecordMetadataAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, metadata *models.Metadata) error {
 				return errors.New("audit service error")
 			},
 		}
@@ -1362,7 +1362,7 @@ func TestGetMetadataAuditEventLogsErrorButContinues(t *testing.T) {
 			})
 
 			Convey("And the audit service was called", func() {
-				So(len(auditServiceMock.RecordVersionAuditEventCalls()), ShouldEqual, 1)
+				So(len(auditServiceMock.RecordMetadataAuditEventCalls()), ShouldEqual, 1)
 			})
 		})
 	})

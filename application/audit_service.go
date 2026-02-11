@@ -14,6 +14,7 @@ import (
 type AuditService interface {
 	RecordDatasetAuditEvent(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, dataset *models.Dataset) error
 	RecordVersionAuditEvent(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, version *models.Version) error
+	RecordMetadataAuditEvent(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, metadata *models.Metadata) error
 }
 
 // auditService provides methods for audit logging
@@ -28,10 +29,9 @@ func NewAuditService(dataStore store.DataStore) AuditService {
 	}
 }
 
-// recordAuditEvent validates and records an audit event for either a dataset or version.
-// It is an internal function used by RecordDatasetAuditEvent and RecordVersionAuditEvent
-func (a *auditService) recordAuditEvent(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, dataset *models.Dataset, version *models.Version) error {
-	event, err := models.NewAuditEvent(requestedBy, action, resource, dataset, version)
+// recordAuditEvent validates and records an audit event for dataset, version, or metadata
+func (a *auditService) recordAuditEvent(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, dataset *models.Dataset, version *models.Version, metadata *models.Metadata) error {
+	event, err := models.NewAuditEvent(requestedBy, action, resource, dataset, version, metadata)
 	if err != nil {
 		return fmt.Errorf("recordAuditEvent: failed to create audit event model: %w", err)
 	}
@@ -45,10 +45,15 @@ func (a *auditService) recordAuditEvent(ctx context.Context, requestedBy models.
 
 // RecordDatasetAuditEvent records an audit event for a dataset action
 func (a *auditService) RecordDatasetAuditEvent(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, dataset *models.Dataset) error {
-	return a.recordAuditEvent(ctx, requestedBy, action, resource, dataset, nil)
+	return a.recordAuditEvent(ctx, requestedBy, action, resource, dataset, nil, nil)
 }
 
 // RecordVersionAuditEvent records an audit event for a version action
 func (a *auditService) RecordVersionAuditEvent(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, version *models.Version) error {
-	return a.recordAuditEvent(ctx, requestedBy, action, resource, nil, version)
+	return a.recordAuditEvent(ctx, requestedBy, action, resource, nil, version, nil)
+}
+
+// RecordMetadataAuditEvent records an audit event for a metadata action
+func (a *auditService) RecordMetadataAuditEvent(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, metadata *models.Metadata) error {
+	return a.recordAuditEvent(ctx, requestedBy, action, resource, nil, nil, metadata)
 }
