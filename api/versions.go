@@ -496,7 +496,7 @@ func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
 	datasetID := vars["dataset_id"]
 	edition := vars["edition"]
 	versionStr := vars["version"]
-	authEntityData, err := api.getAuthEntityData(r)
+	authEntityData, _ := api.getAuthEntityData(r)
 
 	logData := log.Data{
 		"dataset_id": datasetID,
@@ -524,7 +524,6 @@ func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
 
 		autharisation := api.checkUserPermission(r, logData, datasetEditionVersionDeletePermission, nil)
 		if autharisation {
-
 			deletedVersion, err := api.smDatasetAPI.DeleteStaticVersion(ctx, datasetID, edition, versionNum, api.filesAPIClient, fetchAccessTokenFromHeader(r))
 			if err != nil {
 				handleVersionAPIErr(ctx, err, w, logData)
