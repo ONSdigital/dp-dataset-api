@@ -766,10 +766,6 @@ func (smDS *StateMachineDatasetAPI) DeleteStaticVersion(ctx context.Context, dat
 
 			err := filesAPIClient.DeleteFile(ctx, distribution.DownloadURL, filesAPISDK.Headers{Authorization: accessToken})
 			if err != nil {
-				if isFileNotRegisteredErr(err) {
-					log.Warn(ctx, "DeleteStaticVersion: distribution file was not registered in files API", logData)
-					continue
-				}
 				log.Error(ctx, "DeleteStaticVersion: failed to delete distribution file from files API", err, logData)
 				return nil, err
 			}
@@ -802,12 +798,4 @@ func (smDS *StateMachineDatasetAPI) DeleteStaticVersion(ctx context.Context, dat
 
 	log.Info(ctx, "DeleteStaticVersion: successfully deleted static version", logData)
 	return versionDoc, nil
-}
-
-func isFileNotRegisteredErr(err error) bool {
-	if err == nil {
-		return false
-	}
-	msg := strings.ToLower(err.Error())
-	return strings.Contains(msg, "file not registered")
 }

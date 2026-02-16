@@ -3169,39 +3169,6 @@ func TestDeleteStaticVersion_Errors(t *testing.T) {
 		So(len(mockFilesAPIClient.DeleteFileCalls()), ShouldEqual, 1)
 	})
 
-	Convey("When the filesAPIClient reports file not registered, continue deleting version", t, func() {
-		mocked := &storetest.StorerMock{
-			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error { return nil },
-			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
-				return &models.Version{
-					State: models.CreatedState,
-					Distributions: &[]models.Distribution{
-						{
-							Title:       "Distribution 1",
-							DownloadURL: "/path/to/distribution",
-						},
-					}}, nil
-			},
-			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{Current: &models.Dataset{}}, nil
-			},
-			DeleteStaticDatasetVersionFunc: func(context.Context, string, string, int) error { return nil },
-			UpsertDatasetFunc:              func(context.Context, string, *models.DatasetUpdate) error { return nil },
-		}
-
-		mockFilesAPIClient := &filesAPISDKMocks.ClienterMock{
-			DeleteFileFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) error {
-				return nil
-			},
-		}
-
-		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{})
-		_, err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 2, mockFilesAPIClient, "test-token")
-		So(err, ShouldBeNil)
-		So(len(mockFilesAPIClient.DeleteFileCalls()), ShouldEqual, 1)
-		So(len(mocked.DeleteStaticDatasetVersionCalls()), ShouldEqual, 1)
-	})
-
 	Convey("When getting dataset fails, internal error", t, func() {
 		mocked := &storetest.StorerMock{
 			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error { return nil },
