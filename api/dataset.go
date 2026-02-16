@@ -630,9 +630,15 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	datasetID := vars["dataset_id"]
 	logData := log.Data{"dataset_id": datasetID, "func": "deleteDataset"}
+	authEntityData, err := api.getAuthEntityData(r)
+	if err != nil {
+		log.Error(ctx, "deleteDataset endpoint: failed to get auth entity data from request", err, logData)
+		handleDatasetAPIErr(ctx, err, w, logData)
+		return
+	}
 
 	// attempt to delete the dataset.
-	err := func() error {
+	err = func() error {
 		currentDataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 		if err == errs.ErrDatasetNotFound {
 			log.Info(ctx, "cannot delete dataset, it does not exist", logData)
@@ -704,6 +710,12 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 
 		if err := api.dataStore.Backend.DeleteDataset(ctx, datasetID); err != nil {
 			log.Error(ctx, "failed to delete dataset", err, logData)
+			return err
+		}
+
+		// ID and Email are the same as auth middleware can only provide userID
+		if err := api.auditService.RecordDatasetAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionDelete, "/datasets/"+datasetID, currentDataset.Next); err != nil {
+			log.Error(ctx, "deleteDataset endpoint: failed to record dataset audit event", err, logData)
 			return err
 		}
 

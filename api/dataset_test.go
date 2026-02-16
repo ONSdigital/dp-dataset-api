@@ -2616,15 +2616,26 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordDatasetAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, dataset *models.Dataset) error {
+				return nil
+			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNoContent)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
+		So(auditServiceMock.RecordDatasetAuditEventCalls(), ShouldHaveLength, 1)
+		So(auditServiceMock.RecordDatasetAuditEventCalls()[0].Action, ShouldEqual, models.ActionDelete)
+		So(auditServiceMock.RecordDatasetAuditEventCalls()[0].Resource, ShouldEqual, "/datasets/123")
 	})
 
 	Convey("A successful request to delete dataset with editions returns 200 OK response", t, func() {
@@ -2652,9 +2663,17 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordDatasetAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, dataset *models.Dataset) error {
+				return nil
+			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNoContent)
@@ -2662,6 +2681,9 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
+		So(auditServiceMock.RecordDatasetAuditEventCalls(), ShouldHaveLength, 1)
+		So(auditServiceMock.RecordDatasetAuditEventCalls()[0].Action, ShouldEqual, models.ActionDelete)
+		So(auditServiceMock.RecordDatasetAuditEventCalls()[0].Resource, ShouldEqual, "/datasets/123")
 	})
 
 	Convey("A successful request to delete a static dataset with versions returns 204 No Content", t, func() {
@@ -2721,6 +2743,14 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordDatasetAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, dataset *models.Dataset) error {
+				return nil
+			},
 		}
 
 		mockFilesAPIClient := filesAPISDKMocks.ClienterMock{
@@ -2729,7 +2759,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
 		api.filesAPIClient = &mockFilesAPIClient
 
 		api.Router.ServeHTTP(w, r)
@@ -2740,6 +2770,9 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 		So(len(mockFilesAPIClient.DeleteFileCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.DeleteStaticDatasetVersionCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
+		So(auditServiceMock.RecordDatasetAuditEventCalls(), ShouldHaveLength, 1)
+		So(auditServiceMock.RecordDatasetAuditEventCalls()[0].Action, ShouldEqual, models.ActionDelete)
+		So(auditServiceMock.RecordDatasetAuditEventCalls()[0].Resource, ShouldEqual, "/datasets/456")
 	})
 
 	Convey("A successful request to delete a static dataset with no versions returns 204 No Content", t, func() {
@@ -2769,20 +2802,69 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordDatasetAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, dataset *models.Dataset) error {
+				return nil
+			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
 
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNoContent)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
+		So(auditServiceMock.RecordDatasetAuditEventCalls(), ShouldHaveLength, 1)
+		So(auditServiceMock.RecordDatasetAuditEventCalls()[0].Action, ShouldEqual, models.ActionDelete)
+		So(auditServiceMock.RecordDatasetAuditEventCalls()[0].Resource, ShouldEqual, "/datasets/456")
 	})
 }
 
 func TestDeleteDatasetReturnsError(t *testing.T) {
 	t.Parallel()
+	Convey("When recording a delete dataset audit event fails, return an internal server error", t, func() {
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
+			},
+			GetEditionsFunc: func(context.Context, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
+				return []*models.EditionUpdate{}, 0, nil
+			},
+			DeleteDatasetFunc: func(context.Context, string) error {
+				return nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordDatasetAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, dataset *models.Dataset) error {
+				return errors.New("failed to record audit event")
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api.Router.ServeHTTP(w, r)
+
+		assertInternalServerErr(w)
+		So(auditServiceMock.RecordDatasetAuditEventCalls(), ShouldHaveLength, 1)
+		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
+	})
+
 	Convey("When a request to delete a published dataset return status forbidden", t, func() {
 		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123", nil)
 
@@ -2802,6 +2884,9 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		authorisationMock := &authMock.MiddlewareMock{
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
 			},
 		}
 
@@ -2872,6 +2957,9 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
 		}
 
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
@@ -2904,6 +2992,9 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		authorisationMock := &authMock.MiddlewareMock{
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
 			},
 		}
 
@@ -3012,6 +3103,9 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
 			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
 		}
 
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
@@ -3066,6 +3160,9 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		authorisationMock := &authMock.MiddlewareMock{
 			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
 				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
 			},
 		}
 

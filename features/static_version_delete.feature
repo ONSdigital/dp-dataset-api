@@ -161,6 +161,8 @@ Feature: Static Dataset Version DELETE API
         And the static version "static-version-approved" should not exist
         And the dataset "static-dataset-test" should exist
         And the dataset "static-dataset-test" should have next equal to current
+        And the total number of audit events should be 1
+        And the number of events with action "DELETE" and resource "/datasets/static-dataset-test/editions/2024/versions/1" should be 1
 
     Scenario: DELETE single static dataset version with correct parameters successfully for a publisher user
         Given private endpoints are enabled
@@ -172,6 +174,8 @@ Feature: Static Dataset Version DELETE API
         And the static version "static-version-approved" should not exist
         And the dataset "static-dataset-test" should exist
         And the dataset "static-dataset-test" should have next equal to current
+        And the total number of audit events should be 1
+        And the number of events with action "DELETE" and resource "/datasets/static-dataset-test/editions/2024/versions/1" should be 1
 
     Scenario: DELETE static dataset version with invalid version (not an integer) returns 400
         Given private endpoints are enabled
@@ -260,4 +264,3 @@ Feature: Static Dataset Version DELETE API
             """
             internal error: failed to delete file at path: /fail/to/delete.csv
             """
-

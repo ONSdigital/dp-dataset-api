@@ -4223,8 +4223,13 @@ func TestDeleteVersionStaticDatasetReturnOK(t *testing.T) {
 				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
 			},
 		}
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, version *models.Version) error {
+				return nil
+			},
+		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
 
 		api.Router.ServeHTTP(w, r)
 
@@ -4233,11 +4238,68 @@ func TestDeleteVersionStaticDatasetReturnOK(t *testing.T) {
 		So(len(mockedDataStore.IsStaticDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteStaticDatasetVersionCalls()), ShouldEqual, 1)
+		So(auditServiceMock.RecordVersionAuditEventCalls(), ShouldHaveLength, 1)
+		So(auditServiceMock.RecordVersionAuditEventCalls()[0].Action, ShouldEqual, models.ActionDelete)
+		So(auditServiceMock.RecordVersionAuditEventCalls()[0].Resource, ShouldEqual, "/datasets/123/editions/2017/versions/1")
 	})
 }
 
 func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
 	t.Parallel()
+	Convey("When deleteVersionStatic succeeds but recording an audit event fails, return an internal server error", t, func() {
+		r := createRequestWithAuth("DELETE", "http://localhost:22000/datasets/123/editions/2017/versions/1", nil)
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			IsStaticDatasetFunc: func(context.Context, string) (bool, error) {
+				return true, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					ID: "123",
+					Current: &models.Dataset{
+						Type: models.Static.String(),
+					},
+				}, nil
+			},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					Version: 1,
+					State:   models.CreatedState,
+				}, nil
+			},
+			DeleteStaticDatasetVersionFunc: func(context.Context, string, string, int) error {
+				return nil
+			},
+			UpsertDatasetFunc: func(ctx context.Context, ID string, datasetDoc *models.DatasetUpdate) error {
+				return nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+		}
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, version *models.Version) error {
+				return errors.New("failed to record audit event")
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(auditServiceMock.RecordVersionAuditEventCalls(), ShouldHaveLength, 1)
+	})
 
 	Convey("When deleteVersionStatic is called against invalid version, return an invalid version error", t, func() {
 		generatorMock := &mocks.DownloadsGeneratorMock{
