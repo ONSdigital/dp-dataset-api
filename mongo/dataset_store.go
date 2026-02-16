@@ -10,6 +10,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/log.go/v2/log"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	mongodriver "github.com/ONSdigital/dp-mongodb/v3/mongodb"
 	"go.mongodb.org/mongo-driver/bson"
@@ -41,6 +42,10 @@ func (m *Mongo) GetDatasetsByQueryParams(ctx context.Context, id, datasetType, s
 			&values,
 			mongodriver.Sort(bson.M{"_id": sortDir}),
 			mongodriver.Offset(offset), mongodriver.Limit(limit),
+			mongodriver.Collation(&options.Collation{
+				Locale:   "en",
+				Strength: 2, // Case-insensitive sorting
+			}),
 		)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to retrieve datasets: %w", err)
