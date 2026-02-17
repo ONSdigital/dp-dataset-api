@@ -496,12 +496,17 @@ func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
 	datasetID := vars["dataset_id"]
 	edition := vars["edition"]
 	versionStr := vars["version"]
-	authEntityData, _ := api.getAuthEntityData(r)
 
 	logData := log.Data{
 		"dataset_id": datasetID,
 		"edition":    edition,
 		"version":    versionStr,
+	}
+	authEntityData, err := api.getAuthEntityData(r)
+	if err != nil {
+		log.Error(ctx, "deleteVersion endpoint: failed to get auth entity data from request", err, logData)
+		handleVersionAPIErr(ctx, err, w, logData)
+		return
 	}
 
 	versionNum, err := models.ParseAndValidateVersionNumber(ctx, versionStr)
@@ -522,28 +527,26 @@ func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		autharisation := api.checkUserPermission(r, logData, datasetEditionVersionDeletePermission, nil)
-		if autharisation {
-			deletedVersion, err := api.smDatasetAPI.DeleteStaticVersion(ctx, datasetID, edition, versionNum, api.filesAPIClient, fetchAccessTokenFromHeader(r))
-			if err != nil {
-				handleVersionAPIErr(ctx, err, w, logData)
-				return
-			}
-
-			// ID and Email are the same as auth middleware can only provide userID
-			if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionDelete, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+versionStr, deletedVersion); err != nil {
-				log.Error(ctx, "deleteVersion endpoint: failed to record version audit event", err, logData)
-				handleVersionAPIErr(ctx, err, w, logData)
-				return
-			}
-
-			w.WriteHeader(http.StatusNoContent)
-			log.Info(ctx, "deleteVersion: successfully deleted static version", logData)
-			return
-		} else {
+		if !api.checkUserPermission(r, logData, datasetEditionVersionDeletePermission, nil) {
 			handleVersionAPIErr(ctx, errs.ErrUnauthorised, w, logData)
 			return
 		}
+		deletedVersion, err := api.smDatasetAPI.DeleteStaticVersion(ctx, datasetID, edition, versionNum, api.filesAPIClient, fetchAccessTokenFromHeader(r))
+		if err != nil {
+			handleVersionAPIErr(ctx, err, w, logData)
+			return
+		}
+
+		// ID and Email are the same as auth middleware can only provide userID
+		if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionDelete, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+versionStr, deletedVersion); err != nil {
+			log.Error(ctx, "deleteVersion endpoint: failed to record version audit event", err, logData)
+			handleVersionAPIErr(ctx, err, w, logData)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+		log.Info(ctx, "deleteVersion: successfully deleted static version", logData)
+		return
 	}
 
 	if !api.enableDetachDataset {
