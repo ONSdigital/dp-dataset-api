@@ -117,13 +117,15 @@ Feature: Static Dataset Type DELETE API
             ]
             """
     
-     Scenario: DELETE static dataset with unpublished versions successfully for admin user
+    Scenario: DELETE static dataset with unpublished versions successfully for admin user
         Given private endpoints are enabled
         And I am an admin user
         When I DELETE "/datasets/static-dataset-test"
         Then the HTTP status code should be "204"
         And the dataset "static-dataset-test" should not exist
-        And the static version "static-version-approved" should not exist 
+        And the static version "static-version-approved" should not exist
+        And the total number of audit events should be 1
+        And the number of events with action "DELETE" and resource "/datasets/static-dataset-test" should be 1
 
     Scenario: DELETE static dataset with unpublished versions successfully for a publisher user
         Given private endpoints are enabled
@@ -131,7 +133,9 @@ Feature: Static Dataset Type DELETE API
         When I DELETE "/datasets/static-dataset-test"
         Then the HTTP status code should be "204"
         And the dataset "static-dataset-test" should not exist
-        And the static version "static-version-approved" should not exist 
+        And the static version "static-version-approved" should not exist
+        And the total number of audit events should be 1
+        And the number of events with action "DELETE" and resource "/datasets/static-dataset-test" should be 1
 
     Scenario: DELETE rejects published static dataset from deletion
         Given private endpoints are enabled
@@ -155,3 +159,5 @@ Feature: Static Dataset Type DELETE API
         When I DELETE "/datasets/static-dataset-no-versions"
         Then the HTTP status code should be "204"
         And the dataset "static-dataset-no-versions" should not exist
+        And the total number of audit events should be 1
+        And the number of events with action "DELETE" and resource "/datasets/static-dataset-no-versions" should be 1

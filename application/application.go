@@ -736,26 +736,26 @@ func PublishDataset(ctx context.Context, smDS *StateMachineDatasetAPI,
 	return nil
 }
 
-func (smDS *StateMachineDatasetAPI) DeleteStaticVersion(ctx context.Context, datasetID, edition string, version int, filesAPIClient filesAPISDK.Clienter, accessToken string) error {
+func (smDS *StateMachineDatasetAPI) DeleteStaticVersion(ctx context.Context, datasetID, edition string, version int, filesAPIClient filesAPISDK.Clienter, accessToken string) (*models.Version, error) {
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
 
 	// Validate edition exists for the dataset (static context)
 	if err := smDS.DataStore.Backend.CheckEditionExistsStatic(ctx, datasetID, edition, ""); err != nil {
 		log.Error(ctx, "DeleteStaticVersion: edition not found or dataset missing", err, logData)
-		return err
+		return nil, err
 	}
 
 	// Retrieve the version document (any state)
 	versionDoc, err := smDS.DataStore.Backend.GetVersionStatic(ctx, datasetID, edition, version, "")
 	if err != nil {
 		log.Error(ctx, "DeleteStaticVersion: failed to find version for dataset edition", err, logData)
-		return err
+		return nil, err
 	}
 
 	// Prevent deletion of published versions
 	if versionDoc.State == models.PublishedState {
 		log.Error(ctx, "DeleteStaticVersion: unable to delete a published version", errs.ErrDeletePublishedVersionForbidden, logData)
-		return errs.ErrDeletePublishedVersionForbidden
+		return nil, errs.ErrDeletePublishedVersionForbidden
 	}
 
 	// Delete any files associated with the version
@@ -767,7 +767,7 @@ func (smDS *StateMachineDatasetAPI) DeleteStaticVersion(ctx context.Context, dat
 			err := filesAPIClient.DeleteFile(ctx, distribution.DownloadURL, filesAPISDK.Headers{Authorization: accessToken})
 			if err != nil {
 				log.Error(ctx, "DeleteStaticVersion: failed to delete distribution file from files API", err, logData)
-				return err
+				return nil, err
 			}
 			log.Info(ctx, "DeleteStaticVersion: successfully deleted distribution file from files API", logData)
 		}
@@ -777,13 +777,13 @@ func (smDS *StateMachineDatasetAPI) DeleteStaticVersion(ctx context.Context, dat
 	datasetDoc, err := smDS.DataStore.Backend.GetDataset(ctx, datasetID)
 	if err != nil {
 		log.Error(ctx, "DeleteStaticVersion: failed to get dataset", err, logData)
-		return err
+		return nil, err
 	}
 
 	// Perform the deletion
 	if err := smDS.DataStore.Backend.DeleteStaticDatasetVersion(ctx, datasetID, edition, version); err != nil {
 		log.Error(ctx, "DeleteStaticVersion: failed to delete static dataset version", err, logData)
-		return err
+		return nil, err
 	}
 
 	// If there is a current document, make next equal to current to retain consistency
@@ -791,11 +791,11 @@ func (smDS *StateMachineDatasetAPI) DeleteStaticVersion(ctx context.Context, dat
 		datasetDoc.Next = datasetDoc.Current
 		if err := smDS.DataStore.Backend.UpsertDataset(ctx, datasetID, datasetDoc); err != nil {
 			log.Error(ctx, "DeleteStaticVersion: failed to update dataset after version deletion", err, logData)
-			return err
+			return nil, err
 		}
 		log.Info(ctx, "DeleteStaticVersion: updated dataset next document to current", logData)
 	}
 
 	log.Info(ctx, "DeleteStaticVersion: successfully deleted static version", logData)
-	return nil
+	return versionDoc, nil
 }

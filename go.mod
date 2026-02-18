@@ -10,8 +10,8 @@ require (
 	github.com/ONSdigital/dp-api-clients-go/v2 v2.270.0
 	github.com/ONSdigital/dp-assistdog v0.0.1
 	github.com/ONSdigital/dp-authorisation/v2 v2.33.1
-	github.com/ONSdigital/dp-component-test v1.2.3-alpha
-	github.com/ONSdigital/dp-files-api v1.16.0
+	github.com/ONSdigital/dp-component-test v1.2.4-alpha
+	github.com/ONSdigital/dp-files-api v1.19.0
 	github.com/ONSdigital/dp-graph/v2 v2.18.0
 	github.com/ONSdigital/dp-healthcheck v1.6.4
 	github.com/ONSdigital/dp-kafka/v4 v4.2.0
@@ -145,9 +145,9 @@ require (
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.40.0 // indirect
 	golang.org/x/text v0.33.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20251213004720-97cd9d5aeac2 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20251213004720-97cd9d5aeac2 // indirect
-	google.golang.org/grpc v1.75.1 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260202165425-ce8ad4cf556b // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260202165425-ce8ad4cf556b // indirect
+	google.golang.org/grpc v1.76.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
