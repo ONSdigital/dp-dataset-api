@@ -5,7 +5,7 @@ Feature: Dataset sorting
             """
             [
                 {
-                    "id": "Static-dataset-1",
+                    "id": "static-dataset-1",
                     "title": "Static Dataset 1",
                     "state": "created",
                     "type": "static"
@@ -17,7 +17,7 @@ Feature: Dataset sorting
                     "type": "static"
                 },
                 {
-                    "id": "Static-dataset-3",
+                    "id": "static-dataset-3",
                     "title": "Static Dataset 3",
                     "state": "created",
                     "type": "static"
@@ -31,7 +31,7 @@ Feature: Dataset sorting
             ]
             """
 
-    Scenario: No sort_order param defaults to DESC (z to a, case sensitive)
+    Scenario: No sort_order param defaults to DESC (z to a)
         When I GET "/datasets"
         Then I should receive the following JSON response with status "200":
             """
@@ -49,6 +49,13 @@ Feature: Dataset sorting
                         "last_updated": "0001-01-01T00:00:00Z"
                     },
                     {
+                        "id": "static-dataset-3",
+                        "title": "Static Dataset 3",
+                        "state": "created",
+                        "type": "static",
+                        "last_updated": "0001-01-01T00:00:00Z"
+                    },
+                    {
                         "id": "static-dataset-2",
                         "title": "Static Dataset 2",
                         "state": "created",
@@ -56,14 +63,7 @@ Feature: Dataset sorting
                         "last_updated": "0001-01-01T00:00:00Z"
                     },
                     {
-                        "id": "Static-dataset-3",
-                        "title": "Static Dataset 3",
-                        "state": "created",
-                        "type": "static",
-                        "last_updated": "0001-01-01T00:00:00Z"
-                    },
-                    {
-                        "id": "Static-dataset-1",
+                        "id": "static-dataset-1",
                         "title": "Static Dataset 1",
                         "state": "created",
                         "type": "static",
@@ -74,7 +74,7 @@ Feature: Dataset sorting
             """
 
 
-    Scenario: sort_order=ASC returns datasets sorted a to z (case insensitive)
+    Scenario: sort_order=ASC returns datasets sorted a to z
         When I GET "/datasets?sort_order=ASC"
         Then I should receive the following JSON response with status "200":
             """
@@ -85,7 +85,7 @@ Feature: Dataset sorting
                 "offset": 0,
                 "items": [
                     {
-                        "id": "Static-dataset-1",
+                        "id": "static-dataset-1",
                         "title": "Static Dataset 1",
                         "state": "created",
                         "type": "static",
@@ -99,7 +99,7 @@ Feature: Dataset sorting
                         "last_updated": "0001-01-01T00:00:00Z"
                     },
                     {
-                        "id": "Static-dataset-3",
+                        "id": "static-dataset-3",
                         "title": "Static Dataset 3",
                         "state": "created",
                         "type": "static",

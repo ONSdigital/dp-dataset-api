@@ -16,7 +16,7 @@ require (
 	github.com/ONSdigital/dp-healthcheck v1.6.4
 	github.com/ONSdigital/dp-kafka/v4 v4.2.0
 	github.com/ONSdigital/dp-mongodb-in-memory v1.8.1
-	github.com/ONSdigital/dp-mongodb/v3 v3.12.0
+	github.com/ONSdigital/dp-mongodb/v3 v3.11.0
 	github.com/ONSdigital/dp-net/v2 v2.22.0
 	github.com/ONSdigital/dp-net/v3 v3.9.0
 	github.com/ONSdigital/dp-otel-go v0.0.8
