@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/ONSdigital/dp-api-clients-go/v2/headers"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -896,6 +897,7 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
 
 	log.Info(ctx, "putState endpoint: endpoint called", logData)
+	fmt.Println(time.Now().String())
 
 	authEntityData, err := api.getAuthEntityData(r)
 	if err != nil {
@@ -924,12 +926,18 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Println("ABOUT TO GO AND GET THE VERSION")
+	fmt.Println(ctx)
+
 	currentVersion, err := api.dataStore.Backend.GetVersionStatic(ctx, datasetID, edition, versionID, "")
 	if err != nil {
 		log.Error(ctx, "putState endpoint: failed to get version", err, logData)
 		handleVersionAPIErr(ctx, err, w, logData)
 		return
 	}
+
+	fmt.Println("GOT STATIC VERSION FOR EDITION", edition)
+	fmt.Println(time.Now().String())
 
 	// Create a version update with the target state
 	versionUpdate := &models.Version{

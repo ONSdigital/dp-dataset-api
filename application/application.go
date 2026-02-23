@@ -72,8 +72,12 @@ func (smDS *StateMachineDatasetAPI) AmendVersion(ctx context.Context, vars map[s
 		version:   vars["version"],
 	}
 
+	fmt.Println("RECEIVED AMENDVERSION FOR ", version.Edition)
+	fmt.Println(time.Now().String())
+
 	if version.Type == models.Static.String() {
-		lockID, lockErr := smDS.DataStore.Backend.AcquireVersionsLock(ctx, version.ID)
+		//lockID, lockErr := smDS.DataStore.Backend.AcquireVersionsLock(ctx, version.ID)
+		lockID, lockErr := smDS.DataStore.Backend.AcquireVersionsSLock(ctx, version.Edition, 10)
 		if lockErr != nil {
 			return nil, lockErr
 		}

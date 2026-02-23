@@ -8,7 +8,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
-	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"sync"
 )
 
@@ -27,6 +27,9 @@ var _ store.MongoDB = &MongoDBMock{}
 //			},
 //			AcquireVersionsLockFunc: func(ctx context.Context, versionID string) (string, error) {
 //				panic("mock out the AcquireVersionsLock method")
+//			},
+//			AcquireVersionsSLockFunc: func(ctx context.Context, versionID string, maxConcurrent int) (string, error) {
+//				panic("mock out the AcquireVersionsSLock method")
 //			},
 //			AddEventToInstanceFunc: func(ctx context.Context, currentInstance *models.Instance, event *models.Event, eTagSelector string) (string, error) {
 //				panic("mock out the AddEventToInstance method")
@@ -94,7 +97,7 @@ var _ store.MongoDB = &MongoDBMock{}
 //			GetDimensionOptionsFromIDsFunc: func(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error) {
 //				panic("mock out the GetDimensionOptionsFromIDs method")
 //			},
-//			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]bson.M, error) {
+//			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]primitive.M, error) {
 //				panic("mock out the GetDimensions method")
 //			},
 //			GetDimensionsFromInstanceFunc: func(ctx context.Context, ID string, offset int, limit int) ([]*models.DimensionOption, int, error) {
@@ -215,6 +218,9 @@ type MongoDBMock struct {
 	// AcquireVersionsLockFunc mocks the AcquireVersionsLock method.
 	AcquireVersionsLockFunc func(ctx context.Context, versionID string) (string, error)
 
+	// AcquireVersionsSLockFunc mocks the AcquireVersionsSLock method.
+	AcquireVersionsSLockFunc func(ctx context.Context, versionID string, maxConcurrent int) (string, error)
+
 	// AddEventToInstanceFunc mocks the AddEventToInstance method.
 	AddEventToInstanceFunc func(ctx context.Context, currentInstance *models.Instance, event *models.Event, eTagSelector string) (string, error)
 
@@ -282,7 +288,7 @@ type MongoDBMock struct {
 	GetDimensionOptionsFromIDsFunc func(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error)
 
 	// GetDimensionsFunc mocks the GetDimensions method.
-	GetDimensionsFunc func(ctx context.Context, versionID string) ([]bson.M, error)
+	GetDimensionsFunc func(ctx context.Context, versionID string) ([]primitive.M, error)
 
 	// GetDimensionsFromInstanceFunc mocks the GetDimensionsFromInstance method.
 	GetDimensionsFromInstanceFunc func(ctx context.Context, ID string, offset int, limit int) ([]*models.DimensionOption, int, error)
@@ -404,6 +410,15 @@ type MongoDBMock struct {
 			Ctx context.Context
 			// VersionID is the versionID argument value.
 			VersionID string
+		}
+		// AcquireVersionsSLock holds details about calls to the AcquireVersionsSLock method.
+		AcquireVersionsSLock []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// VersionID is the versionID argument value.
+			VersionID string
+			// MaxConcurrent is the maxConcurrent argument value.
+			MaxConcurrent int
 		}
 		// AddEventToInstance holds details about calls to the AddEventToInstance method.
 		AddEventToInstance []struct {
@@ -1000,6 +1015,7 @@ type MongoDBMock struct {
 	}
 	lockAcquireInstanceLock                 sync.RWMutex
 	lockAcquireVersionsLock                 sync.RWMutex
+	lockAcquireVersionsSLock                sync.RWMutex
 	lockAddEventToInstance                  sync.RWMutex
 	lockAddInstance                         sync.RWMutex
 	lockAddVersionStatic                    sync.RWMutex
@@ -1129,6 +1145,46 @@ func (mock *MongoDBMock) AcquireVersionsLockCalls() []struct {
 	mock.lockAcquireVersionsLock.RLock()
 	calls = mock.calls.AcquireVersionsLock
 	mock.lockAcquireVersionsLock.RUnlock()
+	return calls
+}
+
+// AcquireVersionsSLock calls AcquireVersionsSLockFunc.
+func (mock *MongoDBMock) AcquireVersionsSLock(ctx context.Context, versionID string, maxConcurrent int) (string, error) {
+	if mock.AcquireVersionsSLockFunc == nil {
+		panic("MongoDBMock.AcquireVersionsSLockFunc: method is nil but MongoDB.AcquireVersionsSLock was just called")
+	}
+	callInfo := struct {
+		Ctx           context.Context
+		VersionID     string
+		MaxConcurrent int
+	}{
+		Ctx:           ctx,
+		VersionID:     versionID,
+		MaxConcurrent: maxConcurrent,
+	}
+	mock.lockAcquireVersionsSLock.Lock()
+	mock.calls.AcquireVersionsSLock = append(mock.calls.AcquireVersionsSLock, callInfo)
+	mock.lockAcquireVersionsSLock.Unlock()
+	return mock.AcquireVersionsSLockFunc(ctx, versionID, maxConcurrent)
+}
+
+// AcquireVersionsSLockCalls gets all the calls that were made to AcquireVersionsSLock.
+// Check the length with:
+//
+//	len(mockedMongoDB.AcquireVersionsSLockCalls())
+func (mock *MongoDBMock) AcquireVersionsSLockCalls() []struct {
+	Ctx           context.Context
+	VersionID     string
+	MaxConcurrent int
+} {
+	var calls []struct {
+		Ctx           context.Context
+		VersionID     string
+		MaxConcurrent int
+	}
+	mock.lockAcquireVersionsSLock.RLock()
+	calls = mock.calls.AcquireVersionsSLock
+	mock.lockAcquireVersionsSLock.RUnlock()
 	return calls
 }
 
@@ -2037,7 +2093,7 @@ func (mock *MongoDBMock) GetDimensionOptionsFromIDsCalls() []struct {
 }
 
 // GetDimensions calls GetDimensionsFunc.
-func (mock *MongoDBMock) GetDimensions(ctx context.Context, versionID string) ([]bson.M, error) {
+func (mock *MongoDBMock) GetDimensions(ctx context.Context, versionID string) ([]primitive.M, error) {
 	if mock.GetDimensionsFunc == nil {
 		panic("MongoDBMock.GetDimensionsFunc: method is nil but MongoDB.GetDimensions was just called")
 	}

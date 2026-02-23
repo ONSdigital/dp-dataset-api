@@ -3,6 +3,7 @@ package mongo
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -18,6 +19,11 @@ import (
 // AcquireVersionsLock tries to lock the provided versionID.
 func (m *Mongo) AcquireVersionsLock(ctx context.Context, versionID string) (lockID string, err error) {
 	return m.lockClientVersionsCollection.Acquire(ctx, versionID)
+}
+
+// AcquireVersionsSLock tries to create multiple locks (used for concurrent processing).
+func (m *Mongo) AcquireVersionsSLock(ctx context.Context, versionID string, maxConcurrent int) (lockID string, err error) {
+	return m.lockClientVersionsCollection.AcquireSLock(ctx, versionID, maxConcurrent)
 }
 
 func (m *Mongo) UnlockVersions(ctx context.Context, lockID string) {
@@ -161,6 +167,8 @@ func (m *Mongo) GetVersionsStatic(ctx context.Context, datasetID, edition, state
 
 // GetVersion retrieves a version document for a dataset edition
 func (m *Mongo) GetVersionStatic(ctx context.Context, id, editionID string, versionID int, state string) (*models.Version, error) {
+	fmt.Println("RECEIVED CONTEXT")
+	fmt.Println(ctx)
 	selector := buildVersionQuery(id, editionID, state, versionID)
 
 	var version models.Version
