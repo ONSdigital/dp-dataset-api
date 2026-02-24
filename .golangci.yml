@@ -48,6 +48,11 @@ linters:
         - style
     gocyclo:
       min-complexity: 20
+    gosec:
+      excludes:
+        - G705
+        # G705: XSS via taint analysis
+        # This is a false positive as this service only serves JSON responses and does not render any HTML.
     lll:
       line-length: 140
     misspell:
@@ -83,6 +88,12 @@ linters:
       - linters:
           - goconst
         path: api/static_versions_test.go
+      - linters:
+          - gosec
+        path: config/config.go
+        text: G101
+        # G101: Potential hardcoded credentials
+        # This is a false positive as these are default config values for local development and testing.
     paths:
       - third_party$
       - builtin$
