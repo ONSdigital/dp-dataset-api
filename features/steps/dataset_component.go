@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	permissionsSDK "github.com/ONSdigital/dp-permissions-api/sdk"
@@ -81,10 +82,15 @@ func NewDatasetComponent(mongoURI, zebedeeURL string) (*DatasetComponent, error)
 
 	c.Config.ZebedeeURL = zebedeeURL
 
+	parsedMongoURI, err := url.Parse(mongoURI)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse MongoDB URI: %w", err)
+	}
+
 	mongodb := &mongo.Mongo{
 		MongoConfig: config.MongoConfig{
 			MongoDriverConfig: mongodriver.MongoDriverConfig{
-				ClusterEndpoint: mongoURI,
+				ClusterEndpoint: parsedMongoURI.Host,
 				Database:        utils.RandomDatabase(),
 				Collections:     c.Config.Collections,
 				ConnectTimeout:  c.Config.ConnectTimeout,
