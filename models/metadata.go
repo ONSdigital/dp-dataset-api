@@ -346,40 +346,40 @@ func (m Metadata) ToString() string {
 	// Default values
 	nationalStatistic := false
 
-	b.WriteString(fmt.Sprintf("Title: %s\n", m.Title))
-	b.WriteString(fmt.Sprintf("Description: %s\n", m.Description))
+	fmt.Fprintf(&b, "Title: %s\n", m.Title)
+	fmt.Fprintf(&b, "Description: %s\n", m.Description)
 
 	if m.Publisher != nil {
-		b.WriteString(fmt.Sprintf("Publisher: %s\n", *m.Publisher))
+		fmt.Fprintf(&b, "Publisher: %s\n", *m.Publisher)
 	}
 
-	b.WriteString(fmt.Sprintf("Issued: %s\n", m.ReleaseDate))
-	b.WriteString(fmt.Sprintf("Next Release: %s\n", m.NextRelease))
-	b.WriteString(fmt.Sprintf("Identifier: %s\n", m.Title))
+	fmt.Fprintf(&b, "Issued: %s\n", m.ReleaseDate)
+	fmt.Fprintf(&b, "Next Release: %s\n", m.NextRelease)
+	fmt.Fprintf(&b, "Identifier: %s\n", m.Title)
 
 	if len(m.Keywords) > 0 {
-		b.WriteString(fmt.Sprintf("Keywords: %s\n", m.Keywords))
+		fmt.Fprintf(&b, "Keywords: %s\n", m.Keywords)
 	}
 
-	b.WriteString(fmt.Sprintf("Language: %s\n", "English"))
+	fmt.Fprintf(&b, "Language: %s\n", "English")
 
 	if len(m.Contacts) > 0 {
 		// Write first contact irrespective of number in list
 		contact := m.Contacts[0]
-		b.WriteString(fmt.Sprintf("Contact: %s, %s, %s\n", contact.Name, contact.Email, contact.Telephone))
+		fmt.Fprintf(&b, "Contact: %s, %s, %s\n", contact.Name, contact.Email, contact.Telephone)
 	}
 
 	if m.Temporal != nil {
 		// Write first temporal irrespective of number in list
 		temporalList := *m.Temporal
-		b.WriteString(fmt.Sprintf("Temporal: %s\n", temporalList[0].Frequency))
+		fmt.Fprintf(&b, "Temporal: %s\n", temporalList[0].Frequency)
 	}
 
 	if m.LatestChanges != nil {
-		b.WriteString(fmt.Sprintf("Latest Changes: %s\n", *m.LatestChanges))
+		fmt.Fprintf(&b, "Latest Changes: %s\n", *m.LatestChanges)
 	}
 
-	b.WriteString(fmt.Sprintf("Periodicity: %s\n", m.ReleaseFrequency))
+	fmt.Fprintf(&b, "Periodicity: %s\n", m.ReleaseFrequency)
 
 	b.WriteString("Distribution:\n")
 	// Map `DownloadObject`s in `DownloadList` to extension strings, loop through and output if
@@ -389,43 +389,43 @@ func (m Metadata) ToString() string {
 
 		for downloadObject, extension := range downloadObjects {
 			if downloadObject != nil {
-				b.WriteString(fmt.Sprintf("\tExtension: %s\n", extension))
-				b.WriteString(fmt.Sprintf("\tSize: %s\n", downloadObject.Size))
-				b.WriteString(fmt.Sprintf("\tURL: %s\n\n", downloadObject.HRef))
+				fmt.Fprintf(&b, "\tExtension: %s\n", extension)
+				fmt.Fprintf(&b, "\tSize: %s\n", downloadObject.Size)
+				fmt.Fprintf(&b, "\tURL: %s\n\n", downloadObject.HRef)
 			}
 		}
 	}
 
-	b.WriteString(fmt.Sprintf("Unit of measure: %s\n", m.UnitOfMeasure))
-	b.WriteString(fmt.Sprintf("License: %s\n", m.License))
+	fmt.Fprintf(&b, "Unit of measure: %s\n", m.UnitOfMeasure)
+	fmt.Fprintf(&b, "License: %s\n", m.License)
 
 	if len(m.Methodologies) > 0 {
-		b.WriteString(fmt.Sprintf("Methodologies: %s\n", m.Methodologies))
+		fmt.Fprintf(&b, "Methodologies: %s\n", m.Methodologies)
 	}
 
 	if m.NationalStatistic != nil {
 		nationalStatistic = *m.NationalStatistic
 	}
-	b.WriteString(fmt.Sprintf("National Statistic: %t\n", nationalStatistic))
+	fmt.Fprintf(&b, "National Statistic: %t\n", nationalStatistic)
 
 	if len(m.Publications) > 0 {
-		b.WriteString(fmt.Sprintf("Publications: %s\n", m.Publications))
+		fmt.Fprintf(&b, "Publications: %s\n", m.Publications)
 	}
 
 	if len(m.RelatedDatasets) > 0 {
-		b.WriteString(fmt.Sprintf("Related Links: %s\n", m.RelatedDatasets))
+		fmt.Fprintf(&b, "Related Links: %s\n", m.RelatedDatasets)
 	}
 
-	b.WriteString(fmt.Sprintf("Canonical Topic: %s\n", m.CanonicalTopic))
+	fmt.Fprintf(&b, "Canonical Topic: %s\n", m.CanonicalTopic)
 
 	if len(m.Subtopics) > 0 {
-		b.WriteString(fmt.Sprintf("Subtopics: %s\n", m.Subtopics))
+		fmt.Fprintf(&b, "Subtopics: %s\n", m.Subtopics)
 	}
 
-	b.WriteString(fmt.Sprintf("Survey: %s\n", m.Survey))
+	fmt.Fprintf(&b, "Survey: %s\n", m.Survey)
 
 	if len(m.RelatedContent) > 0 {
-		b.WriteString(fmt.Sprintf("Related Content: %s\n", m.RelatedContent))
+		fmt.Fprintf(&b, "Related Content: %s\n", m.RelatedContent)
 	}
 
 	return b.String()

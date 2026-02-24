@@ -2,7 +2,7 @@ package cloudflare
 
 // Config holds configuration details for Cloudflare API access
 type Config struct {
-	APIToken string `envconfig:"CLOUDFLARE_API_TOKEN"`
+	APIToken string `envconfig:"CLOUDFLARE_API_TOKEN" json:"-"`
 	ZoneID   string `envconfig:"CLOUDFLARE_ZONE_ID"`
 	BaseURL  string `envconfig:"CLOUDFLARE_BASE_URL"`
 }

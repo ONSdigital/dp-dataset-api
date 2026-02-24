@@ -2647,9 +2647,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
 			},
 			GetEditionsFunc: func(context.Context, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
-				var items []*models.EditionUpdate
-				items = append(items, &models.EditionUpdate{})
-				return items, 0, nil
+				return []*models.EditionUpdate{{}}, 0, nil
 			},
 			DeleteEditionFunc: func(context.Context, string) error {
 				return nil

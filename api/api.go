@@ -196,7 +196,7 @@ func writeErrorResponse(w http.ResponseWriter, errorResponse *models.ErrorRespon
 	w.WriteHeader(errorResponse.Status)
 
 	if errorResponse.Status == http.StatusInternalServerError {
-		var filteredErrors []models.Error
+		filteredErrors := make([]models.Error, 0, len(errorResponse.Errors))
 		for _, err := range errorResponse.Errors {
 			if !internalServerErrWithMessage[err.Cause] {
 				err = models.NewError(err, models.InternalError, models.InternalErrorDescription)
