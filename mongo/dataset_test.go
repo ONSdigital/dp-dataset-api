@@ -142,25 +142,27 @@ func TestBuildVersionQuery(t *testing.T) {
 func TestDatasetUpdateQuery(t *testing.T) {
 	t.Parallel()
 	Convey("When all possible fields exist", t, func() {
-		contact := models.ContactDetails{
-			Email:     "njarrod@test.com",
-			Name:      "natalie jarrod",
-			Telephone: "01658 234567",
+		contacts := []models.ContactDetails{
+			{
+				Email:     "njarrod@test.com",
+				Name:      "natalie jarrod",
+				Telephone: "01658 234567",
+			},
 		}
 
-		var contacts []models.ContactDetails
-		contacts = append(contacts, contact)
-
-		methodology := models.GeneralDetails{
-			Description: "some methodology description",
-			HRef:        "http://localhost:22000//datasets/123/methodologies",
-			Title:       "some methodology title",
+		methodologies := []models.GeneralDetails{
+			{
+				Description: "some methodology description",
+				HRef:        "http://localhost:22000//datasets/123/methodologies",
+				Title:       "some methodology title",
+			},
 		}
-
-		publication := models.GeneralDetails{
-			Description: "some publication description",
-			HRef:        "http://localhost:22000//datasets/123/publications",
-			Title:       "some publication title",
+		publications := []models.GeneralDetails{
+			{
+				Description: "some publication description",
+				HRef:        "http://localhost:22000//datasets/123/publications",
+				Title:       "some publication title",
+			},
 		}
 
 		qmi := models.GeneralDetails{
@@ -169,9 +171,11 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			Title:       "some qmi title",
 		}
 
-		relatedDataset := models.GeneralDetails{
-			HRef:  "http://localhost:22000//datasets/432",
-			Title: "some dataset title",
+		relatedDatasets := []models.GeneralDetails{
+			{
+				HRef:  "http://localhost:22000//datasets/432",
+				Title: "some dataset title",
+			},
 		}
 
 		canonicalTopic := "canonicalTopicID"
@@ -189,11 +193,6 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			HRef:        "http://localhost:22000//datasets/123/relatedContent2",
 			Title:       "Related content 2",
 		}}
-
-		var methodologies, publications, relatedDatasets []models.GeneralDetails
-		methodologies = append(methodologies, methodology)
-		publications = append(publications, publication)
-		relatedDatasets = append(relatedDatasets, relatedDataset)
 		nationalStatistic := true
 
 		expectedUpdate := bson.M{
@@ -495,13 +494,10 @@ func TestBuildDatasetsQueryUsingParameters(t *testing.T) {
 }
 
 func TestIsStaticDataset(t *testing.T) {
-	Convey("Given an in-memory MongoDB is running", t, func() {
+	Convey("Given MongoDB is running", t, func() {
 		ctx := context.Background()
-		mongo, server, err := getTestMongoDB(ctx)
+		mongo, err := getTestMongoDB(ctx, t)
 		So(err, ShouldBeNil)
-		defer func() {
-			server.Stop(ctx)
-		}()
 
 		Convey("When IsStaticDataset is called with a static dataset ID", func() {
 			datasets, err := setupDatasetTestData(ctx, mongo)

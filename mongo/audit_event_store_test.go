@@ -9,9 +9,9 @@ import (
 )
 
 func TestCreateAuditEvent(t *testing.T) {
-	Convey("Given a MongoDB instance", t, func() {
+	Convey("Given MongoDB is running", t, func() {
 		ctx := context.Background()
-		mongoStore, _, err := getTestMongoDB(ctx)
+		mongo, err := getTestMongoDB(ctx, t)
 		So(err, ShouldBeNil)
 
 		Convey("When CreateAuditEvent is called", func() {
@@ -24,7 +24,7 @@ func TestCreateAuditEvent(t *testing.T) {
 			)
 			So(err, ShouldBeNil)
 
-			err = mongoStore.CreateAuditEvent(ctx, event)
+			err = mongo.CreateAuditEvent(ctx, event)
 
 			Convey("Then the audit event is created successfully", func() {
 				So(err, ShouldBeNil)

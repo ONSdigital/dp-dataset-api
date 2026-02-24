@@ -15,7 +15,7 @@ func TestUpdateVersionStatic(t *testing.T) {
 	Convey("Given a current version, version update and etag", t, func() {
 		ctx := context.Background()
 
-		mongoDB, _, err := getTestMongoDB(ctx)
+		mongoDB, err := getTestMongoDB(ctx, t)
 		So(err, ShouldBeNil)
 
 		_, err = setupVersionsTestData(ctx, mongoDB)
@@ -53,10 +53,10 @@ func TestUpdateVersionStatic(t *testing.T) {
 }
 
 func TestGetStaticVersionsByState(t *testing.T) {
-	Convey("Given a static versions are retieved", t, func() {
+	Convey("Given static versions are retrieved", t, func() {
 		ctx := context.Background()
 
-		mongoDB, _, err := getTestMongoDB(ctx)
+		mongoDB, err := getTestMongoDB(ctx, t)
 		So(err, ShouldBeNil)
 
 		_, err = setupVersionsTestData(ctx, mongoDB)
@@ -87,9 +87,9 @@ func TestGetStaticVersionsByState(t *testing.T) {
 }
 
 func TestVersionsStatic(t *testing.T) {
-	Convey("Given an in-memory MongoDB is running and populated with static versions", t, func() {
+	Convey("Given MongoDB is running and populated with static versions", t, func() {
 		ctx := context.Background()
-		mongoDB, _, err := getTestMongoDB(ctx)
+		mongoDB, err := getTestMongoDB(ctx, t)
 		So(err, ShouldBeNil)
 
 		_, err = setupVersionsTestData(ctx, mongoDB)
@@ -107,14 +107,10 @@ func TestVersionsStatic(t *testing.T) {
 }
 
 func TestGetAllStaticVersions(t *testing.T) {
-	Convey("Given an in-memory MongoDB is running and populated with static versions", t, func() {
+	Convey("Given MongoDB is running and populated with static versions", t, func() {
 		ctx := context.Background()
-		mongoStore, server, err := getTestMongoDB(ctx)
+		mongoStore, err := getTestMongoDB(ctx, t)
 		So(err, ShouldBeNil)
-
-		defer func() {
-			server.Stop(ctx)
-		}()
 
 		versions, err := setupVersionsTestData(ctx, mongoStore)
 		So(err, ShouldBeNil)
@@ -159,9 +155,9 @@ func TestGetAllStaticVersions(t *testing.T) {
 }
 
 func TestCheckVersionExistsStatic(t *testing.T) {
-	Convey("Given a MongoDB instance with static versions", t, func() {
+	Convey("Given MongoDB is running with static versions", t, func() {
 		ctx := context.Background()
-		mongo, _, err := getTestMongoDB(ctx)
+		mongo, err := getTestMongoDB(ctx, t)
 		So(err, ShouldBeNil)
 
 		versions, err := setupVersionsTestData(ctx, mongo)
@@ -198,15 +194,12 @@ func TestCheckVersionExistsStatic(t *testing.T) {
 }
 
 func TestDeleteStaticDatasetVersion(t *testing.T) {
-	Convey("Given an in-memory MongoDB is running", t, func() {
+	Convey("Given MongoDB is running", t, func() {
 		ctx := context.Background()
 
 		Convey("When DeleteStaticDatasetVersion is called with a matching dataset, edition and unpublished version", func() {
-			mongoStore, server, err := getTestMongoDB(ctx)
+			mongoStore, err := getTestMongoDB(ctx, t)
 			So(err, ShouldBeNil)
-			defer func() {
-				server.Stop(ctx)
-			}()
 
 			versions, err := setupVersionsTestData(ctx, mongoStore)
 			So(err, ShouldBeNil)
@@ -227,14 +220,10 @@ func TestDeleteStaticDatasetVersion(t *testing.T) {
 }
 
 func TestCheckEditionTitleExistsStatic(t *testing.T) {
-	Convey("Given a MongoDB instance with static versions", t, func() {
+	Convey("Given MongoDB is running with static versions", t, func() {
 		ctx := context.Background()
-		mongo, server, err := getTestMongoDB(ctx)
+		mongo, err := getTestMongoDB(ctx, t)
 		So(err, ShouldBeNil)
-
-		defer func() {
-			server.Stop(ctx)
-		}()
 
 		versions, err := setupVersionsTestData(ctx, mongo)
 		So(err, ShouldBeNil)
