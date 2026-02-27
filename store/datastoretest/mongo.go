@@ -181,6 +181,9 @@ var _ store.MongoDB = &MongoDBMock{}
 //			UpdateObservationInsertedFunc: func(ctx context.Context, currentInstance *models.Instance, observationInserted int64, eTagSelector string) (string, error) {
 //				panic("mock out the UpdateObservationInserted method")
 //			},
+//			UpdateStateStaticFunc: func(ctx context.Context, currentVersion *models.Version, updatedState *models.StateUpdate, eTagSelector string) (*models.Version, error) {
+//				panic("mock out the UpdateStateStatic method")
+//			},
 //			UpdateVersionFunc: func(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (string, error) {
 //				panic("mock out the UpdateVersion method")
 //			},
@@ -370,6 +373,9 @@ type MongoDBMock struct {
 
 	// UpdateObservationInsertedFunc mocks the UpdateObservationInserted method.
 	UpdateObservationInsertedFunc func(ctx context.Context, currentInstance *models.Instance, observationInserted int64, eTagSelector string) (string, error)
+
+	// UpdateStateStaticFunc mocks the UpdateStateStatic method.
+	UpdateStateStaticFunc func(ctx context.Context, currentVersion *models.Version, updatedState *models.StateUpdate, eTagSelector string) (*models.Version, error)
 
 	// UpdateVersionFunc mocks the UpdateVersion method.
 	UpdateVersionFunc func(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (string, error)
@@ -938,6 +944,17 @@ type MongoDBMock struct {
 			// ETagSelector is the eTagSelector argument value.
 			ETagSelector string
 		}
+		// UpdateStateStatic holds details about calls to the UpdateStateStatic method.
+		UpdateStateStatic []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// CurrentVersion is the currentVersion argument value.
+			CurrentVersion *models.Version
+			// UpdatedState is the updatedState argument value.
+			UpdatedState *models.StateUpdate
+			// ETagSelector is the eTagSelector argument value.
+			ETagSelector string
+		}
 		// UpdateVersion holds details about calls to the UpdateVersion method.
 		UpdateVersion []struct {
 			// Ctx is the ctx argument value.
@@ -1066,6 +1083,7 @@ type MongoDBMock struct {
 	lockUpdateInstance                      sync.RWMutex
 	lockUpdateMetadata                      sync.RWMutex
 	lockUpdateObservationInserted           sync.RWMutex
+	lockUpdateStateStatic                   sync.RWMutex
 	lockUpdateVersion                       sync.RWMutex
 	lockUpdateVersionStatic                 sync.RWMutex
 	lockUpsertContact                       sync.RWMutex
@@ -3321,6 +3339,50 @@ func (mock *MongoDBMock) UpdateObservationInsertedCalls() []struct {
 	mock.lockUpdateObservationInserted.RLock()
 	calls = mock.calls.UpdateObservationInserted
 	mock.lockUpdateObservationInserted.RUnlock()
+	return calls
+}
+
+// UpdateStateStatic calls UpdateStateStaticFunc.
+func (mock *MongoDBMock) UpdateStateStatic(ctx context.Context, currentVersion *models.Version, updatedState *models.StateUpdate, eTagSelector string) (*models.Version, error) {
+	if mock.UpdateStateStaticFunc == nil {
+		panic("MongoDBMock.UpdateStateStaticFunc: method is nil but MongoDB.UpdateStateStatic was just called")
+	}
+	callInfo := struct {
+		Ctx            context.Context
+		CurrentVersion *models.Version
+		UpdatedState   *models.StateUpdate
+		ETagSelector   string
+	}{
+		Ctx:            ctx,
+		CurrentVersion: currentVersion,
+		UpdatedState:   updatedState,
+		ETagSelector:   eTagSelector,
+	}
+	mock.lockUpdateStateStatic.Lock()
+	mock.calls.UpdateStateStatic = append(mock.calls.UpdateStateStatic, callInfo)
+	mock.lockUpdateStateStatic.Unlock()
+	return mock.UpdateStateStaticFunc(ctx, currentVersion, updatedState, eTagSelector)
+}
+
+// UpdateStateStaticCalls gets all the calls that were made to UpdateStateStatic.
+// Check the length with:
+//
+//	len(mockedMongoDB.UpdateStateStaticCalls())
+func (mock *MongoDBMock) UpdateStateStaticCalls() []struct {
+	Ctx            context.Context
+	CurrentVersion *models.Version
+	UpdatedState   *models.StateUpdate
+	ETagSelector   string
+} {
+	var calls []struct {
+		Ctx            context.Context
+		CurrentVersion *models.Version
+		UpdatedState   *models.StateUpdate
+		ETagSelector   string
+	}
+	mock.lockUpdateStateStatic.RLock()
+	calls = mock.calls.UpdateStateStatic
+	mock.lockUpdateStateStatic.RUnlock()
 	return calls
 }
 

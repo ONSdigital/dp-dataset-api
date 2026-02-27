@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"maps"
 	"net/http"
 	"strconv"
 	"strings"
@@ -920,28 +919,26 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = models.CheckState("version", stateUpdate.State); err != nil {
-		log.Error(ctx, "putState endpoint: state is invalid", err, log.Data{"state": stateUpdate.State})
-		handleVersionAPIErr(ctx, models.ErrVersionStateInvalid, w, logData)
-		return
-	}
+	// if err = models.CheckState("version", stateUpdate.State); err != nil {
+	// 	log.Error(ctx, "putState endpoint: state is invalid", err, log.Data{"state": stateUpdate.State})
+	// 	handleVersionAPIErr(ctx, models.ErrVersionStateInvalid, w, logData)
+	// 	return
+	// }
 
-	fmt.Println("ABOUT TO GO AND GET THE VERSION")
-	fmt.Println(ctx)
-
-	currentVersion, err := api.dataStore.Backend.GetVersionStatic(ctx, datasetID, edition, versionID, "")
-	if err != nil {
-		log.Error(ctx, "putState endpoint: failed to get version", err, logData)
-		handleVersionAPIErr(ctx, err, w, logData)
-		return
-	}
+	// currentVersion, err := api.dataStore.Backend.GetVersionStatic(ctx, datasetID, edition, versionID, "")
+	// if err != nil {
+	// 	log.Error(ctx, "putState endpoint: failed to get version", err, logData)
+	// 	handleVersionAPIErr(ctx, err, w, logData)
+	// 	return
+	// }
 
 	fmt.Println("GOT STATIC VERSION FOR EDITION", edition)
 	fmt.Println(time.Now().String())
 
 	// Create a version update with the target state
 	versionUpdate := &models.Version{
-		ID:    currentVersion.ID,
+		//ID:    currentVersion.ID,
+		ID:    strconv.Itoa(versionID),
 		State: stateUpdate.State,
 		Type:  models.Static.String(),
 	}
@@ -963,12 +960,15 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 
 	if updatedVersion.State == models.PublishedState {
 		searchContentUpdatedEvent := map[string]interface{}{
-			"dataset_id":   datasetID,
-			"uri":          fmt.Sprintf("/datasets/%s", datasetID),
-			"title":        currentVersion.EditionTitle,
-			"edition":      currentVersion.Edition,
+			"dataset_id": datasetID,
+			"uri":        fmt.Sprintf("/datasets/%s", datasetID),
+			//"title":        currentVersion.EditionTitle,
+			"title": updatedVersion.EditionTitle,
+			//"edition":      currentVersion.Edition,
+			"edition":      updatedVersion.Edition,
 			"content_type": "dataset_landing_page",
-			"release_date": currentVersion.ReleaseDate,
+			//"release_date": currentVersion.ReleaseDate,
+			"release_date": updatedVersion.ReleaseDate,
 		}
 
 		jsonBytes, err := json.Marshal(searchContentUpdatedEvent)
@@ -1015,9 +1015,10 @@ func (api *DatasetAPI) publishDistributionFiles(ctx context.Context, version *mo
 		return fmt.Errorf("files API client not configured")
 	}
 
-	if version.Distributions == nil || len(*version.Distributions) == 0 {
-		return nil
-	}
+	// Already validated above
+	// if version.Distributions == nil || len(*version.Distributions) == 0 {
+	// 	return nil
+	// }
 
 	var lastError error
 	var filesAPIError error
@@ -1036,32 +1037,46 @@ func (api *DatasetAPI) publishDistributionFiles(ctx context.Context, version *mo
 			"distribution_title":  distribution.Title,
 			"distribution_format": distribution.Format,
 		}
-		maps.Copy(fileLogData, logData)
+		// Is this causing the slowdown?
+		//maps.Copy(fileLogData, logData)
 
-		_, err := api.filesAPIClient.GetFile(ctx, filepath, filesAPISDK.Headers{
-			Authorization: accessToken,
-		})
+		// Could potentially just return the error from the mark file published to handle both
+		// _, err := api.filesAPIClient.GetFile(ctx, filepath, filesAPISDK.Headers{
+		// 	Authorization: accessToken,
+		// })
+		// if err != nil {
+		// 	log.Error(ctx, "failed to get file metadata", err, fileLogData)
+
+		// 	if strings.Contains(err.Error(), "FileNotRegistered") ||
+		// 		strings.Contains(err.Error(), "file not registered") ||
+		// 		strings.Contains(err.Error(), "not found") {
+		// 		filesAPIError = errs.ErrFileMetadataNotFound
+		// 	}
+		// 	lastError = err
+		// 	continue
+		// }
+
+		fmt.Println("SENDING REQUEST TO MARK FILE PUBLISHED AT " + filepath + " " + time.Now().String())
+		err := api.filesAPIClient.MarkFilePublished(ctx, filepath, filesAPISDK.Headers{Authorization: accessToken})
 		if err != nil {
-			log.Error(ctx, "failed to get file metadata", err, fileLogData)
+			log.Error(ctx, "failed to publish file", err, log.Data{
+				"filepath":            filepath,
+				"distribution_title":  distribution.Title,
+				"distribution_format": distribution.Format,
+			})
 
 			if strings.Contains(err.Error(), "FileNotRegistered") ||
 				strings.Contains(err.Error(), "file not registered") ||
 				strings.Contains(err.Error(), "not found") {
 				filesAPIError = errs.ErrFileMetadataNotFound
 			}
-			lastError = err
-			continue
-		}
-
-		err = api.filesAPIClient.MarkFilePublished(ctx, filepath, filesAPISDK.Headers{Authorization: accessToken})
-		if err != nil {
-			log.Error(ctx, "failed to publish file", err, fileLogData)
 
 			if strings.Contains(err.Error(), "FileStateError") ||
 				strings.Contains(err.Error(), "file is not set as publishable") ||
 				strings.Contains(err.Error(), "file state is not in state uploaded") {
 				filesAPIError = errs.ErrFileNotInCorrectState
 			}
+
 			lastError = err
 			continue
 		}

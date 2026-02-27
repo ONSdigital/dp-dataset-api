@@ -14,10 +14,13 @@ import (
 	mongodriver "github.com/ONSdigital/dp-mongodb/v3/mongodb"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // AcquireVersionsLock tries to lock the provided versionID.
 func (m *Mongo) AcquireVersionsLock(ctx context.Context, versionID string) (lockID string, err error) {
+
 	return m.lockClientVersionsCollection.Acquire(ctx, versionID)
 }
 
@@ -259,6 +262,61 @@ func (m *Mongo) UpdateVersionStatic(ctx context.Context, currentVersion, version
 	}
 
 	return newETag, nil
+}
+
+// UpdateVersionStatic updates an existing version document
+func (m *Mongo) UpdateStateStatic(ctx context.Context, currentVersion *models.Version, updatedState *models.StateUpdate, eTagSelector string) (updatedVersion *models.Version, err error) {
+	// calculate the new eTag hash for the instance that would result from adding the event
+	//var updatedVersion *models.Version
+	//	versionUpdate := currentVersion
+	//versionUpdate.State = updatedState.State
+	// newETag, err := newETagForVersionUpdate(currentVersion, versionUpdate)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// versionUpdate.ETag = newETag
+
+	update := bson.M{
+		"$set": bson.M{
+			"state":        updatedState.State,
+			"last_updated": time.Now(),
+		},
+	}
+	// sel := bson.M{
+	// 	"edition": currentVersion.Edition,
+	// 	"version": currentVersion.Version,
+	// 	"e_tag":   eTagSelector,
+	// }
+	//updates := createVersionUpdateQuery(versionUpdate, newETag)
+
+	// fmt.Println("THE UPDATES ARE ")
+	// fmt.Println(updates)
+
+	fmt.Println("THE UPDATE TO MAKE IS")
+	fmt.Println(update)
+
+	fmt.Println("DOCUMENT THATS BEING SEARCHED FOR ")
+	fmt.Println(currentVersion)
+
+	// if _, err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Must().Update(ctx, sel, bson.M{"$set": updates}); err != nil {
+	// 	if errors.Is(err, mongodriver.ErrNoDocumentFound) {
+	// 		return "", errs.ErrVersionNotFound
+	// 	}
+	// 	return "", err
+	// }
+
+	err = m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).
+		FindOneAndUpdate(ctx, currentVersion, update, &updatedVersion, mongodriver.ReturnDocument(options.After))
+	if err != nil {
+		if errors.Is(err, mongodriver.ErrNoDocumentFound) || errors.Is(err, mongo.ErrNoDocuments) {
+			fmt.Println("DID NOT FIND DOCUMENT")
+			// If no pending jobs, no error.
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return updatedVersion, nil
 }
 
 // NOTE: passing in limit as 0 will return the total count but no results
