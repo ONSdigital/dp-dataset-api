@@ -32,3 +32,9 @@ func (api *DatasetAPI) getAuthEntityData(r *http.Request) (*permissionsAPISDK.En
 func getAccessTokenFromRequest(r *http.Request) string {
 	return strings.TrimPrefix(r.Header.Get(dprequest.AuthHeaderKey), dprequest.BearerPrefix)
 }
+
+// getIdentityTypeFromRequest returns true if the request is from a service account, false if from a user
+func getIdentityTypeFromRequest(r *http.Request) bool {
+	accessToken := strings.TrimPrefix(r.Header.Get(request.AuthHeaderKey), request.BearerPrefix)
+	return !strings.Contains(accessToken, ".")
+}

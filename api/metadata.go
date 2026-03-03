@@ -82,15 +82,12 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 
 		state := versionDoc.State
 
-		// if the requested version is not yet published and the user is unauthorised, return a 404
 		if !authorised && versionDoc.State != models.PublishedState {
 			log.Error(ctx, "getMetadata endpoint: unauthorised user requested unpublished version, returning 404", errs.ErrUnauthorised, logData)
 			return nil, errs.ErrUnauthorised
 		}
 
-		// if request is not authenticated but the version is published, restrict dataset access to only published resources
 		if !authorised {
-			// Check for current sub document
 			if datasetDoc.Current == nil || datasetDoc.Current.State != models.PublishedState {
 				logData["dataset"] = datasetDoc.Current
 				log.Error(ctx, "getMetadata endpoint: caller not is authorised and dataset but currently unpublished", errors.New("document is not currently published"), logData)
@@ -122,7 +119,6 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 		if datasetType == models.CantabularFlexibleTable || datasetType == models.CantabularMultivariateTable {
 			metaDataDoc = models.CreateCantabularMetaDataDoc(doc, versionDoc)
 		} else {
-			// combine version and dataset metadata
 			if state != models.PublishedState {
 				metaDataDoc = models.CreateMetaDataDoc(datasetDoc.Next, versionDoc, api.urlBuilder)
 			} else {
@@ -183,11 +179,28 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 				return nil, err
 			}
 
+			identityType := log.USER
+			if getIdentityTypeFromRequest(r) {
+				identityType = log.SERVICE
+			}
+			logAuthOption := log.Auth(identityType, authEntityData.UserID)
+
 			// ID and Email are the same as auth middleware can only provide userID
 			if err := api.auditService.RecordMetadataAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+version+"/metadata", metaDataDoc); err != nil {
+				log.Info(ctx, "getMetadata endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+					"action":   models.ActionRead,
+					"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + version + "/metadata",
+					"outcome":  "failure",
+					"reason":   err.Error(),
+				})
 				log.Error(ctx, "getMetadata endpoint: failed to record metadata audit event", err, logData)
 				return nil, err
 			}
+			log.Info(ctx, "getMetadata endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+				"action":   models.ActionRead,
+				"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + version + "/metadata",
+				"outcome":  "success",
+			})
 		}
 
 		return b, err

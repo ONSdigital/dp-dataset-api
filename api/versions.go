@@ -184,7 +184,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 	versionNumber := vars["version"]
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": versionNumber}
 
-	var authorised bool // Declare at function scope so audit can access it
+	var authorised bool
 
 	v, getVersionErr := func() (*models.Version, error) {
 		versionID, err := models.ParseAndValidateVersionNumber(ctx, versionNumber)
@@ -219,7 +219,6 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 			state = models.PublishedState
 		}
 
-		// get dataset if dataset exists
 		dataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 		if err != nil {
 			log.Error(ctx, "failed to retrieve dataset details", err, logData)
@@ -227,7 +226,6 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 		}
 
 		datasetType := dataset.Next.Type
-		// Check if edition exists based on dataset type
 		if datasetType == models.Static.String() {
 			err = api.dataStore.Backend.CheckEditionExistsStatic(ctx, datasetID, edition, state)
 		} else {
@@ -240,7 +238,6 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 		}
 
 		version := &models.Version{}
-		// Retrieve versions based on dataset type
 		if datasetType == models.Static.String() {
 			version, err = api.dataStore.Backend.GetVersionStatic(ctx, datasetID, edition, versionID, state)
 		} else {
@@ -259,8 +256,6 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 			return nil, errs.ErrResourceState
 		}
 
-		// Only the download service should not have access to the public/private download
-		// fields
 		if r.Header.Get(downloadServiceToken) != api.downloadServiceToken {
 			if version.Downloads != nil {
 				if version.Downloads.CSV != nil {
@@ -334,12 +329,29 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 			return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, responseError)
 		}
 
+		identityType := log.USER
+		if getIdentityTypeFromRequest(r) {
+			identityType = log.SERVICE
+		}
+		logAuthOption := log.Auth(identityType, authEntityData.UserID)
+
 		// ID and Email are the same as auth middleware can only provide userID
 		if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+versionNumber, v); err != nil {
+			log.Info(ctx, "getVersion endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+				"action":   models.ActionRead,
+				"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + versionNumber,
+				"outcome":  "failure",
+				"reason":   err.Error(),
+			})
 			log.Error(ctx, "getVersion endpoint: failed to record version audit event", err, logData)
 			responseError := models.NewError(err, err.Error(), "internal error")
 			return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, responseError)
 		}
+		log.Info(ctx, "getVersion endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+			"action":   models.ActionRead,
+			"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + versionNumber,
+			"outcome":  "success",
+		})
 	}
 
 	responseHeaders := map[string]string{
@@ -367,7 +379,13 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		handleVersionAPIErr(ctx, err, w, data)
 		return
 	}
-	// Read body once and validate distributions before unmarshaling
+
+	identityType := log.USER
+	if getIdentityTypeFromRequest(r) {
+		identityType = log.SERVICE
+	}
+	logAuthOption := log.Auth(identityType, authEntityData.UserID)
+
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Error(ctx, "failed to read request body", err, data)
@@ -387,7 +405,6 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// check for edition ID/title conflicts, spaces in IDs for static datasets and Populate distributions (static only)
 	if version.Type == models.Static.String() {
 		if err := utils.PopulateDistributions(version); err != nil {
 			handleVersionAPIErr(ctx, err, w, data)
@@ -413,7 +430,6 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 			versionStr := vars["version"]
 
 			versionNumber, _ := strconv.Atoi(versionStr)
-			// Load the existing version
 			existingVersion, getErr := api.dataStore.Backend.GetVersionStatic(
 				ctx,
 				vars["dataset_id"],
@@ -427,11 +443,9 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			// Detect whether edition ID or title has changed
 			editionChanged := existingVersion.Edition != version.Edition
 			titleChanged := existingVersion.EditionTitle != version.EditionTitle
 
-			// Only validate uniqueness IF edition or title is changing
 			if editionChanged {
 				checkErr := api.dataStore.Backend.CheckEditionExistsStatic(ctx, version.DatasetID, version.Edition, "")
 				if checkErr == nil {
@@ -465,10 +479,21 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 
 	// ID and Email are the same as auth middleware can only provide userID
 	if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionUpdate, "/datasets/"+vars["dataset_id"]+"/editions/"+vars["edition"]+"/versions/"+vars["version"], amendedVersion); err != nil {
+		log.Info(ctx, "putVersion endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+			"action":   models.ActionUpdate,
+			"endpoint": "/datasets/" + vars["dataset_id"] + "/editions/" + vars["edition"] + "/versions/" + vars["version"],
+			"outcome":  "failure",
+			"reason":   err.Error(),
+		})
 		log.Error(ctx, "putVersion endpoint: failed to record version audit event", err, data)
 		handleVersionAPIErr(ctx, err, w, data)
 		return
 	}
+	log.Info(ctx, "putVersion endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+		"action":   models.ActionUpdate,
+		"endpoint": "/datasets/" + vars["dataset_id"] + "/editions/" + vars["edition"] + "/versions/" + vars["version"],
+		"outcome":  "success",
+	})
 
 	versionBytes, err := json.Marshal(amendedVersion)
 	if err != nil {
@@ -509,6 +534,12 @@ func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	identityType := log.USER
+	if getIdentityTypeFromRequest(r) {
+		identityType = log.SERVICE
+	}
+	logAuthOption := log.Auth(identityType, authEntityData.UserID)
+
 	versionNum, err := models.ParseAndValidateVersionNumber(ctx, versionStr)
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, logData)
@@ -539,10 +570,21 @@ func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
 
 		// ID and Email are the same as auth middleware can only provide userID
 		if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionDelete, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+versionStr, deletedVersion); err != nil {
+			log.Info(ctx, "deleteVersion endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+				"action":   models.ActionDelete,
+				"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + versionStr,
+				"outcome":  "failure",
+				"reason":   err.Error(),
+			})
 			log.Error(ctx, "deleteVersion endpoint: failed to record version audit event", err, logData)
 			handleVersionAPIErr(ctx, err, w, logData)
 			return
 		}
+		log.Info(ctx, "deleteVersion endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+			"action":   models.ActionDelete,
+			"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + versionStr,
+			"outcome":  "success",
+		})
 
 		w.WriteHeader(http.StatusNoContent)
 		log.Info(ctx, "deleteVersion: successfully deleted static version", logData)
@@ -904,6 +946,12 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	identityType := log.USER
+	if getIdentityTypeFromRequest(r) {
+		identityType = log.SERVICE
+	}
+	logAuthOption := log.Auth(identityType, authEntityData.UserID)
+
 	versionID, err := models.ParseAndValidateVersionNumber(ctx, version)
 	if err != nil {
 		log.Error(ctx, "putState endpoint: invalid version request", err, logData)
@@ -931,7 +979,6 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create a version update with the target state
 	versionUpdate := &models.Version{
 		ID:    currentVersion.ID,
 		State: stateUpdate.State,
@@ -977,7 +1024,6 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Purge Cloudflare cache if enabled and version is being published
 	if api.cloudflareEnabled && stateUpdate.State == models.PublishedState {
 		prefixes := utils.GeneratePurgePrefixes(api.urlBuilder.GetWebsiteURL().String(), api.urlBuilder.GetAPIRouterPublicURL().String(), datasetID, edition, version)
 		logData["purge_prefixes"] = prefixes
@@ -992,10 +1038,21 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 
 	// ID and Email are the same as auth middleware can only provide userID
 	if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionUpdate, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+version+"/state", updatedVersion); err != nil {
+		log.Info(ctx, "putState endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+			"action":   models.ActionUpdate,
+			"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + version + "/state",
+			"outcome":  "failure",
+			"reason":   err.Error(),
+		})
 		log.Error(ctx, "putState endpoint: failed to record version audit event", err, logData)
 		handleVersionAPIErr(ctx, err, w, logData)
 		return
 	}
+	log.Info(ctx, "putState endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+		"action":   models.ActionUpdate,
+		"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + version + "/state",
+		"outcome":  "success",
+	})
 
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusOK)

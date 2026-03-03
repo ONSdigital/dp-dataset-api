@@ -263,7 +263,6 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 			}
 		} else {
 			if authorised {
-				// User has valid authentication to get raw edition document
 				b, err = json.Marshal(edition)
 				if err != nil {
 					log.Error(ctx, "getEdition endpoint: failed to marshal edition resource into bytes", err, logData)
@@ -271,7 +270,6 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 				}
 				log.Info(ctx, "getEdition endpoint: get edition with auth", logData)
 			} else {
-				// User is not authenticated and hence has only access to current sub document
 				b, err = json.Marshal(edition.Current)
 				if err != nil {
 					log.Error(ctx, "getEdition endpoint: failed to marshal edition resource into bytes", err, logData)
@@ -288,18 +286,41 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 				return nil, err
 			}
 
+			identityType := log.USER
+			if getIdentityTypeFromRequest(r) {
+				identityType = log.SERVICE
+			}
+			logAuthOption := log.Auth(identityType, authEntityData.UserID)
+
 			if datasetType == models.Static.String() {
 				if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+editionID, versionToAudit); err != nil {
+					log.Info(ctx, "getEdition endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+						"action":   models.ActionRead,
+						"endpoint": "/datasets/" + datasetID + "/editions/" + editionID,
+						"outcome":  "failure",
+						"reason":   err.Error(),
+					})
 					log.Error(ctx, "getEdition endpoint: failed to record version audit event", err, logData)
 					return nil, err
 				}
 			} else {
 				editionToAudit := edition.Next
 				if err := api.auditService.RecordEditionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+editionID, editionToAudit); err != nil {
+					log.Info(ctx, "getEdition endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+						"action":   models.ActionRead,
+						"endpoint": "/datasets/" + datasetID + "/editions/" + editionID,
+						"outcome":  "failure",
+						"reason":   err.Error(),
+					})
 					log.Error(ctx, "getEdition endpoint: failed to record edition audit event", err, logData)
 					return nil, err
 				}
 			}
+			log.Info(ctx, "getEdition endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+				"action":   models.ActionRead,
+				"endpoint": "/datasets/" + datasetID + "/editions/" + editionID,
+				"outcome":  "success",
+			})
 		}
 
 		log.Info(ctx, "getEdition endpoint: get edition", logData)

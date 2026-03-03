@@ -122,12 +122,17 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, models.InternalError, models.InternalErrorDescription))
 	}
 
+	identityType := log.USER
+	if getIdentityTypeFromRequest(r) {
+		identityType = log.SERVICE
+	}
+	logAuthOption := log.Auth(identityType, authEntityData.UserID)
+
 	if err := utils.ValidateIDNoSpaces(edition); err != nil {
 		log.Error(ctx, "addDatasetVersionCondensed endpoint: edition ID contains spaces", err, logData)
 		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, models.ErrNoSpacesAllowedError, err.Error()))
 	}
 
-	// Read body once and validate distributions before unmarshaling
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Error(ctx, "failed to read request body", err, logData)
@@ -145,7 +150,6 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, models.JSONUnmarshalError, "failed to unmarshal version"))
 	}
 
-	// Validate dataset_id in body (if provided)
 	if versionRequest.DatasetID != "" {
 		if err := utils.ValidateIDNoSpaces(versionRequest.DatasetID); err != nil {
 			log.Error(ctx, "addDatasetVersionCondensed endpoint: dataset ID in request body contains spaces", err, logData)
@@ -156,7 +160,6 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 			)
 		}
 	}
-	// Validate edition in body (if provided)
 	if versionRequest.Edition != "" {
 		if err := utils.ValidateIDNoSpaces(versionRequest.Edition); err != nil {
 			log.Error(ctx, "addDatasetVersionCondensed endpoint: edition ID in request body contains spaces", err, logData)
@@ -178,13 +181,11 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewValidationError(models.ErrMissingParameters, err.Error()))
 	}
 
-	// validate versiontype
 	if versionRequest.Type != "" && versionRequest.Type != models.Static.String() {
 		log.Error(ctx, "addDatasetVersionCondensed endpoint: only allowed to create static type versions", errs.ErrInvalidBody, logData)
 		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewValidationError(models.ErrInvalidTypeError, models.ErrTypeNotStaticDescription))
 	}
 
-	// Validate dataset existence
 	if err := api.dataStore.Backend.CheckDatasetExists(ctx, datasetID, ""); err != nil {
 		log.Error(ctx, "failed to find dataset", err, logData)
 		return nil, models.NewErrorResponse(http.StatusNotFound, nil, models.NewValidationError(models.ErrDatasetNotFound, models.ErrDatasetNotFoundDescription))
@@ -202,8 +203,6 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 
 	if errors.Is(err, errs.ErrVersionNotFound) {
 		log.Warn(ctx, "edition not found, defaulting to version 1", logData)
-		// Creating version 1 of a new edition
-		// Check edition ID
 		checkErr := api.dataStore.Backend.CheckEditionExistsStatic(ctx, datasetID, edition, "")
 		if checkErr == nil {
 			log.Error(ctx, "edition ID already exists", errs.ErrEditionAlreadyExists, logData)
@@ -212,7 +211,6 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 			log.Error(ctx, "failed to check edition ID existence", checkErr, logData)
 			return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(checkErr, "failed to check edition ID", "internal error"))
 		}
-		// Check edition title
 		checkErr = api.dataStore.Backend.CheckEditionTitleExistsStatic(ctx, datasetID, versionRequest.EditionTitle)
 		if checkErr != nil {
 			if errors.Is(checkErr, errs.ErrEditionTitleAlreadyExists) {
@@ -242,11 +240,21 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 
 	// ID and Email are the same as auth middleware can only provide userID
 	if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionCreate, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+strconv.Itoa(nextVersion), versionRequest); err != nil {
+		log.Info(ctx, "addDatasetVersionCondensed endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+			"action":   models.ActionCreate,
+			"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + strconv.Itoa(nextVersion),
+			"outcome":  "failure",
+			"reason":   err.Error(),
+		})
 		log.Error(ctx, "addDatasetVersionCondensed endpoint: failed to record version audit event", err, logData)
 		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, models.InternalError, models.InternalErrorDescription))
 	}
+	log.Info(ctx, "addDatasetVersionCondensed endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+		"action":   models.ActionCreate,
+		"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + strconv.Itoa(nextVersion),
+		"outcome":  "success",
+	})
 
-	// Store version in 'versions' collection
 	newVersion, err := api.dataStore.Backend.AddVersionStatic(ctx, versionRequest)
 	if err != nil {
 		log.Error(ctx, "failed to add version", err, logData)
@@ -308,6 +316,12 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, models.InternalError, models.InternalErrorDescription))
 	}
 
+	identityType := log.USER
+	if getIdentityTypeFromRequest(r) {
+		identityType = log.SERVICE
+	}
+	logAuthOption := log.Auth(identityType, authEntityData.UserID)
+
 	if err := utils.ValidateIDNoSpaces(datasetID); err != nil {
 		log.Error(ctx, "createVersion endpoint: dataset ID contains spaces", err, logData)
 		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, models.ErrNoSpacesAllowedError, err.Error()))
@@ -318,7 +332,6 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, models.ErrNoSpacesAllowedError, err.Error()))
 	}
 
-	// Read body once and validate distributions before unmarshaling
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Error(ctx, "createVersion endpoint: failed to read request body", err, logData)
@@ -372,7 +385,6 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewValidationError(models.ErrInvalidTypeError, models.ErrTypeNotStaticDescription))
 	}
 
-	// set mandatory fields
 	newVersion.DatasetID = datasetID
 	newVersion.Edition = edition
 	newVersion.Version = versionNumber
@@ -415,9 +427,20 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 
 	// ID and Email are the same as auth middleware can only provide userID
 	if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionCreate, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+strconv.Itoa(versionNumber), newVersion); err != nil {
+		log.Info(ctx, "createVersion endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+			"action":   models.ActionCreate,
+			"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + strconv.Itoa(versionNumber),
+			"outcome":  "failure",
+			"reason":   err.Error(),
+		})
 		log.Error(ctx, "createVersion endpoint: failed to record version audit event", err, logData)
 		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, models.InternalError, models.InternalErrorDescription))
 	}
+	log.Info(ctx, "createVersion endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+		"action":   models.ActionCreate,
+		"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + strconv.Itoa(versionNumber),
+		"outcome":  "success",
+	})
 
 	createdVersion, err := api.dataStore.Backend.AddVersionStatic(ctx, newVersion)
 	if err != nil {

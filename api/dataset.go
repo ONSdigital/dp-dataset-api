@@ -189,11 +189,28 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 				return nil, err
 			}
 
+			identityType := log.USER
+			if getIdentityTypeFromRequest(r) {
+				identityType = log.SERVICE
+			}
+			logAuthOption := log.Auth(identityType, authEntityData.UserID)
+
 			// ID and Email are the same as auth middleware can only provide userID
 			if err := api.auditService.RecordDatasetAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionRead, "/datasets/"+datasetID, dataset.Next); err != nil {
+				log.Info(ctx, "getDataset endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+					"action":   models.ActionRead,
+					"endpoint": "/datasets/" + datasetID,
+					"outcome":  "failure",
+					"reason":   err.Error(),
+				})
 				log.Error(ctx, "getDataset endpoint: failed to record dataset audit event", err, logData)
 				return nil, err
 			}
+			log.Info(ctx, "getDataset endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+				"action":   models.ActionRead,
+				"endpoint": "/datasets/" + datasetID,
+				"outcome":  "success",
+			})
 		}
 
 		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
@@ -218,7 +235,6 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 			}
 		} else {
 			if !authorised {
-				// User is not authenticated and hence has only access to current sub document
 				if dataset.Current == nil {
 					log.Info(ctx, "getDataset endpoint: published dataset not found", logData)
 					return nil, errs.ErrDatasetNotFound
@@ -233,7 +249,6 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 
 				datasetResponse = dataset.Current
 			} else {
-				// User has valid authentication to get raw dataset document
 				if dataset == nil {
 					log.Info(ctx, "getDataset endpoint: published or unpublished dataset not found", logData)
 					return nil, errs.ErrDatasetNotFound
@@ -379,6 +394,12 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	identityType := log.USER
+	if getIdentityTypeFromRequest(r) {
+		identityType = log.SERVICE
+	}
+	logAuthOption := log.Auth(identityType, authEntityData.UserID)
+
 	dataset, err := models.CreateDataset(r.Body)
 	if err != nil {
 		log.Error(ctx, "addDatasetNew endpoint: failed to model dataset resource based on request", err)
@@ -467,10 +488,21 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 
 	// ID and Email are the same as auth middleware can only provide userID
 	if err := api.auditService.RecordDatasetAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionCreate, "/datasets/"+datasetID, dataset); err != nil {
+		log.Info(ctx, "addDatasetNew endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+			"action":   models.ActionCreate,
+			"endpoint": "/datasets/" + datasetID,
+			"outcome":  "failure",
+			"reason":   err.Error(),
+		})
 		log.Error(ctx, "addDatasetNew endpoint: failed to record dataset audit event", err, logData)
 		handleDatasetAPIErr(ctx, err, w, logData)
 		return
 	}
+	log.Info(ctx, "addDatasetNew endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+		"action":   models.ActionCreate,
+		"endpoint": "/datasets/" + datasetID,
+		"outcome":  "success",
+	})
 
 	if err = api.dataStore.Backend.UpsertDataset(ctx, datasetID, datasetDoc); err != nil {
 		logData["new_dataset"] = datasetID
@@ -509,6 +541,12 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 		handleDatasetAPIErr(ctx, err, w, data)
 		return
 	}
+
+	identityType := log.USER
+	if getIdentityTypeFromRequest(r) {
+		identityType = log.SERVICE
+	}
+	logAuthOption := log.Auth(identityType, authEntityData.UserID)
 
 	b, err := func() ([]byte, error) {
 		dataset, err := models.CreateDataset(r.Body)
@@ -565,9 +603,20 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 
 		// ID and Email are the same as auth middleware can only provide userID
 		if err := api.auditService.RecordDatasetAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionUpdate, "/datasets/"+datasetID, dataset); err != nil {
+			log.Info(ctx, "putDataset endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+				"action":   models.ActionUpdate,
+				"endpoint": "/datasets/" + datasetID,
+				"outcome":  "failure",
+				"reason":   err.Error(),
+			})
 			log.Error(ctx, "putDataset endpoint: failed to record dataset audit event", err, data)
 			return nil, err
 		}
+		log.Info(ctx, "putDataset endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+			"action":   models.ActionUpdate,
+			"endpoint": "/datasets/" + datasetID,
+			"outcome":  "success",
+		})
 
 		b, err := json.Marshal(dataset)
 		if err != nil {
@@ -637,7 +686,12 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// attempt to delete the dataset.
+	identityType := log.USER
+	if getIdentityTypeFromRequest(r) {
+		identityType = log.SERVICE
+	}
+	logAuthOption := log.Auth(identityType, authEntityData.UserID)
+
 	err = func() error {
 		currentDataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 		if err == errs.ErrDatasetNotFound {
@@ -654,11 +708,7 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 			return errs.ErrDeletePublishedDatasetForbidden
 		}
 
-		// Find any editions/versions associated with the dataset based on the type
 		if currentDataset.Next.Type == models.Static.String() {
-			// Limit is set to DEFAULT_LIMIT (20) to prevent unbounded queries.
-			// If a dataset has more than DEFAULT_LIMIT unpublished editions/versions, only the first DEFAULT_LIMIT will be deleted.
-			// Refactoring is required if more than DEFAULT_LIMIT editions/versions per dataset is a possibility.
 			versionDocs, _, err := api.dataStore.Backend.GetAllStaticVersions(ctx, currentDataset.ID, "", 0, api.defaultLimit)
 			if err != nil {
 				if err == errs.ErrVersionsNotFound {
@@ -715,9 +765,20 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 
 		// ID and Email are the same as auth middleware can only provide userID
 		if err := api.auditService.RecordDatasetAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionDelete, "/datasets/"+datasetID, currentDataset.Next); err != nil {
+			log.Info(ctx, "deleteDataset endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+				"action":   models.ActionDelete,
+				"endpoint": "/datasets/" + datasetID,
+				"outcome":  "failure",
+				"reason":   err.Error(),
+			})
 			log.Error(ctx, "deleteDataset endpoint: failed to record dataset audit event", err, logData)
 			return err
 		}
+		log.Info(ctx, "deleteDataset endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+			"action":   models.ActionDelete,
+			"endpoint": "/datasets/" + datasetID,
+			"outcome":  "success",
+		})
 
 		log.Info(ctx, "dataset deleted successfully", logData)
 		return nil
