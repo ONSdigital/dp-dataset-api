@@ -263,6 +263,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 			}
 		} else {
 			if authorised {
+				// User has valid authentication to get raw edition document
 				b, err = json.Marshal(edition)
 				if err != nil {
 					log.Error(ctx, "getEdition endpoint: failed to marshal edition resource into bytes", err, logData)
@@ -270,6 +271,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 				}
 				log.Info(ctx, "getEdition endpoint: get edition with auth", logData)
 			} else {
+				// User is not authenticated and hence has only access to current sub document
 				b, err = json.Marshal(edition.Current)
 				if err != nil {
 					log.Error(ctx, "getEdition endpoint: failed to marshal edition resource into bytes", err, logData)

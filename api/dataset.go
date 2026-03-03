@@ -236,6 +236,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 		} else {
 			if !authorised {
 				if dataset.Current == nil {
+					// User is not authenticated and hence has only access to current sub document
 					log.Info(ctx, "getDataset endpoint: published dataset not found", logData)
 					return nil, errs.ErrDatasetNotFound
 				}
@@ -249,6 +250,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 
 				datasetResponse = dataset.Current
 			} else {
+				// User has valid authentication to get raw dataset document
 				if dataset == nil {
 					log.Info(ctx, "getDataset endpoint: published or unpublished dataset not found", logData)
 					return nil, errs.ErrDatasetNotFound
@@ -708,7 +710,11 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 			return errs.ErrDeletePublishedDatasetForbidden
 		}
 
+		// Find any editions/versions associated with the dataset based on the type
 		if currentDataset.Next.Type == models.Static.String() {
+			// Limit is set to DEFAULT_LIMIT (20) to prevent unbounded queries.
+			// If a dataset has more than DEFAULT_LIMIT unpublished editions/versions, only the first DEFAULT_LIMIT will be deleted.
+			// Refactoring is required if more than DEFAULT_LIMIT editions/versions per dataset is a possibility.
 			versionDocs, _, err := api.dataStore.Backend.GetAllStaticVersions(ctx, currentDataset.ID, "", 0, api.defaultLimit)
 			if err != nil {
 				if err == errs.ErrVersionsNotFound {

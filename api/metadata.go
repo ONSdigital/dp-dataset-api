@@ -82,12 +82,15 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 
 		state := versionDoc.State
 
+		// if the requested version is not yet published and the user is unauthorised, return a 404
 		if !authorised && versionDoc.State != models.PublishedState {
 			log.Error(ctx, "getMetadata endpoint: unauthorised user requested unpublished version, returning 404", errs.ErrUnauthorised, logData)
 			return nil, errs.ErrUnauthorised
 		}
 
+		// if request is not authenticated but the version is published, restrict dataset access to only published resources
 		if !authorised {
+			// Check for current sub document
 			if datasetDoc.Current == nil || datasetDoc.Current.State != models.PublishedState {
 				logData["dataset"] = datasetDoc.Current
 				log.Error(ctx, "getMetadata endpoint: caller not is authorised and dataset but currently unpublished", errors.New("document is not currently published"), logData)
@@ -119,6 +122,7 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 		if datasetType == models.CantabularFlexibleTable || datasetType == models.CantabularMultivariateTable {
 			metaDataDoc = models.CreateCantabularMetaDataDoc(doc, versionDoc)
 		} else {
+			// combine version and dataset metadata
 			if state != models.PublishedState {
 				metaDataDoc = models.CreateMetaDataDoc(datasetDoc.Next, versionDoc, api.urlBuilder)
 			} else {

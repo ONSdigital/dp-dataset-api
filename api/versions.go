@@ -83,7 +83,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 
 		datasetType := dataset.Next.Type
 
-		var authorised bool
+		var authorised bool // Declare at function scope so audit can access it
 		if datasetType == models.Static.String() {
 			authorised = api.checkUserPermission(r, logData, datasetEditionVersionReadPermission, attrs)
 		} else {
@@ -219,6 +219,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 			state = models.PublishedState
 		}
 
+		// get dataset if dataset exists
 		dataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 		if err != nil {
 			log.Error(ctx, "failed to retrieve dataset details", err, logData)
@@ -226,6 +227,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 		}
 
 		datasetType := dataset.Next.Type
+		// Check if edition exists based on dataset type
 		if datasetType == models.Static.String() {
 			err = api.dataStore.Backend.CheckEditionExistsStatic(ctx, datasetID, edition, state)
 		} else {
@@ -238,6 +240,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 		}
 
 		version := &models.Version{}
+		// Retrieve versions based on dataset type
 		if datasetType == models.Static.String() {
 			version, err = api.dataStore.Backend.GetVersionStatic(ctx, datasetID, edition, versionID, state)
 		} else {
@@ -256,6 +259,8 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 			return nil, errs.ErrResourceState
 		}
 
+		// Only the download service should not have access to the public/private download
+		// fields
 		if r.Header.Get(downloadServiceToken) != api.downloadServiceToken {
 			if version.Downloads != nil {
 				if version.Downloads.CSV != nil {
@@ -379,6 +384,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		handleVersionAPIErr(ctx, err, w, data)
 		return
 	}
+	// Read body once and validate distributions before unmarshaling
 
 	identityType := log.USER
 	if getIdentityTypeFromRequest(r) {
@@ -405,6 +411,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check for edition ID/title conflicts, spaces in IDs for static datasets and Populate distributions (static only)
 	if version.Type == models.Static.String() {
 		if err := utils.PopulateDistributions(version); err != nil {
 			handleVersionAPIErr(ctx, err, w, data)
@@ -430,6 +437,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 			versionStr := vars["version"]
 
 			versionNumber, _ := strconv.Atoi(versionStr)
+			// Load the existing version
 			existingVersion, getErr := api.dataStore.Backend.GetVersionStatic(
 				ctx,
 				vars["dataset_id"],
@@ -443,9 +451,11 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
+			// Detect whether edition ID or title has changed
 			editionChanged := existingVersion.Edition != version.Edition
 			titleChanged := existingVersion.EditionTitle != version.EditionTitle
 
+			// Only validate uniqueness IF edition or title is changing
 			if editionChanged {
 				checkErr := api.dataStore.Backend.CheckEditionExistsStatic(ctx, version.DatasetID, version.Edition, "")
 				if checkErr == nil {
@@ -979,6 +989,7 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Create a version update with the target state
 	versionUpdate := &models.Version{
 		ID:    currentVersion.ID,
 		State: stateUpdate.State,
@@ -1024,6 +1035,7 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Purge Cloudflare cache if enabled and version is being published
 	if api.cloudflareEnabled && stateUpdate.State == models.PublishedState {
 		prefixes := utils.GeneratePurgePrefixes(api.urlBuilder.GetWebsiteURL().String(), api.urlBuilder.GetAPIRouterPublicURL().String(), datasetID, edition, version)
 		logData["purge_prefixes"] = prefixes
