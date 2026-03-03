@@ -83,7 +83,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 
 		datasetType := dataset.Next.Type
 
-		var authorised bool // Declare at function scope so audit can access it
+		var authorised bool
 		if datasetType == models.Static.String() {
 			authorised = api.checkUserPermission(r, logData, datasetEditionVersionReadPermission, attrs)
 		} else {
@@ -184,7 +184,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 	versionNumber := vars["version"]
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": versionNumber}
 
-	var authorised bool
+	var authorised bool // Declare at function scope so audit can access it
 
 	v, getVersionErr := func() (*models.Version, error) {
 		versionID, err := models.ParseAndValidateVersionNumber(ctx, versionNumber)
