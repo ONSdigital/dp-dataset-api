@@ -27,11 +27,12 @@ var (
 
 	// errors that should return a 400 status
 	datasetsBadRequest = map[error]bool{
-		errs.ErrAddUpdateDatasetBadRequest: true,
-		errs.ErrTypeMismatch:               true,
-		errs.ErrDatasetTypeInvalid:         true,
-		errs.ErrInvalidQueryParameter:      true,
-		errs.ErrSpacesNotAllowedInID:       true,
+		errs.ErrAddUpdateDatasetBadRequest:  true,
+		errs.ErrTypeMismatch:                true,
+		errs.ErrDatasetTypeInvalid:          true,
+		errs.ErrInvalidQueryParameter:       true,
+		errs.ErrSpacesNotAllowedInID:        true,
+		errs.ErrPublishedDatasetTopicChange: true,
 	}
 
 	// errors that should return a 403 status
@@ -495,6 +496,7 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 	log.Info(ctx, "addDatasetNew endpoint: request completed successfully", logData)
 }
 
+//nolint:gocognit,gocyclo // complexity is high (22)
 func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 	defer dphttp.DrainBody(r)
 
@@ -549,6 +551,12 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 				log.Error(ctx, "putDataset endpoint: unable to update a dataset with title that already exists", errs.ErrAddDatasetTitleAlreadyExists, data)
 				return nil, errs.ErrAddDatasetTitleAlreadyExists
 			}
+		}
+
+		if currentDataset.Current != nil && currentDataset.Current.State == models.PublishedState &&
+			currentDataset.Current.Topics[0] != dataset.Topics[0] {
+			log.Error(ctx, "putDataset endpoint: unable to update canonical topic of a published dataset", errs.ErrPublishedDatasetTopicChange, data)
+			return nil, errs.ErrPublishedDatasetTopicChange
 		}
 
 		if dataset.State == models.PublishedState {
