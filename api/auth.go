@@ -13,7 +13,7 @@ import (
 )
 
 // getAuthEntityData returns the AuthEntityData associated with the provided access token,
-// including whether the token belongs to a service account or a human user
+// including whether the token belongs to a service account or user
 func (api *DatasetAPI) getAuthEntityData(r *http.Request) (*AuthEntityData, error) {
 	accessToken := strings.TrimPrefix(r.Header.Get(request.AuthHeaderKey), request.BearerPrefix)
 	entityData, err := api.authMiddleware.Parse(accessToken)
