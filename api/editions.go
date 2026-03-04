@@ -289,13 +289,13 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 			}
 
 			identityType := log.USER
-			if getIdentityTypeFromRequest(r) {
+			if authEntityData.IsServiceAuth {
 				identityType = log.SERVICE
 			}
-			logAuthOption := log.Auth(identityType, authEntityData.UserID)
+			logAuthOption := log.Auth(identityType, authEntityData.EntityData.UserID)
 
 			if datasetType == models.Static.String() {
-				if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+editionID, versionToAudit); err != nil {
+				if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.EntityData.UserID, Email: authEntityData.EntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+editionID, versionToAudit); err != nil {
 					log.Info(ctx, "getEdition endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
 						"action":   models.ActionRead,
 						"endpoint": "/datasets/" + datasetID + "/editions/" + editionID,
@@ -307,7 +307,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 				}
 			} else {
 				editionToAudit := edition.Next
-				if err := api.auditService.RecordEditionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+editionID, editionToAudit); err != nil {
+				if err := api.auditService.RecordEditionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.EntityData.UserID, Email: authEntityData.EntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+editionID, editionToAudit); err != nil {
 					log.Info(ctx, "getEdition endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
 						"action":   models.ActionRead,
 						"endpoint": "/datasets/" + datasetID + "/editions/" + editionID,

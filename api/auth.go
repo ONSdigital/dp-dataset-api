@@ -12,8 +12,9 @@ import (
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
 )
 
-// getAuthEntityData returns the EntityData associated with the provided access token
-func (api *DatasetAPI) getAuthEntityData(r *http.Request) (*permissionsAPISDK.EntityData, error) {
+// getAuthEntityData returns the AuthEntityData associated with the provided access token,
+// including whether the token belongs to a service account or a human user
+func (api *DatasetAPI) getAuthEntityData(r *http.Request) (*AuthEntityData, error) {
 	accessToken := strings.TrimPrefix(r.Header.Get(request.AuthHeaderKey), request.BearerPrefix)
 	entityData, err := api.authMiddleware.Parse(accessToken)
 	if err != nil {
@@ -25,7 +26,7 @@ func (api *DatasetAPI) getAuthEntityData(r *http.Request) (*permissionsAPISDK.En
 		// valid
 		entityData = &permissionsAPISDK.EntityData{UserID: resp.Identifier}
 	}
-	return entityData, nil
+	return CreateAuthEntityData(entityData, false), nil
 }
 
 // getAccessTokenFromRequest extracts the access token from the Authorization header of the request
@@ -33,8 +34,21 @@ func getAccessTokenFromRequest(r *http.Request) string {
 	return strings.TrimPrefix(r.Header.Get(dprequest.AuthHeaderKey), dprequest.BearerPrefix)
 }
 
-// getIdentityTypeFromRequest returns true if the request is from a service account, false if from a user
-func getIdentityTypeFromRequest(r *http.Request) bool {
-	accessToken := strings.TrimPrefix(r.Header.Get(request.AuthHeaderKey), request.BearerPrefix)
-	return !strings.Contains(accessToken, ".")
+// AuthEntityData holds the entity data for an authenticated request along with
+// whether the request was made by a service account or user
+type AuthEntityData struct {
+	EntityData    *permissionsAPISDK.EntityData
+	IsServiceAuth bool
+}
+
+// CreateAuthEntityData creates an AuthEntityData from the provided EntityData and
+// a bool indicating whether the token belongs to a service account
+func CreateAuthEntityData(entityData *permissionsAPISDK.EntityData, isService bool) *AuthEntityData {
+	return &AuthEntityData{
+		EntityData: &permissionsAPISDK.EntityData{
+			UserID: entityData.UserID,
+			Groups: entityData.Groups,
+		},
+		IsServiceAuth: isService,
+	}
 }

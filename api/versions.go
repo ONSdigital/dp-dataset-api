@@ -335,13 +335,13 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 		}
 
 		identityType := log.USER
-		if getIdentityTypeFromRequest(r) {
+		if authEntityData.IsServiceAuth {
 			identityType = log.SERVICE
 		}
-		logAuthOption := log.Auth(identityType, authEntityData.UserID)
+		logAuthOption := log.Auth(identityType, authEntityData.EntityData.UserID)
 
 		// ID and Email are the same as auth middleware can only provide userID
-		if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+versionNumber, v); err != nil {
+		if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.EntityData.UserID, Email: authEntityData.EntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+versionNumber, v); err != nil {
 			log.Info(ctx, "getVersion endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
 				"action":   models.ActionRead,
 				"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + versionNumber,
@@ -387,10 +387,10 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	// Read body once and validate distributions before unmarshaling
 
 	identityType := log.USER
-	if getIdentityTypeFromRequest(r) {
+	if authEntityData.IsServiceAuth {
 		identityType = log.SERVICE
 	}
-	logAuthOption := log.Auth(identityType, authEntityData.UserID)
+	logAuthOption := log.Auth(identityType, authEntityData.EntityData.UserID)
 
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -488,7 +488,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// ID and Email are the same as auth middleware can only provide userID
-	if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionUpdate, "/datasets/"+vars["dataset_id"]+"/editions/"+vars["edition"]+"/versions/"+vars["version"], amendedVersion); err != nil {
+	if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.EntityData.UserID, Email: authEntityData.EntityData.UserID}, models.ActionUpdate, "/datasets/"+vars["dataset_id"]+"/editions/"+vars["edition"]+"/versions/"+vars["version"], amendedVersion); err != nil {
 		log.Info(ctx, "putVersion endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
 			"action":   models.ActionUpdate,
 			"endpoint": "/datasets/" + vars["dataset_id"] + "/editions/" + vars["edition"] + "/versions/" + vars["version"],
@@ -545,10 +545,10 @@ func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	identityType := log.USER
-	if getIdentityTypeFromRequest(r) {
+	if authEntityData.IsServiceAuth {
 		identityType = log.SERVICE
 	}
-	logAuthOption := log.Auth(identityType, authEntityData.UserID)
+	logAuthOption := log.Auth(identityType, authEntityData.EntityData.UserID)
 
 	versionNum, err := models.ParseAndValidateVersionNumber(ctx, versionStr)
 	if err != nil {
@@ -579,7 +579,7 @@ func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// ID and Email are the same as auth middleware can only provide userID
-		if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionDelete, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+versionStr, deletedVersion); err != nil {
+		if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.EntityData.UserID, Email: authEntityData.EntityData.UserID}, models.ActionDelete, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+versionStr, deletedVersion); err != nil {
 			log.Info(ctx, "deleteVersion endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
 				"action":   models.ActionDelete,
 				"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + versionStr,
@@ -957,10 +957,10 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 	}
 
 	identityType := log.USER
-	if getIdentityTypeFromRequest(r) {
+	if authEntityData.IsServiceAuth {
 		identityType = log.SERVICE
 	}
-	logAuthOption := log.Auth(identityType, authEntityData.UserID)
+	logAuthOption := log.Auth(identityType, authEntityData.EntityData.UserID)
 
 	versionID, err := models.ParseAndValidateVersionNumber(ctx, version)
 	if err != nil {
@@ -1049,7 +1049,7 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// ID and Email are the same as auth middleware can only provide userID
-	if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionUpdate, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+version+"/state", updatedVersion); err != nil {
+	if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.EntityData.UserID, Email: authEntityData.EntityData.UserID}, models.ActionUpdate, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+version+"/state", updatedVersion); err != nil {
 		log.Info(ctx, "putState endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
 			"action":   models.ActionUpdate,
 			"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + version + "/state",

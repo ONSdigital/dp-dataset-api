@@ -483,9 +483,9 @@ func (api *DatasetAPI) checkUserPermission(r *http.Request, logData log.Data, pe
 		if err != nil {
 			return false
 		}
-		logData["entity_data"] = entityData
+		logData["entity_data"] = entityData.EntityData
 
-		hasPermission, err := api.permissionsChecker.HasPermission(r.Context(), *entityData, permission, attributes)
+		hasPermission, err := api.permissionsChecker.HasPermission(r.Context(), *entityData.EntityData, permission, attributes)
 		if err != nil {
 			log.Error(r.Context(), "permissions check errored", err, logData)
 			return false

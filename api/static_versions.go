@@ -123,10 +123,10 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	}
 
 	identityType := log.USER
-	if getIdentityTypeFromRequest(r) {
+	if authEntityData.IsServiceAuth {
 		identityType = log.SERVICE
 	}
-	logAuthOption := log.Auth(identityType, authEntityData.UserID)
+	logAuthOption := log.Auth(identityType, authEntityData.EntityData.UserID)
 
 	if err := utils.ValidateIDNoSpaces(edition); err != nil {
 		log.Error(ctx, "addDatasetVersionCondensed endpoint: edition ID contains spaces", err, logData)
@@ -247,7 +247,7 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	versionRequest.Type = models.Static.String()
 
 	// ID and Email are the same as auth middleware can only provide userID
-	if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionCreate, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+strconv.Itoa(nextVersion), versionRequest); err != nil {
+	if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.EntityData.UserID, Email: authEntityData.EntityData.UserID}, models.ActionCreate, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+strconv.Itoa(nextVersion), versionRequest); err != nil {
 		log.Info(ctx, "addDatasetVersionCondensed endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
 			"action":   models.ActionCreate,
 			"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + strconv.Itoa(nextVersion),
@@ -326,10 +326,10 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 	}
 
 	identityType := log.USER
-	if getIdentityTypeFromRequest(r) {
+	if authEntityData.IsServiceAuth {
 		identityType = log.SERVICE
 	}
-	logAuthOption := log.Auth(identityType, authEntityData.UserID)
+	logAuthOption := log.Auth(identityType, authEntityData.EntityData.UserID)
 
 	if err := utils.ValidateIDNoSpaces(datasetID); err != nil {
 		log.Error(ctx, "createVersion endpoint: dataset ID contains spaces", err, logData)
@@ -437,7 +437,7 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 	}
 
 	// ID and Email are the same as auth middleware can only provide userID
-	if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionCreate, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+strconv.Itoa(versionNumber), newVersion); err != nil {
+	if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.EntityData.UserID, Email: authEntityData.EntityData.UserID}, models.ActionCreate, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+strconv.Itoa(versionNumber), newVersion); err != nil {
 		log.Info(ctx, "createVersion endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
 			"action":   models.ActionCreate,
 			"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + strconv.Itoa(versionNumber),

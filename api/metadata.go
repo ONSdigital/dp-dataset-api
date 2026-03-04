@@ -184,13 +184,13 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 			}
 
 			identityType := log.USER
-			if getIdentityTypeFromRequest(r) {
+			if authEntityData.IsServiceAuth {
 				identityType = log.SERVICE
 			}
-			logAuthOption := log.Auth(identityType, authEntityData.UserID)
+			logAuthOption := log.Auth(identityType, authEntityData.EntityData.UserID)
 
 			// ID and Email are the same as auth middleware can only provide userID
-			if err := api.auditService.RecordMetadataAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+version+"/metadata", metaDataDoc); err != nil {
+			if err := api.auditService.RecordMetadataAuditEvent(ctx, models.RequestedBy{ID: authEntityData.EntityData.UserID, Email: authEntityData.EntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+version+"/metadata", metaDataDoc); err != nil {
 				log.Info(ctx, "getMetadata endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
 					"action":   models.ActionRead,
 					"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + version + "/metadata",
@@ -305,7 +305,7 @@ func (api *DatasetAPI) putMetadata(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// ID and Email are the same as auth middleware can only provide userID
-		if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionUpdate, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+versionID+"/metadata", version); err != nil {
+		if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.EntityData.UserID, Email: authEntityData.EntityData.UserID}, models.ActionUpdate, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+versionID+"/metadata", version); err != nil {
 			log.Error(ctx, "putMetadata endpoint: failed to record version audit event", err, logData)
 			return err
 		}
