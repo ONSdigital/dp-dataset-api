@@ -24,7 +24,7 @@ func (api *DatasetAPI) getAuthEntityData(r *http.Request) (*AuthEntityData, erro
 			return nil, fmt.Errorf("failed to parse access token: %w", err)
 		}
 		// valid
-		entityData = &permissionsAPISDK.EntityData{UserID: resp.Identifier}
+		return CreateAuthEntityData(&permissionsAPISDK.EntityData{UserID: resp.Identifier}, true), nil
 	}
 	return CreateAuthEntityData(entityData, false), nil
 }
