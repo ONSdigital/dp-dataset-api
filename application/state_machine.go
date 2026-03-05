@@ -6,6 +6,7 @@ import (
 
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/dp-permissions-api/sdk"
 	"github.com/ONSdigital/log.go/v2/log"
 )
 
@@ -15,7 +16,9 @@ type State struct {
 		currentVersion *models.Version, // Called Instances in Mongo
 		versionUpdate *models.Version, // Next version, that is the new version
 		versionDetails VersionDetails,
-		hasDownloads string) error
+		hasDownloads string,
+		authEntityData *sdk.EntityData,
+		accessToken string) error
 }
 
 func (s State) String() string {
@@ -60,7 +63,9 @@ func (sm *StateMachine) Transition(ctx context.Context, smDS *StateMachineDatase
 	currentVersion *models.Version, // Called Instances in Mongo
 	versionUpdate *models.Version, // Next version, that is the new version
 	versionDetails VersionDetails,
-	hasDownloads string) error {
+	hasDownloads string,
+	authEntityData *sdk.EntityData,
+	accessToken string) error {
 	match := false
 	var nextState *State
 	var ok bool
@@ -96,7 +101,9 @@ func (sm *StateMachine) Transition(ctx context.Context, smDS *StateMachineDatase
 		currentVersion, // Called Instances in Mongo
 		versionUpdate,  // Next version, that is the new version
 		versionDetails,
-		hasDownloads)
+		hasDownloads,
+		authEntityData,
+		accessToken)
 	if err != nil {
 		return err
 	}

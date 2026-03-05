@@ -457,7 +457,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 
 	var amendedVersion *models.Version
 
-	amendedVersion, err = api.smDatasetAPI.AmendVersion(r.Context(), vars, version)
+	amendedVersion, err = api.smDatasetAPI.AmendVersion(r.Context(), vars, version, authEntityData, fetchAccessTokenFromHeader(r))
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, data)
 		return
@@ -943,20 +943,21 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 		Type:  models.Static.String(),
 	}
 
-	updatedVersion, err := api.smDatasetAPI.AmendVersion(r.Context(), vars, versionUpdate)
+	updatedVersion, err := api.smDatasetAPI.AmendVersion(r.Context(), vars, versionUpdate, authEntityData, fetchAccessTokenFromHeader(r))
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, logData)
 		return
 	}
 
-	if stateUpdate.State == models.PublishedState && updatedVersion.Distributions != nil && len(*updatedVersion.Distributions) > 0 {
-		err = api.publishDistributionFiles(ctx, updatedVersion, logData, fetchAccessTokenFromHeader(r))
-		if err != nil {
-			log.Error(ctx, "putState endpoint: failed to publish distribution files", err, logData)
-			handleVersionAPIErr(ctx, err, w, logData)
-			return
-		}
-	}
+	// move to state machine
+	// if stateUpdate.State == models.PublishedState && updatedVersion.Distributions != nil && len(*updatedVersion.Distributions) > 0 {
+	// 	err = api.publishDistributionFiles(ctx, updatedVersion, logData, fetchAccessTokenFromHeader(r))
+	// 	if err != nil {
+	// 		log.Error(ctx, "putState endpoint: failed to publish distribution files", err, logData)
+	// 		handleVersionAPIErr(ctx, err, w, logData)
+	// 		return
+	// 	}
+	// }
 
 	if updatedVersion.State == models.PublishedState {
 		searchContentUpdatedEvent := map[string]interface{}{

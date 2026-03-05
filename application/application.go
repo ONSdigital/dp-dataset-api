@@ -13,6 +13,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	dprequest "github.com/ONSdigital/dp-net/v3/request"
+	"github.com/ONSdigital/dp-permissions-api/sdk"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/jinzhu/copier"
 	"github.com/pkg/errors"
@@ -49,6 +50,14 @@ type StateMachineDatasetAPI struct {
 	DataStore          store.DataStore
 	DownloadGenerators map[models.DatasetType]DownloadsGenerator
 	StateMachine       *StateMachine
+	FilesAPIClient     filesAPISDK.Clienter
+	authToken          string
+}
+
+// SetFilesAPIClient sets the files API client and auth token for the API
+func (smDS *StateMachineDatasetAPI) SetFilesAPIClient(client filesAPISDK.Clienter, authToken string) {
+	smDS.FilesAPIClient = client
+	smDS.authToken = authToken
 }
 
 func Setup(dataStoreVal store.DataStore, downloadGenerators map[models.DatasetType]DownloadsGenerator, stateMachine *StateMachine) *StateMachineDatasetAPI {
@@ -65,7 +74,7 @@ func (v VersionDetails) baseLogData() log.Data {
 	return log.Data{"dataset_id": v.datasetID, "edition": v.edition, "version": v.version}
 }
 
-func (smDS *StateMachineDatasetAPI) AmendVersion(ctx context.Context, vars map[string]string, version *models.Version) (*models.Version, error) {
+func (smDS *StateMachineDatasetAPI) AmendVersion(ctx context.Context, vars map[string]string, version *models.Version, authEntityData *sdk.EntityData, accessToken string) (*models.Version, error) {
 	versionDetails := VersionDetails{
 		datasetID: vars["dataset_id"],
 		edition:   vars["edition"],
@@ -103,7 +112,7 @@ func (smDS *StateMachineDatasetAPI) AmendVersion(ctx context.Context, vars map[s
 	fmt.Println("THE CURRENT VERSION IS BEFORE TRANSITION")
 	fmt.Println(currentVersion)
 
-	if err := smDS.StateMachine.Transition(ctx, smDS, currentVersion, versionUpdate, versionDetails, vars[hasDownloads]); err != nil {
+	if err := smDS.StateMachine.Transition(ctx, smDS, currentVersion, versionUpdate, versionDetails, vars[hasDownloads], authEntityData, accessToken); err != nil {
 		log.Error(ctx, "amendVersion: state machine transition failed", err)
 		return nil, err
 	}
@@ -436,7 +445,9 @@ func AssociateVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 	currentVersion *models.Version, // Called Instances in Mongo
 	versionUpdate *models.Version, // Next version, that is the new version
 	versionDetails VersionDetails,
-	hasDownloads string) error {
+	hasDownloads string,
+	authEntityData *sdk.EntityData,
+	accessToken string) error {
 	data := versionDetails.baseLogData()
 	log.Info(ctx, "putVersion endpoint (associateVersion): beginning associate version", data)
 
@@ -489,7 +500,9 @@ func ApproveVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 	currentVersion *models.Version, // Called Instances in Mongo
 	versionUpdate *models.Version, // Next version, that is the new version
 	versionDetails VersionDetails,
-	hasDownloads string) error {
+	hasDownloads string,
+	authEntityData *sdk.EntityData,
+	accessToken string) error {
 	data := versionDetails.baseLogData()
 	log.Info(ctx, "putVersion endpoint (associateVersion): beginning associate version", data)
 
@@ -512,7 +525,9 @@ func EditionConfirmVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 	currentVersion *models.Version, // Called Instances in Mongo
 	versionUpdate *models.Version, // Next version, that is the new version
 	versionDetails VersionDetails,
-	_ string) error {
+	_ string,
+	authEntityData *sdk.EntityData,
+	accessToken string) error {
 	data := versionDetails.baseLogData()
 
 	log.Info(ctx, "putVersion endpoint (editionConfirmVersion): beginning transition to edition-confirmed", data)
@@ -535,7 +550,9 @@ func PublishVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 	currentVersion *models.Version, // Called Instances in Mongo
 	versionUpdate *models.Version, // Next version, that is the new version
 	versionDetails VersionDetails,
-	hasDownloads string) error {
+	hasDownloads string,
+	authEntityData *sdk.EntityData,
+	accessToken string) error {
 	data := versionDetails.baseLogData()
 	log.Info(ctx, "putVersion endpoint (publishVersion): beginning transition to published", data)
 
@@ -548,7 +565,7 @@ func PublishVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 	// 	}
 	// }
 
-	versionUpdate, err := PublishVersionInfo(ctx, smDS, currentVersion, versionUpdate, versionDetails)
+	versionUpdate, err := PublishVersionInfo(ctx, smDS, currentVersion, versionUpdate, versionDetails, authEntityData, accessToken)
 	if err != nil {
 		log.Error(ctx, "State machine - Publish: UpdateVersionInfo : failed to update the version", err, data)
 		return err
@@ -666,7 +683,9 @@ func UpdateVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 	currentVersion *models.Version, // Called Instances in Mongo
 	versionUpdate *models.Version,
-	versionDetails VersionDetails) (updatedVersion *models.Version, err error) {
+	versionDetails VersionDetails,
+	authEntityData *sdk.EntityData,
+	accessToken string) (updatedVersion *models.Version, err error) {
 	eTag := headers.IfMatchAnyETag
 	if currentVersion.ETag != "" {
 		eTag = currentVersion.ETag
@@ -697,6 +716,15 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 				if errVersion != nil {
 					log.Error(ctx, "putVersion endpoint: UpdateVersionStatic returned an error", err)
 					return nil, errVersion
+				}
+
+				fmt.Println("ABOUT TO PUBLISH DISTRIBUTION FILES")
+				fmt.Println(authEntityData.UserID)
+				err = smDS.publishDistributionFiles(ctx, updatedV, log.Data{}, accessToken)
+				if err != nil {
+					log.Error(ctx, "putState endpoint: failed to publish distribution files", err, log.Data{})
+					//handleVersionAPIErr(ctx, err, w, logData)
+					return nil, err
 				}
 				return updatedV, nil
 			} else {
@@ -925,4 +953,96 @@ func (smDS *StateMachineDatasetAPI) DeleteStaticVersion(ctx context.Context, dat
 
 	log.Info(ctx, "DeleteStaticVersion: successfully deleted static version", logData)
 	return versionDoc, nil
+}
+
+func (smDS *StateMachineDatasetAPI) publishDistributionFiles(ctx context.Context, version *models.Version, logData log.Data, accessToken string) error {
+	// if api.filesAPIClient == nil {
+	// 	return fmt.Errorf("files API client not configured")
+	// }
+
+	// Already validated above
+	// if version.Distributions == nil || len(*version.Distributions) == 0 {
+	// 	return nil
+	// }
+
+	var lastError error
+	var filesAPIError error
+	totalFiles := len(*version.Distributions)
+	successCount := 0
+
+	for _, distribution := range *version.Distributions {
+		if distribution.DownloadURL == "" {
+			continue
+		}
+
+		filepath := distribution.DownloadURL
+
+		fileLogData := log.Data{
+			"filepath":            filepath,
+			"distribution_title":  distribution.Title,
+			"distribution_format": distribution.Format,
+		}
+		// Is this causing the slowdown?
+		//maps.Copy(fileLogData, logData)
+
+		// Could potentially just return the error from the mark file published to handle both
+		// _, err := api.filesAPIClient.GetFile(ctx, filepath, filesAPISDK.Headers{
+		// 	Authorization: accessToken,
+		// })
+		// if err != nil {
+		// 	log.Error(ctx, "failed to get file metadata", err, fileLogData)
+
+		// 	if strings.Contains(err.Error(), "FileNotRegistered") ||
+		// 		strings.Contains(err.Error(), "file not registered") ||
+		// 		strings.Contains(err.Error(), "not found") {
+		// 		filesAPIError = errs.ErrFileMetadataNotFound
+		// 	}
+		// 	lastError = err
+		// 	continue
+		// }
+
+		fmt.Println("SENDING REQUEST TO MARK FILE PUBLISHED AT " + filepath + " " + time.Now().String())
+		err := smDS.FilesAPIClient.MarkFilePublished(ctx, filepath, filesAPISDK.Headers{Authorization: accessToken})
+		if err != nil {
+			log.Error(ctx, "failed to publish file", err, log.Data{
+				"filepath":            filepath,
+				"distribution_title":  distribution.Title,
+				"distribution_format": distribution.Format,
+			})
+
+			if strings.Contains(err.Error(), "FileNotRegistered") ||
+				strings.Contains(err.Error(), "file not registered") ||
+				strings.Contains(err.Error(), "not found") {
+				filesAPIError = errs.ErrFileMetadataNotFound
+			}
+
+			if strings.Contains(err.Error(), "FileStateError") ||
+				strings.Contains(err.Error(), "file is not set as publishable") ||
+				strings.Contains(err.Error(), "file state is not in state uploaded") {
+				filesAPIError = errs.ErrFileNotInCorrectState
+			}
+
+			lastError = err
+			continue
+		}
+
+		successCount++
+		log.Info(ctx, "successfully published file", fileLogData)
+	}
+
+	log.Info(ctx, "completed publishing distribution files", log.Data{
+		"total_files": totalFiles,
+		"successful":  successCount,
+		"failed":      totalFiles - successCount,
+	})
+
+	if filesAPIError != nil {
+		return filesAPIError
+	}
+
+	if lastError != nil {
+		return fmt.Errorf("one or more errors occurred while publishing files: %w", lastError)
+	}
+
+	return nil
 }

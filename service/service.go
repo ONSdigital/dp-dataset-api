@@ -357,6 +357,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		svc.searchContentUpdatedKafkaProducer.LogErrors(ctx)
 	}
 
+	// will need to look at this for web mode
 	sm := GetStateMachine(ctx, ds)
 	svc.smDS = application.Setup(ds, smDownloadGenerators, sm)
 
@@ -367,6 +368,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	// Set the files API client on the DatasetAPI after initialisation
 	if svc.config.EnablePrivateEndpoints && svc.filesAPIClient != nil {
 		svc.api.SetFilesAPIClient(svc.filesAPIClient, svc.config.ServiceAuthToken)
+		svc.smDS.SetFilesAPIClient(svc.filesAPIClient, svc.config.ServiceAuthToken)
 		log.Info(ctx, "files API client set on dataset API")
 	}
 
