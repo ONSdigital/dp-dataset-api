@@ -27,11 +27,11 @@ var (
 
 	// errors that should return a 400 status
 	datasetsBadRequest = map[error]bool{
-		errs.ErrAddUpdateDatasetBadRequest:  true,
-		errs.ErrTypeMismatch:                true,
-		errs.ErrDatasetTypeInvalid:          true,
-		errs.ErrInvalidQueryParameter:       true,
-		errs.ErrSpacesNotAllowedInID:        true,
+		errs.ErrAddUpdateDatasetBadRequest: true,
+		errs.ErrTypeMismatch:               true,
+		errs.ErrDatasetTypeInvalid:         true,
+		errs.ErrInvalidQueryParameter:      true,
+		errs.ErrSpacesNotAllowedInID:       true,
 	}
 
 	// errors that should return a 403 status
@@ -50,7 +50,7 @@ var (
 	datasetsConflict = map[error]bool{
 		errs.ErrAddDatasetAlreadyExists:      true,
 		errs.ErrAddDatasetTitleAlreadyExists: true,
-		errs.ErrPublishedDatasetTopicChange: true,
+		errs.ErrPublishedDatasetTopicChange:  true,
 	}
 )
 
@@ -558,7 +558,6 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 				return nil, errs.ErrPublishedDatasetTopicChange
 			}
 		}
-
 
 		if dataset.State == models.PublishedState {
 			if err := api.publishDataset(ctx, currentDataset, nil); err != nil {
