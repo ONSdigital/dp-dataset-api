@@ -62,6 +62,7 @@ var (
 	ErrFileNotInCorrectState              = errors.New("file not in correct state")
 	ErrInvalidParamCombination            = errors.New("cannot request state and published parameters at the same time")
 	ErrMethodNotAllowed                   = errors.New("method not allowed")
+	ErrPublishedDatasetTopicChange        = errors.New("canonical topic can't be changed once a series is published")
 
 	ErrExpectedResourceStateOfCreated          = errors.New("unable to update resource, expected resource to have a state of created")
 	ErrExpectedResourceStateOfSubmitted        = errors.New("unable to update resource, expected resource to have a state of submitted")

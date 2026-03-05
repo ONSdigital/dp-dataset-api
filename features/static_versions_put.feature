@@ -826,3 +826,68 @@ Feature: Static Dataset Versions PUT API
             """
             spaces are not allowed in the ID field
             """
+
+    Scenario: PUT Updating the first (canonical) topic on a published dataset returns a 400
+        Given I have these datasets:
+            """
+            [
+                {
+                    "id": "update-published-topic-test",
+                    "contacts": [
+                          {
+                            "email": "contact@ons.gov.uk",
+                            "name": "Expert Statistical Team",
+                            "telephone": "+44 1234 111111"
+                          }
+                        ],
+                        "description": "This dataset is for testing",
+                        "keywords": [
+                          "dataset"
+                        ],
+                        "license": "Open Government Licence v3.0",
+                        "next_release": "To be announced",
+                        "title": "Static Dataset for Testing topic change",
+                    "title": "Static Dataset for Updates",
+                    "state": "published",
+                    "topics": [
+                      "topic-1",
+                      "topic-2"
+                    ],
+                    "type": "static"
+                }
+            ]
+            """
+        And private endpoints are enabled
+        And I am an admin user
+        When I PUT "/datasets/update-published-topic-test"
+            """
+            {
+                "id": "update-published-topic-test",
+                "contacts": [
+                      {
+                        "email": "contact@ons.gov.uk",
+                        "name": "Expert Statistical Team",
+                        "telephone": "+44 1234 111111"
+                      }
+                    ],
+                    "description": "This dataset is for testing",
+                    "keywords": [
+                      "dataset"
+                    ],
+                    "license": "Open Government Licence v3.0",
+                    "next_release": "To be announced",
+                    "title": "Static Dataset for Testing topic change",
+                "title": "Static Dataset for Updates",
+                "state": "published",
+                "topics": [
+                  "updated-topic-1",
+                  "topic-2"
+                ],
+                "type": "static"
+            }
+            """
+        Then the HTTP status code should be "409"
+        And I should receive the following response:
+              """
+              canonical topic can't be changed once a series is published
+              """
