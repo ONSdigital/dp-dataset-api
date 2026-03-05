@@ -191,7 +191,7 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 
 			// ID and Email are the same as auth middleware can only provide userID
 			if err := api.auditService.RecordMetadataAuditEvent(ctx, models.RequestedBy{ID: authEntityData.EntityData.UserID, Email: authEntityData.EntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+version+"/metadata", metaDataDoc); err != nil {
-				log.Info(ctx, "getMetadata endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+				log.Info(ctx, "failed to create metadata audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
 					"action":   models.ActionRead,
 					"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + version + "/metadata",
 					"outcome":  "failure",
@@ -200,7 +200,7 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 				log.Error(ctx, "getMetadata endpoint: failed to record metadata audit event", err, logData)
 				return nil, err
 			}
-			log.Info(ctx, "getMetadata endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+			log.Info(ctx, "successfully created metadata audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
 				"action":   models.ActionRead,
 				"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + version + "/metadata",
 				"outcome":  "success",

@@ -197,7 +197,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 
 			// ID and Email are the same as auth middleware can only provide userID
 			if err := api.auditService.RecordDatasetAuditEvent(ctx, models.RequestedBy{ID: authEntityData.EntityData.UserID, Email: authEntityData.EntityData.UserID}, models.ActionRead, "/datasets/"+datasetID, dataset.Next); err != nil {
-				log.Info(ctx, "getDataset endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+				log.Info(ctx, "failed to create dataset audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
 					"action":   models.ActionRead,
 					"endpoint": "/datasets/" + datasetID,
 					"outcome":  "failure",
@@ -206,7 +206,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 				log.Error(ctx, "getDataset endpoint: failed to record dataset audit event", err, logData)
 				return nil, err
 			}
-			log.Info(ctx, "getDataset endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+			log.Info(ctx, "successfully created dataset audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
 				"action":   models.ActionRead,
 				"endpoint": "/datasets/" + datasetID,
 				"outcome":  "success",
@@ -490,7 +490,7 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 
 	// ID and Email are the same as auth middleware can only provide userID
 	if err := api.auditService.RecordDatasetAuditEvent(ctx, models.RequestedBy{ID: authEntityData.EntityData.UserID, Email: authEntityData.EntityData.UserID}, models.ActionCreate, "/datasets/"+datasetID, dataset); err != nil {
-		log.Info(ctx, "addDatasetNew endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+		log.Info(ctx, "failed to created dataset audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
 			"action":   models.ActionCreate,
 			"endpoint": "/datasets/" + datasetID,
 			"outcome":  "failure",
@@ -500,7 +500,7 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 		handleDatasetAPIErr(ctx, err, w, logData)
 		return
 	}
-	log.Info(ctx, "addDatasetNew endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+	log.Info(ctx, "successfully created dataset audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
 		"action":   models.ActionCreate,
 		"endpoint": "/datasets/" + datasetID,
 		"outcome":  "success",
@@ -605,7 +605,7 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 
 		// ID and Email are the same as auth middleware can only provide userID
 		if err := api.auditService.RecordDatasetAuditEvent(ctx, models.RequestedBy{ID: authEntityData.EntityData.UserID, Email: authEntityData.EntityData.UserID}, models.ActionUpdate, "/datasets/"+datasetID, dataset); err != nil {
-			log.Info(ctx, "putDataset endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+			log.Info(ctx, "failed to create dataset audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
 				"action":   models.ActionUpdate,
 				"endpoint": "/datasets/" + datasetID,
 				"outcome":  "failure",
@@ -614,7 +614,7 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 			log.Error(ctx, "putDataset endpoint: failed to record dataset audit event", err, data)
 			return nil, err
 		}
-		log.Info(ctx, "putDataset endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+		log.Info(ctx, "successfully created dataset audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
 			"action":   models.ActionUpdate,
 			"endpoint": "/datasets/" + datasetID,
 			"outcome":  "success",
@@ -771,7 +771,7 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 
 		// ID and Email are the same as auth middleware can only provide userID
 		if err := api.auditService.RecordDatasetAuditEvent(ctx, models.RequestedBy{ID: authEntityData.EntityData.UserID, Email: authEntityData.EntityData.UserID}, models.ActionDelete, "/datasets/"+datasetID, currentDataset.Next); err != nil {
-			log.Info(ctx, "deleteDataset endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+			log.Info(ctx, "failed to create dataset audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
 				"action":   models.ActionDelete,
 				"endpoint": "/datasets/" + datasetID,
 				"outcome":  "failure",
@@ -780,7 +780,7 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 			log.Error(ctx, "deleteDataset endpoint: failed to record dataset audit event", err, logData)
 			return err
 		}
-		log.Info(ctx, "deleteDataset endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+		log.Info(ctx, "successfully created dataset audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
 			"action":   models.ActionDelete,
 			"endpoint": "/datasets/" + datasetID,
 			"outcome":  "success",

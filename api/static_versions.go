@@ -248,7 +248,7 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 
 	// ID and Email are the same as auth middleware can only provide userID
 	if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.EntityData.UserID, Email: authEntityData.EntityData.UserID}, models.ActionCreate, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+strconv.Itoa(nextVersion), versionRequest); err != nil {
-		log.Info(ctx, "addDatasetVersionCondensed endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+		log.Info(ctx, "failed to create version audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
 			"action":   models.ActionCreate,
 			"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + strconv.Itoa(nextVersion),
 			"outcome":  "failure",
@@ -257,7 +257,7 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 		log.Error(ctx, "addDatasetVersionCondensed endpoint: failed to record version audit event", err, logData)
 		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, models.InternalError, models.InternalErrorDescription))
 	}
-	log.Info(ctx, "addDatasetVersionCondensed endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+	log.Info(ctx, "successfully created version audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
 		"action":   models.ActionCreate,
 		"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + strconv.Itoa(nextVersion),
 		"outcome":  "success",
@@ -438,7 +438,7 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 
 	// ID and Email are the same as auth middleware can only provide userID
 	if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.EntityData.UserID, Email: authEntityData.EntityData.UserID}, models.ActionCreate, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+strconv.Itoa(versionNumber), newVersion); err != nil {
-		log.Info(ctx, "createVersion endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+		log.Info(ctx, "failed to create version audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
 			"action":   models.ActionCreate,
 			"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + strconv.Itoa(versionNumber),
 			"outcome":  "failure",
@@ -447,7 +447,7 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 		log.Error(ctx, "createVersion endpoint: failed to record version audit event", err, logData)
 		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, models.InternalError, models.InternalErrorDescription))
 	}
-	log.Info(ctx, "createVersion endpoint protective monitoring event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+	log.Info(ctx, "successfully created version audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
 		"action":   models.ActionCreate,
 		"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + strconv.Itoa(versionNumber),
 		"outcome":  "success",
