@@ -2593,7 +2593,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 	})
 
-	Convey("When PUT dataset calls trying to change canonical topic returns 400 response", t, func() {
+	Convey("When PUT dataset calls trying to change canonical topic returns 409 response", t, func() {
 		b := datasetPayloadWithStatePublished
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
@@ -2628,7 +2628,7 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
 		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Code, ShouldEqual, http.StatusConflict)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckDatasetTitleExistCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)

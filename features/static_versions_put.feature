@@ -828,113 +828,6 @@ Feature: Static Dataset Versions PUT API
             """
 
     Scenario: PUT Updating the first (canonical) topic on a published dataset returns a 400
-#        Given I have a static dataset with version:
-#            """
-#            {
-#                "dataset": {
-#                    "id": "update-published-topic-test",
-#                    "contacts": [
-#                      {
-#                        "email": "contact@ons.gov.uk",
-#                        "name": "Expert Statistical Team",
-#                        "telephone": "+44 1234 111111"
-#                      }
-#                    ],
-#                    "description": "This dataset is for testing",
-#                    "keywords": [
-#                      "dataset"
-#                    ],
-#                    "license": "Open Government Licence v3.0",
-#                    "next_release": "To be announced",
-#                    "title": "Static Dataset for Testing topic change",
-#                    "state": "associated",
-#                    "topics": [
-#                      "topic-1",
-#                      "topic-2"
-#                    ],
-#                    "type": "static",
-#                    "links": {
-#                        "editions": {
-#                            "href": "/datasets/update-published-topic-test/editions"
-#                        },
-#                        "self": {
-#                            "href": "/datasets/update-published-topic-test"
-#                        }
-#                    }
-#                },
-#                "version": {
-#                    "id": "static-dataset-topic-test",
-#                    "edition": "2026",
-#                    "edition_title": "2026 Edition",
-#                    "links": {
-#                        "dataset": {
-#                            "id": "update-published-topic-test"
-#                        },
-#                        "edition": {
-#                            "href": "/datasets/update-published-topic-test/editions/2026",
-#                            "id": "2026"
-#                        },
-#                        "self": {
-#                            "href": "/datasets/update-published-topic-test/editions/2026/versions/1"
-#                        }
-#                    },
-#                    "version": 1,
-#                    "release_date": "2025-01-01T09:00:00.000Z",
-#                    "state": "associated",
-#                    "type": "static",
-#                    "distributions": [
-#                        {
-#                            "title": "csv",
-#                            "format": "csv",
-#                            "media_type": "text/csv",
-#                            "download_url": "/uuid/filename_topic.csv",
-#                            "byte_size": 125000
-#                        }
-#                    ]
-#                }
-#            }
-#            """
-#        And private endpoints are enabled
-#        And I am an admin user
-#        When I PUT "/datasets/update-published-topic-test/editions/2026/versions/1/state"
-#            """
-#            {
-#                "state": "published"
-#            }
-#            """
-#        Then the HTTP status code should be "200"
-#        When I PUT "/datasets/update-published-topic-test"
-#            """
-#            {
-#                "id": "update-published-topic-test",
-#                "contacts": [
-#                      {
-#                        "email": "contact@ons.gov.uk",
-#                        "name": "Expert Statistical Team",
-#                        "telephone": "+44 1234 111111"
-#                      }
-#                    ],
-#                    "description": "This dataset is for testing",
-#                    "keywords": [
-#                      "dataset"
-#                    ],
-#                    "license": "Open Government Licence v3.0",
-#                    "next_release": "To be announced",
-#                    "title": "Static Dataset for Testing topic change",
-#                "title": "Static Dataset for Updates",
-#                "state": "published",
-#                "topics": [
-#                  "updated-topic-1",
-#                  "topic-2"
-#                ],
-#                "type": "static"
-#            }
-#            """
-#        Then the HTTP status code should be "400"
-#        And I should receive the following response:
-#              """
-#              canonical topic can't be changed once a series is published
-#              """
         Given I have these datasets:
             """
             [
@@ -993,7 +886,7 @@ Feature: Static Dataset Versions PUT API
                 "type": "static"
             }
             """
-        Then the HTTP status code should be "400"
+        Then the HTTP status code should be "409"
         And I should receive the following response:
               """
               canonical topic can't be changed once a series is published

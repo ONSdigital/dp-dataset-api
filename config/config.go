@@ -103,7 +103,7 @@ func Get() (*Configuration, error) {
 		DownloadServiceURL:             "http://localhost:23600",
 		ImportAPIURL:                   "http://localhost:21800",
 		WebsiteURL:                     "http://localhost:20000",
-		ZebedeeURL:                     "http://localhost:29500",
+		ZebedeeURL:                     "http://localhost:8082",
 		ServiceAuthToken:               "FD0108EA-825D-411C-9B1D-41EF7727F465",
 		DownloadServiceSecretKey:       "QB0108EZ-825D-412C-9B1D-41EF7747F462",
 		GracefulShutdownTimeout:        5 * time.Second,
