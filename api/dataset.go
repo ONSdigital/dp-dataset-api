@@ -20,11 +20,6 @@ import (
 )
 
 var (
-	// errors that should return a 204 status
-	datasetsNoContent = map[error]bool{
-		errs.ErrDeleteDatasetNotFound: true,
-	}
-
 	// errors that should return a 400 status
 	datasetsBadRequest = map[error]bool{
 		errs.ErrAddUpdateDatasetBadRequest: true,
@@ -705,8 +700,8 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 	err = func() error {
 		currentDataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 		if err == errs.ErrDatasetNotFound {
-			log.Info(ctx, "cannot delete dataset, it does not exist", logData)
-			return errs.ErrDeleteDatasetNotFound
+			log.Info(ctx, "cannot delete dataset that does not exist", logData)
+			return err
 		}
 		if err != nil {
 			log.Error(ctx, "failed to run query for existing dataset", err, logData)
@@ -828,8 +823,6 @@ func handleDatasetAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 	switch {
 	case datasetsForbidden[err]:
 		status = http.StatusForbidden
-	case datasetsNoContent[err]:
-		status = http.StatusNoContent
 	case datasetsBadRequest[err], strings.HasPrefix(err.Error(), "invalid fields:"):
 		status = http.StatusBadRequest
 	case datasetsConflict[err]:
