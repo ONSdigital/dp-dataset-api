@@ -71,7 +71,6 @@ func (smDS *StateMachineDatasetAPI) AmendVersion(ctx context.Context, vars map[s
 		edition:   vars["edition"],
 		version:   vars["version"],
 	}
-
 	if version.Type == models.Static.String() {
 		lockID, lockErr := smDS.DataStore.Backend.AcquireVersionsLock(ctx, version.ID)
 		if lockErr != nil {
@@ -101,6 +100,28 @@ func (smDS *StateMachineDatasetAPI) AmendVersion(ctx context.Context, vars map[s
 		return nil, err
 	}
 
+	if version.Type == models.Static.String() {
+		versionNumber, err := strconv.Atoi(versionDetails.version)
+		if err != nil {
+			log.Error(ctx, "amendVersion: failed to convert version to integer", err)
+			return nil, err
+		}
+		if versionUpdate.Edition != "" {
+			dbVersion, err := smDS.DataStore.Backend.GetVersionStatic(ctx, versionDetails.datasetID, versionUpdate.Edition, versionNumber, "")
+			if err != nil {
+				log.Error(ctx, "amendVersion: error getting version from store after transition", err)
+				return nil, err
+			}
+			versionUpdate.LastUpdated = dbVersion.LastUpdated
+		} else {
+			dbVersion, err := smDS.DataStore.Backend.GetVersionStatic(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
+			if err != nil {
+				log.Error(ctx, "amendVersion: error getting version from store after transition", err)
+				return nil, err
+			}
+			versionUpdate.LastUpdated = dbVersion.LastUpdated
+		}
+	}
 	return versionUpdate, nil
 }
 
@@ -453,6 +474,7 @@ func ApproveVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 	versionDetails VersionDetails,
 	hasDownloads string) error {
 	data := versionDetails.baseLogData()
+	// 4055 Is this logging statement correct? Should be "putVersion endpoint (approveVersion): beginning approve version"?
 	log.Info(ctx, "putVersion endpoint (associateVersion): beginning associate version", data)
 
 	errModel := models.ValidateVersion(versionUpdate)

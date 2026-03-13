@@ -384,7 +384,6 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		handleVersionAPIErr(ctx, err, w, data)
 		return
 	}
-	// Read body once and validate distributions before unmarshaling
 
 	identityType := log.USER
 	if authEntityData.IsServiceAuth {
@@ -392,6 +391,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	}
 	logAuthOption := log.Auth(identityType, authEntityData.EntityData.UserID)
 
+	// Read body once and validate distributions before unmarshaling
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Error(ctx, "failed to read request body", err, data)
@@ -480,7 +480,6 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var amendedVersion *models.Version
-
 	amendedVersion, err = api.smDatasetAPI.AmendVersion(r.Context(), vars, version)
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, data)

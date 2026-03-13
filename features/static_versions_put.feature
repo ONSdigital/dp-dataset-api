@@ -105,7 +105,7 @@ Feature: Static Dataset Versions PUT API
                 ],
                 "edition": "2025",
                 "id": "static-version-update",
-                "last_updated": "0001-01-01T00:00:00Z",
+                "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
                 "links": {
                     "dataset": {
                         "id": "static-dataset-update"
@@ -152,7 +152,7 @@ Feature: Static Dataset Versions PUT API
                 ],
                 "edition": "2025",
                 "id": "static-version-update",
-                "last_updated": "0001-01-01T00:00:00Z",
+                "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
                 "links": {
                     "dataset": {
                         "id": "static-dataset-update"
@@ -202,7 +202,7 @@ Feature: Static Dataset Versions PUT API
                 "edition": "2025",
                 "edition_title": "Updated 2025 Edition",
                 "id": "static-version-update",
-                "last_updated": "0001-01-01T00:00:00Z",
+                "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
                 "links": {
                     "dataset": {
                         "id": "static-dataset-update"
