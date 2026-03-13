@@ -78,6 +78,7 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I don't have viewer access to the dataset edition "([^"]*)"$`, c.viewerDoesNotHavePreviewAccessToDatasetEdition)
 	ctx.Step(`the total number of audit events should be (\d+)`, c.theTotalNumberOfAuditEventsShouldBe)
 	ctx.Step(`the number of events with action "([^"]*)" and resource "([^"]*)" should be (\d+)`, c.theNumberOfEventsWithActionAndResourceShouldBe)
+	ctx.Step(`I have realistic datasets`, c.iHaveRealisticDatasets)
 }
 
 func (c *DatasetComponent) viewerHasPreviewAccessToDataset(datasetID string) error {
@@ -865,6 +866,25 @@ func (c *DatasetComponent) theNumberOfEventsWithActionAndResourceShouldBe(action
 
 	if count != expectedCount {
 		return fmt.Errorf("expected %d events with action '%s' and resource '%s', but found %d", expectedCount, action, resource, count)
+	}
+	return nil
+}
+
+func (c *DatasetComponent) iHaveRealisticDatasets(datasetsJSON *godog.DocString) error {
+	var datasets []models.DatasetUpdate
+	err := json.Unmarshal([]byte(datasetsJSON.Content), &datasets)
+	if err != nil {
+		return err
+	}
+
+	for timeOffset := range datasets {
+		dataset := &datasets[timeOffset]
+		dataset.ID = dataset.Next.ID
+
+		datasetsCollection := c.MongoClient.ActualCollectionName(config.DatasetsCollection)
+		if err := c.putDocumentInDatabase(dataset, dataset.ID, datasetsCollection, timeOffset); err != nil {
+			return err
+		}
 	}
 	return nil
 }

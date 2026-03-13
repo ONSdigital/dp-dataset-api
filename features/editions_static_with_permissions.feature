@@ -1,16 +1,25 @@
 Feature: Dataset API - Static Editions Permissions
 
     Background:
-        Given I have these datasets:
+        Given I have realistic datasets:
             """
             [
-                {
-                    "id": "population-estimates",
-                    "title": "Static Dataset 3",
-                    "description": "Static Dataset 3 Description",
-                    "state": "published",
-                    "type": "static"
-                }
+              {
+                  "current": {
+                      "id": "population-estimates",
+                      "title": "Static Dataset 3",
+                      "description": "Static Dataset 3 Description",
+                      "state": "published",
+                      "type": "static"
+                  },
+                  "next": {
+                      "id": "population-estimates",
+                      "title": "Static Dataset 3",
+                      "description": "Static Dataset 3 Description",
+                      "state": "assosciated",
+                      "type": "static"
+                  }
+              }
             ]
             """
         And I have these static versions:

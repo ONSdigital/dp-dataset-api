@@ -1,20 +1,24 @@
 Feature: GET /datasets/{id} in publishing mode
 
     Background:
-        Given I have these datasets:
+        Given I have realistic datasets:
             """
             [
                 {
-                    "id": "unpublished-filterable-dataset",
-                    "state": "created",
-                    "title": "Unpublished Filterable Dataset",
-                    "type": "filterable"
+                    "next": {
+                        "id": "unpublished-filterable-dataset",
+                        "state": "created",
+                        "title": "Unpublished Filterable Dataset",
+                        "type": "filterable"
+                    }
                 },
                 {
-                    "id": "unpublished-static-dataset",
-                    "state": "created",
-                    "title": "Unpublished Static Dataset",
-                    "type": "static"
+                    "next":{
+                        "id": "unpublished-static-dataset",
+                        "state": "created",
+                        "title": "Unpublished Static Dataset",
+                        "type": "static"
+                    }
                 }
             ]
             """
@@ -27,13 +31,6 @@ Feature: GET /datasets/{id} in publishing mode
             """
             {
                 "id": "unpublished-filterable-dataset",
-                "current": {
-                    "id": "unpublished-filterable-dataset",
-                    "last_updated": "0001-01-01T00:00:00Z",
-                    "state": "created",
-                    "title": "Unpublished Filterable Dataset",
-                    "type": "filterable"
-                },
                 "next": {
                     "id": "unpublished-filterable-dataset",
                     "last_updated": "0001-01-01T00:00:00Z",
@@ -54,13 +51,6 @@ Feature: GET /datasets/{id} in publishing mode
             """
             {
                 "id": "unpublished-static-dataset",
-                "current": {
-                    "id": "unpublished-static-dataset",
-                    "last_updated": "0001-01-01T00:00:00Z",
-                    "state": "created",
-                    "title": "Unpublished Static Dataset",
-                    "type": "static"
-                },
                 "next": {
                     "id": "unpublished-static-dataset",
                     "last_updated": "0001-01-01T00:00:00Z",

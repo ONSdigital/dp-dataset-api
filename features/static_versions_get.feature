@@ -1,19 +1,22 @@
 Feature: Static versions GET /versions
 
     Background: We have static datasets, editions and versions for testing
-        Given I have these datasets:
+        Given I have realistic datasets:
             """
             [
                 {
-                    "id": "test-static",
-                    "state": "created",
-                    "type": "static",
-                    "links": {
-                        "latest_version": {
-                            "id": "1",
-                            "href": "/datasets/test-static/editions/test-edition-static/versions/1"
+                    "next": {
+                        "id": "test-static",
+                        "state": "created",
+                        "type": "static",
+                        "links": {
+                            "latest_version": {
+                                "id": "1",
+                                "href": "/datasets/test-static/editions/test-edition-static/versions/1"
+                            }
                         }
-                    }
+                    },
+                    "current": null
                 }
             ]
             """
@@ -109,7 +112,7 @@ Feature: Static versions GET /versions
                 }
             ]
             """
-    
+
     Scenario: GET /datasets/test-static/editions/test-edition-static-approved/versions in private mode returns all versions
         Given private endpoints are enabled
         And I am an admin user
@@ -156,7 +159,7 @@ Feature: Static versions GET /versions
                 "total_count": 1
             }
             """
-    
+
     Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} records audit event with authorised user
         Given private endpoints are enabled
         And I am a publisher user
@@ -169,3 +172,13 @@ Feature: Static versions GET /versions
         When I GET "/datasets/test-static/editions/test-edition-published/versions/1"
         Then the HTTP status code should be "200"
         And the total number of audit events should be 0
+
+    Scenario: Get dataset with created state returns 404 in web mode
+        When I GET "/datasets/test-static"
+        Then the HTTP status code should be "404"
+
+    Scenario: Get dataset with created state returns dataset in private mode
+        When private endpoints are enabled
+        And I am an admin user
+        When I GET "/datasets/test-static"
+        Then the HTTP status code should be "200"
