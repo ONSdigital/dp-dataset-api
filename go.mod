@@ -7,6 +7,9 @@ replace github.com/ONSdigital/dp-component-test => github.com/ONSdigital/dp-comp
 
 replace github.com/ONSdigital/dp-mongodb/v3 => /Users/francesmoore/src/github.com/ONSdigital/dp-mongodb
 
+replace github.com/ONSdigital/dp-api-clients-go/v2 => /Users/francesmoore/src/github.com/ONSdigital/dp-api-clients-go
+replace github.com/ONSdigital/dp-authorisation/v2 => /Users/francesmoore/src/github.com/ONSdigital/dp-authorisation
+
 require (
 	github.com/ONSdigital/dp-api-clients-go v1.43.0
 	github.com/ONSdigital/dp-api-clients-go/v2 v2.270.0
