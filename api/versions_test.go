@@ -4824,7 +4824,7 @@ func TestPutStateReturnsOk(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(mockedDataStore.GetVersionStaticCalls(), ShouldHaveLength, 3)
+		So(mockedDataStore.GetVersionStaticCalls(), ShouldHaveLength, 4)
 		So(mockedDataStore.AcquireVersionsLockCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.UnlockVersionsCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.UpdateVersionStaticCalls(), ShouldHaveLength, 1)
