@@ -79,7 +79,6 @@ Feature: Static Dataset Versions PUT API
             ]
             """
 
-# not failing
     Scenario: PUT updates static dataset version successfully for an admin user
         Given private endpoints are enabled
         And I am an admin user
@@ -174,7 +173,6 @@ Feature: Static Dataset Versions PUT API
         And the total number of audit events should be 1
         And the number of events with action "UPDATE" and resource "/datasets/static-dataset-update/editions/2025/versions/1" should be 1
 
-# not failing
     Scenario: PUT updates static dataset version with new data
         Given private endpoints are enabled
         And I am an admin user
@@ -226,7 +224,6 @@ Feature: Static Dataset Versions PUT API
         And the total number of audit events should be 1
         And the number of events with action "UPDATE" and resource "/datasets/static-dataset-update/editions/2025/versions/1" should be 1
 
-# not failing
     Scenario: PUT updates static dataset version distributions
         Given private endpoints are enabled
         And I am an admin user
@@ -256,7 +253,6 @@ Feature: Static Dataset Versions PUT API
         And the total number of audit events should be 1
         And the number of events with action "UPDATE" and resource "/datasets/static-dataset-update/editions/2025/versions/1" should be 1
 
-# failing
     Scenario: PUT updates static dataset version edition
         Given private endpoints are enabled
         And I am an admin user
@@ -516,7 +512,6 @@ Feature: Static Dataset Versions PUT API
             the edition already exists
             """
 
-# failing
     Scenario: PUT succeeds when updating edition-id to new edition for static dataset
         Given private endpoints are enabled
         And I am an admin user
@@ -595,7 +590,6 @@ Feature: Static Dataset Versions PUT API
             | http://localhost:23200/v1/datasets/static-dataset-published/editions               |
             | http://localhost:23200/v1/datasets/static-dataset-published/editions/2025/versions |
 
-# failing
     Scenario: PUT succeeds when updating edition ID to unique value within series
         Given private endpoints are enabled
         And I am an admin user
@@ -641,7 +635,6 @@ Feature: Static Dataset Versions PUT API
             the edition already exists
             """
 
-# failing
     Scenario: PUT succeeds when updating both edition ID and title to unique values within the series
         Given private endpoints are enabled
         And I am an admin user
@@ -689,7 +682,6 @@ Feature: Static Dataset Versions PUT API
             the edition-title already exists
             """
 
-# failing
     Scenario: PUT succeeds when distributions contain valid formats
         Given private endpoints are enabled
         And I am an admin user
