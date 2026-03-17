@@ -349,7 +349,7 @@ func TestAmendVersionStaticSuccess(t *testing.T) {
 		So(len(mockedDataStore.AcquireVersionsLockCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UnlockVersionsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsStaticCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetVersionStaticCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionStaticCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpdateVersionStaticCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
 	})
