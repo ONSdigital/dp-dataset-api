@@ -40,6 +40,7 @@ func TestSpec(t *testing.T) {
 				So(cfg.DownloadServiceSecretKey, ShouldEqual, "QB0108EZ-825D-412C-9B1D-41EF7747F462")
 				So(cfg.DownloadServiceURL, ShouldEqual, "http://localhost:23600")
 				So(cfg.ImportAPIURL, ShouldEqual, "http://localhost:21800")
+				So(cfg.TopicAPIURL, ShouldEqual, "http://localhost:25300")
 				So(cfg.WebsiteURL, ShouldEqual, "http://localhost:20000")
 				So(cfg.ZebedeeURL, ShouldEqual, "http://localhost:8082")
 				So(cfg.ServiceAuthToken, ShouldEqual, "FD0108EA-825D-411C-9B1D-41EF7727F465")
