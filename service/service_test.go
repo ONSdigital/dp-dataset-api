@@ -22,6 +22,8 @@ import (
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	kafka "github.com/ONSdigital/dp-kafka/v4"
 	"github.com/ONSdigital/dp-kafka/v4/kafkatest"
+	topicAPISDK "github.com/ONSdigital/dp-topic-api/sdk"
+	topicAPISDKMocks "github.com/ONSdigital/dp-topic-api/sdk/mocks"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -141,6 +143,10 @@ func TestRun(t *testing.T) {
 			return &cloudflareMocks.ClienterMock{}, nil
 		}
 
+		funcDoGetTopicAPIClientOk := func(context.Context, *config.Configuration) topicAPISDK.Clienter {
+			return &topicAPISDKMocks.ClienterMock{}
+		}
+
 		funcDoGetKafkaProducerOk := func(context.Context, *config.Configuration, string) (kafka.IProducer, error) {
 			return &kafkatest.IProducerMock{
 				ChannelsFunc: func() *kafka.ProducerChannels {
@@ -167,6 +173,7 @@ func TestRun(t *testing.T) {
 				So(svcList.Graph, ShouldBeFalse)
 				So(svcList.FilesAPIClient, ShouldBeFalse)
 				So(svcList.CloudflareClient, ShouldBeFalse)
+				So(svcList.TopicAPIClient, ShouldBeFalse)
 				So(svcList.KafkaProducer, ShouldBeFalse)
 				So(svcList.HealthCheck, ShouldBeFalse)
 			})
@@ -188,6 +195,7 @@ func TestRun(t *testing.T) {
 				So(svcList.Graph, ShouldBeFalse)
 				So(svcList.FilesAPIClient, ShouldBeFalse)
 				So(svcList.CloudflareClient, ShouldBeFalse)
+				So(svcList.TopicAPIClient, ShouldBeFalse)
 				So(svcList.KafkaProducer, ShouldBeFalse)
 				So(svcList.HealthCheck, ShouldBeFalse)
 			})
@@ -210,6 +218,7 @@ func TestRun(t *testing.T) {
 				So(svcList.Graph, ShouldBeTrue)
 				So(svcList.CloudflareClient, ShouldBeFalse)
 				So(svcList.FilesAPIClient, ShouldBeFalse)
+				So(svcList.TopicAPIClient, ShouldBeFalse)
 				So(svcList.KafkaProducer, ShouldBeFalse)
 				So(svcList.HealthCheck, ShouldBeFalse)
 			})
@@ -233,6 +242,7 @@ func TestRun(t *testing.T) {
 				So(svcList.Graph, ShouldBeTrue)
 				So(svcList.FilesAPIClient, ShouldBeTrue)
 				So(svcList.CloudflareClient, ShouldBeFalse)
+				So(svcList.TopicAPIClient, ShouldBeFalse)
 				So(svcList.KafkaProducer, ShouldBeFalse)
 				So(svcList.HealthCheck, ShouldBeFalse)
 			})
@@ -244,6 +254,7 @@ func TestRun(t *testing.T) {
 				DoGetGraphDBFunc:          funcDoGetGraphDBOk,
 				DoGetFilesAPIClientFunc:   funcDoGetFilesAPIClientOk,
 				DoGetCloudflareClientFunc: funcDoGetCloudflareClientOk,
+				DoGetTopicAPIClientFunc:   funcDoGetTopicAPIClientOk,
 				DoGetKafkaProducerFunc:    funcDoGetKafkaProducerErr,
 			}
 			svcErrors := make(chan error, 1)
@@ -257,6 +268,7 @@ func TestRun(t *testing.T) {
 				So(svcList.Graph, ShouldBeTrue)
 				So(svcList.FilesAPIClient, ShouldBeTrue)
 				So(svcList.CloudflareClient, ShouldBeTrue)
+				So(svcList.TopicAPIClient, ShouldBeTrue)
 				So(svcList.KafkaProducer, ShouldBeFalse)
 				So(svcList.HealthCheck, ShouldBeFalse)
 			})
@@ -268,6 +280,7 @@ func TestRun(t *testing.T) {
 				DoGetGraphDBFunc:                 funcDoGetGraphDBOk,
 				DoGetFilesAPIClientFunc:          funcDoGetFilesAPIClientOk,
 				DoGetCloudflareClientFunc:        funcDoGetCloudflareClientOk,
+				DoGetTopicAPIClientFunc:          funcDoGetTopicAPIClientOk,
 				DoGetKafkaProducerFunc:           funcDoGetKafkaProducerOk,
 				DoGetHealthCheckFunc:             funcDoGetHealthcheckErr,
 				DoGetAuthorisationMiddlewareFunc: funcDoGetAuthOk,
@@ -283,6 +296,7 @@ func TestRun(t *testing.T) {
 				So(svcList.Graph, ShouldBeTrue)
 				So(svcList.FilesAPIClient, ShouldBeTrue)
 				So(svcList.CloudflareClient, ShouldBeTrue)
+				So(svcList.TopicAPIClient, ShouldBeTrue)
 				So(svcList.KafkaProducer, ShouldBeTrue)
 				So(svcList.HealthCheck, ShouldBeFalse)
 			})
@@ -300,6 +314,7 @@ func TestRun(t *testing.T) {
 				DoGetGraphDBFunc:          funcDoGetGraphDBOk,
 				DoGetFilesAPIClientFunc:   funcDoGetFilesAPIClientOk,
 				DoGetCloudflareClientFunc: funcDoGetCloudflareClientOk,
+				DoGetTopicAPIClientFunc:   funcDoGetTopicAPIClientOk,
 				DoGetKafkaProducerFunc:    funcDoGetKafkaProducerOk,
 				DoGetHealthCheckFunc: func(*config.Configuration, string, string, string) (service.HealthChecker, error) {
 					return hcMockAddFail, nil
@@ -319,15 +334,17 @@ func TestRun(t *testing.T) {
 				So(svcList.KafkaProducer, ShouldBeTrue)
 				So(svcList.FilesAPIClient, ShouldBeTrue)
 				So(svcList.CloudflareClient, ShouldBeTrue)
+				So(svcList.TopicAPIClient, ShouldBeTrue)
 				So(svcList.HealthCheck, ShouldBeTrue)
-				So(len(hcMockAddFail.AddCheckCalls()), ShouldEqual, 7)
+				So(len(hcMockAddFail.AddCheckCalls()), ShouldEqual, 8)
 				So(hcMockAddFail.AddCheckCalls()[0].Name, ShouldResemble, "Zebedee")
 				So(hcMockAddFail.AddCheckCalls()[1].Name, ShouldResemble, "Kafka Generate Downloads Producer")
 				So(hcMockAddFail.AddCheckCalls()[2].Name, ShouldResemble, "Kafka Generate Cantabular Downloads Producer")
 				So(hcMockAddFail.AddCheckCalls()[3].Name, ShouldResemble, "Kafka Search Content Updated Producer")
 				So(hcMockAddFail.AddCheckCalls()[4].Name, ShouldResemble, "Files API Client")
-				So(hcMockAddFail.AddCheckCalls()[5].Name, ShouldResemble, "Graph DB")
-				So(hcMockAddFail.AddCheckCalls()[6].Name, ShouldResemble, "Mongo DB")
+				So(hcMockAddFail.AddCheckCalls()[5].Name, ShouldResemble, "Topic API Client")
+				So(hcMockAddFail.AddCheckCalls()[6].Name, ShouldResemble, "Graph DB")
+				So(hcMockAddFail.AddCheckCalls()[7].Name, ShouldResemble, "Mongo DB")
 			})
 		})
 
@@ -337,6 +354,7 @@ func TestRun(t *testing.T) {
 				DoGetGraphDBFunc:                 funcDoGetGraphDBOk,
 				DoGetFilesAPIClientFunc:          funcDoGetFilesAPIClientOk,
 				DoGetCloudflareClientFunc:        funcDoGetCloudflareClientOk,
+				DoGetTopicAPIClientFunc:          funcDoGetTopicAPIClientOk,
 				DoGetKafkaProducerFunc:           funcDoGetKafkaProducerOk,
 				DoGetHealthCheckFunc:             funcDoGetHealthcheckOk,
 				DoGetHTTPServerFunc:              funcDoGetHTTPServer,
@@ -354,19 +372,21 @@ func TestRun(t *testing.T) {
 				So(svcList.Graph, ShouldBeTrue)
 				So(svcList.FilesAPIClient, ShouldBeTrue)
 				So(svcList.CloudflareClient, ShouldBeTrue)
+				So(svcList.TopicAPIClient, ShouldBeTrue)
 				So(svcList.KafkaProducer, ShouldBeTrue)
 				So(svcList.HealthCheck, ShouldBeTrue)
 			})
 
 			Convey("The checkers are registered and the healthcheck and http server started", func() {
-				So(len(hcMock.AddCheckCalls()), ShouldEqual, 7)
+				So(len(hcMock.AddCheckCalls()), ShouldEqual, 8)
 				So(hcMock.AddCheckCalls()[0].Name, ShouldResemble, "Zebedee")
 				So(hcMock.AddCheckCalls()[1].Name, ShouldResemble, "Kafka Generate Downloads Producer")
 				So(hcMock.AddCheckCalls()[2].Name, ShouldResemble, "Kafka Generate Cantabular Downloads Producer")
 				So(hcMock.AddCheckCalls()[3].Name, ShouldResemble, "Kafka Search Content Updated Producer")
 				So(hcMock.AddCheckCalls()[4].Name, ShouldResemble, "Files API Client")
-				So(hcMock.AddCheckCalls()[5].Name, ShouldResemble, "Graph DB")
-				So(hcMock.AddCheckCalls()[6].Name, ShouldResemble, "Mongo DB")
+				So(hcMock.AddCheckCalls()[5].Name, ShouldResemble, "Topic API Client")
+				So(hcMock.AddCheckCalls()[6].Name, ShouldResemble, "Graph DB")
+				So(hcMock.AddCheckCalls()[7].Name, ShouldResemble, "Mongo DB")
 				So(len(initMock.DoGetHTTPServerCalls()), ShouldEqual, 1)
 				So(initMock.DoGetHTTPServerCalls()[0].BindAddr, ShouldEqual, ":22000")
 				So(len(hcMock.StartCalls()), ShouldEqual, 1)
@@ -397,6 +417,7 @@ func TestRun(t *testing.T) {
 				So(svcList.Graph, ShouldBeFalse)
 				So(svcList.FilesAPIClient, ShouldBeFalse)
 				So(svcList.CloudflareClient, ShouldBeTrue)
+				So(svcList.TopicAPIClient, ShouldBeFalse)
 				So(svcList.KafkaProducer, ShouldBeFalse)
 				So(svcList.HealthCheck, ShouldBeTrue)
 			})
@@ -418,6 +439,7 @@ func TestRun(t *testing.T) {
 				DoGetGraphDBFunc:                 funcDoGetGraphDBOk,
 				DoGetFilesAPIClientFunc:          funcDoGetFilesAPIClientOk,
 				DoGetCloudflareClientFunc:        funcDoGetCloudflareClientOk,
+				DoGetTopicAPIClientFunc:          funcDoGetTopicAPIClientOk,
 				DoGetKafkaProducerFunc:           funcDoGetKafkaProducerOk,
 				DoGetHealthCheckFunc:             funcDoGetHealthcheckOk,
 				DoGetHTTPServerFunc:              funcDoGetFailingHTTPServer,
@@ -519,6 +541,7 @@ func TestClose(t *testing.T) {
 			HealthCheck:    true,
 			MongoDB:        true,
 			FilesAPIClient: true,
+			TopicAPIClient: true,
 			Init:           nil,
 		}
 

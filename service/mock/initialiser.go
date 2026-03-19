@@ -12,6 +12,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	kafka "github.com/ONSdigital/dp-kafka/v4"
+	topicAPISDK "github.com/ONSdigital/dp-topic-api/sdk"
 	"net/http"
 	"sync"
 )
@@ -50,6 +51,9 @@ var _ service.Initialiser = &InitialiserMock{}
 //			DoGetMongoDBFunc: func(ctx context.Context, cfg config.MongoConfig) (store.MongoDB, error) {
 //				panic("mock out the DoGetMongoDB method")
 //			},
+//			DoGetTopicAPIClientFunc: func(ctx context.Context, cfg *config.Configuration) topicAPISDK.Clienter {
+//				panic("mock out the DoGetTopicAPIClient method")
+//			},
 //		}
 //
 //		// use mockedInitialiser in code that requires service.Initialiser
@@ -80,6 +84,9 @@ type InitialiserMock struct {
 
 	// DoGetMongoDBFunc mocks the DoGetMongoDB method.
 	DoGetMongoDBFunc func(ctx context.Context, cfg config.MongoConfig) (store.MongoDB, error)
+
+	// DoGetTopicAPIClientFunc mocks the DoGetTopicAPIClient method.
+	DoGetTopicAPIClientFunc func(ctx context.Context, cfg *config.Configuration) topicAPISDK.Clienter
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -143,6 +150,13 @@ type InitialiserMock struct {
 			// Cfg is the cfg argument value.
 			Cfg config.MongoConfig
 		}
+		// DoGetTopicAPIClient holds details about calls to the DoGetTopicAPIClient method.
+		DoGetTopicAPIClient []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Cfg is the cfg argument value.
+			Cfg *config.Configuration
+		}
 	}
 	lockDoGetAuthorisationMiddleware sync.RWMutex
 	lockDoGetCloudflareClient        sync.RWMutex
@@ -152,6 +166,7 @@ type InitialiserMock struct {
 	lockDoGetHealthCheck             sync.RWMutex
 	lockDoGetKafkaProducer           sync.RWMutex
 	lockDoGetMongoDB                 sync.RWMutex
+	lockDoGetTopicAPIClient          sync.RWMutex
 }
 
 // DoGetAuthorisationMiddleware calls DoGetAuthorisationMiddlewareFunc.
@@ -447,5 +462,41 @@ func (mock *InitialiserMock) DoGetMongoDBCalls() []struct {
 	mock.lockDoGetMongoDB.RLock()
 	calls = mock.calls.DoGetMongoDB
 	mock.lockDoGetMongoDB.RUnlock()
+	return calls
+}
+
+// DoGetTopicAPIClient calls DoGetTopicAPIClientFunc.
+func (mock *InitialiserMock) DoGetTopicAPIClient(ctx context.Context, cfg *config.Configuration) topicAPISDK.Clienter {
+	if mock.DoGetTopicAPIClientFunc == nil {
+		panic("InitialiserMock.DoGetTopicAPIClientFunc: method is nil but Initialiser.DoGetTopicAPIClient was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+		Cfg *config.Configuration
+	}{
+		Ctx: ctx,
+		Cfg: cfg,
+	}
+	mock.lockDoGetTopicAPIClient.Lock()
+	mock.calls.DoGetTopicAPIClient = append(mock.calls.DoGetTopicAPIClient, callInfo)
+	mock.lockDoGetTopicAPIClient.Unlock()
+	return mock.DoGetTopicAPIClientFunc(ctx, cfg)
+}
+
+// DoGetTopicAPIClientCalls gets all the calls that were made to DoGetTopicAPIClient.
+// Check the length with:
+//
+//	len(mockedInitialiser.DoGetTopicAPIClientCalls())
+func (mock *InitialiserMock) DoGetTopicAPIClientCalls() []struct {
+	Ctx context.Context
+	Cfg *config.Configuration
+} {
+	var calls []struct {
+		Ctx context.Context
+		Cfg *config.Configuration
+	}
+	mock.lockDoGetTopicAPIClient.RLock()
+	calls = mock.calls.DoGetTopicAPIClient
+	mock.lockDoGetTopicAPIClient.RUnlock()
 	return calls
 }
