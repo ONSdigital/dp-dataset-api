@@ -20,6 +20,7 @@ import (
 	dpresponse "github.com/ONSdigital/dp-net/v3/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v3/http"
 	"github.com/ONSdigital/dp-net/v3/links"
+	topicAPISDK "github.com/ONSdigital/dp-topic-api/sdk"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
@@ -1036,10 +1037,30 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 
 	// Purge Cloudflare cache if enabled and version is being published
 	if api.cloudflareEnabled && stateUpdate.State == models.PublishedState {
-		prefixes := utils.GeneratePurgePrefixes(api.urlBuilder.GetWebsiteURL().String(), api.urlBuilder.GetAPIRouterPublicURL().String(), datasetID, edition, version)
+		// dataset needed in order to get canonical topic ID
+		dataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
+		if err != nil {
+			log.Error(ctx, "putState endpoint: failed to get dataset", err, logData)
+			handleVersionAPIErr(ctx, err, w, logData)
+			return
+		}
+
+		topicSDKHeaders := topicAPISDK.Headers{
+			ServiceAuthToken: fetchAccessTokenFromHeader(r),
+		}
+
+		// Retrieve canonical topic from Topic API in order to get topic slug
+		topic, err := api.topicAPIClient.GetTopicPrivate(ctx, topicSDKHeaders, dataset.Next.Topics[0])
+		if err != nil {
+			log.Error(ctx, "putState endpoint: failed to get topic from Topic API", err, logData)
+			handleVersionAPIErr(ctx, err, w, logData)
+			return
+		}
+
+		prefixes := utils.GeneratePurgePrefixes(api.urlBuilder.GetWebsiteURL().String(), api.urlBuilder.GetAPIRouterPublicURL().String(), topic.Next.Slug, datasetID, edition, version)
 		logData["purge_prefixes"] = prefixes
 
-		err := api.cloudflareClient.PurgeByPrefixes(ctx, prefixes)
+		err = api.cloudflareClient.PurgeByPrefixes(ctx, prefixes)
 		if err != nil {
 			log.Error(ctx, "putState endpoint: failed to purge cache by prefixes", err, logData)
 		} else {

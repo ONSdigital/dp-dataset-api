@@ -26,6 +26,10 @@ import (
 	filesAPIModels "github.com/ONSdigital/dp-files-api/files"
 	filesAPIErrors "github.com/ONSdigital/dp-files-api/store"
 	permissionsAPISDK "github.com/ONSdigital/dp-permissions-api/sdk"
+	topicAPIModels "github.com/ONSdigital/dp-topic-api/models"
+	topicAPISDK "github.com/ONSdigital/dp-topic-api/sdk"
+	topicAPISDKErrors "github.com/ONSdigital/dp-topic-api/sdk/errors"
+	topicAPISDKMocks "github.com/ONSdigital/dp-topic-api/sdk/mocks"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -4820,7 +4824,19 @@ func TestPutStateReturnsOk(t *testing.T) {
 			},
 		}
 
+		topicAPIMock := &topicAPISDKMocks.ClienterMock{
+			GetTopicPrivateFunc: func(ctx context.Context, reqHeaders topicAPISDK.Headers, id string) (*topicAPIModels.TopicResponse, topicAPISDKErrors.Error) {
+				return &topicAPIModels.TopicResponse{
+					Next: &topicAPIModels.Topic{
+						ID:   id,
+						Slug: "economy",
+					},
+				}, nil
+			},
+		}
+
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, searchContentUpdated, cloudflareMock, auditServiceMock)
+		api.topicAPIClient = topicAPIMock
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -4829,20 +4845,21 @@ func TestPutStateReturnsOk(t *testing.T) {
 		So(mockedDataStore.UnlockVersionsCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.UpdateVersionStaticCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.GetDatasetTypeCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 2)
 		So(mockedDataStore.UpsertVersionStaticCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.CheckEditionExistsStaticCalls(), ShouldHaveLength, 1)
 		So(len(scuProducerMock.OutputCalls()), ShouldEqual, 1)
+		So(topicAPIMock.GetTopicPrivateCalls(), ShouldHaveLength, 1)
 		So(cloudflareMock.PurgeByPrefixesCalls(), ShouldHaveLength, 1)
 		So(auditServiceMock.RecordVersionAuditEventCalls(), ShouldHaveLength, 1)
 		So(auditServiceMock.RecordVersionAuditEventCalls()[0].Resource, ShouldEqual, "/datasets/test-static-dataset/editions/test-edition-1/versions/1/state")
 
 		Convey("And the correct URL's should have been purged", func() {
 			expectedPrefixes := []string{
-				"http://localhost:20000/datasets/test-static-dataset",
-				"http://localhost:20000/datasets/test-static-dataset/editions",
-				"http://localhost:20000/datasets/test-static-dataset/editions/test-edition-1/versions",
+				"http://localhost:20000/economy/datasets/test-static-dataset",
+				"http://localhost:20000/economy/datasets/test-static-dataset/editions",
+				"http://localhost:20000/economy/datasets/test-static-dataset/editions/test-edition-1/versions",
 				"http://localhost:23200/v1/datasets/test-static-dataset",
 				"http://localhost:23200/v1/datasets/test-static-dataset/editions",
 				"http://localhost:23200/v1/datasets/test-static-dataset/editions/test-edition-1/versions",
