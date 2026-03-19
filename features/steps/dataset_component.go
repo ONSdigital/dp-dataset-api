@@ -3,6 +3,7 @@ package steps
 import (
 	"context"
 	"crypto/rsa"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -28,6 +29,10 @@ import (
 	kafka "github.com/ONSdigital/dp-kafka/v4"
 	"github.com/ONSdigital/dp-kafka/v4/kafkatest"
 	mongodriver "github.com/ONSdigital/dp-mongodb/v3/mongodb"
+	topicAPIModels "github.com/ONSdigital/dp-topic-api/models"
+	topicAPISDK "github.com/ONSdigital/dp-topic-api/sdk"
+	topicAPISDKErrors "github.com/ONSdigital/dp-topic-api/sdk/errors"
+	topicAPISDKMocks "github.com/ONSdigital/dp-topic-api/sdk/mocks"
 	"github.com/ONSdigital/log.go/v2/log"
 )
 
@@ -295,12 +300,36 @@ func (c *DatasetComponent) DoGetCloudflareClientOk(ctx context.Context, cloudfla
 	return cloudflareClient, nil
 }
 
+func (c *DatasetComponent) DoGetTopicAPIClientOk(ctx context.Context, cfg *config.Configuration) topicAPISDK.Clienter {
+	return &topicAPISDKMocks.ClienterMock{
+		GetTopicPrivateFunc: func(ctx context.Context, reqHeaders topicAPISDK.Headers, id string) (*topicAPIModels.TopicResponse, topicAPISDKErrors.Error) {
+			switch id {
+			case "economy-topic-id":
+				return &topicAPIModels.TopicResponse{
+					Next: &topicAPIModels.Topic{
+						Slug: "economy",
+					},
+				}, nil
+			case "businessindustryandtrade-topic-id":
+				return &topicAPIModels.TopicResponse{
+					Next: &topicAPIModels.Topic{
+						Slug: "businessindustryandtrade",
+					},
+				}, nil
+			default:
+				return nil, topicAPISDKErrors.StatusError{Code: http.StatusInternalServerError, Err: errors.New("topicID does not match any known topics")}
+			}
+		},
+	}
+}
+
 func (c *DatasetComponent) setInitialiserMock() {
 	c.initialiser = &serviceMock.InitialiserMock{
 		DoGetMongoDBFunc:                 c.DoGetMongoDB,
 		DoGetGraphDBFunc:                 c.DoGetGraphDBOk,
 		DoGetFilesAPIClientFunc:          c.DoGetFilesAPIClientOk,
 		DoGetCloudflareClientFunc:        c.DoGetCloudflareClientOk,
+		DoGetTopicAPIClientFunc:          c.DoGetTopicAPIClientOk,
 		DoGetKafkaProducerFunc:           c.DoGetMockedKafkaProducerOk,
 		DoGetHealthCheckFunc:             c.DoGetHealthcheckOk,
 		DoGetHTTPServerFunc:              c.DoGetHTTPServer,
@@ -313,6 +342,7 @@ func (c *DatasetComponent) setInitialiserRealKafka() {
 		DoGetGraphDBFunc:                 c.DoGetGraphDBOk,
 		DoGetFilesAPIClientFunc:          c.DoGetFilesAPIClientOk,
 		DoGetCloudflareClientFunc:        c.DoGetCloudflareClientOk,
+		DoGetTopicAPIClientFunc:          c.DoGetTopicAPIClientOk,
 		DoGetKafkaProducerFunc:           c.DoGetKafkaProducer,
 		DoGetHealthCheckFunc:             c.DoGetHealthcheckOk,
 		DoGetHTTPServerFunc:              c.DoGetHTTPServer,
