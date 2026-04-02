@@ -12,7 +12,6 @@ services:
       - -coverpkg=github.com/ONSdigital/dp-dataset-api/...
       - -component
     volumes:
-      - /Users/braceh/dis_projects/dp-component-test:/dp-component-test
       - ../../:/dp-dataset-api
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
