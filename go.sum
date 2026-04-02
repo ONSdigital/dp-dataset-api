@@ -52,6 +52,8 @@ github.com/ONSdigital/dp-permissions-api v1.10.1 h1:dOyPtS94CpBgS0Y1oZJy84UcKZOH
 github.com/ONSdigital/dp-permissions-api v1.10.1/go.mod h1:436ej+daY+8+hNCReDvCIsI0iNRWKU/UZsxC09CRMNA=
 github.com/ONSdigital/dp-s3/v3 v3.3.0 h1:l5QrJ4lFHMfhHmk0Cox+0xSNQ6RhkCHJ6ikqq5XNLi4=
 github.com/ONSdigital/dp-s3/v3 v3.3.0/go.mod h1:KT4ZL+3p3RDYv4zfgAKXb4ofPey2eDUFZKk0E/c/jr4=
+github.com/ONSdigital/dp-topic-api v1.3.1 h1:rnYeiZPRM7vrA1k75OCw4a7ZGAfsM9gbqew+/eJlb88=
+github.com/ONSdigital/dp-topic-api v1.3.1/go.mod h1:5mUuCGbkfpTFpTY2Nt1PeJ4CGvvPzS5A74/3kN34A1w=
 github.com/ONSdigital/go-ns v0.0.0-20191104121206-f144c4ec2e58/go.mod h1:iWos35il+NjbvDEqwtB736pyHru0MPFE/LqcwkV1wDc=
 github.com/ONSdigital/golang-neo4j-bolt-driver v0.0.0-20241121114036-9f4b82bb9d37 h1:AAp2YSXveTMb6iqi7qd88D0iCMbHbnWMVgMGWrDYyaU=
 github.com/ONSdigital/golang-neo4j-bolt-driver v0.0.0-20241121114036-9f4b82bb9d37/go.mod h1:75Sxr59AMz2RiPskqSymLFxdeaIEhnkNaJE5lonMS3M=
@@ -202,8 +204,9 @@ github.com/go-playground/universal-translator v0.18.1/go.mod h1:xekY+UJKNuX9WP91
 github.com/go-playground/validator v9.31.0+incompatible h1:UA72EPEogEnq76ehGdEDp4Mit+3FDh548oRqwVgNsHA=
 github.com/go-playground/validator v9.31.0+incompatible/go.mod h1:yrEkQXlcI+PugkyDjY2bRrL/UBU4f3rvrgkN3V8JEig=
 github.com/go-stack/stack v1.8.0/go.mod h1:v0f6uXyyMGvRgIKkXu+yp6POWl0qKG85gN/melR3HDY=
-github.com/go-test/deep v1.0.1 h1:UQhStjbkDClarlmv0am7OXXO4/GaPdCGiUiMTvi28sg=
 github.com/go-test/deep v1.0.1/go.mod h1:wGDj63lr65AM2AQyKZd/NYHGb0R+1RLqB8NKt3aSFNA=
+github.com/go-test/deep v1.1.0 h1:WOcxcdHcvdgThNXjw0t76K42FXTU7HpNQWHpA2HHNlg=
+github.com/go-test/deep v1.1.0/go.mod h1:5C2ZWiW0ErCdrYzpqxLbTX7MG14M9iiw8DgHncVwcsE=
 github.com/gobwas/httphead v0.1.0 h1:exrUm0f4YX0L7EBwZHuCF4GDp8aJfVeBrlLQrs6NqWU=
 github.com/gobwas/httphead v0.1.0/go.mod h1:O/RXo79gxV8G+RqlR/otEwx4Q36zl9rqC5u12GKvMCM=
 github.com/gobwas/pool v0.2.1 h1:xfeeEhW7pwmX8nuLVlqbzVc7udMDrwetjEv+TZIz1og=

@@ -25,6 +25,7 @@ import (
 	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	kafka "github.com/ONSdigital/dp-kafka/v4"
 	dphandlers "github.com/ONSdigital/dp-net/v3/handlers"
+	topicAPISDK "github.com/ONSdigital/dp-topic-api/sdk"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
@@ -55,6 +56,7 @@ type Service struct {
 	cloudflareClient                    cloudflare.Clienter
 	identityClient                      *clientsidentity.Client
 	filesAPIClient                      filesAPISDK.Clienter
+	topicAPIClient                      topicAPISDK.Clienter
 	server                              HTTPServer
 	healthCheck                         HealthChecker
 	api                                 *api.DatasetAPI
@@ -224,6 +226,10 @@ func (svc *Service) SetFilesAPIClient(filesAPIClient filesAPISDK.Clienter) {
 }
 
 // Run the service
+//
+// TODO: refactor this function to reduce cyclomatic complexity.
+//
+//nolint:gocyclo // cyclomatic complexity > 20, acceptable as this function initialises all the dependencies and starts the service.
 func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version string, svcErrors chan error) (err error) {
 	// Copilot used to move initMongoDB and initGraphDB functions out of Run
 	if err := svc.initMongoDB(ctx); err != nil {
@@ -241,6 +247,8 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	if err := svc.initCloudflareClient(ctx); err != nil {
 		return err
 	}
+
+	svc.initTopicAPIClient(ctx)
 
 	ds := store.DataStore{Backend: DatsetAPIStore{svc.mongoDB, svc.graphDB}}
 
@@ -370,6 +378,12 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		log.Info(ctx, "files API client set on dataset API")
 	}
 
+	// Set the topic API client on the DatasetAPI after initialisation
+	if svc.config.EnablePrivateEndpoints && svc.topicAPIClient != nil {
+		svc.api.SetTopicAPIClient(svc.topicAPIClient)
+		log.Info(ctx, "topic API client set on dataset API")
+	}
+
 	svc.healthCheck.Start(ctx)
 
 	// Run the http server in a new go-routine
@@ -421,6 +435,10 @@ func (svc *Service) initCloudflareClient(ctx context.Context) error {
 	var err error
 	svc.cloudflareClient, err = svc.serviceList.GetCloudflareClient(ctx, svc.config)
 	return err
+}
+
+func (svc *Service) initTopicAPIClient(ctx context.Context) {
+	svc.topicAPIClient = svc.serviceList.GetTopicAPIClient(ctx, svc.config)
 }
 
 func createURLBuilder(cfg *config.Configuration) (*url.Builder, error) {
@@ -591,6 +609,11 @@ func (svc *Service) registerCheckers(ctx context.Context) (err error) {
 		if err = svc.healthCheck.AddCheck("Files API Client", svc.filesAPIClient.Checker); err != nil {
 			hasErrors = true
 			log.Error(ctx, "error adding check for files api client", err)
+		}
+
+		if err = svc.healthCheck.AddCheck("Topic API Client", svc.topicAPIClient.Checker); err != nil {
+			hasErrors = true
+			log.Error(ctx, "error adding check for topic api client", err)
 		}
 
 		// If running Catabular Locally then don't do health checks against GraphDB

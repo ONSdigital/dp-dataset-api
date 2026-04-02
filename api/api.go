@@ -23,6 +23,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/url"
 	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	dprequest "github.com/ONSdigital/dp-net/v3/request"
+	topicAPISDK "github.com/ONSdigital/dp-topic-api/sdk"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 
@@ -95,6 +96,7 @@ type DatasetAPI struct {
 	searchContentUpdatedProducer *SearchContentUpdatedProducer
 	cloudflareClient             cloudflare.Clienter
 	cloudflareEnabled            bool
+	topicAPIClient               topicAPISDK.Clienter
 }
 
 // Setup creates a new Dataset API instance and register the API routes based on the application configuration.
@@ -168,6 +170,11 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 func (api *DatasetAPI) SetFilesAPIClient(client filesAPISDK.Clienter, authToken string) {
 	api.filesAPIClient = client
 	api.authToken = authToken
+}
+
+// SetTopicAPIClient sets the topic API client for the API
+func (api *DatasetAPI) SetTopicAPIClient(client topicAPISDK.Clienter) {
+	api.topicAPIClient = client
 }
 
 // enablePublicEndpoints register only the public GET endpoints.

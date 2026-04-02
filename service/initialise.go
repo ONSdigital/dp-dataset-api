@@ -14,6 +14,7 @@ import (
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	kafka "github.com/ONSdigital/dp-kafka/v4"
 	dphttp "github.com/ONSdigital/dp-net/v3/http"
+	topicAPISDK "github.com/ONSdigital/dp-topic-api/sdk"
 	"github.com/ONSdigital/log.go/v2/log"
 )
 
@@ -26,6 +27,7 @@ type ExternalServiceList struct {
 	MongoDB                 bool
 	FilesAPIClient          bool
 	CloudflareClient        bool
+	TopicAPIClient          bool
 	Init                    Initialiser
 }
 
@@ -116,6 +118,17 @@ func (e *ExternalServiceList) GetCloudflareClient(ctx context.Context, cfg *conf
 	return nil, nil
 }
 
+// GetTopicAPIClient returns a topic API client
+func (e *ExternalServiceList) GetTopicAPIClient(ctx context.Context, cfg *config.Configuration) topicAPISDK.Clienter {
+	if cfg.EnablePrivateEndpoints {
+		topicAPIClient := e.Init.DoGetTopicAPIClient(ctx, cfg)
+		e.TopicAPIClient = true
+		log.Info(ctx, "topic API client created successfully", log.Data{"url": cfg.TopicAPIURL})
+		return topicAPIClient
+	}
+	return nil
+}
+
 // DoGetHTTPServer creates an HTTP Server with the provided bind address and router
 func (e *Init) DoGetHTTPServer(bindAddr string, router http.Handler) HTTPServer {
 	s := dphttp.NewServer(bindAddr, router)
@@ -197,4 +210,9 @@ func (e *Init) DoGetFilesAPIClient(ctx context.Context, cfg *config.Configuratio
 // DoGetCloudflareClient returns a cloudflare client
 func (e *Init) DoGetCloudflareClient(ctx context.Context, cloudflareConfig *cloudflare.Config) (cloudflare.Clienter, error) {
 	return cloudflare.New(cloudflareConfig)
+}
+
+// DoGetTopicAPIClient returns a topic API client
+func (e *Init) DoGetTopicAPIClient(ctx context.Context, cfg *config.Configuration) topicAPISDK.Clienter {
+	return topicAPISDK.New(cfg.TopicAPIURL)
 }

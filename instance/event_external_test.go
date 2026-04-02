@@ -137,8 +137,8 @@ func TestAddEventReturnsOk(t *testing.T) {
 			w := httptest.NewRecorder()
 			datasetAPI.Router.ServeHTTP(w, r)
 
-			Convey("Then the response status is 200 OK, with the expected ETag header", func() {
-				So(w.Code, ShouldEqual, http.StatusOK)
+			Convey("Then the response status is 201 Created, with the expected ETag header", func() {
+				So(w.Code, ShouldEqual, http.StatusCreated)
 				So(w.Header().Get("ETag"), ShouldEqual, testETag)
 			})
 
@@ -165,8 +165,8 @@ func TestAddEventReturnsOk(t *testing.T) {
 			w := httptest.NewRecorder()
 			datasetAPI.Router.ServeHTTP(w, r)
 
-			Convey("Then the response status is 200 OK, with the expected ETag header", func() {
-				So(w.Code, ShouldEqual, http.StatusOK)
+			Convey("Then the response status is 201 Created, with the expected ETag header", func() {
+				So(w.Code, ShouldEqual, http.StatusCreated)
 				So(w.Header().Get("ETag"), ShouldEqual, testETag)
 			})
 

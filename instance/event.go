@@ -74,4 +74,5 @@ func (s *Store) AddEvent(w http.ResponseWriter, r *http.Request) {
 
 	log.Info(ctx, "add instance event: request successful", data)
 	dpresponse.SetETag(w, newETag)
+	w.WriteHeader(http.StatusCreated)
 }
