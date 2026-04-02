@@ -155,7 +155,7 @@ Feature: Dataset API - Static Editions Permissions
 
     Scenario: GET /datasets/{id}/editions returns 200 for an authorised viewer
         Given private endpoints are enabled
-        And I am a viewer user with permission
+        And I am a JWT user with email "viewer1@ons.gov.uk" and group "role-viewer-allowed"
         And I have viewer access to the dataset "population-estimates"
         When I GET "/datasets/population-estimates/editions"
         Then I should receive the following JSON response with status "200":
@@ -245,14 +245,14 @@ Feature: Dataset API - Static Editions Permissions
 
     Scenario: GET /datasets/{id}/editions returns 403 for an unauthorised viewer
         Given private endpoints are enabled
-        And I am a viewer user with permission
+        And I am a JWT user with email "viewer1@ons.gov.uk" and group "role-viewer-allowed"
         And I don't have viewer access to the dataset "population-estimates"
         When I GET "/datasets/population-estimates/editions"
         Then the HTTP status code should be "403"
 
     Scenario: GET /datasets/{id}/editions/{edition} returns 200 for an authorised viewer
         Given private endpoints are enabled
-        And I am a viewer user with permission
+        And I am a JWT user with email "viewer1@ons.gov.uk" and group "role-viewer-allowed"
         And I have viewer access to the dataset "population-estimates/February"
         When I GET "/datasets/population-estimates/editions/February"
         Then I should receive the following JSON response with status "200":
@@ -286,7 +286,7 @@ Feature: Dataset API - Static Editions Permissions
 
     Scenario: GET /datasets/{id}/editions/{edition} returns 403 for an unauthorised viewer
         Given private endpoints are enabled
-        And I am a viewer user without permission
+        And I am a JWT user with email "viewer2@ons.gov.uk" and group "role-viewer-denied"
         And I don't have viewer access to the dataset "population-estimates/January"
         When I GET "/datasets/population-estimates/editions/January"
         Then the HTTP status code should be "403"

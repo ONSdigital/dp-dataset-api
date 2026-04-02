@@ -57,7 +57,7 @@ Feature: Dataset API - Static Dataset Versions Permissions
 
     Scenario: GET /datasets/{id}/editions/{edition}/versions returns 200 for an authorised viewer
         Given private endpoints are enabled
-        And I am a viewer user with permission
+        And I am a JWT user with email "viewer1@ons.gov.uk" and group "role-viewer-allowed"
         And I have viewer access to the dataset edition "test-dataset/2021"
         When I GET "/datasets/test-dataset/editions/2021/versions"
         Then I should receive the following JSON response with status "200":
@@ -116,14 +116,14 @@ Feature: Dataset API - Static Dataset Versions Permissions
 
     Scenario: GET /datasets/{id}/editions/{edition}/versions returns 403 for an unauthorised viewer
         Given private endpoints are enabled
-        And I am a viewer user with permission
+        And I am a JWT user with email "viewer1@ons.gov.uk" and group "role-viewer-allowed"
         And I don't have viewer access to the dataset edition "test-dataset/2021"
         When I GET "/datasets/test-dataset/editions/2021/versions"
         Then the HTTP status code should be "403"
 
     Scenario: GET /datasets/{id}/editions/{edition}/versions/2 returns 200 for an authorised viewer
         Given private endpoints are enabled
-        And I am a viewer user with permission
+        And I am a JWT user with email "viewer1@ons.gov.uk" and group "role-viewer-allowed"
         And I have viewer access to the dataset edition "test-dataset/2021"
         When I GET "/datasets/test-dataset/editions/2021/versions/2"
         Then I should receive the following JSON response with status "200":
@@ -152,7 +152,7 @@ Feature: Dataset API - Static Dataset Versions Permissions
 
 Scenario: GET /datasets/{id}/editions/{edition}/versions/1 returns 403 for an unauthorised viewer
     Given private endpoints are enabled
-    And I am a viewer user with permission
+    And I am a JWT user with email "viewer1@ons.gov.uk" and group "role-viewer-allowed"
     And I don't have viewer access to the dataset edition "test-dataset/2021"
     When I GET "/datasets/test-dataset/editions/2021/versions/1"
     Then the HTTP status code should be "403"

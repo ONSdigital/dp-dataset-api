@@ -44,7 +44,7 @@ Feature: GET /datasets/{id} in publishing mode
         And the number of events with action "READ" and resource "/datasets/unpublished-filterable-dataset" should be 1
     
     Scenario: Viewer with permission to read the dataset receives 200 (static type)
-        Given I am a viewer user with permission
+        Given I am a JWT user with email "viewer1@ons.gov.uk" and group "role-viewer-allowed"
         And I have viewer access to the dataset "unpublished-static-dataset"
         When I GET "/datasets/unpublished-static-dataset"
         Then I should receive the following JSON response with status "200":
@@ -64,7 +64,7 @@ Feature: GET /datasets/{id} in publishing mode
         And the number of events with action "READ" and resource "/datasets/unpublished-static-dataset" should be 1
 
     Scenario: Viewer with no permission to read the dataset receives 403 (static type)
-        Given I am a viewer user without permission
+        Given I am a JWT user with email "viewer2@ons.gov.uk" and group "role-viewer-denied"
         When I GET "/datasets/unpublished-static-dataset"
         Then the HTTP status code should be "403"
     

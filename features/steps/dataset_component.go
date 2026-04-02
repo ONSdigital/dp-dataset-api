@@ -2,7 +2,6 @@ package steps
 
 import (
 	"context"
-	"crypto/rsa"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -50,8 +49,6 @@ type DatasetComponent struct {
 	producer                kafka.IProducer
 	initialiser             service.Initialiser
 	AuthorisationMiddleware authorisation.Middleware
-	viewerPrivKey           *rsa.PrivateKey
-	viewerKID               string
 	fakePermissionsAPI      *authorisationtest.FakePermissionsAPI
 }
 
@@ -117,6 +114,12 @@ func (c *DatasetComponent) Reset() error {
 	if err := c.MongoClient.Init(ctx); err != nil {
 		log.Warn(ctx, "error initialising MongoClient during Reset", log.Data{"err": err.Error()})
 	}
+
+	key, err := c.apiFeature.JWTFeature.EnsureKeys()
+	if err != nil {
+		return err
+	}
+	c.Config.AuthConfig.JWTVerificationPublicKeys[key.KID] = key.PublicKeyB64
 
 	c.Config.EnablePrivateEndpoints = false
 	c.Config.EnableURLRewriting = false

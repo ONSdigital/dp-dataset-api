@@ -43,7 +43,7 @@ Feature: Dataset API - Metadata Permissions
 
     Scenario: GET /datasets/{id}/editions/{edition}/versions/1/metadata returns 200 for an authorised viewer
         Given private endpoints are enabled
-        And I am a viewer user with permission
+        And I am a JWT user with email "viewer1@ons.gov.uk" and group "role-viewer-allowed"
         And I have viewer access to the dataset edition "static-test-dataset/time-series"
         When I GET "/datasets/static-test-dataset/editions/time-series/versions/1/metadata"
         Then I should receive the following JSON response with status "200":
@@ -83,7 +83,7 @@ Feature: Dataset API - Metadata Permissions
 
     Scenario: GET /datasets/{id}/editions/{edition}/versions/1 returns 403 for an unauthorised viewer
         Given private endpoints are enabled
-        And I am a viewer user with permission
+        And I am a JWT user with email "viewer1@ons.gov.uk" and group "role-viewer-allowed"
         And I don't have viewer access to the dataset edition "static-test-dataset/time-series"
         When I GET "/datasets/static-test-dataset/editions/time-series/versions/1/metadata"
         Then the HTTP status code should be "403"
