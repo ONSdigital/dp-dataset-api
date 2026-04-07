@@ -1,0 +1,7 @@
+ignore:
+  - id: GO-2026-4883
+    module: github.com/docker/docker
+    reason: No fix available; transitive dependency via dp-component-test -> testcontainers-go; only used for testing, not used by service runtime.
+  - id: GO-2026-4887
+    module: github.com/docker/docker
+    reason: No fix available; transitive dependency via dp-component-test -> testcontainers-go; only used for testing, not used by service runtime.
