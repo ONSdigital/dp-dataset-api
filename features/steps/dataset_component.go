@@ -2,7 +2,6 @@ package steps
 
 import (
 	"context"
-	"crypto/rsa"
 	"errors"
 	"fmt"
 	"net/http"

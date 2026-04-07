@@ -7,7 +7,7 @@ require (
 	github.com/ONSdigital/dp-api-clients-go/v2 v2.270.0
 	github.com/ONSdigital/dp-assistdog v0.0.1
 	github.com/ONSdigital/dp-authorisation/v2 v2.34.0
-	github.com/ONSdigital/dp-component-test v1.2.6-alpha
+	github.com/ONSdigital/dp-component-test v1.4.3-alpha
 	github.com/ONSdigital/dp-files-api v1.19.0
 	github.com/ONSdigital/dp-graph/v2 v2.18.0
 	github.com/ONSdigital/dp-healthcheck v1.6.4
@@ -143,6 +143,7 @@ require (
 	github.com/smarty/assertions v1.16.0 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/square/mongo-lock v0.0.0-20230808145049-cfcf499f6bf0 // indirect
+	github.com/testcontainers/testcontainers-go/modules/kafka v0.40.0 // indirect
 	github.com/testcontainers/testcontainers-go/modules/redis v0.40.0 // indirect
 	github.com/tidwall/gjson v1.18.0 // indirect
 	github.com/tidwall/match v1.2.0 // indirect
@@ -171,6 +172,7 @@ require (
 	go.opentelemetry.io/proto/otlp v1.7.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.47.0 // indirect
+	golang.org/x/mod v0.31.0 // indirect
 	golang.org/x/net v0.48.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.40.0 // indirect

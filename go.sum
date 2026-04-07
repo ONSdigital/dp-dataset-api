@@ -4,6 +4,8 @@ github.com/AdaLogics/go-fuzz-headers v0.0.0-20240806141605-e8a1dd7889d6 h1:He8af
 github.com/AdaLogics/go-fuzz-headers v0.0.0-20240806141605-e8a1dd7889d6/go.mod h1:8o94RPi1/7XTJvwPpRSzSUedZrtlirdB3r9Z20bi2f8=
 github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c h1:udKWzYgxTojEKWjV8V+WSxDXJ4NFATAsZjh8iIbsQIg=
 github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c/go.mod h1:xomTg63KZ2rFqZQzSB4Vz2SUXa1BpHTVz9L5PTmPC4E=
+github.com/IBM/sarama v1.42.1 h1:wugyWa15TDEHh2kvq2gAy1IHLjEjuYOYgXz/ruC/OSQ=
+github.com/IBM/sarama v1.42.1/go.mod h1:Xxho9HkHd4K/MDUo/T/sOqwtX/17D33++E9Wib6hUdQ=
 github.com/Microsoft/go-winio v0.6.2 h1:F2VQgta7ecxGYO8k3ZZz3RS8fVIXVxONVUPlNERoyfY=
 github.com/Microsoft/go-winio v0.6.2/go.mod h1:yd8OoFMLzJbo9gZq8j5qaps8bJ9aShtEA8Ipt1oGCvU=
 github.com/ONSdigital/dp-api-clients-go v1.28.0/go.mod h1:iyJy6uRL4B6OYOJA0XMr5UHt6+Q8XmN9uwmURO+9Oj4=
@@ -17,8 +19,8 @@ github.com/ONSdigital/dp-assistdog v0.0.1 h1:5jzUWZ3EmweVjSx+5c40oLh/+WBJtD3VOEr
 github.com/ONSdigital/dp-assistdog v0.0.1/go.mod h1:Agb8iTx42/V+eSffc/gD2oXEvOcerN3GER76FAcBr+I=
 github.com/ONSdigital/dp-authorisation/v2 v2.34.0 h1:Zc096gAh5S7PFG1LlbM/siZDvyzd7fU11dMK8X6m98k=
 github.com/ONSdigital/dp-authorisation/v2 v2.34.0/go.mod h1:y3zXIX/x8baEKucG05v/PL86GtL7MAz9Eb3HcwZmuvQ=
-github.com/ONSdigital/dp-component-test v1.2.6-alpha h1:gPwu2xayWxdM0hmJvDX2/9UC8iStMrWKLB7aro6OhSc=
-github.com/ONSdigital/dp-component-test v1.2.6-alpha/go.mod h1:5IYvqiKqKTfkN5lTbIH8NzUxjclsztWgEroKxY/MVEE=
+github.com/ONSdigital/dp-component-test v1.4.3-alpha h1:QPxQgL1NF0KvXcdMOAW04vq4asNacQHSBBkKneMrJI0=
+github.com/ONSdigital/dp-component-test v1.4.3-alpha/go.mod h1:OXn4Abzk1Djc2yfwRhcTXKCDxtUumXBqn0MD1sYe9Fc=
 github.com/ONSdigital/dp-files-api v1.19.0 h1:C82idvRAliq1f5KIBOML7/h1rH5E1AXwK2DJUbjlBL4=
 github.com/ONSdigital/dp-files-api v1.19.0/go.mod h1:ajampl7S6Scswy70qQT73OwHPq0Cak9CQHmXHXMG0pU=
 github.com/ONSdigital/dp-graph/v2 v2.18.0 h1:sp5B78/ueRC7raYh1OuGr6XBvCJhXx7vtH68U84rcCk=
@@ -409,6 +411,8 @@ github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 github.com/testcontainers/testcontainers-go v0.40.0 h1:pSdJYLOVgLE8YdUY2FHQ1Fxu+aMnb6JfVz1mxk7OeMU=
 github.com/testcontainers/testcontainers-go v0.40.0/go.mod h1:FSXV5KQtX2HAMlm7U3APNyLkkap35zNLxukw9oBi/MY=
+github.com/testcontainers/testcontainers-go/modules/kafka v0.40.0 h1:BW4CMO6rYLvJRC7UF4l0rudnwm7IX/kJPvGd9MCJM6I=
+github.com/testcontainers/testcontainers-go/modules/kafka v0.40.0/go.mod h1:O4U0SUR8blhkRLLfIFHQqNRKzee7fOxzya2H+rnl4OY=
 github.com/testcontainers/testcontainers-go/modules/mongodb v0.40.0 h1:z/1qHeliTLDKNaJ7uOHOx1FjwghbcbYfga4dTFkF0hU=
 github.com/testcontainers/testcontainers-go/modules/mongodb v0.40.0/go.mod h1:GaunAWwMXLtsMKG3xn2HYIBDbKddGArfcGsF2Aog81E=
 github.com/testcontainers/testcontainers-go/modules/redis v0.40.0 h1:OG4qwcxp2O0re7V7M9lY9w0v6wWgWf7j7rtkpAnGMd0=
@@ -499,6 +503,8 @@ golang.org/x/crypto v0.6.0/go.mod h1:OFC/31mSvZgRz0V1QTNCzfAI1aIRzbiufJtkMIlEp58
 golang.org/x/crypto v0.47.0 h1:V6e3FRj+n4dbpw86FJ8Fv7XVOql7TEwpHapKoMJ/GO8=
 golang.org/x/crypto v0.47.0/go.mod h1:ff3Y9VzzKbwSSEzWqJsJVBnWmRwRSHt/6Op5n9bQc4A=
 golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4/go.mod h1:jJ57K6gSWd91VN4djpZkiMVwK6gcyfeH4XE8wZrZaV4=
+golang.org/x/mod v0.31.0 h1:HaW9xtz0+kOcWKwli0ZXy79Ix+UW/vOfmWI5QVd2tgI=
+golang.org/x/mod v0.31.0/go.mod h1:43JraMp9cGx1Rx3AqioxrbrhNsLl2l/iNAvuBkrezpg=
 golang.org/x/net v0.0.0-20190311183353-d8887717615a/go.mod h1:t9HGtf8HONx5eT2rtn7q6eTqICYqUVnKs3thJo3Qplg=
 golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3/go.mod h1:t9HGtf8HONx5eT2rtn7q6eTqICYqUVnKs3thJo3Qplg=
 golang.org/x/net v0.0.0-20190620200207-3b0461eec859/go.mod h1:z5CRVTTTmAJ677TzLLGU+0bjPO0LkuOLi4/5GtJWs/s=
