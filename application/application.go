@@ -3,8 +3,10 @@ package application
 import (
 	"context"
 	"fmt"
+	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ONSdigital/dp-api-clients-go/headers"
@@ -970,7 +972,16 @@ func (smDS *StateMachineDatasetAPI) publishDistributionFiles(ctx context.Context
 	totalFiles := len(*version.Distributions)
 	successCount := 0
 
-	for _, distribution := range *version.Distributions {
+	var wg sync.WaitGroup
+	ch := make(chan string, totalFiles)
+
+	//for index, distribution := range *version.Distributions {
+	for index := range *version.Distributions {
+		distribution := &(*version.Distributions)[index]
+		wg.Add(1)
+		fmt.Println("Starting loop: "+strconv.Itoa(index)+"at: ", time.Now().String())
+		fmt.Println("Number of goroutines on startup", runtime.NumGoroutine())
+		fmt.Println("ABOUT TO EXECUTE PUBLISH FILE")
 		if distribution.DownloadURL == "" {
 			continue
 		}
@@ -1002,33 +1013,41 @@ func (smDS *StateMachineDatasetAPI) publishDistributionFiles(ctx context.Context
 		// }
 
 		fmt.Println("SENDING REQUEST TO MARK FILE PUBLISHED AT " + filepath + " " + time.Now().String())
-		err := smDS.FilesAPIClient.MarkFilePublished(ctx, filepath, filesAPISDK.Headers{Authorization: accessToken})
-		if err != nil {
-			log.Error(ctx, "failed to publish file", err, log.Data{
-				"filepath":            filepath,
-				"distribution_title":  distribution.Title,
-				"distribution_format": distribution.Format,
-			})
+		go publishFile(ctx, smDS.FilesAPIClient, *distribution, accessToken, ch, &wg)
+		fmt.Println("Ending loop: "+strconv.Itoa(index)+"at: ", time.Now().String())
+		fmt.Println("Number of goroutines after", runtime.NumGoroutine())
+		// err := smDS.FilesAPIClient.MarkFilePublished(ctx, filepath, filesAPISDK.Headers{Authorization: accessToken})
+		// if err != nil {
+		// 	log.Error(ctx, "failed to publish file", err, log.Data{
+		// 		"filepath":            filepath,
+		// 		"distribution_title":  distribution.Title,
+		// 		"distribution_format": distribution.Format,
+		// 	})
 
-			if strings.Contains(err.Error(), "FileNotRegistered") ||
-				strings.Contains(err.Error(), "file not registered") ||
-				strings.Contains(err.Error(), "not found") {
-				filesAPIError = errs.ErrFileMetadataNotFound
-			}
+		// 	if strings.Contains(err.Error(), "FileNotRegistered") ||
+		// 		strings.Contains(err.Error(), "file not registered") ||
+		// 		strings.Contains(err.Error(), "not found") {
+		// 		filesAPIError = errs.ErrFileMetadataNotFound
+		// 	}
 
-			if strings.Contains(err.Error(), "FileStateError") ||
-				strings.Contains(err.Error(), "file is not set as publishable") ||
-				strings.Contains(err.Error(), "file state is not in state uploaded") {
-				filesAPIError = errs.ErrFileNotInCorrectState
-			}
+		// 	if strings.Contains(err.Error(), "FileStateError") ||
+		// 		strings.Contains(err.Error(), "file is not set as publishable") ||
+		// 		strings.Contains(err.Error(), "file state is not in state uploaded") {
+		// 		filesAPIError = errs.ErrFileNotInCorrectState
+		// 	}
 
-			lastError = err
-			continue
-		}
+		// 	lastError = err
+		// 	continue
+		// }
 
 		successCount++
 		log.Info(ctx, "successfully published file", fileLogData)
 	}
+
+	fmt.Println("Waiting...")
+	wg.Wait()
+
+	fmt.Println("After goroutines launched:", runtime.NumGoroutine())
 
 	log.Info(ctx, "completed publishing distribution files", log.Data{
 		"total_files": totalFiles,
@@ -1044,5 +1063,40 @@ func (smDS *StateMachineDatasetAPI) publishDistributionFiles(ctx context.Context
 		return fmt.Errorf("one or more errors occurred while publishing files: %w", lastError)
 	}
 
+	return nil
+}
+
+func publishFile(ctx context.Context, filesAPIClient filesAPISDK.Clienter, distribution models.Distribution, accessToken string, ch chan string, wg *sync.WaitGroup) error {
+	defer wg.Done()
+
+	fmt.Println("Starting publish file for ", distribution.DownloadURL)
+	fmt.Println(time.Now().String())
+
+	var filesAPIError error
+	err := filesAPIClient.MarkFilePublished(ctx, distribution.DownloadURL, filesAPISDK.Headers{Authorization: accessToken})
+	if err != nil {
+		log.Error(ctx, "failed to publish file", err, log.Data{
+			"filepath":            distribution.DownloadURL,
+			"distribution_title":  distribution.Title,
+			"distribution_format": distribution.Format,
+		})
+
+		if strings.Contains(err.Error(), "FileNotRegistered") ||
+			strings.Contains(err.Error(), "file not registered") ||
+			strings.Contains(err.Error(), "not found") {
+			filesAPIError = errs.ErrFileMetadataNotFound
+		}
+
+		if strings.Contains(err.Error(), "FileStateError") ||
+			strings.Contains(err.Error(), "file is not set as publishable") ||
+			strings.Contains(err.Error(), "file state is not in state uploaded") {
+			filesAPIError = errs.ErrFileNotInCorrectState
+		}
+		return filesAPIError
+		//lastError = err
+		//continue
+	}
+
+	ch <- distribution.DownloadURL
 	return nil
 }
