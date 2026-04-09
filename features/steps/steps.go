@@ -73,30 +73,18 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 }
 
 func (c *DatasetComponent) viewerHasPreviewAccessToDataset(datasetID string) error {
-	if err := c.apiFeature.IUseAJWTToken("viewer1@ons.gov.uk", "role-viewer-allowed"); err != nil {
-		return err
-	}
 	return c.updateViewerPreviewPolicies([]string{datasetID})
 }
 
 func (c *DatasetComponent) viewerDoesNotHavePreviewAccessToDataset(datasetID string) error {
-	if err := c.apiFeature.IUseAJWTToken("viewer1@ons.gov.uk", "role-viewer-allowed"); err != nil {
-		return err
-	}
 	return c.updateViewerPreviewPolicies([]string{})
 }
 
 func (c *DatasetComponent) viewerHasPreviewAccessToDatasetEdition(datasetEdition string) error {
-	if err := c.apiFeature.IUseAJWTToken("viewer1@ons.gov.uk", "role-viewer-allowed"); err != nil {
-		return err
-	}
 	return c.updateViewerPreviewPolicies([]string{datasetEdition})
 }
 
 func (c *DatasetComponent) viewerDoesNotHavePreviewAccessToDatasetEdition(datasetEdition string) error {
-	if err := c.apiFeature.IUseAJWTToken("viewer1@ons.gov.uk", "role-viewer-allowed"); err != nil {
-		return err
-	}
 	return c.updateViewerPreviewPolicies([]string{})
 }
 
