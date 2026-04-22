@@ -910,5 +910,53 @@ func TestPostVersion(t *testing.T) {
 				So(createdVersion, ShouldBeNil)
 			})
 		})
+
+		Convey("When is_latest=true is passed, the URI includes the query parameter", func() {
+			createdVersion, err := datasetAPIClient.PostVersion(ctx, headers, datasetID, editionID, versionID, exampleVersion, true)
+
+			Convey("Then the request is successful", func() {
+				So(err, ShouldBeNil)
+				So(*createdVersion, ShouldResemble, expectedVersionResponse)
+			})
+
+			Convey("And the request URI includes is_latest=true", func() {
+				So(len(httpClient.DoCalls()), ShouldEqual, 1)
+				call := httpClient.DoCalls()[0]
+				So(call.Req.Method, ShouldEqual, http.MethodPost)
+				So(call.Req.URL.RequestURI(), ShouldEqual, fmt.Sprintf("/datasets/%s/editions/%s/versions/%s?is_latest=true", datasetID, editionID, versionID))
+			})
+		})
+
+		Convey("When is_latest=false is passed, the URI includes the query parameter", func() {
+			createdVersion, err := datasetAPIClient.PostVersion(ctx, headers, datasetID, editionID, versionID, exampleVersion, false)
+
+			Convey("Then the request is successful", func() {
+				So(err, ShouldBeNil)
+				So(*createdVersion, ShouldResemble, expectedVersionResponse)
+			})
+
+			Convey("And the request URI includes is_latest=false", func() {
+				So(len(httpClient.DoCalls()), ShouldEqual, 1)
+				call := httpClient.DoCalls()[0]
+				So(call.Req.Method, ShouldEqual, http.MethodPost)
+				So(call.Req.URL.RequestURI(), ShouldEqual, fmt.Sprintf("/datasets/%s/editions/%s/versions/%s?is_latest=false", datasetID, editionID, versionID))
+			})
+		})
+
+		Convey("When is_latest is not passed, the URI does not include the query parameter", func() {
+			createdVersion, err := datasetAPIClient.PostVersion(ctx, headers, datasetID, editionID, versionID, exampleVersion)
+
+			Convey("Then the request is successful", func() {
+				So(err, ShouldBeNil)
+				So(*createdVersion, ShouldResemble, expectedVersionResponse)
+			})
+
+			Convey("And the request URI does not include is_latest", func() {
+				So(len(httpClient.DoCalls()), ShouldEqual, 1)
+				call := httpClient.DoCalls()[0]
+				So(call.Req.Method, ShouldEqual, http.MethodPost)
+				So(call.Req.URL.RequestURI(), ShouldEqual, fmt.Sprintf("/datasets/%s/editions/%s/versions/%s", datasetID, editionID, versionID))
+			})
+		})
 	})
 }

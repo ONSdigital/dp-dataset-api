@@ -463,7 +463,7 @@ func (c *Client) PutVersionState(ctx context.Context, headers Headers, datasetID
 }
 
 // PostVersion creates a specific version for a dataset series
-func (c *Client) PostVersion(ctx context.Context, headers Headers, datasetID, editionID, versionID string, version models.Version) (createdVersion *models.Version, err error) {
+func (c *Client) PostVersion(ctx context.Context, headers Headers, datasetID, editionID, versionID string, version models.Version, isLatest ...bool) (createdVersion *models.Version, err error) {
 	if err := validateRequiredParams(map[string]string{
 		"datasetID": datasetID,
 		"editionID": editionID,
@@ -476,6 +476,12 @@ func (c *Client) PostVersion(ctx context.Context, headers Headers, datasetID, ed
 	uri.Path, err = url.JoinPath(c.hcCli.URL, "datasets", datasetID, "editions", editionID, "versions", versionID)
 	if err != nil {
 		return createdVersion, err
+	}
+
+	if len(isLatest) > 0 {
+		query := uri.Query()
+		query.Set("is_latest", strconv.FormatBool(isLatest[0]))
+		uri.RawQuery = query.Encode()
 	}
 
 	requestBody, err := json.Marshal(version)
