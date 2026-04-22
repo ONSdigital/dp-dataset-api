@@ -192,6 +192,12 @@ parameters:
             downloads:
               allOf:
                 - readOnly: false
+  is_latest:
+    name: is_latest
+    description: "A boolean value which, when true, sets the latest_version information at series level using the version number and edition provided in the path"
+    in: query
+    required: false
+    type: boolean
   limit:
     name: limit
     description: "Maximum number of items that will be returned. A value of zero will return zero items."
@@ -633,6 +639,7 @@ paths:
         - $ref: "#/parameters/edition"
         - $ref: "#/parameters/version"
         - $ref: "#/parameters/new_version"
+        - $ref: "#/parameters/is_latest"  
       security:
         - {}
         - Authorization: []
@@ -648,6 +655,7 @@ paths:
               * dataset id was incorrect
               * edition was incorrect
               * an unpublished version of the dataset already exists
+              * is_latest parameter is not a valid boolean
         401:
           description: "Unauthorised to update version of dataset"
         404:

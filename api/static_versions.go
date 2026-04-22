@@ -390,6 +390,18 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, models.ErrInvalidQueryParameter, models.ErrInvalidQueryParameterDescription+": version"))
 	}
 
+	var isLatest bool
+	if isLatestParam := r.URL.Query().Get("is_latest"); isLatestParam != "" {
+		isLatest, err = strconv.ParseBool(isLatestParam)
+		if err != nil {
+			log.Error(ctx, "createVersion endpoint: invalid is_latest parameter", err, logData)
+			return nil, models.NewErrorResponse(
+				http.StatusBadRequest, nil,
+				models.NewError(err, models.ErrInvalidQueryParameter, models.ErrInvalidQueryParameterDescription+": is_latest"),
+			)
+		}
+	}
+
 	if newVersion.Type != models.Static.String() {
 		log.Error(ctx, "createVersion endpoint: only allowed to create static type versions", errs.ErrInvalidBody, logData)
 		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewValidationError(models.ErrInvalidTypeError, models.ErrTypeNotStaticDescription))
@@ -457,6 +469,32 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 	if err != nil {
 		log.Error(ctx, "createVersion endpoint: failed to create version", err, logData)
 		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, models.InternalError, models.InternalErrorDescription))
+	}
+
+	if isLatest {
+		datasetDoc, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
+		if err != nil {
+			log.Error(ctx, "createVersion endpoint: failed to get dataset", err, logData)
+			return nil, models.NewErrorResponse(http.StatusInternalServerError, nil,
+				models.NewError(err, "failed to get dataset", models.InternalErrorDescription))
+		}
+
+		if datasetDoc.Next.Links == nil {
+			datasetDoc.Next.Links = &models.DatasetLinks{}
+		}
+
+		datasetDoc.Next.LastUpdated = createdVersion.LastUpdated
+		datasetDoc.Next.State = models.AssociatedState
+		datasetDoc.Next.Links.LatestVersion = &models.LinkObject{
+			HRef: fmt.Sprintf("/datasets/%s/editions/%s/versions/%d", datasetID, edition, versionNumber),
+			ID:   strconv.Itoa(versionNumber),
+		}
+
+		if err := api.dataStore.Backend.UpsertDataset(ctx, datasetID, datasetDoc); err != nil {
+			log.Error(ctx, "createVersion endpoint: failed to update dataset", err, logData)
+			return nil, models.NewErrorResponse(http.StatusInternalServerError, nil,
+				models.NewError(err, "failed to update dataset", models.InternalErrorDescription))
+		}
 	}
 
 	createdVersionJSON, err := json.Marshal(createdVersion)

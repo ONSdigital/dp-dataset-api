@@ -70,6 +70,7 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`the total number of audit events should be (\d+)`, c.theTotalNumberOfAuditEventsShouldBe)
 	ctx.Step(`the number of events with action "([^"]*)" and resource "([^"]*)" should be (\d+)`, c.theNumberOfEventsWithActionAndResourceShouldBe)
 	ctx.Step(`I have realistic datasets`, c.iHaveRealisticDatasets)
+	ctx.Step(`^the dataset "([^"]*)" should have latest_version href "([^"]*)"$`, c.theDatasetShouldHaveLatestVersionHref)
 }
 
 func (c *DatasetComponent) viewerHasPreviewAccessToDataset(datasetID string) error {

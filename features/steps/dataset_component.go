@@ -9,6 +9,7 @@ import (
 	"time"
 
 	permissionsSDK "github.com/ONSdigital/dp-permissions-api/sdk"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/ONSdigital/dp-authorisation/v2/authorisation"
 	"github.com/ONSdigital/dp-authorisation/v2/authorisationtest"
@@ -17,6 +18,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/cloudflare"
 	cloudflareMocks "github.com/ONSdigital/dp-dataset-api/cloudflare/mocks"
 	"github.com/ONSdigital/dp-dataset-api/config"
+	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/service"
 	serviceMock "github.com/ONSdigital/dp-dataset-api/service/mock"
@@ -538,4 +540,23 @@ func (c *DatasetComponent) updateViewerPreviewPolicies(values []string) error {
 	ensure(permissionDatasetEditionsVersionsRead) // "dataset-editions-versions:read" (for /editions, /versions and metadata)
 	c.fakePermissionsAPI.Reset()
 	return c.fakePermissionsAPI.UpdatePermissionsBundleResponse(&bundle)
+}
+
+func (c *DatasetComponent) theDatasetShouldHaveLatestVersionHref(datasetID, expectedHref string) error {
+	collectionName := c.MongoClient.ActualCollectionName(config.DatasetsCollection)
+	var dataset models.DatasetUpdate
+
+	if err := c.MongoClient.Connection.Collection(collectionName).FindOne(context.Background(), bson.M{"_id": datasetID}, &dataset); err != nil {
+		return fmt.Errorf("failed to find dataset %s: %w", datasetID, err)
+	}
+
+	if dataset.Next == nil || dataset.Next.Links == nil || dataset.Next.Links.LatestVersion == nil {
+		return fmt.Errorf("dataset %s has no latest_version link", datasetID)
+	}
+
+	if dataset.Next.Links.LatestVersion.HRef != expectedHref {
+		return fmt.Errorf("expected latest_version href %q but got %q", expectedHref, dataset.Next.Links.LatestVersion.HRef)
+	}
+
+	return nil
 }

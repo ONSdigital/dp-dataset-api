@@ -8,7 +8,13 @@ Feature: POST /datasets/{dataset_id}/editions/{edition}/versions/{version}
                     "id": "static-dataset-1",
                     "title": "static dataset with published version",
                     "state": "published",
-                    "type": "static"
+                    "type": "static",
+                    "links": {
+                        "latest_version": {
+                            "href": "/datasets/static-dataset-1/editions/2024/versions/1",
+                            "id": "1"
+                        }
+                    }
                 }
             ]
             """
@@ -609,3 +615,81 @@ Scenario: POST Creating an edition with spaces in the edition ID should return 4
                 ]
             }
             """
+
+Scenario: Request with is_latest=true updates the dataset latest_version link
+    Given private endpoints are enabled
+    And I am an admin user
+    When I POST "/datasets/static-dataset-1/editions/2024/versions/2?is_latest=true"
+        """
+        {
+            "release_date": "2024-12-01T09:00:00.000Z",
+            "edition_title": "2024",
+            "distributions": [
+                {
+                    "title": "Full Dataset CSV",
+                    "format": "csv",
+                    "media_type": "text/csv",
+                    "download_url": "/uuid/filename.csv",
+                    "byte_size": 100
+                }
+            ],
+            "type": "static"
+        }
+        """
+    Then the HTTP status code should be "201"
+    And the dataset "static-dataset-1" should have latest_version href "/datasets/static-dataset-1/editions/2024/versions/2"
+
+Scenario: Request with is_latest=false does not update the dataset latest_version link
+    Given private endpoints are enabled
+    And I am an admin user
+    When I POST "/datasets/static-dataset-1/editions/2024/versions/2?is_latest=false"
+        """
+        {
+            "release_date": "2024-12-01T09:00:00.000Z",
+            "edition_title": "2024",
+            "distributions": [
+                {
+                    "title": "Full Dataset CSV",
+                    "format": "csv",
+                    "media_type": "text/csv",
+                    "download_url": "/uuid/filename.csv",
+                    "byte_size": 100
+                }
+            ],
+            "type": "static"
+        }
+        """
+    Then the HTTP status code should be "201"
+    And the dataset "static-dataset-1" should have latest_version href "/datasets/static-dataset-1/editions/2024/versions/1"
+
+Scenario: Request with an invalid is_latest value returns 400
+    Given private endpoints are enabled
+    And I am an admin user
+    When I POST "/datasets/static-dataset-1/editions/2024/versions/2?is_latest=notabool"
+        """
+        {
+            "release_date": "2024-12-01T09:00:00.000Z",
+            "edition_title": "2024",
+            "distributions": [
+                {
+                    "title": "Full Dataset CSV",
+                    "format": "csv",
+                    "media_type": "text/csv",
+                    "download_url": "/uuid/filename.csv",
+                    "byte_size": 100
+                }
+            ],
+            "type": "static"
+        }
+        """
+    Then I should receive the following JSON response with status "400":
+        """
+        {
+            "errors": [
+                {
+                    "code": "ErrInvalidQueryParameter",
+                    "description": "invalid query parameter: is_latest"
+                }
+            ]
+        }
+        """
