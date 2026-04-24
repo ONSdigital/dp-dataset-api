@@ -80,7 +80,7 @@ var _ sdk.Clienter = &ClienterMock{}
 //			HealthFunc: func() *health.Client {
 //				panic("mock out the Health method")
 //			},
-//			PostVersionFunc: func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, versionID string, version models.Version) (*models.Version, error) {
+//			PostVersionFunc: func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, versionID string, version models.Version, isLatest bool) (*models.Version, error) {
 //				panic("mock out the PostVersion method")
 //			},
 //			PutDatasetFunc: func(ctx context.Context, headers sdk.Headers, datasetID string, d models.Dataset) error {
@@ -166,7 +166,7 @@ type ClienterMock struct {
 	HealthFunc func() *health.Client
 
 	// PostVersionFunc mocks the PostVersion method.
-	PostVersionFunc func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, versionID string, version models.Version) (*models.Version, error)
+	PostVersionFunc func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, versionID string, version models.Version, isLatest bool) (*models.Version, error)
 
 	// PutDatasetFunc mocks the PutDataset method.
 	PutDatasetFunc func(ctx context.Context, headers sdk.Headers, datasetID string, d models.Dataset) error
@@ -409,6 +409,8 @@ type ClienterMock struct {
 			VersionID string
 			// Version is the version argument value.
 			Version models.Version
+			// IsLatest is the isLatest argument value.
+			IsLatest bool
 		}
 		// PutDataset holds details about calls to the PutDataset method.
 		PutDataset []struct {
@@ -1341,7 +1343,7 @@ func (mock *ClienterMock) HealthCalls() []struct {
 }
 
 // PostVersion calls PostVersionFunc.
-func (mock *ClienterMock) PostVersion(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, versionID string, version models.Version) (*models.Version, error) {
+func (mock *ClienterMock) PostVersion(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, versionID string, version models.Version, isLatest bool) (*models.Version, error) {
 	if mock.PostVersionFunc == nil {
 		panic("ClienterMock.PostVersionFunc: method is nil but Clienter.PostVersion was just called")
 	}
@@ -1352,6 +1354,7 @@ func (mock *ClienterMock) PostVersion(ctx context.Context, headers sdk.Headers, 
 		EditionID string
 		VersionID string
 		Version   models.Version
+		IsLatest  bool
 	}{
 		Ctx:       ctx,
 		Headers:   headers,
@@ -1359,11 +1362,12 @@ func (mock *ClienterMock) PostVersion(ctx context.Context, headers sdk.Headers, 
 		EditionID: editionID,
 		VersionID: versionID,
 		Version:   version,
+		IsLatest:  isLatest,
 	}
 	mock.lockPostVersion.Lock()
 	mock.calls.PostVersion = append(mock.calls.PostVersion, callInfo)
 	mock.lockPostVersion.Unlock()
-	return mock.PostVersionFunc(ctx, headers, datasetID, editionID, versionID, version)
+	return mock.PostVersionFunc(ctx, headers, datasetID, editionID, versionID, version, isLatest)
 }
 
 // PostVersionCalls gets all the calls that were made to PostVersion.
@@ -1377,6 +1381,7 @@ func (mock *ClienterMock) PostVersionCalls() []struct {
 	EditionID string
 	VersionID string
 	Version   models.Version
+	IsLatest  bool
 } {
 	var calls []struct {
 		Ctx       context.Context
@@ -1385,6 +1390,7 @@ func (mock *ClienterMock) PostVersionCalls() []struct {
 		EditionID string
 		VersionID string
 		Version   models.Version
+		IsLatest  bool
 	}
 	mock.lockPostVersion.RLock()
 	calls = mock.calls.PostVersion

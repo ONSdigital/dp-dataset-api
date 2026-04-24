@@ -846,7 +846,7 @@ func TestPostVersion(t *testing.T) {
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
 
 		Convey("And the parameters are valid", func() {
-			createdVersion, err := datasetAPIClient.PostVersion(ctx, headers, datasetID, editionID, versionID, exampleVersion)
+			createdVersion, err := datasetAPIClient.PostVersion(ctx, headers, datasetID, editionID, versionID, exampleVersion, false)
 
 			Convey("Then the request is successful", func() {
 				So(err, ShouldBeNil)
@@ -868,7 +868,7 @@ func TestPostVersion(t *testing.T) {
 		})
 
 		Convey("When all required parameters are not provided", func() {
-			createdVersion, err := datasetAPIClient.PostVersion(ctx, headers, "", "", "", exampleVersion)
+			createdVersion, err := datasetAPIClient.PostVersion(ctx, headers, "", "", "", exampleVersion, false)
 
 			Convey("Then an error is returned", func() {
 				So(err, ShouldNotBeNil)
@@ -897,7 +897,7 @@ func TestPostVersion(t *testing.T) {
 			httpClient = createHTTPClientMock(MockedHTTPResponse{http.StatusInternalServerError, expectedErrorResponse, map[string]string{}})
 			datasetAPIClient = newDatasetAPIHealthcheckClient(t, httpClient)
 
-			createdVersion, err := datasetAPIClient.PostVersion(ctx, headers, datasetID, editionID, versionID, exampleVersion)
+			createdVersion, err := datasetAPIClient.PostVersion(ctx, headers, datasetID, editionID, versionID, exampleVersion, false)
 
 			Convey("Then an error is returned", func() {
 				So(err, ShouldNotBeNil)
@@ -927,24 +927,8 @@ func TestPostVersion(t *testing.T) {
 			})
 		})
 
-		Convey("When is_latest=false is passed, the URI includes the query parameter", func() {
+		Convey("When is_latest=false is passed, the URI does not include the query parameter", func() {
 			createdVersion, err := datasetAPIClient.PostVersion(ctx, headers, datasetID, editionID, versionID, exampleVersion, false)
-
-			Convey("Then the request is successful", func() {
-				So(err, ShouldBeNil)
-				So(*createdVersion, ShouldResemble, expectedVersionResponse)
-			})
-
-			Convey("And the request URI includes is_latest=false", func() {
-				So(len(httpClient.DoCalls()), ShouldEqual, 1)
-				call := httpClient.DoCalls()[0]
-				So(call.Req.Method, ShouldEqual, http.MethodPost)
-				So(call.Req.URL.RequestURI(), ShouldEqual, fmt.Sprintf("/datasets/%s/editions/%s/versions/%s?is_latest=false", datasetID, editionID, versionID))
-			})
-		})
-
-		Convey("When is_latest is not passed, the URI does not include the query parameter", func() {
-			createdVersion, err := datasetAPIClient.PostVersion(ctx, headers, datasetID, editionID, versionID, exampleVersion)
 
 			Convey("Then the request is successful", func() {
 				So(err, ShouldBeNil)

@@ -490,6 +490,10 @@ versionToCreate := models.Version{
     // populate other required fields as required
 }
 
+// Pass true to set this version as the latest version at series level
+createdVersion, err := client.PostVersion(ctx, headers, "dataset-id", "edition-id", "1", versionToCreate, true)
+```
+
 createdVersion, err := client.PostVersion(ctx, headers, "dataset-id", "edition-id", "1", versionToCreate)
 ```
 

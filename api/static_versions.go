@@ -483,8 +483,6 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 			datasetDoc.Next.Links = &models.DatasetLinks{}
 		}
 
-		datasetDoc.Next.LastUpdated = createdVersion.LastUpdated
-		datasetDoc.Next.State = models.AssociatedState
 		datasetDoc.Next.Links.LatestVersion = &models.LinkObject{
 			HRef: fmt.Sprintf("/datasets/%s/editions/%s/versions/%d", datasetID, edition, versionNumber),
 			ID:   strconv.Itoa(versionNumber),
