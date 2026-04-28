@@ -494,9 +494,6 @@ versionToCreate := models.Version{
 createdVersion, err := client.PostVersion(ctx, headers, "dataset-id", "edition-id", "1", versionToCreate, true)
 ```
 
-createdVersion, err := client.PostVersion(ctx, headers, "dataset-id", "edition-id", "1", versionToCreate)
-```
-
 ## Additional Information
 
 ### Errors
