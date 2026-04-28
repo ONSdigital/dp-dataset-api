@@ -100,6 +100,22 @@ func setupVersionsTestData(ctx context.Context, mongoStore *Mongo) ([]*models.Ve
 			ReleaseDate: "2025-02-02T07:00:00.000Z",
 		},
 		{
+			ID:           "edition2-version1",
+			Edition:      "edition2",
+			EditionTitle: "Second Edition",
+			LastUpdated:  now.Add(-time.Hour),
+			Version:      1,
+			State:        models.AssociatedState,
+			Type:         "static",
+			ETag:         "edition2Version1ETag",
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{ID: staticDatasetID},
+				Edition: &models.LinkObject{ID: "edition2"},
+				Version: &models.LinkObject{ID: "1"},
+			},
+			ReleaseDate: "2024-02-02T07:00:00.000Z",
+		},
+		{
 			ID:           "version1",
 			Edition:      "edition1",
 			EditionTitle: "First Edition",

@@ -68,7 +68,7 @@ func TestGetStaticVersionsByState(t *testing.T) {
 			Convey("Then the version is retrieved successfully", func() {
 				So(err, ShouldBeNil)
 				So(version, ShouldNotBeNil)
-				So(count, ShouldEqual, 2)
+				So(count, ShouldEqual, 3)
 				So(version[0].State, ShouldNotEqual, models.PublishedState)
 			})
 		})
@@ -121,7 +121,7 @@ func TestGetAllStaticVersions(t *testing.T) {
 			retrievedVersions, count, err := mongoStore.GetAllStaticVersions(ctx, staticDatasetID, "", 0, 0)
 
 			So(err, ShouldBeNil)
-			So(count, ShouldEqual, 2)
+			So(count, ShouldEqual, 3)
 			So(retrievedVersions, ShouldHaveLength, 0)
 		})
 
@@ -129,7 +129,7 @@ func TestGetAllStaticVersions(t *testing.T) {
 			retrievedVersions, count, err := mongoStore.GetAllStaticVersions(ctx, staticDatasetID, "", 1, 1)
 
 			So(err, ShouldBeNil)
-			So(count, ShouldEqual, 2)
+			So(count, ShouldEqual, 3)
 			So(retrievedVersions, ShouldHaveLength, 1)
 			So(retrievedVersions[0].ID, ShouldEqual, "version1")
 		})
@@ -138,7 +138,7 @@ func TestGetAllStaticVersions(t *testing.T) {
 			retrievedVersions, count, err := mongoStore.GetAllStaticVersions(ctx, staticDatasetID, "", 0, 1)
 
 			So(err, ShouldBeNil)
-			So(count, ShouldEqual, 2)
+			So(count, ShouldEqual, 3)
 			So(retrievedVersions, ShouldHaveLength, 1)
 
 			So(retrievedVersions[0].ID, ShouldEqual, "version2")
@@ -150,6 +150,81 @@ func TestGetAllStaticVersions(t *testing.T) {
 			So(err, ShouldEqual, errs.ErrVersionsNotFound)
 			So(count, ShouldEqual, 0)
 			So(retrievedVersions, ShouldBeNil)
+		})
+	})
+}
+
+func TestGetEditionsStatic(t *testing.T) {
+	Convey("Given MongoDB is running and populated with static versions", t, func() {
+		ctx := context.Background()
+		mongoStore, err := getTestMongoDB(ctx, t)
+		So(err, ShouldBeNil)
+
+		versions, err := setupVersionsTestData(ctx, mongoStore)
+		So(err, ShouldBeNil)
+		So(versions, ShouldNotBeEmpty)
+
+		Convey("When GetEditionsStatic is called with no state filter", func() {
+			retrievedEditions, count, err := mongoStore.GetEditionsStatic(ctx, staticDatasetID, "", 0, 20)
+
+			Convey("Then it returns the expected total number of unique editions", func() {
+				So(err, ShouldBeNil)
+				So(count, ShouldEqual, 2)
+				So(retrievedEditions, ShouldHaveLength, 2)
+			})
+
+			Convey("And the editions are ordered by version 1 release date in descending order", func() {
+				So(retrievedEditions[0].Next.Edition, ShouldEqual, "edition1")
+				So(retrievedEditions[1].Next.Edition, ShouldEqual, "edition2")
+			})
+
+			Convey("And each edition is mapped to the latest published and unpublished versions correctly", func() {
+				So(retrievedEditions[0].Current.Edition, ShouldEqual, "edition1")
+				So(retrievedEditions[0].Current.Version, ShouldEqual, 1)
+				So(retrievedEditions[0].Next.Edition, ShouldEqual, "edition1")
+				So(retrievedEditions[0].Next.Version, ShouldEqual, 1)
+
+				So(retrievedEditions[1].Current, ShouldBeNil)
+				So(retrievedEditions[1].Next.Edition, ShouldEqual, "edition2")
+				So(retrievedEditions[1].Next.Version, ShouldEqual, 2)
+			})
+		})
+
+		Convey("When GetEditionsStatic is called with pagination", func() {
+			retrievedEditions, count, err := mongoStore.GetEditionsStatic(ctx, staticDatasetID, "", 1, 1)
+
+			Convey("Then it returns a paginated subset while preserving the total edition count", func() {
+				So(err, ShouldBeNil)
+				So(count, ShouldEqual, 2)
+				So(retrievedEditions, ShouldHaveLength, 1)
+				So(retrievedEditions[0].Current, ShouldBeNil)
+				So(retrievedEditions[0].Next.Edition, ShouldEqual, "edition2")
+				So(retrievedEditions[0].Next.Version, ShouldEqual, 2)
+			})
+		})
+
+		Convey("When GetEditionsStatic is called with the published state", func() {
+			retrievedEditions, count, err := mongoStore.GetEditionsStatic(ctx, staticDatasetID, models.PublishedState, 0, 20)
+
+			Convey("Then it only returns editions that have published versions", func() {
+				So(err, ShouldBeNil)
+				So(count, ShouldEqual, 1)
+				So(retrievedEditions, ShouldHaveLength, 1)
+				So(retrievedEditions[0].Current.Edition, ShouldEqual, "edition1")
+				So(retrievedEditions[0].Current.Version, ShouldEqual, 1)
+				So(retrievedEditions[0].Next.Edition, ShouldEqual, "edition1")
+				So(retrievedEditions[0].Next.Version, ShouldEqual, 1)
+			})
+		})
+
+		Convey("When GetEditionsStatic is called with a non-existent datasetID", func() {
+			retrievedEditions, count, err := mongoStore.GetEditionsStatic(ctx, nonExistentDatasetID, "", 0, 20)
+
+			Convey("Then ErrEditionsNotFound is returned", func() {
+				So(err, ShouldEqual, errs.ErrEditionsNotFound)
+				So(count, ShouldEqual, 0)
+				So(retrievedEditions, ShouldBeNil)
+			})
 		})
 	})
 }
@@ -203,7 +278,7 @@ func TestDeleteStaticDatasetVersion(t *testing.T) {
 
 			versions, err := setupVersionsTestData(ctx, mongoStore)
 			So(err, ShouldBeNil)
-			So(versions, ShouldHaveLength, 4)
+			So(versions, ShouldHaveLength, 5)
 
 			datasetToDelete := staticDatasetID
 			editionToDelete := "edition2"
@@ -214,7 +289,7 @@ func TestDeleteStaticDatasetVersion(t *testing.T) {
 			selector := bson.M{"links.dataset.id": staticDatasetID}
 			totalCount, err := mongoStore.Connection.Collection(mongoStore.ActualCollectionName(config.VersionsCollection)).Count(ctx, selector)
 			So(err, ShouldBeNil)
-			So(totalCount, ShouldEqual, 1)
+			So(totalCount, ShouldEqual, 2)
 		})
 	})
 }
