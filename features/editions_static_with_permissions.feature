@@ -26,7 +26,7 @@ Feature: Dataset API - Static Editions Permissions
             """
             [
                 {
-                    "id": "test-version-population-1",
+                    "id": "January-version-1",
                     "edition": "January",
                     "edition_title": "January Edition Title",
                     "links": {
@@ -44,7 +44,25 @@ Feature: Dataset API - Static Editions Permissions
                     "type": "static"
                 },
                 {
-                    "id": "test-version-population-2",
+                    "id": "January-version-2",
+                    "edition": "January",
+                    "edition_title": "January Edition Title",
+                    "links": {
+                        "dataset": {
+                            "id": "population-estimates"
+                        },
+                        "edition": {
+                            "href": "/datasets/population-estimates/editions/January",
+                            "id": "January"
+                        }
+                    },
+                    "version": 2,
+                    "release_date": "2025-03-01T07:00:00.000Z",
+                    "state": "associated",
+                    "type": "static"
+                },
+                {
+                    "id": "February-version-1",
                     "edition": "February",
                     "edition_title": "February Edition Title",
                     "links": {
@@ -130,6 +148,47 @@ Feature: Dataset API - Static Editions Permissions
                                     "id": "population-estimates"
                                 },
                                 "latest_version": {
+                                    "href": "/datasets/population-estimates/editions/January/versions/2",
+                                    "id": "2"
+                                },
+                                "self": {
+                                    "href": "/datasets/population-estimates/editions/January",
+                                    "id": "January"
+                                },
+                                "versions": {
+                                    "href": "/datasets/population-estimates/editions/January/versions"
+                                }
+                            },
+                            "release_date": "2025-03-01T07:00:00.000Z",
+                            "state": "associated",
+                            "version": 2
+                        }
+                    }
+                ],
+                "limit": 20,
+                "offset": 0,
+                "total_count": 2
+            }
+            """
+
+    Scenario: GET /datasets/{id}/editions returns paginated results for Admin
+        Given private endpoints are enabled
+        And I am an admin user
+        When I GET "/datasets/population-estimates/editions?limit=1&offset=1"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "count": 1,
+                "items": [
+                    {
+                        "current": {
+                            "edition": "January",
+                            "edition_title": "January Edition Title",
+                            "links": {
+                                "dataset": {
+                                    "id": "population-estimates"
+                                },
+                                "latest_version": {
                                     "href": "/datasets/population-estimates/editions/January/versions/1",
                                     "id": "1"
                                 },
@@ -144,11 +203,34 @@ Feature: Dataset API - Static Editions Permissions
                             "release_date": "2025-01-01T07:00:00.000Z",
                             "state": "published",
                             "version": 1
+                        },
+                        "next": {
+                            "edition": "January",
+                            "edition_title": "January Edition Title",
+                            "links": {
+                                "dataset": {
+                                    "id": "population-estimates"
+                                },
+                                "latest_version": {
+                                    "href": "/datasets/population-estimates/editions/January/versions/2",
+                                    "id": "2"
+                                },
+                                "self": {
+                                    "href": "/datasets/population-estimates/editions/January",
+                                    "id": "January"
+                                },
+                                "versions": {
+                                    "href": "/datasets/population-estimates/editions/January/versions"
+                                }
+                            },
+                            "release_date": "2025-03-01T07:00:00.000Z",
+                            "state": "associated",
+                            "version": 2
                         }
                     }
                 ],
-                "limit": 20,
-                "offset": 0,
+                "limit": 1,
+                "offset": 1,
                 "total_count": 2
             }
             """
@@ -220,8 +302,8 @@ Feature: Dataset API - Static Editions Permissions
                                     "id": "population-estimates"
                                 },
                                 "latest_version": {
-                                    "href": "/datasets/population-estimates/editions/January/versions/1",
-                                    "id": "1"
+                                    "href": "/datasets/population-estimates/editions/January/versions/2",
+                                    "id": "2"
                                 },
                                 "self": {
                                     "href": "/datasets/population-estimates/editions/January",
@@ -231,9 +313,9 @@ Feature: Dataset API - Static Editions Permissions
                                     "href": "/datasets/population-estimates/editions/January/versions"
                                 }
                             },
-                            "release_date": "2025-01-01T07:00:00.000Z",
-                            "state": "published",
-                            "version": 1
+                            "release_date": "2025-03-01T07:00:00.000Z",
+                            "state": "associated",
+                            "version": 2
                         }
                     }
                 ],
