@@ -61,52 +61,15 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 	var totalCount int
 
 	if datasetType == models.Static.String() {
-		var versionResults []*models.Version
-		var unpublishedVersion *models.Version
-
-		versionResults, totalCount, err = api.dataStore.Backend.GetAllStaticVersions(ctx, datasetID, state, offset, limit)
+		results, totalCount, err = api.dataStore.Backend.GetEditionsStatic(ctx, datasetID, state, offset, limit)
 		if err != nil {
-			log.Error(ctx, "getEditions endpoint: unable to find versions for dataset", err, logData)
-			if err == errs.ErrVersionsNotFound {
-				http.Error(w, errs.ErrEditionsNotFound.Error(), http.StatusNotFound)
+			log.Error(ctx, "getEditions endpoint: unable to find editions for dataset", err, logData)
+			if err == errs.ErrEditionsNotFound {
+				http.Error(w, err.Error(), http.StatusNotFound)
 			} else {
 				http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
 			}
 			return nil, 0, err
-		}
-
-		editionMap := make(map[string][]*models.Version)
-		editionOrder := make([]string, 0) // maps are unordered, so a separate slice is needed to maintain the order returned from MongoDB
-
-		for _, version := range versionResults {
-			if _, exists := editionMap[version.Edition]; !exists {
-				editionOrder = append(editionOrder, version.Edition)
-			}
-			editionMap[version.Edition] = append(editionMap[version.Edition], version)
-		}
-
-		for _, editionID := range editionOrder {
-			publishedVersion, err := api.dataStore.Backend.GetLatestVersionStatic(ctx, datasetID, editionID, models.PublishedState)
-			if err != nil && err != errs.ErrVersionNotFound {
-				log.Error(ctx, "getEdition endpoint: unable to find latest published static version", err, logData)
-				return nil, 0, err
-			}
-
-			if authorised {
-				unpublishedVersion, err = api.dataStore.Backend.GetLatestVersionStatic(ctx, datasetID, editionID, "")
-				if err != nil && err != errs.ErrVersionNotFound {
-					log.Error(ctx, "getEdition endpoint: unable to find latest unpublished static version", err, logData)
-					return nil, 0, err
-				}
-			}
-
-			edition, err := utils.MapVersionsToEditionUpdate(publishedVersion, unpublishedVersion)
-			if err != nil {
-				log.Error(ctx, "getEditions endpoint: failed to map versions to edition", err, logData)
-				return nil, 0, err
-			}
-
-			results = append(results, edition)
 		}
 	} else {
 		results, totalCount, err = api.dataStore.Backend.GetEditions(ctx, datasetID, state, offset, limit, authorised)

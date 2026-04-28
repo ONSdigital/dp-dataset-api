@@ -17,7 +17,6 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
-	"github.com/ONSdigital/dp-dataset-api/utils"
 	permissionsAPISDK "github.com/ONSdigital/dp-permissions-api/sdk"
 	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
@@ -259,86 +258,6 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			},
 		}
 
-		versions := []*models.Version{
-			{
-				DatasetID:   "123",
-				Edition:     "2023",
-				ReleaseDate: "2023-10-01",
-				Links: &models.VersionLinks{
-					Dataset: &models.LinkObject{
-						HRef: "http://localhost:22000/datasets/123",
-						ID:   "123",
-					},
-					Version: &models.LinkObject{
-						HRef: "http://localhost:22000/datasets/123/editions/2023/versions/1",
-						ID:   "1",
-					},
-					Edition: &models.LinkObject{
-						HRef: "http://localhost:22000/datasets/123/editions/2023",
-						ID:   "2023",
-					},
-				},
-				Version:            1,
-				LastUpdated:        time.Date(2023, 9, 30, 12, 0, 0, 0, time.UTC),
-				Alerts:             &[]models.Alert{{Description: "Test alert"}},
-				UsageNotes:         &[]models.UsageNote{{Note: "Test usage note"}},
-				Distributions:      &[]models.Distribution{{Title: "Test distribution"}},
-				QualityDesignation: "Test quality designation",
-				State:              "published",
-			},
-			{
-				DatasetID:   "123",
-				Edition:     "2023",
-				ReleaseDate: "2023-10-01",
-				Links: &models.VersionLinks{
-					Dataset: &models.LinkObject{
-						HRef: "http://localhost:22000/datasets/123",
-						ID:   "123",
-					},
-					Version: &models.LinkObject{
-						HRef: "http://localhost:22000/datasets/123/editions/2023/versions/2",
-						ID:   "2",
-					},
-					Edition: &models.LinkObject{
-						HRef: "http://localhost:22000/datasets/123/editions/2023",
-						ID:   "2023",
-					},
-				},
-				Version:            2,
-				LastUpdated:        time.Date(2023, 9, 30, 12, 0, 0, 0, time.UTC),
-				Alerts:             &[]models.Alert{{Description: "Test alert"}},
-				UsageNotes:         &[]models.UsageNote{{Note: "Test usage note"}},
-				Distributions:      &[]models.Distribution{{Title: "Test distribution"}},
-				QualityDesignation: "Test quality designation",
-				State:              "published",
-			},
-		}
-		publishedLatestVersion := &models.Version{
-			DatasetID:   "123",
-			Edition:     "2023",
-			ReleaseDate: "2023-10-01",
-			Links: &models.VersionLinks{
-				Dataset: &models.LinkObject{
-					HRef: "http://localhost:22000/datasets/123",
-					ID:   "123",
-				},
-				Version: &models.LinkObject{
-					HRef: "http://localhost:22000/datasets/123/editions/2023/versions/2",
-					ID:   "2",
-				},
-				Edition: &models.LinkObject{
-					HRef: "http://localhost:22000/datasets/123/editions/2023",
-					ID:   "2023",
-				},
-			},
-			Version:            2,
-			LastUpdated:        time.Date(2023, 9, 30, 12, 0, 0, 0, time.UTC),
-			Alerts:             &[]models.Alert{{Description: "Test alert"}},
-			UsageNotes:         &[]models.UsageNote{{Note: "Test usage note"}},
-			Distributions:      &[]models.Distribution{{Title: "Test distribution"}},
-			QualityDesignation: "Test quality designation",
-			State:              "published",
-		}
 		mockedDataStore := &storetest.StorerMock{
 			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
 				return true, nil
@@ -346,11 +265,8 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
 				return models.Static.String(), nil
 			},
-			GetAllStaticVersionsFunc: func(ctx context.Context, ID, state string, offset, limit int) ([]*models.Version, int, error) {
-				return versions, 2, nil
-			},
-			GetLatestVersionStaticFunc: func(ctx context.Context, datasetID, editionID, state string) (*models.Version, error) {
-				return publishedLatestVersion, nil
+			GetEditionsStaticFunc: func(context.Context, string, string, int, int) ([]*models.EditionUpdate, int, error) {
+				return editionsList, 1, nil
 			},
 		}
 
@@ -364,14 +280,12 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 		}
 
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
-		_, totalCount, _ := api.getEditions(w, r, 20, 0)
-
-		editions, err := utils.MapVersionsToEditionUpdate(publishedLatestVersion, nil)
+		list, totalCount, err := api.getEditions(w, r, 20, 0)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.GetAllStaticVersionsCalls()), ShouldEqual, 1)
-		So([]*models.EditionUpdate{editions}, ShouldEqual, editionsList)
-		So(totalCount, ShouldEqual, 2)
+		So(len(mockedDataStore.GetEditionsStaticCalls()), ShouldEqual, 1)
+		So(list, ShouldEqual, editionsList)
+		So(totalCount, ShouldEqual, 1)
 		So(err, ShouldEqual, nil)
 	})
 
@@ -461,112 +375,6 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			},
 		}
 
-		versions := []*models.Version{
-			{
-				DatasetID:   "123",
-				Edition:     "2023",
-				ReleaseDate: "2023-10-01",
-				Links: &models.VersionLinks{
-					Dataset: &models.LinkObject{
-						HRef: "http://localhost:22000/datasets/123",
-						ID:   "123",
-					},
-					Version: &models.LinkObject{
-						HRef: "http://localhost:22000/datasets/123/editions/2023/versions/1",
-						ID:   "1",
-					},
-					Edition: &models.LinkObject{
-						HRef: "http://localhost:22000/datasets/123/editions/2023",
-						ID:   "2023",
-					},
-				},
-				Version:            1,
-				LastUpdated:        time.Date(2023, 9, 30, 12, 0, 0, 0, time.UTC),
-				Alerts:             &[]models.Alert{{Description: "Test alert"}},
-				UsageNotes:         &[]models.UsageNote{{Note: "Test usage note"}},
-				Distributions:      &[]models.Distribution{{Title: "Test distribution"}},
-				QualityDesignation: "Test quality designation",
-				State:              "published",
-			},
-			{
-				DatasetID:   "123",
-				Edition:     "2023",
-				ReleaseDate: "2023-10-01",
-				Links: &models.VersionLinks{
-					Dataset: &models.LinkObject{
-						HRef: "http://localhost:22000/datasets/123",
-						ID:   "123",
-					},
-					Version: &models.LinkObject{
-						HRef: "http://localhost:22000/datasets/123/editions/2023/versions/2",
-						ID:   "2",
-					},
-					Edition: &models.LinkObject{
-						HRef: "http://localhost:22000/datasets/123/editions/2023",
-						ID:   "2023",
-					},
-				},
-				Version:            2,
-				LastUpdated:        time.Date(2023, 9, 30, 12, 0, 0, 0, time.UTC),
-				Alerts:             &[]models.Alert{{Description: "Test alert"}},
-				UsageNotes:         &[]models.UsageNote{{Note: "Test usage note"}},
-				Distributions:      &[]models.Distribution{{Title: "Test distribution"}},
-				QualityDesignation: "Test quality designation",
-				State:              "associated",
-			},
-		}
-		publishedLatestVersion := &models.Version{
-			DatasetID:   "123",
-			Edition:     "2023",
-			ReleaseDate: "2023-10-01",
-			Links: &models.VersionLinks{
-				Dataset: &models.LinkObject{
-					HRef: "http://localhost:22000/datasets/123",
-					ID:   "123",
-				},
-				Version: &models.LinkObject{
-					HRef: "http://localhost:22000/datasets/123/editions/2023/versions/1",
-					ID:   "1",
-				},
-				Edition: &models.LinkObject{
-					HRef: "http://localhost:22000/datasets/123/editions/2023",
-					ID:   "2023",
-				},
-			},
-			Version:            1,
-			LastUpdated:        time.Date(2023, 9, 30, 12, 0, 0, 0, time.UTC),
-			Alerts:             &[]models.Alert{{Description: "Test alert"}},
-			UsageNotes:         &[]models.UsageNote{{Note: "Test usage note"}},
-			Distributions:      &[]models.Distribution{{Title: "Test distribution"}},
-			QualityDesignation: "Test quality designation",
-			State:              "published",
-		}
-		unpublishedLatestVersion := &models.Version{
-			DatasetID:   "123",
-			Edition:     "2023",
-			ReleaseDate: "2023-10-01",
-			Links: &models.VersionLinks{
-				Dataset: &models.LinkObject{
-					HRef: "http://localhost:22000/datasets/123",
-					ID:   "123",
-				},
-				Version: &models.LinkObject{
-					HRef: "http://localhost:22000/datasets/123/editions/2023/versions/2",
-					ID:   "2",
-				},
-				Edition: &models.LinkObject{
-					HRef: "http://localhost:22000/datasets/123/editions/2023",
-					ID:   "2023",
-				},
-			},
-			Version:            2,
-			LastUpdated:        time.Date(2023, 9, 30, 12, 0, 0, 0, time.UTC),
-			Alerts:             &[]models.Alert{{Description: "Test alert"}},
-			UsageNotes:         &[]models.UsageNote{{Note: "Test usage note"}},
-			Distributions:      &[]models.Distribution{{Title: "Test distribution"}},
-			QualityDesignation: "Test quality designation",
-			State:              "associated",
-		}
 		mockedDataStore := &storetest.StorerMock{
 			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
 				return true, nil
@@ -574,11 +382,8 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
 				return models.Static.String(), nil
 			},
-			GetAllStaticVersionsFunc: func(ctx context.Context, ID, state string, offset, limit int) ([]*models.Version, int, error) {
-				return versions, 2, nil
-			},
-			GetLatestVersionStaticFunc: func(ctx context.Context, datasetID, editionID, state string) (*models.Version, error) {
-				return publishedLatestVersion, nil
+			GetEditionsStaticFunc: func(context.Context, string, string, int, int) ([]*models.EditionUpdate, int, error) {
+				return editionsList, 1, nil
 			},
 		}
 
@@ -592,14 +397,12 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 		}
 
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
-		_, totalCount, _ := api.getEditions(w, r, 20, 0)
-
-		editions, err := utils.MapVersionsToEditionUpdate(publishedLatestVersion, unpublishedLatestVersion)
+		list, totalCount, err := api.getEditions(w, r, 20, 0)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.GetAllStaticVersionsCalls()), ShouldEqual, 1)
-		So([]*models.EditionUpdate{editions}, ShouldEqual, editionsList)
-		So(totalCount, ShouldEqual, 2)
+		So(len(mockedDataStore.GetEditionsStaticCalls()), ShouldEqual, 1)
+		So(list, ShouldEqual, editionsList)
+		So(totalCount, ShouldEqual, 1)
 		So(err, ShouldEqual, nil)
 	})
 }
@@ -749,8 +552,8 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
 				return models.Static.String(), nil
 			},
-			GetAllStaticVersionsFunc: func(ctx context.Context, ID, state string, offset, limit int) ([]*models.Version, int, error) {
-				return nil, 0, errs.ErrVersionsNotFound
+			GetEditionsStaticFunc: func(context.Context, string, string, int, int) ([]*models.EditionUpdate, int, error) {
+				return nil, 0, errs.ErrEditionsNotFound
 			},
 		}
 
@@ -768,7 +571,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionsNotFound.Error())
-		So(len(mockedDataStore.GetAllStaticVersionsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionsStaticCalls()), ShouldEqual, 1)
 	})
 }
 
