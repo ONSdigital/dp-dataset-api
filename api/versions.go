@@ -161,8 +161,9 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 	if api.enableURLRewriting {
 		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 		codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetCodeListAPIURL())
+		websiteLinksBuilder := &links.Builder{URL: api.urlBuilder.GetWebsiteURL()}
 
-		list, err = utils.RewriteVersions(ctx, list, datasetLinksBuilder, codeListLinksBuilder, api.urlBuilder.GetDownloadServiceURL())
+		list, err = utils.RewriteVersions(ctx, list, datasetLinksBuilder, codeListLinksBuilder, websiteLinksBuilder, api.urlBuilder.GetDownloadServiceURL())
 		if err != nil {
 			log.Error(ctx, "getVersions endpoint: error rewriting dimension, version, download or distribution links", err)
 			handleVersionAPIErr(ctx, err, w, logData)
@@ -288,10 +289,11 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 	if api.enableURLRewriting {
 		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 		codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetCodeListAPIURL())
+		websiteLinksBuilder := &links.Builder{URL: api.urlBuilder.GetWebsiteURL()}
 
 		var err error
 
-		err = utils.RewriteVersionLinks(ctx, v.Links, datasetLinksBuilder)
+		err = utils.RewriteVersionLinks(ctx, v.Links, datasetLinksBuilder, websiteLinksBuilder)
 		if err != nil {
 			log.Error(ctx, "getVersion endpoint: failed to rewrite version links", err, logData)
 			return nil, models.NewErrorResponse(getVersionAPIErrStatusCode(err), nil, models.NewError(err, "failed to rewrite version links", "internal error"))
