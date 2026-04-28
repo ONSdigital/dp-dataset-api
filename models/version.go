@@ -128,6 +128,7 @@ type VersionLinks struct {
 	Self       *LinkObject `bson:"self,omitempty"        json:"self,omitempty"`
 	Spatial    *LinkObject `bson:"spatial,omitempty"     json:"spatial,omitempty"`
 	Version    *LinkObject `bson:"version,omitempty"     json:"-"`
+	WebPage    *LinkObject `bson:"web_page,omitempty"    json:"web_page,omitempty"`
 }
 
 func (vl *VersionLinks) DeepCopy() *VersionLinks {
@@ -166,6 +167,12 @@ func (vl *VersionLinks) DeepCopy() *VersionLinks {
 		dst.Version = &LinkObject{
 			ID:   vl.Version.ID,
 			HRef: vl.Version.HRef,
+		}
+	}
+	if vl.WebPage != nil {
+		dst.WebPage = &LinkObject{
+			ID:   vl.WebPage.ID,
+			HRef: vl.WebPage.HRef,
 		}
 	}
 	return dst

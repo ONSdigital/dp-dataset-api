@@ -412,6 +412,10 @@ func TestVersionLinksDeepCopy(t *testing.T) {
 				ID:   "versionID",
 				HRef: "versionHRef",
 			},
+			WebPage: &LinkObject{
+				ID:   "webPageID",
+				HRef: "webPageHRef",
+			},
 		}
 
 		Convey("Then doing a deep copy of it results in a new fully populated VersionLinks", func() {
@@ -441,6 +445,10 @@ func TestVersionLinksDeepCopy(t *testing.T) {
 					ID:   "versionID",
 					HRef: "versionHRef",
 				},
+				WebPage: &LinkObject{
+					ID:   "webPageID",
+					HRef: "webPageHRef",
+				},
 			})
 
 			So(vl2, ShouldNotPointTo, vl)
@@ -450,6 +458,7 @@ func TestVersionLinksDeepCopy(t *testing.T) {
 			So(vl2.Self, ShouldNotPointTo, vl.Self)
 			So(vl2.Spatial, ShouldNotPointTo, vl.Spatial)
 			So(vl2.Version, ShouldNotPointTo, vl.Version)
+			So(vl2.WebPage, ShouldNotPointTo, vl.WebPage)
 		})
 	})
 
