@@ -590,10 +590,10 @@ func (svc *Service) registerCheckers(ctx context.Context) (err error) {
 			log.Error(ctx, "error adding check for search content updated kafka producer", err)
 		}
 
-		if err = svc.healthCheck.AddCheck("Files API Client", svc.filesAPIClient.Checker); err != nil {
-			hasErrors = true
-			log.Error(ctx, "error adding check for files api client", err)
-		}
+		// if err = svc.healthCheck.AddCheck("Files API Client", svc.filesAPIClient.Checker); err != nil {
+		// 	hasErrors = true
+		// 	log.Error(ctx, "error adding check for files api client", err)
+		// }
 
 		// If running Catabular Locally then don't do health checks against GraphDB
 		if !svc.config.DisableGraphDBDependency {

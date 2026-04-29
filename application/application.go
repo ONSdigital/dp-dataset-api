@@ -741,6 +741,7 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 	}
 
 	if versionUpdate, err := doUpdate(); err != nil {
+		fmt.Println("IN THE DO UPDATE THING")
 		if err == errs.ErrDatasetNotFound {
 			if versionUpdate != nil {
 				if versionUpdate.Type == models.Static.String() {
@@ -759,6 +760,7 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 			}
 
 			if _, err := doUpdate(); err != nil {
+				fmt.Println("DOING THE UPDATE again")
 				log.Error(ctx, "putVersion endpoint: failed to update version document on 2nd attempt", err)
 				return nil, err
 			}
