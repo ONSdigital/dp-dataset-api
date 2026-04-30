@@ -15,7 +15,7 @@ import (
 var (
 	codeListAPIURL     = &neturl.URL{Scheme: "http", Host: "localhost:22400"}
 	datasetAPIURL      = &neturl.URL{Scheme: "http", Host: "localhost:22000"}
-	websiteURL         = &neturl.URL{Scheme: "http", Host: "localhost:20000"}
+	publicWebsiteURL   = &neturl.URL{Scheme: "http", Host: "localhost:20000"}
 	downloadServiceURL = &neturl.URL{Scheme: "http", Host: "localhost:23600"}
 	importAPIURL       = &neturl.URL{Scheme: "http", Host: "localhost:21800"}
 )
@@ -3924,7 +3924,7 @@ func TestRewriteVersions_Success(t *testing.T) {
 	Convey("Given a list of versions", t, func() {
 		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, codeListAPIURL)
 		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
-		websiteLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, websiteURL)
+		websiteLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, publicWebsiteURL)
 
 		Convey("When the version, dimension, download and distribution links need rewriting", func() {
 			results := []models.Version{
@@ -4556,7 +4556,7 @@ func TestRewriteVersions_Error(t *testing.T) {
 	Convey("Given a list of versions", t, func() {
 		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, codeListAPIURL)
-		websiteLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, websiteURL)
+		websiteLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, publicWebsiteURL)
 		Convey("When the version links are unable to be parsed", func() {
 			results := []models.Version{
 				{
@@ -4700,7 +4700,7 @@ func TestRewriteVersionLinks_Success(t *testing.T) {
 	ctx := context.Background()
 	Convey("Given a set of version links", t, func() {
 		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
-		websiteLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, websiteURL)
+		websiteLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, publicWebsiteURL)
 		Convey("When the version links need rewriting", func() {
 			versionLinks := &models.VersionLinks{
 				Dataset: &models.LinkObject{

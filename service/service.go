@@ -442,9 +442,14 @@ func (svc *Service) initTopicAPIClient(ctx context.Context) {
 }
 
 func createURLBuilder(cfg *config.Configuration) (*url.Builder, error) {
-	websiteURL, err := neturl.Parse(cfg.WebsiteURL)
+	publicWebsiteURL, err := neturl.Parse(cfg.PublicWebsiteURL)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to parse WebsiteURL from config")
+		return nil, errors.Wrap(err, "unable to parse PublicWebsiteURL from config")
+	}
+
+	privateWebsiteURL, err := neturl.Parse(cfg.PrivateWebsiteURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to parse PrivateWebsiteURL from config")
 	}
 
 	downloadServiceURL, err := neturl.Parse(cfg.DownloadServiceURL)
@@ -472,7 +477,7 @@ func createURLBuilder(cfg *config.Configuration) (*url.Builder, error) {
 		return nil, errors.Wrap(err, "unable to parse APIRouterPublicURL from config")
 	}
 
-	return url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL, apiRouterPublicURL), nil
+	return url.NewBuilder(publicWebsiteURL, privateWebsiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL, apiRouterPublicURL), nil
 }
 
 // CreateMiddleware creates an Alice middleware chain of handlers

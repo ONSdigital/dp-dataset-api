@@ -39,7 +39,8 @@ type Configuration struct {
 	DownloadServiceURL             string        `envconfig:"DOWNLOAD_SERVICE_URL"`
 	ImportAPIURL                   string        `envconfig:"IMPORT_API_URL"`
 	TopicAPIURL                    string        `envconfig:"TOPIC_API_URL"`
-	WebsiteURL                     string        `envconfig:"WEBSITE_URL"`
+	PublicWebsiteURL               string        `envconfig:"PUBLIC_WEBSITE_URL"`
+	PrivateWebsiteURL              string        `envconfig:"PRIVATE_WEBSITE_URL"`
 	ZebedeeURL                     string        `envconfig:"ZEBEDEE_URL"`
 	DownloadServiceSecretKey       string        `envconfig:"DOWNLOAD_SERVICE_SECRET_KEY"      json:"-"`
 	ServiceAuthToken               string        `envconfig:"SERVICE_AUTH_TOKEN"               json:"-"`
@@ -104,7 +105,8 @@ func Get() (*Configuration, error) {
 		DownloadServiceURL:             "http://localhost:23600",
 		ImportAPIURL:                   "http://localhost:21800",
 		TopicAPIURL:                    "http://localhost:25300",
-		WebsiteURL:                     "http://localhost:20000",
+		PublicWebsiteURL:               "http://localhost:20000",
+		PrivateWebsiteURL:              "http://localhost:20000",
 		ZebedeeURL:                     "http://localhost:8082",
 		ServiceAuthToken:               "FD0108EA-825D-411C-9B1D-41EF7727F465",
 		DownloadServiceSecretKey:       "QB0108EZ-825D-412C-9B1D-41EF7747F462",

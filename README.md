@@ -90,7 +90,8 @@ Scripts for updating and debugging Kafka can be found [here](https://github.com/
 | IMPORT_API_URL                     | `http://localhost:21800`                                                                         | The host name for the Import API                                                                     |
 | TOPIC_API_URL                      | `http://localhost:25300`                                                                         | The host name for the Topic API                                                                      |
 | GRACEFUL_SHUTDOWN_TIMEOUT          | 5s                                                                                               | The graceful shutdown timeout in seconds                                                             |
-| WEBSITE_URL                        | `http://localhost:20000`                                                                         | The host name for the website                                                                        |
+| PUBLIC_WEBSITE_URL                        | `http://localhost:20000`                                                                         | The host name for the public website                                                                        |
+| PRIVATE_WEBSITE_URL                       | `http://localhost:20000`                                                                         | The host name for the private website                                                                |
 | KAFKA_ADDR                         | `localhost:9092`                                                                                 | The address of (TLS-ready) Kafka brokers (comma-separated values)                                    |
 | KAFKA_CONSUMER_MIN_BROKERS_HEALTHY | 2                                                                                                | The minimum number of consumer brokers needed                                                        |
 | KAFKA_PRODUCER_MIN_BROKERS_HEALTHY | 2                                                                                                | The minimum number of producer brokers needed                                                        |
@@ -141,6 +142,6 @@ See [CONTRIBUTING](CONTRIBUTING.md) for details.
 
 ### License
 
-Copyright © 2016-2022, [Office for National Statistics](https://www.ons.gov.uk)
+Copyright © 2016-2026, [Office for National Statistics](https://www.ons.gov.uk)
 
 Released under MIT license, see [LICENSE](LICENSE.md) for details

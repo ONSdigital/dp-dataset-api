@@ -7,8 +7,8 @@ import (
 )
 
 func TestGeneratePurgePrefixes(t *testing.T) {
-	Convey("Given a website URL, API router public URL, topic slug, dataset ID, edition and version", t, func() {
-		websiteURL := "https://www.example.com"
+	Convey("Given a public website URL, API router public URL, topic slug, dataset ID, edition and version", t, func() {
+		publicWebsiteURL := "https://www.example.com"
 		apiRouterPublicURL := "https://api.example.com"
 		topicSlug := "economy"
 		datasetID := "dataset123"
@@ -16,7 +16,7 @@ func TestGeneratePurgePrefixes(t *testing.T) {
 		version := "1"
 
 		Convey("When GeneratePurgePrefixes is called", func() {
-			prefixes := GeneratePurgePrefixes(websiteURL, apiRouterPublicURL, topicSlug, datasetID, edition, version)
+			prefixes := GeneratePurgePrefixes(publicWebsiteURL, apiRouterPublicURL, topicSlug, datasetID, edition, version)
 
 			Convey("Then the correct list of URL prefixes is returned", func() {
 				expectedPrefixes := []string{

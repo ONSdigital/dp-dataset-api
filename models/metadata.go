@@ -3,7 +3,6 @@ package models
 import (
 	"bytes"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/ONSdigital/dp-dataset-api/url"
@@ -139,10 +138,12 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 		metaDataDoc.Links.Spatial = versionDoc.Links.Spatial
 		metaDataDoc.Links.Version = versionDoc.Links.Version
 
-		websiteVersionURL := urlBuilder.BuildWebsiteDatasetVersionURL(
+		websiteVersionURL := fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%d",
+			urlBuilder.GetPublicWebsiteURL(),
 			datasetDoc.ID,
 			versionDoc.Links.Edition.ID,
-			strconv.Itoa(versionDoc.Version))
+			versionDoc.Version,
+		)
 
 		metaDataDoc.Links.WebsiteVersion = &LinkObject{
 			HRef: websiteVersionURL,
