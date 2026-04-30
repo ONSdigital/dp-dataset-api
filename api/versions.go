@@ -161,7 +161,13 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 	if api.enableURLRewriting {
 		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 		codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetCodeListAPIURL())
-		websiteLinksBuilder := &links.Builder{URL: api.urlBuilder.GetWebsiteURL()}
+		websiteLinksBuilder := &links.Builder{}
+
+		if api.enablePrivateEndpoints {
+			websiteLinksBuilder.URL = api.urlBuilder.GetPrivateWebsiteURL()
+		} else {
+			websiteLinksBuilder.URL = api.urlBuilder.GetPublicWebsiteURL()
+		}
 
 		list, err = utils.RewriteVersions(ctx, list, datasetLinksBuilder, codeListLinksBuilder, websiteLinksBuilder, api.urlBuilder.GetDownloadServiceURL())
 		if err != nil {
@@ -289,7 +295,13 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 	if api.enableURLRewriting {
 		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 		codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetCodeListAPIURL())
-		websiteLinksBuilder := &links.Builder{URL: api.urlBuilder.GetWebsiteURL()}
+		websiteLinksBuilder := &links.Builder{}
+
+		if api.enablePrivateEndpoints {
+			websiteLinksBuilder.URL = api.urlBuilder.GetPrivateWebsiteURL()
+		} else {
+			websiteLinksBuilder.URL = api.urlBuilder.GetPublicWebsiteURL()
+		}
 
 		var err error
 
@@ -1059,7 +1071,7 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		prefixes := utils.GeneratePurgePrefixes(api.urlBuilder.GetWebsiteURL().String(), api.urlBuilder.GetAPIRouterPublicURL().String(), topic.Next.Slug, datasetID, edition, version)
+		prefixes := utils.GeneratePurgePrefixes(api.urlBuilder.GetPublicWebsiteURL().String(), api.urlBuilder.GetAPIRouterPublicURL().String(), topic.Next.Slug, datasetID, edition, version)
 		logData["purge_prefixes"] = prefixes
 
 		err = api.cloudflareClient.PurgeByPrefixes(ctx, prefixes)
