@@ -15,6 +15,7 @@ import (
 var (
 	codeListAPIURL     = &neturl.URL{Scheme: "http", Host: "localhost:22400"}
 	datasetAPIURL      = &neturl.URL{Scheme: "http", Host: "localhost:22000"}
+	websiteURL         = &neturl.URL{Scheme: "http", Host: "localhost:20000"}
 	downloadServiceURL = &neturl.URL{Scheme: "http", Host: "localhost:23600"}
 	importAPIURL       = &neturl.URL{Scheme: "http", Host: "localhost:21800"}
 )
@@ -3923,6 +3924,7 @@ func TestRewriteVersions_Success(t *testing.T) {
 	Convey("Given a list of versions", t, func() {
 		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, codeListAPIURL)
 		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
+		websiteLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, websiteURL)
 
 		Convey("When the version, dimension, download and distribution links need rewriting", func() {
 			results := []models.Version{
@@ -3942,6 +3944,9 @@ func TestRewriteVersions_Success(t *testing.T) {
 						},
 						Self: &models.LinkObject{
 							HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/53",
+						},
+						WebPage: &models.LinkObject{
+							HRef: "https://oldhost:1000/economy/datasets/cpih01/editions/time-series/versions/53",
 						},
 					},
 					Dimensions: []models.Dimension{
@@ -4036,6 +4041,9 @@ func TestRewriteVersions_Success(t *testing.T) {
 						Self: &models.LinkObject{
 							HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/52",
 						},
+						WebPage: &models.LinkObject{
+							HRef: "https://oldhost:1000/economy/datasets/cpih01/editions/time-series/versions/52",
+						},
 					},
 					Dimensions: []models.Dimension{
 						{
@@ -4114,7 +4122,7 @@ func TestRewriteVersions_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, downloadServiceURL)
+			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, websiteLinksBuilder, downloadServiceURL)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
@@ -4126,6 +4134,7 @@ func TestRewriteVersions_Success(t *testing.T) {
 				So(items[0].Links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
 				So(items[0].Links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
 				So(items[0].Links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/53")
+				So(items[0].Links.WebPage.HRef, ShouldEqual, "http://localhost:20000/economy/datasets/cpih01/editions/time-series/versions/53")
 				So(items[0].Dimensions[0].Links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid")
 				So(items[0].Dimensions[0].Links.Options.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/aggregate/options")
 				So(items[0].Dimensions[0].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
@@ -4152,6 +4161,7 @@ func TestRewriteVersions_Success(t *testing.T) {
 				So(items[1].Links.Dataset.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01")
 				So(items[1].Links.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series")
 				So(items[1].Links.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/52")
+				So(items[1].Links.WebPage.HRef, ShouldEqual, "http://localhost:20000/economy/datasets/cpih01/editions/time-series/versions/52")
 				So(items[1].Dimensions[0].Links.CodeList.HRef, ShouldEqual, "http://localhost:22400/code-lists/cpih1dim1aggid")
 				So(items[1].Dimensions[0].Links.Options.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/dimensions/aggregate/options")
 				So(items[1].Dimensions[0].Links.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
@@ -4191,6 +4201,9 @@ func TestRewriteVersions_Success(t *testing.T) {
 						},
 						Self: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/53",
+						},
+						WebPage: &models.LinkObject{
+							HRef: "http://localhost:20000/economy/datasets/cpih01/editions/time-series/versions/53",
 						},
 					},
 					Dimensions: []models.Dimension{
@@ -4285,6 +4298,9 @@ func TestRewriteVersions_Success(t *testing.T) {
 						Self: &models.LinkObject{
 							HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/52",
 						},
+						WebPage: &models.LinkObject{
+							HRef: "http://localhost:20000/economy/datasets/cpih01/editions/time-series/versions/52",
+						},
 					},
 					Dimensions: []models.Dimension{
 						{
@@ -4363,7 +4379,7 @@ func TestRewriteVersions_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, downloadServiceURL)
+			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, websiteLinksBuilder, downloadServiceURL)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
@@ -4375,6 +4391,7 @@ func TestRewriteVersions_Success(t *testing.T) {
 				So(items[0].Links.Dataset.HRef, ShouldEqual, results[0].Links.Dataset.HRef)
 				So(items[0].Links.Edition.HRef, ShouldEqual, results[0].Links.Edition.HRef)
 				So(items[0].Links.Self.HRef, ShouldEqual, results[0].Links.Self.HRef)
+				So(items[0].Links.WebPage.HRef, ShouldEqual, results[0].Links.WebPage.HRef)
 				So(items[0].Dimensions[0].Links.CodeList.HRef, ShouldEqual, results[0].Dimensions[0].Links.CodeList.HRef)
 				So(items[0].Dimensions[0].Links.Options.HRef, ShouldEqual, results[0].Dimensions[0].Links.Options.HRef)
 				So(items[0].Dimensions[0].Links.Version.HRef, ShouldEqual, results[0].Dimensions[0].Links.Version.HRef)
@@ -4401,6 +4418,7 @@ func TestRewriteVersions_Success(t *testing.T) {
 				So(items[1].Links.Dataset.HRef, ShouldEqual, results[1].Links.Dataset.HRef)
 				So(items[1].Links.Edition.HRef, ShouldEqual, results[1].Links.Edition.HRef)
 				So(items[1].Links.Self.HRef, ShouldEqual, results[1].Links.Self.HRef)
+				So(items[1].Links.WebPage.HRef, ShouldEqual, results[1].Links.WebPage.HRef)
 				So(items[1].Dimensions[0].Links.CodeList.HRef, ShouldEqual, results[1].Dimensions[0].Links.CodeList.HRef)
 				So(items[1].Dimensions[0].Links.Options.HRef, ShouldEqual, results[1].Dimensions[0].Links.Options.HRef)
 				So(items[1].Dimensions[0].Links.Version.HRef, ShouldEqual, results[1].Dimensions[0].Links.Version.HRef)
@@ -4446,7 +4464,7 @@ func TestRewriteVersions_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, downloadServiceURL)
+			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, websiteLinksBuilder, downloadServiceURL)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -4495,7 +4513,7 @@ func TestRewriteVersions_Success(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, downloadServiceURL)
+			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, websiteLinksBuilder, downloadServiceURL)
 
 			Convey("Then the links should remain nil", func() {
 				So(err, ShouldBeNil)
@@ -4523,7 +4541,7 @@ func TestRewriteVersions_Success(t *testing.T) {
 		Convey("When the versions are empty", func() {
 			results := []models.Version{}
 
-			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, downloadServiceURL)
+			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, websiteLinksBuilder, downloadServiceURL)
 
 			Convey("Then the versions should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -4538,6 +4556,7 @@ func TestRewriteVersions_Error(t *testing.T) {
 	Convey("Given a list of versions", t, func() {
 		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
 		codeListLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, codeListAPIURL)
+		websiteLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, websiteURL)
 		Convey("When the version links are unable to be parsed", func() {
 			results := []models.Version{
 				{
@@ -4580,7 +4599,7 @@ func TestRewriteVersions_Error(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, downloadServiceURL)
+			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, websiteLinksBuilder, downloadServiceURL)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -4618,7 +4637,7 @@ func TestRewriteVersions_Error(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, downloadServiceURL)
+			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, websiteLinksBuilder, downloadServiceURL)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -4642,7 +4661,7 @@ func TestRewriteVersions_Error(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, downloadServiceURL)
+			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, websiteLinksBuilder, downloadServiceURL)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -4666,7 +4685,7 @@ func TestRewriteVersions_Error(t *testing.T) {
 				},
 			}
 
-			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, downloadServiceURL)
+			items, err := RewriteVersions(ctx, results, datasetLinksBuilder, codeListLinksBuilder, websiteLinksBuilder, downloadServiceURL)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -4681,6 +4700,7 @@ func TestRewriteVersionLinks_Success(t *testing.T) {
 	ctx := context.Background()
 	Convey("Given a set of version links", t, func() {
 		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
+		websiteLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, websiteURL)
 		Convey("When the version links need rewriting", func() {
 			versionLinks := &models.VersionLinks{
 				Dataset: &models.LinkObject{
@@ -4704,9 +4724,12 @@ func TestRewriteVersionLinks_Success(t *testing.T) {
 					HRef: "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
 					ID:   "1",
 				},
+				WebPage: &models.LinkObject{
+					HRef: "https://oldhost:1000/economy/datasets/cpih01/editions/time-series/versions/1",
+				},
 			}
 
-			err := RewriteVersionLinks(ctx, versionLinks, datasetLinksBuilder)
+			err := RewriteVersionLinks(ctx, versionLinks, datasetLinksBuilder, websiteLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
@@ -4717,6 +4740,7 @@ func TestRewriteVersionLinks_Success(t *testing.T) {
 				So(versionLinks.Spatial.HRef, ShouldEqual, "https://oldhost:1000/spatial")
 				So(versionLinks.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 				So(versionLinks.Version.ID, ShouldEqual, "1")
+				So(versionLinks.WebPage.HRef, ShouldEqual, "http://localhost:20000/economy/datasets/cpih01/editions/time-series/versions/1")
 			})
 		})
 
@@ -4743,9 +4767,12 @@ func TestRewriteVersionLinks_Success(t *testing.T) {
 					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1",
 					ID:   "1",
 				},
+				WebPage: &models.LinkObject{
+					HRef: "http://localhost:20000/economy/datasets/cpih01/editions/time-series/versions/1",
+				},
 			}
 
-			err := RewriteVersionLinks(ctx, versionLinks, datasetLinksBuilder)
+			err := RewriteVersionLinks(ctx, versionLinks, datasetLinksBuilder, websiteLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
@@ -4756,13 +4783,14 @@ func TestRewriteVersionLinks_Success(t *testing.T) {
 				So(versionLinks.Spatial.HRef, ShouldEqual, "http://oldhost:1000/spatial")
 				So(versionLinks.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 				So(versionLinks.Version.ID, ShouldEqual, "1")
+				So(versionLinks.WebPage.HRef, ShouldEqual, "http://localhost:20000/economy/datasets/cpih01/editions/time-series/versions/1")
 			})
 		})
 
 		Convey("When the version links are empty", func() {
 			versionLinks := &models.VersionLinks{}
 
-			err := RewriteVersionLinks(ctx, versionLinks, datasetLinksBuilder)
+			err := RewriteVersionLinks(ctx, versionLinks, datasetLinksBuilder, websiteLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -4771,7 +4799,7 @@ func TestRewriteVersionLinks_Success(t *testing.T) {
 		})
 
 		Convey("When the version links are nil", func() {
-			err := RewriteVersionLinks(ctx, nil, datasetLinksBuilder)
+			err := RewriteVersionLinks(ctx, nil, datasetLinksBuilder, websiteLinksBuilder)
 
 			Convey("Then the links should remain nil", func() {
 				So(err, ShouldBeNil)
@@ -4789,26 +4817,9 @@ func TestRewriteVersionLinks_Error(t *testing.T) {
 					HRef: "://oldhost:1000/datasets/cpih01",
 					ID:   "cpih01",
 				},
-				Dimensions: &models.LinkObject{
-					HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/1/dimensions",
-				},
-				Edition: &models.LinkObject{
-					HRef: "://oldhost:1000/datasets/cpih01/editions/time-series",
-					ID:   "time-series",
-				},
-				Self: &models.LinkObject{
-					HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
-				},
-				Spatial: &models.LinkObject{
-					HRef: "://oldhost:1000/spatial",
-				},
-				Version: &models.LinkObject{
-					HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
-					ID:   "1",
-				},
 			}
 
-			err := RewriteVersionLinks(ctx, versionLinks, nil)
+			err := RewriteVersionLinks(ctx, versionLinks, nil, nil)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)

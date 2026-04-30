@@ -38,6 +38,9 @@ Feature: Static versions GET /versions
                         },
                         "self": {
                             "href": "/datasets/test-static/editions/test-edition-static/versions/1"
+                        },
+                        "web_page": {
+                            "href": "/economy/datasets/test-static/editions/test-edition-static/versions/1"
                         }
                     },
                     "state": "created",
@@ -67,6 +70,9 @@ Feature: Static versions GET /versions
                         },
                         "self": {
                             "href": "/datasets/test-static/editions/test-edition-static-approved/versions/1"
+                        },
+                        "web_page": {
+                            "href": "/economy/datasets/test-static/editions/test-edition-static-approved/versions/1"
                         }
                     },
                     "state": "approved",
@@ -96,6 +102,9 @@ Feature: Static versions GET /versions
                         },
                         "self": {
                             "href": "/datasets/test-static/editions/test-edition-published/versions/1"
+                        },
+                        "web_page": {
+                            "href": "/economy/datasets/test-static/editions/test-edition-published/versions/1"
                         }
                     },
                     "state": "published",
@@ -139,6 +148,9 @@ Feature: Static versions GET /versions
                             },
                             "self": {
                                 "href": "/datasets/test-static/editions/test-edition-static-approved/versions/1"
+                            },
+                            "web_page": {
+                                "href": "/economy/datasets/test-static/editions/test-edition-static-approved/versions/1"
                             }
                         },
                         "edition": "test-edition-static-approved",
@@ -157,6 +169,103 @@ Feature: Static versions GET /versions
                 "limit": 20,
                 "offset": 0,
                 "total_count": 1
+            }
+            """
+
+    Scenario: GET /datasets/test-static/editions/test-edition-static-approved/versions in private mode rewrites all links when URL rewriting is enabled
+        Given private endpoints are enabled
+        And URL rewriting is enabled
+        And I set the "X-Forwarded-Host" header to "api.example.com"
+        And I set the "X-Forwarded-Path-Prefix" header to "v1"
+        And I am an admin user
+        When I GET "/datasets/test-static/editions/test-edition-static-approved/versions"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "count": 1,
+                "items": [
+                    {
+                        "dataset_id": "test-static",
+                        "id": "test-static-version-approved",
+                        "last_updated":"2021-01-01T00:00:01Z",
+                        "type":"static",
+                        "version": 1,
+                        "state": "approved",
+                        "links": {
+                            "dataset": {
+                                "id": "test-static"
+                            },
+                            "edition": {
+                                "href": "https://api.example.com/v1/datasets/test-static/editions/test-edition-static-approved",
+                                "id": "test-edition-static-approved"
+                            },
+                            "self": {
+                                "href": "https://api.example.com/v1/datasets/test-static/editions/test-edition-static-approved/versions/1"
+                            },
+                            "web_page": {
+                                "href": "http://localhost:20000/economy/datasets/test-static/editions/test-edition-static-approved/versions/1"
+                            }
+                        },
+                        "edition": "test-edition-static-approved",
+                        "edition_title": "Test Edition Static Approved Title",
+                        "distributions": [
+                            {
+                                "title": "Distribution 1",
+                                "format": "csv",
+                                "media_type": "text/csv",
+                                "download_url": "http://localhost:23600/downloads/files/uuid/filename.csv",
+                                "byte_size": 100000
+                            }
+                        ]
+                    }
+                ],
+                "limit": 20,
+                "offset": 0,
+                "total_count": 1
+            }
+            """
+
+    Scenario: GET /datasets/test-static/editions/test-edition-static-approved/versions/1 in private mode rewrites all links when URL rewriting is enabled
+        Given private endpoints are enabled
+        And URL rewriting is enabled
+        And I set the "X-Forwarded-Host" header to "api.example.com"
+        And I set the "X-Forwarded-Path-Prefix" header to "v1"
+        And I am an admin user
+        When I GET "/datasets/test-static/editions/test-edition-static-approved/versions/1"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "id": "test-static-version-approved",
+                "last_updated":"2021-01-01T00:00:01Z",
+                "type":"static",
+                "version": 1,
+                "state": "approved",
+                "links": {
+                    "dataset": {
+                        "id": "test-static"
+                    },
+                    "edition": {
+                        "href": "https://api.example.com/v1/datasets/test-static/editions/test-edition-static-approved",
+                        "id": "test-edition-static-approved"
+                    },
+                    "self": {
+                        "href": "https://api.example.com/v1/datasets/test-static/editions/test-edition-static-approved/versions/1"
+                    },
+                    "web_page": {
+                        "href": "http://localhost:20000/economy/datasets/test-static/editions/test-edition-static-approved/versions/1"
+                    }
+                },
+                "edition": "test-edition-static-approved",
+                "edition_title": "Test Edition Static Approved Title",
+                "distributions": [
+                    {
+                        "title": "Distribution 1",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "download_url": "http://localhost:23600/downloads/files/uuid/filename.csv",
+                        "byte_size": 100000
+                    }
+                ]
             }
             """
 
