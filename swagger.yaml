@@ -2663,6 +2663,9 @@ definitions:
         example: July to September 2017
       is_based_on:
         $ref: "#/definitions/IsBasedOn"
+      is_migration:
+        description: "Indicates whether this version was created as part of a dataset migration"
+        type: boolean
       last_updated:
         $ref: "#/definitions/LastUpdated"
       latest_changes:

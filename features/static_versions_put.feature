@@ -897,3 +897,48 @@ Feature: Static Dataset Versions PUT API
               """
               canonical topic can't be changed once a series is published
               """
+
+    Scenario: PUT updates static dataset version with is_migration field
+        Given private endpoints are enabled
+        And I am an admin user
+        When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
+            """
+            {
+                "is_migration": true,
+                "type": "static"
+            }
+            """
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "dataset_id": "static-dataset-update",
+                "distributions": [
+                    {
+                        "byte_size": 125000,
+                        "download_url": "/uuid/filename.csv",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "title": "csv"
+                    }
+                ],
+                "edition": "2025",
+                "id": "static-version-update",
+                "is_migration": true,
+                "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
+                "links": {
+                    "dataset": {
+                        "id": "static-dataset-update"
+                    },
+                    "edition": {
+                        "href": "/datasets/static-dataset-update/editions/2025",
+                        "id": "2025"
+                    },
+                    "self": {
+                        "href": "/datasets/static-dataset-update/editions/2025/versions/1"
+                    }
+                },
+                "release_date": "2025-01-01T09:00:00.000Z",
+                "state": "associated",
+                "type": "static"
+            }
+            """

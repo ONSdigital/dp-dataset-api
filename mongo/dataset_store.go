@@ -603,6 +603,10 @@ func createVersionUpdateQuery(version *models.Version, newETag string) bson.M {
 		setUpdates["distributions"] = version.Distributions
 	}
 
+	if version.IsMigration != nil {
+		setUpdates["is_migration"] = version.IsMigration
+	}
+
 	if newETag != "" {
 		setUpdates["e_tag"] = newETag
 	}

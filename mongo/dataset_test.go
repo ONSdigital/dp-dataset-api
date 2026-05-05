@@ -281,6 +281,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 func TestVersionUpdateQuery(t *testing.T) {
 	t.Parallel()
 	Convey("When all possible fields exist", t, func() {
+		trueVal := true
 		temporal := models.TemporalFrequency{
 			EndDate:   "2017-09-09",
 			Frequency: "monthly",
@@ -325,6 +326,7 @@ func TestVersionUpdateQuery(t *testing.T) {
 			State:         models.PublishedState,
 			Temporal:      &[]models.TemporalFrequency{temporal},
 			Distributions: distributions,
+			IsMigration:   &trueVal,
 		}
 
 		selector := createVersionUpdateQuery(version, "newETag")
@@ -343,6 +345,7 @@ func TestVersionUpdateQuery(t *testing.T) {
 		So(selector["distributions"], ShouldResemble, distributions)
 		So(selector["e_tag"], ShouldEqual, "newETag")
 		So(selector["last_updated"], ShouldNotBeEmpty)
+		So(selector["is_migration"], ShouldResemble, &trueVal)
 	})
 }
 

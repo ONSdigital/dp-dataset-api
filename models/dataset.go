@@ -181,6 +181,7 @@ type Edition struct {
 	Alerts             *[]Alert            `bson:"alerts,omitempty"              json:"alerts,omitempty"`
 	UsageNotes         *[]UsageNote        `bson:"usage_notes,omitempty"         json:"usage_notes,omitempty"`
 	Distributions      *[]Distribution     `bson:"distributions,omitempty"       json:"distributions,omitempty"`
+	IsMigration        *bool               `bson:"is_migration,omitempty"        json:"is_migration,omitempty"`
 	IsBasedOn          *IsBasedOn          `bson:"is_based_on,omitempty"         json:"is_based_on,omitempty"`
 	Type               string              `bson:"type,omitempty"                json:"type,omitempty"`
 	QualityDesignation QualityDesignation  `bson:"quality_designation,omitempty" json:"quality_designation,omitempty"`
