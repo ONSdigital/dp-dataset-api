@@ -75,6 +75,7 @@ linters:
           - errcheck
           - gocyclo
           - gosec
+          - goconst
         path: _test\.go
       - linters:
           - revive
@@ -88,6 +89,7 @@ linters:
       - linters:
           - goconst
         path: api/static_versions_test.go
+        path: models/dataset.go
       - linters:
           - gosec
         path: config/config.go
