@@ -29,9 +29,6 @@ linters:
       statements: 100
     gocognit:
       min-complexity: 40
-    goconst:
-      min-len: 2
-      min-occurrences: 8
     gocritic:
       disabled-checks:
         - wrapperFunc
@@ -74,7 +71,6 @@ linters:
           - errcheck
           - gocyclo
           - gosec
-          - goconst
         path: _test\.go
       - linters:
           - revive
@@ -85,9 +81,6 @@ linters:
         path: _test.go
         text: dot-imports
         source: github.com/smartystreets/goconvey/convey
-      - linters:
-          - goconst
-        path: api/static_versions_test.go
       - linters:
           - gosec
         path: config/config.go
