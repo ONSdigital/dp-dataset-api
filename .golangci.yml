@@ -9,6 +9,7 @@ linters:
     - errcheck
     - gochecknoinits
     - gocognit
+    # - goconst lint failures related to goconst will be addressed as tech debt
     - gocritic
     - gocyclo
     - gosec
@@ -29,6 +30,9 @@ linters:
       statements: 100
     gocognit:
       min-complexity: 40
+    goconst:
+      min-len: 2
+      min-occurrences: 4
     gocritic:
       disabled-checks:
         - wrapperFunc

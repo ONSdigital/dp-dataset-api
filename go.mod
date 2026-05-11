@@ -1,6 +1,6 @@
 module github.com/ONSdigital/dp-dataset-api
 
-go 1.26.3
+go 1.26
 
 require (
 	github.com/ONSdigital/dp-api-clients-go v1.43.0
