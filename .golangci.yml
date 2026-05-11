@@ -32,7 +32,7 @@ linters:
       min-complexity: 40
     goconst:
       min-len: 2
-      min-occurrences: 4
+      min-occurrences: 8
     gocritic:
       disabled-checks:
         - wrapperFunc

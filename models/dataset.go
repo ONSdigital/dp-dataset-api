@@ -315,7 +315,7 @@ func (ed *EditionUpdate) UpdateLinks(ctx context.Context, host string) error {
 	}
 
 	if currentVersion > version {
-		log.Info(ctx, "published edition links to a higher version than the requested change", log.Data{"doc": ed, "versionID": versionID}) //nolint:goconst
+		log.Info(ctx, "published edition links to a higher version than the requested change", log.Data{"doc": ed, "versionID": versionID})
 		return errors.New("published edition links to a higher version than the requested change")
 	}
 
