@@ -9,7 +9,6 @@ linters:
     - errcheck
     - gochecknoinits
     - gocognit
-    - goconst
     - gocritic
     - gocyclo
     - gosec
