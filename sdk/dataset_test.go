@@ -497,6 +497,38 @@ func Test_PutDataset(t *testing.T) {
 	})
 }
 
+func TestDeleteDataset(t *testing.T) {
+	Convey("Given a dataset that can be deleted", t, func() {
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusNoContent, "", nil})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+
+		err := datasetAPIClient.DeleteDataset(ctx, headers, datasetID)
+
+		Convey("then no error is returned", func() {
+			So(err, ShouldBeNil)
+		})
+
+		Convey("and the request is sent to the correct endpoint with the correct method", func() {
+			So(len(httpClient.DoCalls()), ShouldEqual, 1)
+			call := httpClient.DoCalls()[0]
+			So(call.Req.Method, ShouldEqual, http.MethodDelete)
+			So(call.Req.URL.RequestURI(), ShouldEqual, "/datasets/"+datasetID)
+		})
+	})
+
+	Convey("Given no auth token has been configured so the request is unauthorized", t, func() {
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusUnauthorized, "", nil})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+
+		err := datasetAPIClient.DeleteDataset(ctx, headers, datasetID)
+
+		Convey("then an error is returned", func() {
+			So(err, ShouldNotBeNil)
+			So(err.Error(), ShouldContainSubstring, "did not receive success response. received status 401")
+		})
+	})
+}
+
 // Test CreateDataset SDK method
 func TestCreateDataset(t *testing.T) {
 	Convey("Given a static dataset to be created", t, func() {
