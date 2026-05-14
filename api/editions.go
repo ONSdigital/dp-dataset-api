@@ -113,6 +113,9 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 
 	publicResults := make([]*models.Edition, 0, len(results))
 	for i := range results {
+		if results[i].Current != nil {
+			results[i].Current.IsMigration = nil
+		}
 		publicResults = append(publicResults, results[i].Current)
 	}
 	log.Info(ctx, "getEditions endpoint: get all edition without auth", logData)
@@ -235,6 +238,9 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 				log.Info(ctx, "getEdition endpoint: get edition with auth", logData)
 			} else {
 				// User is not authenticated and hence has only access to current sub document
+				if edition.Current != nil {
+					edition.Current.IsMigration = nil
+				}
 				b, err = json.Marshal(edition.Current)
 				if err != nil {
 					log.Error(ctx, "getEdition endpoint: failed to marshal edition resource into bytes", err, logData)
