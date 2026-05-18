@@ -505,3 +505,117 @@ Feature: Static Dataset Versions POST API
                 "version": 1
             }
             """
+
+    Scenario: POST creates a version with web_page link when dataset has topics
+        Given private endpoints are enabled
+        And I am an admin user
+        And I have these datasets:
+            """
+            [
+                {
+                    "id": "static-dataset-topics-condensed",
+                    "title": "Static dataset with topics",
+                    "state": "created",
+                    "type": "static",
+                    "topics": ["economy-topic-id"],
+                    "links": {
+                        "self": {
+                            "href": "http://localhost:22000/datasets/static-dataset-topics-condensed"
+                        }
+                    }
+                }
+            ]
+            """
+        When I POST "/datasets/static-dataset-topics-condensed/editions/2024/versions"
+            """
+            {
+                "release_date": "2024-12-01T09:00:00.000Z",
+                "edition_title": "2024",
+                "type": "static",
+                "distributions": [
+                    {
+                        "title": "Full Dataset CSV",
+                        "format": "csv",
+                        "download_url": "/uuid/filename.csv",
+                        "byte_size": 100
+                    }
+                ]
+            }
+            """
+        Then I should receive the following JSON response with status "201":
+            """
+            {
+                "dataset_id": "static-dataset-topics-condensed",
+                "distributions": [
+                    {
+                        "byte_size": 100,
+                        "download_url": "/uuid/filename.csv",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "title": "Full Dataset CSV"
+                    }
+                ],
+                "edition": "2024",
+                "edition_title": "2024",
+                "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
+                "links": {
+                    "dataset": {
+                        "href": "http://localhost:22000/datasets/static-dataset-topics-condensed",
+                        "id": "static-dataset-topics-condensed"
+                    },
+                    "edition": {
+                        "href": "http://localhost:22000/datasets/static-dataset-topics-condensed/editions/2024",
+                        "id": "2024"
+                    },
+                    "self": {
+                        "href": "http://localhost:22000/datasets/static-dataset-topics-condensed/editions/2024/versions/1"
+                    },
+                    "web_page": {
+                        "href": "economy/datasets/static-dataset-topics-condensed/editions/2024/versions/1"
+                    }
+                },
+                "release_date": "2024-12-01T09:00:00.000Z",
+                "state": "associated",
+                "type": "static",
+                "version": 1
+            }
+            """
+        And the response header "ETag" should not be empty
+
+    Scenario: POST creates a version without web_page link when topic API returns an error
+        Given private endpoints are enabled
+        And I am an admin user
+        And I have these datasets:
+            """
+            [
+                {
+                    "id": "static-dataset-unknown-topic-condensed",
+                    "title": "Static dataset with unknown topic",
+                    "state": "created",
+                    "type": "static",
+                    "topics": ["unknown-topic-id"],
+                    "links": {
+                        "self": {
+                            "href": "http://localhost:22000/datasets/static-dataset-unknown-topic-condensed"
+                        }
+                    }
+                }
+            ]
+            """
+        When I POST "/datasets/static-dataset-unknown-topic-condensed/editions/2024/versions"
+            """
+            {
+                "release_date": "2024-12-01T09:00:00.000Z",
+                "edition_title": "2024",
+                "type": "static",
+                "distributions": [
+                    {
+                        "title": "Full Dataset CSV",
+                        "format": "csv",
+                        "download_url": "/uuid/filename.csv",
+                        "byte_size": 100
+                    }
+                ]
+            }
+            """
+        Then the HTTP status code should be "201"
