@@ -1300,9 +1300,6 @@ func TestGetEditionReturnsIsMigration(t *testing.T) {
 			LastUpdated: time.Date(2025, 3, 11, 0, 0, 0, 0, time.UTC),
 		}
 
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678", http.NoBody)
-		w := httptest.NewRecorder()
-
 		mockedDataStore := &storetest.StorerMock{
 			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
 				return true, nil
@@ -1315,18 +1312,57 @@ func TestGetEditionReturnsIsMigration(t *testing.T) {
 			},
 		}
 
-		authorisationMock := &authMock.MiddlewareMock{
-			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
-				return handlerFunc
-			},
-			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
-				return nil, permissionsAPISDK.ErrFailedToParsePermissionsResponse
-			},
-		}
+		Convey("When an unauthenticated user calls the GET edition endpoint", func() {
+			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678", http.NoBody)
+			w := httptest.NewRecorder()
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+			authorisationMock := &authMock.MiddlewareMock{
+				RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+					return handlerFunc
+				},
+				ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+					return nil, permissionsAPISDK.ErrFailedToParsePermissionsResponse
+				},
+			}
 
-		Convey("When we call the GET edition endpoint", func() {
+			api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+			api.Router.ServeHTTP(w, r)
+
+			Convey("Then it returns a 200 OK", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+			})
+
+			Convey("And is_migration is absent from the response body", func() {
+				var edition models.Edition
+				err := json.Unmarshal(w.Body.Bytes(), &edition)
+				So(err, ShouldBeNil)
+				So(edition.IsMigration, ShouldBeNil)
+			})
+		})
+
+		Convey("When an authenticated user calls the GET edition endpoint", func() {
+			r := createRequestWithAuth("GET", "http://localhost:22000/datasets/123-456/editions/678", nil)
+			w := httptest.NewRecorder()
+
+			authorisationMock := &authMock.MiddlewareMock{
+				RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+					return handlerFunc
+				},
+				RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+					return handlerFunc
+				},
+				ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+					return &permissionsAPISDK.EntityData{UserID: "test-user-id"}, nil
+				},
+			}
+
+			auditServiceMock := &applicationMocks.AuditServiceMock{
+				RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, versionDoc *models.Version) error {
+					return nil
+				},
+			}
+
+			api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
 			api.Router.ServeHTTP(w, r)
 
 			Convey("Then it returns a 200 OK", func() {
@@ -1334,11 +1370,12 @@ func TestGetEditionReturnsIsMigration(t *testing.T) {
 			})
 
 			Convey("And is_migration is present in the response body", func() {
-				var edition models.Edition
-				err := json.Unmarshal(w.Body.Bytes(), &edition)
+				var editionUpdate models.EditionUpdate
+				err := json.Unmarshal(w.Body.Bytes(), &editionUpdate)
 				So(err, ShouldBeNil)
-				So(edition.IsMigration, ShouldNotBeNil)
-				So(*edition.IsMigration, ShouldBeTrue)
+				So(editionUpdate.Current, ShouldNotBeNil)
+				So(editionUpdate.Current.IsMigration, ShouldNotBeNil)
+				So(*editionUpdate.Current.IsMigration, ShouldBeTrue)
 			})
 		})
 	})

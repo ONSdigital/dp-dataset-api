@@ -144,6 +144,10 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 					}
 				}
 			}
+
+			if !authorised {
+				item.IsMigration = nil
+			}
 		}
 
 		if hasInvalidState {
@@ -285,6 +289,11 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 				}
 			}
 		}
+
+		if !authorised {
+			version.IsMigration = nil
+		}
+
 		return version, nil
 	}()
 	if getVersionErr != nil {

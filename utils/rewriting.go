@@ -340,6 +340,8 @@ func RewriteEditionsWithoutAuth(ctx context.Context, results []*models.EditionUp
 			continue
 		}
 
+		item.Current.IsMigration = nil
+
 		err := RewriteEditionLinks(ctx, item.Current.Links, datasetLinksBuilder)
 		if err != nil {
 			log.Error(ctx, "failed to rewrite 'current' links", err)
@@ -407,6 +409,7 @@ func RewriteEditionWithoutAuth(ctx context.Context, edition *models.EditionUpdat
 	log.Info(ctx, "getEdition endpoint: caller not authorised returning edition", log.Data{"edition_id": edition.ID})
 
 	edition.Current.ID = edition.ID
+	edition.Current.IsMigration = nil
 	editionResponse = edition.Current
 	err := RewriteEditionLinks(ctx, editionResponse.Links, datasetLinksBuilder)
 	if err != nil {
