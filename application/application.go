@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -317,6 +318,13 @@ func updateEditionLinks(currentVersion *models.Version, newEdition string) *mode
 
 	if links.Self != nil {
 		links.Self.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%d", host, datasetID, newEdition, versionNum)
+	}
+
+	if links.WebPage != nil {
+		re := regexp.MustCompile(`/([A-Za-z0-9_-]+)/datasets/`)
+		match := re.FindStringSubmatch(links.WebPage.HRef)
+		topicSlug := match[1]
+		links.WebPage.HRef = fmt.Sprintf("%s/%s/datasets/%s/editions/%s/versions/%d", host, topicSlug, datasetID, newEdition, versionNum)
 	}
 
 	return links

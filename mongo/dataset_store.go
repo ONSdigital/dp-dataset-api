@@ -632,6 +632,10 @@ func updateLinksFields(version *models.Version, setUpdates bson.M) {
 	if version.Links.Self != nil && version.Links.Self.HRef != "" {
 		setUpdates["links.self.href"] = version.Links.Self.HRef
 	}
+
+	if version.Links.WebPage != nil && version.Links.WebPage.HRef != "" {
+		setUpdates["links.web_page.href"] = version.Links.WebPage.HRef
+	}
 }
 
 func (m *Mongo) UpdateMetadata(ctx context.Context, datasetID, versionID, versionEtag string, updatedDataset *models.Dataset, updatedVersion *models.Version) error {
