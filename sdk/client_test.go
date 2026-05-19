@@ -165,6 +165,29 @@ func TestClientDoAuthenticatedPostRequest(t *testing.T) {
 	})
 }
 
+func TestClientDoAuthenticatedDeleteRequest(t *testing.T) {
+	Convey("Given a mocked dataset API client", t, func() {
+		expectedResponseBody := map[string]string{"message": "deleted"}
+		mockHTTPClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, expectedResponseBody, nil})
+		client := newDatasetAPIHealthcheckClient(t, mockHTTPClient)
+
+		Convey("When DoAuthenticatedDeleteRequest is called", func() {
+			uri, err := url.Parse("https://domain.com/target-path")
+			So(err, ShouldBeNil)
+
+			resp, err := client.doAuthenticatedDeleteRequest(context.Background(), headers, uri)
+
+			Convey("Then no error is returned", func() {
+				So(err, ShouldBeNil)
+			})
+
+			Convey("And the response is returned", func() {
+				So(resp, ShouldNotBeNil)
+			})
+		})
+	})
+}
+
 // Test the `Headers` struct and associated methods
 func TestHeaders(t *testing.T) {
 	downloadServiceToken := "mydownloadservicetoken"

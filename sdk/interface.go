@@ -17,6 +17,7 @@ type Clienter interface {
 	URL() string
 
 	CreateDataset(ctx context.Context, headers Headers, dataset models.Dataset) (datasetUpdate models.DatasetUpdate, err error)
+	DeleteDataset(ctx context.Context, headers Headers, datasetID string) error
 	GetDataset(ctx context.Context, headers Headers, datasetID string) (dataset models.Dataset, err error)
 	GetDatasetByPath(ctx context.Context, headers Headers, path string) (dataset models.Dataset, err error)
 	GetDatasetCurrentAndNext(ctx context.Context, headers Headers, datasetID string) (dataset models.DatasetUpdate, err error)

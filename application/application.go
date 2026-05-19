@@ -283,6 +283,10 @@ func populateNewVersionDoc(currentVersion, originalVersion *models.Version) (*mo
 		version.Distributions = nil
 	}
 
+	if version.IsMigration == nil {
+		version.IsMigration = currentVersion.IsMigration
+	}
+
 	if version.UsageNotes == nil {
 		version.UsageNotes = currentVersion.UsageNotes
 	}

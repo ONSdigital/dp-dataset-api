@@ -50,6 +50,7 @@ type Version struct {
 	LowestGeography    string               `bson:"lowest_geography,omitempty"      json:"lowest_geography,omitempty"`
 	QualityDesignation QualityDesignation   `bson:"quality_designation,omitempty"   json:"quality_designation,omitempty"`
 	Distributions      *[]Distribution      `bson:"distributions,omitempty"         json:"distributions,omitempty"`
+	IsMigration        *bool                `bson:"is_migration,omitempty"          json:"is_migration,omitempty"`
 }
 
 // Alert represents an object containing information on an alert

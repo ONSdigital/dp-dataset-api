@@ -68,6 +68,17 @@ func (c *Client) doAuthenticatedPostRequest(ctx context.Context, headers Headers
 	return c.hcCli.Client.Do(ctx, req)
 }
 
+// Creates new request object, executes a delete request using the input `headers` and `uri` and returns the response
+func (c *Client) doAuthenticatedDeleteRequest(ctx context.Context, headers Headers, uri *url.URL) (*http.Response, error) {
+	req, err := http.NewRequest(http.MethodDelete, uri.RequestURI(), http.NoBody)
+	if err != nil {
+		return nil, err
+	}
+
+	headers.add(req)
+	return c.hcCli.Client.Do(ctx, req)
+}
+
 // Health returns the underlying Healthcheck Client for this API client
 func (c *Client) Health() *health.Client {
 	return c.hcCli

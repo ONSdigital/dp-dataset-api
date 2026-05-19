@@ -43,7 +43,7 @@ Feature: Static versions GET /versions
                             "href": "/economy/datasets/test-static/editions/test-edition-static/versions/1"
                         }
                     },
-                    "state": "created",
+                    "state": "associated",
                     "type": "static",
                     "distributions": [
                         {
@@ -53,7 +53,8 @@ Feature: Static versions GET /versions
                             "download_url": "/uuid/filename.csv",
                             "byte_size": 100000
                         }
-                    ]
+                    ],
+                    "is_migration": true
                 },
                 {
                     "id": "test-static-version-approved",
@@ -291,3 +292,45 @@ Feature: Static versions GET /versions
         And I am an admin user
         When I GET "/datasets/test-static"
         Then the HTTP status code should be "200"
+
+    Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} returns is_migration when set
+        Given private endpoints are enabled
+        And I am an admin user
+        When I GET "/datasets/test-static/editions/test-edition-static/versions/1"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "id": "test-static-version",
+                "is_migration": true,
+                "last_updated": "2021-01-01T00:00:00Z",
+                "type": "static",
+                "version": 1,
+                "state": "associated",
+                "links": {
+                    "dataset": {
+                        "id": "test-static"
+                    },
+                    "edition": {
+                        "href": "/datasets/test-static/editions/test-edition-static",
+                        "id": "test-edition-static"
+                    },
+                    "self": {
+                        "href": "/datasets/test-static/editions/test-edition-static/versions/1"
+                    },
+                    "web_page": {
+                        "href": "/economy/datasets/test-static/editions/test-edition-static/versions/1"
+                    }
+                },
+                "edition": "test-edition-static",
+                "edition_title": "Test Edition Static Title",
+                "distributions": [
+                    {
+                        "title": "Distribution 1",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "download_url": "/uuid/filename.csv",
+                        "byte_size": 100000
+                    }
+                ]
+            }
+            """

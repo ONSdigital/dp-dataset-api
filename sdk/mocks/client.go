@@ -29,6 +29,9 @@ var _ sdk.Clienter = &ClienterMock{}
 //			CreateDatasetFunc: func(ctx context.Context, headers sdk.Headers, dataset models.Dataset) (models.DatasetUpdate, error) {
 //				panic("mock out the CreateDataset method")
 //			},
+//			DeleteDatasetFunc: func(ctx context.Context, headers sdk.Headers, datasetID string) error {
+//				panic("mock out the DeleteDataset method")
+//			},
 //			GetDatasetFunc: func(ctx context.Context, headers sdk.Headers, datasetID string) (models.Dataset, error) {
 //				panic("mock out the GetDataset method")
 //			},
@@ -113,6 +116,9 @@ type ClienterMock struct {
 
 	// CreateDatasetFunc mocks the CreateDataset method.
 	CreateDatasetFunc func(ctx context.Context, headers sdk.Headers, dataset models.Dataset) (models.DatasetUpdate, error)
+
+	// DeleteDatasetFunc mocks the DeleteDataset method.
+	DeleteDatasetFunc func(ctx context.Context, headers sdk.Headers, datasetID string) error
 
 	// GetDatasetFunc mocks the GetDataset method.
 	GetDatasetFunc func(ctx context.Context, headers sdk.Headers, datasetID string) (models.Dataset, error)
@@ -203,6 +209,15 @@ type ClienterMock struct {
 			Headers sdk.Headers
 			// Dataset is the dataset argument value.
 			Dataset models.Dataset
+		}
+		// DeleteDataset holds details about calls to the DeleteDataset method.
+		DeleteDataset []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Headers is the headers argument value.
+			Headers sdk.Headers
+			// DatasetID is the datasetID argument value.
+			DatasetID string
 		}
 		// GetDataset holds details about calls to the GetDataset method.
 		GetDataset []struct {
@@ -485,6 +500,7 @@ type ClienterMock struct {
 	}
 	lockChecker                    sync.RWMutex
 	lockCreateDataset              sync.RWMutex
+	lockDeleteDataset              sync.RWMutex
 	lockGetDataset                 sync.RWMutex
 	lockGetDatasetByPath           sync.RWMutex
 	lockGetDatasetCurrentAndNext   sync.RWMutex
@@ -584,6 +600,46 @@ func (mock *ClienterMock) CreateDatasetCalls() []struct {
 	mock.lockCreateDataset.RLock()
 	calls = mock.calls.CreateDataset
 	mock.lockCreateDataset.RUnlock()
+	return calls
+}
+
+// DeleteDataset calls DeleteDatasetFunc.
+func (mock *ClienterMock) DeleteDataset(ctx context.Context, headers sdk.Headers, datasetID string) error {
+	if mock.DeleteDatasetFunc == nil {
+		panic("ClienterMock.DeleteDatasetFunc: method is nil but Clienter.DeleteDataset was just called")
+	}
+	callInfo := struct {
+		Ctx       context.Context
+		Headers   sdk.Headers
+		DatasetID string
+	}{
+		Ctx:       ctx,
+		Headers:   headers,
+		DatasetID: datasetID,
+	}
+	mock.lockDeleteDataset.Lock()
+	mock.calls.DeleteDataset = append(mock.calls.DeleteDataset, callInfo)
+	mock.lockDeleteDataset.Unlock()
+	return mock.DeleteDatasetFunc(ctx, headers, datasetID)
+}
+
+// DeleteDatasetCalls gets all the calls that were made to DeleteDataset.
+// Check the length with:
+//
+//	len(mockedClienter.DeleteDatasetCalls())
+func (mock *ClienterMock) DeleteDatasetCalls() []struct {
+	Ctx       context.Context
+	Headers   sdk.Headers
+	DatasetID string
+} {
+	var calls []struct {
+		Ctx       context.Context
+		Headers   sdk.Headers
+		DatasetID string
+	}
+	mock.lockDeleteDataset.RLock()
+	calls = mock.calls.DeleteDataset
+	mock.lockDeleteDataset.RUnlock()
 	return calls
 }
 

@@ -5722,3 +5722,239 @@ func TestGetVersionAuditEventLogsErrorButContinues(t *testing.T) {
 		})
 	})
 }
+
+func TestGetVersionReturnsIsMigration(t *testing.T) {
+	t.Parallel()
+	Convey("Given a static version with is_migration set to true", t, func() {
+		trueVal := true
+		version := &models.Version{
+			State:       models.PublishedState,
+			IsMigration: &trueVal,
+			Links: &models.VersionLinks{
+				Self:    &models.LinkObject{},
+				Version: &models.LinkObject{HRef: "href"},
+			},
+		}
+
+		mockedDataStore := &storetest.StorerMock{
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return true, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{ID: "123-456", Next: &models.Dataset{ID: "123-456", Type: models.Static.String()}}, nil
+			},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return version, nil
+			},
+		}
+
+		Convey("When an unauthenticated user calls the GET version endpoint", func() {
+			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", http.NoBody)
+			w := httptest.NewRecorder()
+
+			authorisationMock := &authMock.MiddlewareMock{
+				RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+					return handlerFunc
+				},
+				RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+					return handlerFunc
+				},
+				ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+					return nil, errors.New("no token")
+				},
+			}
+
+			api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+			api.Router.ServeHTTP(w, r)
+
+			Convey("Then it returns a 200 OK", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+			})
+
+			Convey("And is_migration is absent from the response body", func() {
+				var responseVersion models.Version
+				err := json.Unmarshal(w.Body.Bytes(), &responseVersion)
+				So(err, ShouldBeNil)
+				So(responseVersion.IsMigration, ShouldBeNil)
+			})
+		})
+
+		Convey("When an authenticated user calls the GET version endpoint", func() {
+			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", http.NoBody)
+			r.Header.Set("Authorization", "Bearer "+testAuthToken)
+			w := httptest.NewRecorder()
+
+			authorisationMock := &authMock.MiddlewareMock{
+				RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+					return handlerFunc
+				},
+				RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+					return handlerFunc
+				},
+				ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+					return &permissionsAPISDK.EntityData{UserID: "test-user-id"}, nil
+				},
+			}
+
+			auditServiceMock := &applicationMocks.AuditServiceMock{
+				RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, versionDoc *models.Version) error {
+					return nil
+				},
+			}
+
+			api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+			api.Router.ServeHTTP(w, r)
+
+			Convey("Then it returns a 200 OK", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+			})
+
+			Convey("And is_migration is present in the response body", func() {
+				var responseVersion models.Version
+				err := json.Unmarshal(w.Body.Bytes(), &responseVersion)
+				So(err, ShouldBeNil)
+				So(responseVersion.IsMigration, ShouldNotBeNil)
+				So(*responseVersion.IsMigration, ShouldBeTrue)
+			})
+		})
+	})
+
+	Convey("Given a static version without is_migration set", t, func() {
+		version := &models.Version{
+			State: models.PublishedState,
+			Links: &models.VersionLinks{
+				Self:    &models.LinkObject{},
+				Version: &models.LinkObject{HRef: "href"},
+			},
+		}
+
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678/versions/1", http.NoBody)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return true, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{ID: "123-456", Next: &models.Dataset{ID: "123-456", Type: models.Static.String()}}, nil
+			},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return version, nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return nil, errors.New("no token")
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+
+		Convey("When we call the GET version endpoint", func() {
+			api.Router.ServeHTTP(w, r)
+
+			Convey("Then it returns a 200 OK", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+			})
+
+			Convey("And is_migration is absent from the response body", func() {
+				var responseVersion models.Version
+				err := json.Unmarshal(w.Body.Bytes(), &responseVersion)
+				So(err, ShouldBeNil)
+				So(responseVersion.IsMigration, ShouldBeNil)
+			})
+		})
+	})
+}
+
+func TestPutVersionIsMigration(t *testing.T) {
+	t.Parallel()
+	Convey("When is_migration is included in a PUT version request body", t, func() {
+		trueVal := true
+
+		b := `{"edition_title":"Updated Edition Title","release_date":"2017-04-04","is_migration":true,"type":"static"}`
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		var capturedVersionUpdate *models.Version
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID, editionID, state string) error {
+				if editionID == "2017" {
+					return nil
+				}
+				return errs.ErrEditionNotFound
+			},
+			CheckEditionTitleExistsStaticFunc: func(ctx context.Context, datasetID, editionTitle string) error {
+				return nil
+			},
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					State: models.AssociatedState,
+					Type:  models.Static.String(),
+				}, nil
+			},
+			GetVersionStaticFunc: func(ctx context.Context, datasetID, editionID string, version int, state string) (*models.Version, error) {
+				return &models.Version{
+					ID:           "789",
+					Edition:      "2017",
+					EditionTitle: "Original Title",
+					State:        models.AssociatedState,
+					Type:         models.Static.String(),
+					ETag:         testETag,
+					Version:      1,
+					IsMigration:  &trueVal,
+				}, nil
+			},
+			UpdateVersionStaticFunc: func(ctx context.Context, currentVersion *models.Version, versionUpdate *models.Version, eTagSelector string) (string, error) {
+				capturedVersionUpdate = versionUpdate
+				return "", nil
+			},
+			AcquireVersionsLockFunc: func(context.Context, string) (string, error) {
+				return testLockID, nil
+			},
+			UnlockVersionsFunc: func(context.Context, string) {},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, version *models.Version) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api.Router.ServeHTTP(w, r)
+
+		Convey("Then it returns a 200 OK", func() {
+			So(w.Code, ShouldEqual, http.StatusOK)
+		})
+
+		Convey("And is_migration is carried through to the update", func() {
+			So(capturedVersionUpdate, ShouldNotBeNil)
+			So(capturedVersionUpdate.IsMigration, ShouldNotBeNil)
+			So(*capturedVersionUpdate.IsMigration, ShouldBeTrue)
+		})
+	})
+}

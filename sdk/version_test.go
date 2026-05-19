@@ -944,3 +944,89 @@ func TestPostVersion(t *testing.T) {
 		})
 	})
 }
+
+func TestVersionIsMigration(t *testing.T) {
+	Convey("Given a version with is_migration set to true", t, func() {
+		trueVal := true
+		versionID := 1
+
+		mockVersion := models.Version{
+			CollectionID: collectionID,
+			DatasetID:    datasetID,
+			Edition:      editionID,
+			Version:      versionID,
+			IsMigration:  &trueVal,
+		}
+
+		Convey("When GetVersion is called and the API returns is_migration: true", func() {
+			httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, mockVersion, map[string]string{}})
+			datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+			returnedVersion, err := datasetAPIClient.GetVersion(ctx, headers, datasetID, editionID, strconv.Itoa(versionID))
+
+			Convey("Then is_migration is deserialised correctly", func() {
+				So(err, ShouldBeNil)
+				So(returnedVersion.IsMigration, ShouldNotBeNil)
+				So(*returnedVersion.IsMigration, ShouldBeTrue)
+			})
+		})
+
+		Convey("When PostVersion is called with is_migration: true in the request body", func() {
+			expectedResponse := mockVersion
+			httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusCreated, expectedResponse, map[string]string{"ETag": etag}})
+			datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+			createdVersion, err := datasetAPIClient.PostVersion(ctx, headers, datasetID, editionID, strconv.Itoa(versionID), mockVersion, false)
+
+			Convey("Then is_migration is serialised in the request body and deserialised in the response", func() {
+				So(err, ShouldBeNil)
+				So(createdVersion.IsMigration, ShouldNotBeNil)
+				So(*createdVersion.IsMigration, ShouldBeTrue)
+
+				var sentVersion models.Version
+				err := json.NewDecoder(httpClient.DoCalls()[0].Req.Body).Decode(&sentVersion)
+				So(err, ShouldBeNil)
+				So(sentVersion.IsMigration, ShouldNotBeNil)
+				So(*sentVersion.IsMigration, ShouldBeTrue)
+			})
+		})
+
+		Convey("When PutVersion is called with is_migration: true in the request body", func() {
+			httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, mockVersion, map[string]string{}})
+			datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+			updatedVersion, err := datasetAPIClient.PutVersion(ctx, headers, datasetID, editionID, strconv.Itoa(versionID), mockVersion)
+
+			Convey("Then is_migration is serialised in the request body and deserialised in the response", func() {
+				So(err, ShouldBeNil)
+				So(updatedVersion.IsMigration, ShouldNotBeNil)
+				So(*updatedVersion.IsMigration, ShouldBeTrue)
+
+				var sentVersion models.Version
+				err := json.NewDecoder(httpClient.DoCalls()[0].Req.Body).Decode(&sentVersion)
+				So(err, ShouldBeNil)
+				So(sentVersion.IsMigration, ShouldNotBeNil)
+				So(*sentVersion.IsMigration, ShouldBeTrue)
+			})
+		})
+	})
+
+	Convey("Given a version without is_migration set", t, func() {
+		versionID := 1
+
+		mockVersion := models.Version{
+			CollectionID: collectionID,
+			DatasetID:    datasetID,
+			Edition:      editionID,
+			Version:      versionID,
+		}
+
+		Convey("When GetVersion is called and the API returns no is_migration field", func() {
+			httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, mockVersion, map[string]string{}})
+			datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+			returnedVersion, err := datasetAPIClient.GetVersion(ctx, headers, datasetID, editionID, strconv.Itoa(versionID))
+
+			Convey("Then is_migration is nil", func() {
+				So(err, ShouldBeNil)
+				So(returnedVersion.IsMigration, ShouldBeNil)
+			})
+		})
+	})
+}

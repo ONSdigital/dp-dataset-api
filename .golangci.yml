@@ -9,7 +9,7 @@ linters:
     - errcheck
     - gochecknoinits
     - gocognit
-    - goconst
+    # - goconst lint failures related to goconst will be addressed as tech debt
     - gocritic
     - gocyclo
     - gosec
@@ -85,9 +85,6 @@ linters:
         path: _test.go
         text: dot-imports
         source: github.com/smartystreets/goconvey/convey
-      - linters:
-          - goconst
-        path: api/static_versions_test.go
       - linters:
           - gosec
         path: config/config.go

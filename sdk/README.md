@@ -18,6 +18,7 @@ This SDK provides a client for interacting with the dp-dataset-api. It is intend
 | [`GetDatasets`](#getdatasets) | Returns the list of datasets |
 | [`GetDatasetsInBatches`](#getdatasetsinbatches) | Returns a list of datasets in concurrent batches and accumulates the results |
 | [`CreateDataset`](#createdataset) | Creates a new dataset |
+| [`DeleteDataset`](#deletedataset) | Deletes a dataset by ID |
 | [`GetEdition`](#getedition) | Retrieves a single edition document from a given datasetID and edition |
 | [`GetEditions`](#geteditions) | Returns a paginated list of editions for a dataset |
 | [`GetVersion`](#getversion) | Retrieves a specific version for an edition of a dataset |
@@ -225,6 +226,18 @@ datasetToCreate := models.Dataset{
 }
 
 createdDataset, err := client.CreateDataset(ctx, headers, datasetToCreate)
+```
+
+### DeleteDataset
+
+```go
+import "github.com/ONSdigital/dp-dataset-api/sdk"
+
+headers := sdk.Headers{
+    AccessToken: "example-auth-token",
+}
+
+err := client.DeleteDataset(ctx, headers, "dataset-id")
 ```
 
 ### GetEdition

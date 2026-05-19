@@ -761,3 +761,60 @@ Scenario: Request with an invalid is_latest value returns 400
             ]
         }
         """
+
+Scenario: POST creates a static version with is_migration true and it is returned in the response
+    Given private endpoints are enabled
+    And I am an admin user
+    When I POST "/datasets/static-dataset-1/editions/2024/versions/2"
+        """
+        {
+            "release_date": "2024-12-01T09:00:00.000Z",
+            "edition_title": "2024",
+            "type": "static",
+            "is_migration": true,
+            "distributions": [
+                {
+                    "title": "Full Dataset CSV",
+                    "format": "csv",
+                    "download_url": "/uuid/filename.csv",
+                    "byte_size": 100
+                }
+            ]
+        }
+        """
+    Then I should receive the following JSON response with status "201":
+        """
+        {
+            "dataset_id": "static-dataset-1",
+            "distributions": [
+                {
+                    "byte_size": 100,
+                    "download_url": "/uuid/filename.csv",
+                    "format": "csv",
+                    "media_type": "text/csv",
+                    "title": "Full Dataset CSV"
+                }
+            ],
+            "edition": "2024",
+            "edition_title": "2024",
+            "is_migration": true,
+            "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
+            "links": {
+                "dataset": {
+                    "href": "http://localhost:22000/datasets/static-dataset-1",
+                    "id": "static-dataset-1"
+                },
+                "edition": {
+                    "href": "http://localhost:22000/datasets/static-dataset-1/editions/2024",
+                    "id": "2024"
+                },
+                "self": {
+                    "href": "http://localhost:22000/datasets/static-dataset-1/editions/2024/versions/2"
+                }
+            },
+            "release_date": "2024-12-01T09:00:00.000Z",
+            "state": "associated",
+            "type": "static",
+            "version": 2
+        }
+        """
