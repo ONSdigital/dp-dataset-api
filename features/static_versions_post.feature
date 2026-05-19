@@ -582,7 +582,7 @@ Feature: Static Dataset Versions POST API
             """
         And the response header "ETag" should not be empty
 
-    Scenario: POST creates a version without web_page link when topic API returns an error
+    Scenario: POST returns 500 when topic API returns an error for a dataset with topics
         Given private endpoints are enabled
         And I am an admin user
         And I have these datasets:
@@ -618,4 +618,4 @@ Feature: Static Dataset Versions POST API
                 ]
             }
             """
-        Then the HTTP status code should be "201"
+        Then the HTTP status code should be "500"

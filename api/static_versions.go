@@ -260,10 +260,10 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 		topic, err := api.topicAPIClient.GetTopicPrivate(ctx, topicSDKHeaders, datasetDoc.Next.Topics[0])
 		if err != nil {
 			log.Error(ctx, "addDatasetVersionCondensed endpoint: failed to get topic from Topic API", err, logData)
-		} else {
-			versionRequest.Links.WebPage = &models.LinkObject{
-				HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%d", topic.Next.Slug, datasetID, edition, nextVersion),
-			}
+			return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, models.InternalError, models.InternalErrorDescription))
+		}
+		versionRequest.Links.WebPage = &models.LinkObject{
+			HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%d", topic.Next.Slug, datasetID, edition, nextVersion),
 		}
 	}
 
@@ -469,10 +469,10 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 		topic, err := api.topicAPIClient.GetTopicPrivate(ctx, topicSDKHeaders, datasetDoc.Next.Topics[0])
 		if err != nil {
 			log.Error(ctx, "createVersion endpoint: failed to get topic from Topic API", err, logData)
-		} else {
-			newVersion.Links.WebPage = &models.LinkObject{
-				HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%d", topic.Next.Slug, datasetID, edition, versionNumber),
-			}
+			return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, models.InternalError, models.InternalErrorDescription))
+		}
+		newVersion.Links.WebPage = &models.LinkObject{
+			HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%d", topic.Next.Slug, datasetID, edition, versionNumber),
 		}
 	}
 

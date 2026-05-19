@@ -890,7 +890,7 @@ Scenario: Successfully creating a version includes web_page link when dataset ha
         """
     And the response header "ETag" should not be empty
 
-Scenario: Creating a version with an unknown topic ID still succeeds but without a web_page link
+Scenario: Creating a version with an unknown topic ID returns 500
     Given private endpoints are enabled
     And I am an admin user
     And I have these datasets:
@@ -921,4 +921,4 @@ Scenario: Creating a version with an unknown topic ID still succeeds but without
             "type": "static"
         }
         """
-    Then the HTTP status code should be "201"
+    Then the HTTP status code should be "500"

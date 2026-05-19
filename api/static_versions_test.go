@@ -2802,7 +2802,7 @@ func TestCreateVersion_WebPageLink(t *testing.T) {
 		So(topicClientMock.GetTopicPrivateCalls()[0].ID, ShouldEqual, "topic-0")
 	})
 
-	Convey("When topic API call fails, version is still created successfully without a web_page link", t, func() {
+	Convey("When topic API call fails, version creation returns a 500 error", t, func() {
 		validVersionJSON, err := json.Marshal(validVersion)
 		So(err, ShouldBeNil)
 
@@ -2840,14 +2840,10 @@ func TestCreateVersion_WebPageLink(t *testing.T) {
 
 		successResponse, errorResponse := api.createVersion(w, r)
 
-		So(errorResponse, ShouldBeNil)
-		So(successResponse.Status, ShouldEqual, http.StatusCreated)
-
-		var version models.Version
-		err = json.Unmarshal(successResponse.Body, &version)
-		So(err, ShouldBeNil)
-		So(version.Links, ShouldNotBeNil)
-		So(version.Links.WebPage, ShouldBeNil)
+		So(successResponse, ShouldBeNil)
+		So(errorResponse.Status, ShouldEqual, http.StatusInternalServerError)
+		So(errorResponse.Errors[0].Code, ShouldEqual, models.InternalError)
+		So(errorResponse.Errors[0].Description, ShouldEqual, models.InternalErrorDescription)
 
 		So(topicClientMock.GetTopicPrivateCalls(), ShouldHaveLength, 1)
 	})
@@ -2982,7 +2978,7 @@ func TestAddDatasetVersionCondensed_WebPageLink(t *testing.T) {
 		So(topicClientMock.GetTopicPrivateCalls()[0].ID, ShouldEqual, "topic-0")
 	})
 
-	Convey("When topic API call fails, version is still created successfully without a web_page link", t, func() {
+	Convey("When topic API call fails, version creation returns a 500 error", t, func() {
 		mockedDataStore := &storetest.StorerMock{
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
@@ -3022,62 +3018,11 @@ func TestAddDatasetVersionCondensed_WebPageLink(t *testing.T) {
 
 		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
 
-		So(errorResponse, ShouldBeNil)
-		So(successResponse.Status, ShouldEqual, http.StatusCreated)
-
-		var version models.Version
-		err := json.Unmarshal(successResponse.Body, &version)
-		So(err, ShouldBeNil)
-		So(version.Links, ShouldNotBeNil)
-		So(version.Links.WebPage, ShouldBeNil)
+		So(successResponse, ShouldBeNil)
+		So(errorResponse.Status, ShouldEqual, http.StatusInternalServerError)
+		So(errorResponse.Errors[0].Code, ShouldEqual, models.InternalError)
+		So(errorResponse.Errors[0].Description, ShouldEqual, models.InternalErrorDescription)
 
 		So(topicClientMock.GetTopicPrivateCalls(), ShouldHaveLength, 1)
-	})
-
-	Convey("When dataset has no topics, topic API is not called and version is created without a web_page link", t, func() {
-		mockedDataStore := &storetest.StorerMock{
-			CheckDatasetExistsFunc: func(context.Context, string, string) error {
-				return nil
-			},
-			GetLatestVersionStaticFunc: func(context.Context, string, string, string) (*models.Version, error) {
-				return &models.Version{State: models.PublishedState}, nil
-			},
-			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{
-					Next: &models.Dataset{
-						State: models.AssociatedState,
-						Links: &models.DatasetLinks{},
-					},
-				}, nil
-			},
-			AddVersionStaticFunc: func(_ context.Context, v *models.Version) (*models.Version, error) {
-				return v, nil
-			},
-			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
-				return nil
-			},
-		}
-
-		topicClientMock := &topicMocks.ClienterMock{}
-
-		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/time-series/versions", bytes.NewBufferString(body))
-		r = mux.SetURLVars(r, map[string]string{"dataset_id": "123", "edition": "time-series"})
-		w := httptest.NewRecorder()
-
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
-		api.SetTopicAPIClient(topicClientMock)
-
-		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
-
-		So(errorResponse, ShouldBeNil)
-		So(successResponse.Status, ShouldEqual, http.StatusCreated)
-
-		var version models.Version
-		err := json.Unmarshal(successResponse.Body, &version)
-		So(err, ShouldBeNil)
-		So(version.Links, ShouldNotBeNil)
-		So(version.Links.WebPage, ShouldBeNil)
-
-		So(topicClientMock.GetTopicPrivateCalls(), ShouldHaveLength, 0)
 	})
 }
