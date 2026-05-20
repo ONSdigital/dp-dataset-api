@@ -59,7 +59,7 @@ const DatasetID = "id"
 func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit, offset int) (mappedDatasets interface{}, totalCount int, err error) {
 	ctx := r.Context()
 	logData := log.Data{}
-	authorised := true
+	authorised := api.checkUserPermission(r, logData, datasetReadPermission, nil)
 
 	isBasedOnExists := r.URL.Query().Has(IsBasedOn)
 	isBasedOn := r.URL.Query().Get(IsBasedOn)
@@ -144,7 +144,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 	}
 
 	if authorised {
-		return mapResults(datasets), totalCount, nil
+		return datasets, totalCount, nil
 	}
 
 	return mapResults(datasets), totalCount, nil

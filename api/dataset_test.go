@@ -357,7 +357,7 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 
 		actualResponse, actualTotalCount, err := api.getDatasets(w, r, 11, 12)
 
-		So(actualResponse, ShouldResemble, []*models.DatasetUpdate{})
+		So(actualResponse, ShouldResemble, []*models.Dataset{})
 		So(actualTotalCount, ShouldEqual, 15)
 		So(err, ShouldEqual, nil)
 		So(mockedDataStore.GetDatasetsCalls()[0].Limit, ShouldEqual, 11)
@@ -389,7 +389,7 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 
 		actualResponse, actualTotalCount, err := api.getDatasets(w, r, 11, 12)
 
-		So(actualResponse, ShouldResemble, []*models.DatasetUpdate{{ID: "123-456", Current: &models.Dataset{ID: "123-456", Type: "static"}, Next: &models.Dataset{ID: "123-456", Type: "static"}}})
+		So(actualResponse, ShouldResemble, []*models.Dataset{{ID: "123-456", Type: "static"}})
 		So(actualTotalCount, ShouldEqual, 1)
 		So(err, ShouldEqual, nil)
 		So(mockedDataStore.GetDatasetsByQueryParamsCalls()[0].Limit, ShouldEqual, 11)
@@ -420,7 +420,7 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
 
 		actualResponse, actualTotalCount, err := api.getDatasets(w, r, 11, 12)
-		So(actualResponse, ShouldResemble, []*models.DatasetUpdate{{ID: "123-456", Current: &models.Dataset{ID: "123-456", Type: "static", IsBasedOn: &models.IsBasedOn{ID: "Example"}}, Next: &models.Dataset{ID: "123-456", Type: "static", IsBasedOn: &models.IsBasedOn{ID: "Example"}}}})
+		So(actualResponse, ShouldResemble, []*models.Dataset{{ID: "123-456", Type: "static", IsBasedOn: &models.IsBasedOn{ID: "Example"}}})
 		So(actualTotalCount, ShouldEqual, 1)
 		So(err, ShouldEqual, nil)
 		So(mockedDataStore.GetDatasetsByQueryParamsCalls()[0].Limit, ShouldEqual, 11)
@@ -461,13 +461,13 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(actualTotalCount, ShouldEqual, 3)
 
-		datasets, ok := actualResponse.([]*models.DatasetUpdate)
+		datasets, ok := actualResponse.([]*models.Dataset)
 		So(ok, ShouldBeTrue)
 		So(datasets, ShouldHaveLength, 3)
 
-		So(datasets[0].Current.ID, ShouldEqual, "a-dataset")
-		So(datasets[1].Current.ID, ShouldEqual, "m-dataset")
-		So(datasets[2].Current.ID, ShouldEqual, "z-dataset")
+		So(datasets[0].ID, ShouldEqual, "a-dataset")
+		So(datasets[1].ID, ShouldEqual, "m-dataset")
+		So(datasets[2].ID, ShouldEqual, "z-dataset")
 	})
 }
 
