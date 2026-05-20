@@ -1036,6 +1036,56 @@ func TestPopulateVersonLinksIsNil(t *testing.T) {
 	})
 }
 
+func TestUpdateEditionLinks(t *testing.T) {
+	t.Parallel()
+
+	Convey("When current version links are nil, updateEditionLinks returns nil", t, func() {
+		updatedLinks := updateEditionLinks(&models.Version{Links: nil}, "new-edition")
+		So(updatedLinks, ShouldBeNil)
+	})
+
+	Convey("When edition changes, updateEditionLinks rewrites edition/version/self/web_page links", t, func() {
+		currentVersion := &models.Version{
+			Version: 1,
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{HRef: "http://localhost:22000/datasets/123", ID: "123"},
+				Edition: &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2017", ID: "2017"},
+				Version: &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1", ID: "1"},
+				Self:    &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1"},
+				WebPage: &models.LinkObject{HRef: "http://dp-frontend-router:20000/businessindustryandtrade/datasets/123/editions/2017/versions/1"},
+			},
+		}
+
+		updatedLinks := updateEditionLinks(currentVersion, "new-edition")
+
+		So(updatedLinks, ShouldNotBeNil)
+		So(updatedLinks.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/123/editions/new-edition")
+		So(updatedLinks.Edition.ID, ShouldEqual, "new-edition")
+		So(updatedLinks.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/123/editions/new-edition/versions/1")
+		So(updatedLinks.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/123/editions/new-edition/versions/1")
+		So(updatedLinks.WebPage.HRef, ShouldEqual, "http://localhost:22000/businessindustryandtrade/datasets/123/editions/new-edition/versions/1")
+	})
+
+	Convey("When dataset href is missing, updateEditionLinks returns a deep copy without rewriting", t, func() {
+		currentVersion := &models.Version{
+			Version: 1,
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{HRef: "", ID: "123"},
+				Edition: &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2017", ID: "2017"},
+			},
+		}
+
+		updatedLinks := updateEditionLinks(currentVersion, "new-edition")
+
+		So(updatedLinks, ShouldNotBeNil)
+		So(updatedLinks.Edition.HRef, ShouldEqual, "http://localhost:22000/datasets/123/editions/2017")
+		So(updatedLinks.Edition.ID, ShouldEqual, "2017")
+
+		updatedLinks.Edition.ID = "changed-on-copy"
+		So(currentVersion.Links.Edition.ID, ShouldEqual, "2017")
+	})
+}
+
 func TestPopulateXLSDownloads(t *testing.T) {
 	t.Parallel()
 	Convey("When the xls link requires populating", t, func() {

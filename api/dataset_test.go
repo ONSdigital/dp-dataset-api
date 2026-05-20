@@ -13,6 +13,10 @@ import (
 	"testing"
 
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
+	topicAPIModels "github.com/ONSdigital/dp-topic-api/models"
+	topicAPISDK "github.com/ONSdigital/dp-topic-api/sdk"
+	topicAPISDKErrors "github.com/ONSdigital/dp-topic-api/sdk/errors"
+	topicAPISDKMocks "github.com/ONSdigital/dp-topic-api/sdk/mocks"
 
 	cloudflareMocks "github.com/ONSdigital/dp-dataset-api/cloudflare/mocks"
 
@@ -353,7 +357,7 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 
 		actualResponse, actualTotalCount, err := api.getDatasets(w, r, 11, 12)
 
-		So(actualResponse, ShouldResemble, []*models.Dataset{})
+		So(actualResponse, ShouldResemble, []*models.DatasetUpdate{})
 		So(actualTotalCount, ShouldEqual, 15)
 		So(err, ShouldEqual, nil)
 		So(mockedDataStore.GetDatasetsCalls()[0].Limit, ShouldEqual, 11)
@@ -385,7 +389,7 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 
 		actualResponse, actualTotalCount, err := api.getDatasets(w, r, 11, 12)
 
-		So(actualResponse, ShouldResemble, []*models.Dataset{{ID: "123-456", Type: "static"}})
+		So(actualResponse, ShouldResemble, []*models.DatasetUpdate{{ID: "123-456", Current: &models.Dataset{ID: "123-456", Type: "static"}, Next: &models.Dataset{ID: "123-456", Type: "static"}}})
 		So(actualTotalCount, ShouldEqual, 1)
 		So(err, ShouldEqual, nil)
 		So(mockedDataStore.GetDatasetsByQueryParamsCalls()[0].Limit, ShouldEqual, 11)
@@ -416,7 +420,7 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
 
 		actualResponse, actualTotalCount, err := api.getDatasets(w, r, 11, 12)
-		So(actualResponse, ShouldResemble, []*models.Dataset{{ID: "123-456", Type: "static", IsBasedOn: &models.IsBasedOn{ID: "Example"}}})
+		So(actualResponse, ShouldResemble, []*models.DatasetUpdate{{ID: "123-456", Current: &models.Dataset{ID: "123-456", Type: "static", IsBasedOn: &models.IsBasedOn{ID: "Example"}}, Next: &models.Dataset{ID: "123-456", Type: "static", IsBasedOn: &models.IsBasedOn{ID: "Example"}}}})
 		So(actualTotalCount, ShouldEqual, 1)
 		So(err, ShouldEqual, nil)
 		So(mockedDataStore.GetDatasetsByQueryParamsCalls()[0].Limit, ShouldEqual, 11)
@@ -457,13 +461,13 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(actualTotalCount, ShouldEqual, 3)
 
-		datasets, ok := actualResponse.([]*models.Dataset)
+		datasets, ok := actualResponse.([]*models.DatasetUpdate)
 		So(ok, ShouldBeTrue)
 		So(datasets, ShouldHaveLength, 3)
 
-		So(datasets[0].ID, ShouldEqual, "a-dataset")
-		So(datasets[1].ID, ShouldEqual, "m-dataset")
-		So(datasets[2].ID, ShouldEqual, "z-dataset")
+		So(datasets[0].Current.ID, ShouldEqual, "a-dataset")
+		So(datasets[1].Current.ID, ShouldEqual, "m-dataset")
+		So(datasets[2].Current.ID, ShouldEqual, "z-dataset")
 	})
 }
 
@@ -1879,7 +1883,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{Next: &models.Dataset{Type: "static"}}, nil
+				return &models.DatasetUpdate{Next: &models.Dataset{Type: "static", Topics: []string{"topic-0", "topic-1"}}}, nil
 			},
 			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
 				return false, nil
@@ -1928,6 +1932,462 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 
 			So(actual, ShouldResemble, expected)
 		})
+	})
+
+	Convey("A successful request to put static dataset with canonical topic change updates version web_page links", t, func() {
+		b := datasetPayloadWithTypeStatic
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
+
+		w := httptest.NewRecorder()
+		updatedWebPageHref := ""
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{Type: models.Static.String(), Title: "CensusEthnicity", State: models.CreatedState, Topics: []string{"old-topic", "topic-1"}}}, nil
+			},
+			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
+				return false, nil
+			},
+			GetEditionsStaticFunc: func(ctx context.Context, id, state string, offset, limit int) ([]*models.EditionUpdate, int, error) {
+				return []*models.EditionUpdate{{Next: &models.Edition{Edition: "2025"}}}, 1, nil
+			},
+			GetVersionsStaticFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) ([]models.Version, int, error) {
+				return []models.Version{{
+					Edition: "2025",
+					Version: 1,
+					ETag:    "etag-1",
+					Links:   &models.VersionLinks{WebPage: &models.LinkObject{HRef: "/old/web/page"}},
+				}}, 1, nil
+			},
+			UpdateVersionStaticFunc: func(ctx context.Context, currentVersion *models.Version, versionUpdate *models.Version, eTagSelector string) (string, error) {
+				updatedWebPageHref = versionUpdate.Links.WebPage.HRef
+				return "new-etag", nil
+			},
+			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
+				return nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordDatasetAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, dataset *models.Dataset) error {
+				return nil
+			},
+		}
+
+		topicAPIMock := &topicAPISDKMocks.ClienterMock{
+			GetTopicPrivateFunc: func(ctx context.Context, reqHeaders topicAPISDK.Headers, id string) (*topicAPIModels.TopicResponse, topicAPISDKErrors.Error) {
+				return &topicAPIModels.TopicResponse{Current: &topicAPIModels.Topic{ID: id, Slug: "businessindustryandtrade"}}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api.topicAPIClient = topicAPIMock
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(updatedWebPageHref, ShouldEqual, "/businessindustryandtrade/datasets/123/editions/2025/versions/1")
+		So(mockedDataStore.GetEditionsStaticCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetVersionsStaticCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpdateVersionStaticCalls(), ShouldHaveLength, 1)
+		So(topicAPIMock.GetTopicPrivateCalls(), ShouldHaveLength, 1)
+	})
+
+	Convey("When put static dataset topic is unchanged, version web_page links are not updated", t, func() {
+		// datasetPayloadWithTypeStatic has topics: ["topic-0","topic-1"]
+		// stored dataset also has topic-0 as canonical topic => no change => no version updates
+		b := datasetPayloadWithTypeStatic
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{Type: models.Static.String(), Title: "CensusEthnicity", State: models.CreatedState, Topics: []string{"topic-0", "topic-1"}}}, nil
+			},
+			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
+				return false, nil
+			},
+			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
+				return nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordDatasetAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, dataset *models.Dataset) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(mockedDataStore.GetEditionsStaticCalls(), ShouldHaveLength, 0)
+		So(mockedDataStore.GetVersionsStaticCalls(), ShouldHaveLength, 0)
+	})
+
+	Convey("When put static dataset has a Current sub-document (published), topic change path for version updates is skipped", t, func() {
+		b := datasetPayloadWithTypeStatic // topics ["topic-0","topic-1"]
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				// Current is non-nil so the unpublished topic-change branch is skipped
+				return &models.DatasetUpdate{
+					Current: &models.Dataset{Type: models.Static.String(), State: models.PublishedState, Topics: []string{"old-topic", "topic-1"}},
+					Next:    &models.Dataset{Type: models.Static.String(), State: models.PublishedState, Topics: []string{"old-topic", "topic-1"}},
+				}, nil
+			},
+			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
+				return false, nil
+			},
+			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
+				return nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordDatasetAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, dataset *models.Dataset) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api.Router.ServeHTTP(w, r)
+
+		// published dataset with changed canonical topic should return 409
+		So(w.Code, ShouldEqual, http.StatusConflict)
+		So(mockedDataStore.GetEditionsStaticCalls(), ShouldHaveLength, 0)
+		So(mockedDataStore.GetVersionsStaticCalls(), ShouldHaveLength, 0)
+	})
+
+	Convey("When put static dataset topic changes but no editions exist, no version updates are made", t, func() {
+		b := datasetPayloadWithTypeStatic // topics ["topic-0","topic-1"]
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{Type: models.Static.String(), Title: "CensusEthnicity", State: models.CreatedState, Topics: []string{"old-topic", "topic-1"}}}, nil
+			},
+			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
+				return false, nil
+			},
+			GetEditionsStaticFunc: func(ctx context.Context, id, state string, offset, limit int) ([]*models.EditionUpdate, int, error) {
+				return []*models.EditionUpdate{}, 0, nil
+			},
+			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
+				return nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordDatasetAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, dataset *models.Dataset) error {
+				return nil
+			},
+		}
+
+		topicAPIMock := &topicAPISDKMocks.ClienterMock{
+			GetTopicPrivateFunc: func(ctx context.Context, reqHeaders topicAPISDK.Headers, id string) (*topicAPIModels.TopicResponse, topicAPISDKErrors.Error) {
+				return &topicAPIModels.TopicResponse{Current: &topicAPIModels.Topic{ID: id, Slug: "newslug"}}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api.topicAPIClient = topicAPIMock
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(mockedDataStore.GetEditionsStaticCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetVersionsStaticCalls(), ShouldHaveLength, 0)
+		So(topicAPIMock.GetTopicPrivateCalls(), ShouldHaveLength, 0)
+	})
+
+	Convey("When put static dataset topic changes but an edition has no versions, no UpdateVersionStatic calls are made", t, func() {
+		b := datasetPayloadWithTypeStatic // topics ["topic-0","topic-1"]
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{Type: models.Static.String(), Title: "CensusEthnicity", State: models.CreatedState, Topics: []string{"old-topic", "topic-1"}}}, nil
+			},
+			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
+				return false, nil
+			},
+			GetEditionsStaticFunc: func(ctx context.Context, id, state string, offset, limit int) ([]*models.EditionUpdate, int, error) {
+				return []*models.EditionUpdate{{Next: &models.Edition{Edition: "2025"}}}, 1, nil
+			},
+			GetVersionsStaticFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) ([]models.Version, int, error) {
+				return []models.Version{}, 0, nil
+			},
+			UpdateDatasetFunc: func(context.Context, string, *models.Dataset, string) error {
+				return nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordDatasetAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, dataset *models.Dataset) error {
+				return nil
+			},
+		}
+
+		topicAPIMock := &topicAPISDKMocks.ClienterMock{
+			GetTopicPrivateFunc: func(ctx context.Context, reqHeaders topicAPISDK.Headers, id string) (*topicAPIModels.TopicResponse, topicAPISDKErrors.Error) {
+				return &topicAPIModels.TopicResponse{Current: &topicAPIModels.Topic{ID: id, Slug: "newslug"}}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api.topicAPIClient = topicAPIMock
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(mockedDataStore.GetEditionsStaticCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetVersionsStaticCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpdateVersionStaticCalls(), ShouldHaveLength, 0)
+		So(topicAPIMock.GetTopicPrivateCalls(), ShouldHaveLength, 1)
+	})
+
+	Convey("When put static dataset topic changes and GetEditionsStatic returns error, 500 is returned", t, func() {
+		b := datasetPayloadWithTypeStatic // topics ["topic-0","topic-1"]
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{Type: models.Static.String(), Title: "CensusEthnicity", State: models.CreatedState, Topics: []string{"old-topic", "topic-1"}}}, nil
+			},
+			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
+				return false, nil
+			},
+			GetEditionsStaticFunc: func(ctx context.Context, id, state string, offset, limit int) ([]*models.EditionUpdate, int, error) {
+				return nil, 0, errors.New("editions store error")
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordDatasetAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, dataset *models.Dataset) error {
+				return nil
+			},
+		}
+
+		topicAPIMock := &topicAPISDKMocks.ClienterMock{}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api.topicAPIClient = topicAPIMock
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(mockedDataStore.GetEditionsStaticCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetVersionsStaticCalls(), ShouldHaveLength, 0)
+	})
+
+	Convey("When put static dataset topic changes and GetVersionsStatic returns error, 500 is returned", t, func() {
+		b := datasetPayloadWithTypeStatic // topics ["topic-0","topic-1"]
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{Type: models.Static.String(), Title: "CensusEthnicity", State: models.CreatedState, Topics: []string{"old-topic", "topic-1"}}}, nil
+			},
+			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
+				return false, nil
+			},
+			GetEditionsStaticFunc: func(ctx context.Context, id, state string, offset, limit int) ([]*models.EditionUpdate, int, error) {
+				return []*models.EditionUpdate{{Next: &models.Edition{Edition: "2025"}}}, 1, nil
+			},
+			GetVersionsStaticFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) ([]models.Version, int, error) {
+				return nil, 0, errors.New("versions store error")
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordDatasetAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, dataset *models.Dataset) error {
+				return nil
+			},
+		}
+
+		topicAPIMock := &topicAPISDKMocks.ClienterMock{
+			GetTopicPrivateFunc: func(ctx context.Context, reqHeaders topicAPISDK.Headers, id string) (*topicAPIModels.TopicResponse, topicAPISDKErrors.Error) {
+				return &topicAPIModels.TopicResponse{Current: &topicAPIModels.Topic{ID: id, Slug: "newslug"}}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api.topicAPIClient = topicAPIMock
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(mockedDataStore.GetEditionsStaticCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetVersionsStaticCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpdateVersionStaticCalls(), ShouldHaveLength, 0)
+	})
+
+	Convey("When put static dataset topic changes and GetTopicPrivate returns error, 500 is returned", t, func() {
+		b := datasetPayloadWithTypeStatic // topics ["topic-0","topic-1"]
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{Type: models.Static.String(), Title: "CensusEthnicity", State: models.CreatedState, Topics: []string{"old-topic", "topic-1"}}}, nil
+			},
+			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
+				return false, nil
+			},
+			GetEditionsStaticFunc: func(ctx context.Context, id, state string, offset, limit int) ([]*models.EditionUpdate, int, error) {
+				return []*models.EditionUpdate{{Next: &models.Edition{Edition: "2025"}}}, 1, nil
+			},
+			GetVersionsStaticFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) ([]models.Version, int, error) {
+				return []models.Version{{Edition: "2025", Version: 1, ETag: "e1", Links: &models.VersionLinks{WebPage: &models.LinkObject{HRef: "/old"}}}}, 1, nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordDatasetAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, dataset *models.Dataset) error {
+				return nil
+			},
+		}
+
+		topicAPIMock := &topicAPISDKMocks.ClienterMock{
+			GetTopicPrivateFunc: func(ctx context.Context, reqHeaders topicAPISDK.Headers, id string) (*topicAPIModels.TopicResponse, topicAPISDKErrors.Error) {
+				return nil, topicAPISDKErrors.StatusError{Code: 500}
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api.topicAPIClient = topicAPIMock
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(topicAPIMock.GetTopicPrivateCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpdateVersionStaticCalls(), ShouldHaveLength, 0)
+	})
+
+	Convey("When put static dataset topic changes and UpdateVersionStatic returns error, 500 is returned", t, func() {
+		b := datasetPayloadWithTypeStatic // topics ["topic-0","topic-1"]
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{Type: models.Static.String(), Title: "CensusEthnicity", State: models.CreatedState, Topics: []string{"old-topic", "topic-1"}}}, nil
+			},
+			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
+				return false, nil
+			},
+			GetEditionsStaticFunc: func(ctx context.Context, id, state string, offset, limit int) ([]*models.EditionUpdate, int, error) {
+				return []*models.EditionUpdate{{Next: &models.Edition{Edition: "2025"}}}, 1, nil
+			},
+			GetVersionsStaticFunc: func(ctx context.Context, datasetID, editionID, state string, offset, limit int) ([]models.Version, int, error) {
+				return []models.Version{{Edition: "2025", Version: 1, ETag: "e1", Links: &models.VersionLinks{WebPage: &models.LinkObject{HRef: "/old"}}}}, 1, nil
+			},
+			UpdateVersionStaticFunc: func(ctx context.Context, currentVersion *models.Version, versionUpdate *models.Version, eTagSelector string) (string, error) {
+				return "", errors.New("update version store error")
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordDatasetAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, dataset *models.Dataset) error {
+				return nil
+			},
+		}
+
+		topicAPIMock := &topicAPISDKMocks.ClienterMock{
+			GetTopicPrivateFunc: func(ctx context.Context, reqHeaders topicAPISDK.Headers, id string) (*topicAPIModels.TopicResponse, topicAPISDKErrors.Error) {
+				return &topicAPIModels.TopicResponse{Current: &topicAPIModels.Topic{ID: id, Slug: "newslug"}}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api.topicAPIClient = topicAPIMock
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(mockedDataStore.UpdateVersionStaticCalls(), ShouldHaveLength, 1)
 	})
 
 	Convey("When update dataset type has a value of filterable and stored dataset type is nomis return status ok", t, func() {

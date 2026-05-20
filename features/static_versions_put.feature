@@ -942,3 +942,107 @@ Feature: Static Dataset Versions PUT API
                 "type": "static"
             }
             """
+
+    Scenario: PUT updates static version edition ID and updates webpage link
+      Given I have a static dataset with version:
+          """
+          {
+              "dataset": {
+                  "id": "static-dataset",
+                  "title": "Change topic in version link test",
+                  "state": "associated",
+                  "type": "static",
+                  "topics": [
+                      "businessindustryandtrade-topic-id"
+                  ]
+              },
+              "version": {
+                  "id": "static-version-webpage-link",
+                  "edition": "2025",
+                  "edition_title": "2025 Edition",
+                  "links": {
+                      "dataset": {
+                          "id": "static-dataset"
+                      },
+                      "edition": {
+                          "href": "/datasets/static-dataset/editions/2025",
+                          "id": "2025"
+                      },
+                      "self": {
+                          "href": "/datasets/static-dataset/editions/2025/versions/1"
+                      },
+                      "version": {
+                          "href": "/datasets/static-dataset/editions/2025/versions/1",
+                          "id": "1"
+                      },
+                      "web_page": {
+                          "href": "http://dp-frontend-router:20000/businessindustryandtrade/datasets/static-dataset/editions/2025/versions/1"
+                      }
+                  },
+                  "version": 1,
+                  "release_date": "2025-01-01T09:00:00.000Z",
+                  "state": "associated",
+                  "type": "static",
+                  "distributions": [
+                      {
+                          "title": "csv",
+                          "format": "csv",
+                          "media_type": "text/csv",
+                          "download_url": "/uuid/filename.csv",
+                          "byte_size": 125000
+                      }
+                  ]
+              }
+          }
+          """
+      And private endpoints are enabled
+      And I am an admin user
+      When I PUT "/datasets/static-dataset/editions/2025/versions/1"
+          """
+          {
+              "edition": "2026",
+              "edition_title": "2026 Edition",
+              "type": "static",
+          }
+          """
+      Then I should receive the following JSON response with status "200":
+          """
+          {
+              "dataset_id": "static-dataset",
+              "distributions": [
+                  {
+                      "byte_size": 125000,
+                      "download_url": "/uuid/filename.csv",
+                      "format": "csv",
+                      "media_type": "text/csv",
+                      "title": "csv"
+                  }
+              ],
+              "edition": "2026",
+              "edition_title": "2026 Edition",
+              "id": "static-version-webpage-link",
+              "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
+              "links": {
+                  "dataset": {
+                      "id": "static-dataset"
+                  },
+                  "edition": {
+                      "href": "/datasets/static-dataset/editions/2026",
+                      "id": "2026"
+                  },
+                  "self": {
+                      "href": "/datasets/static-dataset/editions/2026/versions/1"
+                  },
+                  "version": {
+                      "href": "/datasets/static-dataset/editions/2026/versions/1",
+                      "id": "1"
+                  },
+                  "web_page": {
+                      "href": "/businessindustryandtrade/datasets/static-dataset/editions/2026/versions/1"
+                  }
+              },
+              "release_date": "2025-01-01T09:00:00.000Z",
+              "state": "associated",
+              "type": "static"
+          }
+          """

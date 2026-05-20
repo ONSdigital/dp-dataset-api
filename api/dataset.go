@@ -144,7 +144,7 @@ func (api *DatasetAPI) getDatasets(w http.ResponseWriter, r *http.Request, limit
 	}
 
 	if authorised {
-		return datasets, totalCount, nil
+		return mapResults(datasets), totalCount, nil
 	}
 
 	return mapResults(datasets), totalCount, nil
@@ -589,17 +589,19 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if currentDataset.Current != nil && currentDataset.Current.State == models.PublishedState &&
+				len(currentDataset.Current.Topics) > 0 && len(dataset.Topics) > 0 &&
 				currentDataset.Current.Topics[0] != dataset.Topics[0] {
 				log.Error(ctx, "putDataset endpoint: unable to update canonical topic of a published dataset", errs.ErrPublishedDatasetTopicChange, data)
 				return nil, errs.ErrPublishedDatasetTopicChange
 			}
 
 			if currentDataset.Next != nil && currentDataset.Current == nil && currentDataset.Next.State != models.PublishedState {
-				if currentDataset.Next.Topics[0] != dataset.Topics[0] {
+				if len(currentDataset.Next.Topics) > 0 && len(dataset.Topics) > 0 && currentDataset.Next.Topics[0] != dataset.Topics[0] {
 					state := ""
 					editions, _, err := api.dataStore.Backend.GetEditionsStatic(ctx, datasetID, state, 0, 0)
 					if err != nil {
 						log.Error(ctx, "putDataset endpoint: error getting editions for dataset", err, data)
+						return nil, err
 					}
 					for eCount := range editions {
 						versions, _, err := api.dataStore.Backend.GetVersionsStatic(ctx, datasetID, editions[eCount].Next.Edition, state, 0, 100)
@@ -611,7 +613,7 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 						topicSDKHeaders := topicAPISDK.Headers{
 							ServiceAuthToken: fetchAccessTokenFromHeader(r),
 						}
-						topic, err := api.topicAPIClient.GetTopicPublic(ctx, topicSDKHeaders, dataset.Topics[0])
+						topic, err := api.topicAPIClient.GetTopicPrivate(ctx, topicSDKHeaders, dataset.Topics[0])
 						if err != nil {
 							log.Error(ctx, "putVersion endpoint: failed to get topic from Topic API", err, data)
 							return nil, err
@@ -621,9 +623,16 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 							updatedVersion := new(models.Version)
 							*updatedVersion = versions[vCount]
 
+							if updatedVersion.Links == nil {
+								updatedVersion.Links = &models.VersionLinks{}
+							}
+							if updatedVersion.Links.WebPage == nil {
+								updatedVersion.Links.WebPage = &models.LinkObject{}
+							}
+
 							updatedVersion.Links.WebPage.HRef = fmt.Sprintf(
 								"/%s/datasets/%s/editions/%s/versions/%d",
-								topic.Slug,
+								topic.Current.Slug,
 								datasetID,
 								currentVersion.Edition,
 								currentVersion.Version,
@@ -639,7 +648,6 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
-		fmt.Println("AFTER TOPIC CHANGE FOR PUT DATASET")
 
 		if dataset.State == models.PublishedState {
 			if err := api.publishDataset(ctx, currentDataset, nil); err != nil {
