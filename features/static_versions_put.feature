@@ -1002,7 +1002,7 @@ Feature: Static Dataset Versions PUT API
           {
               "edition": "2026",
               "edition_title": "2026 Edition",
-              "type": "static",
+              "type": "static"
           }
           """
       Then I should receive the following JSON response with status "200":
