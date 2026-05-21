@@ -958,25 +958,26 @@ Feature: Static Dataset Versions PUT API
               },
               "version": {
                   "id": "static-version-webpage-link",
-                  "edition": "2025",
-                  "edition_title": "2025 Edition",
+                  "edition": "2025-links",
+                  "edition_title": "2025 Edition links",
                   "links": {
                       "dataset": {
+                          "href": "/datasets/static-dataset",
                           "id": "static-dataset"
                       },
                       "edition": {
-                          "href": "/datasets/static-dataset/editions/2025",
-                          "id": "2025"
+                          "href": "/datasets/static-dataset/editions/2025-links",
+                          "id": "2025-links"
                       },
                       "self": {
-                          "href": "/datasets/static-dataset/editions/2025/versions/1"
+                          "href": "/datasets/static-dataset/editions/2025-links/versions/1"
                       },
                       "version": {
-                          "href": "/datasets/static-dataset/editions/2025/versions/1",
+                          "href": "/datasets/static-dataset/editions/2025-links/versions/1",
                           "id": "1"
                       },
                       "web_page": {
-                          "href": "http://dp-frontend-router:20000/businessindustryandtrade/datasets/static-dataset/editions/2025/versions/1"
+                          "href": "/businessindustryandtrade/datasets/static-dataset/editions/2025-links/versions/1"
                       }
                   },
                   "version": 1,
@@ -997,7 +998,7 @@ Feature: Static Dataset Versions PUT API
           """
       And private endpoints are enabled
       And I am an admin user
-      When I PUT "/datasets/static-dataset/editions/2025/versions/1"
+      When I PUT "/datasets/static-dataset/editions/2025-links/versions/1"
           """
           {
               "edition": "2026-update",
@@ -1025,6 +1026,7 @@ Feature: Static Dataset Versions PUT API
               "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
               "links": {
                   "dataset": {
+                      "href": "/datasets/static-dataset",
                       "id": "static-dataset"
                   },
                   "edition": {
@@ -1035,7 +1037,7 @@ Feature: Static Dataset Versions PUT API
                       "href": "/datasets/static-dataset/editions/2026-update/versions/1"
                   },
                   "web_page": {
-                      "href": "http://dp-frontend-router:20000/businessindustryandtrade/datasets/static-dataset/editions/2026-update/versions/1"
+                      "href": "/businessindustryandtrade/datasets/static-dataset/editions/2026-update/versions/1"
                   }
               },
               "release_date": "2025-01-01T09:00:00.000Z",
