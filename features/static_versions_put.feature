@@ -1033,10 +1033,6 @@ Feature: Static Dataset Versions PUT API
                   "self": {
                       "href": "/datasets/static-dataset/editions/2026/versions/1"
                   },
-                  "version": {
-                      "href": "/datasets/static-dataset/editions/2026/versions/1",
-                      "id": "1"
-                  },
                   "web_page": {
                       "href": "/businessindustryandtrade/datasets/static-dataset/editions/2026/versions/1"
                   }
