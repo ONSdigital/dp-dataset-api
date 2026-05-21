@@ -1000,7 +1000,7 @@ Feature: Static Dataset Versions PUT API
       When I PUT "/datasets/static-dataset/editions/2025/versions/1"
           """
           {
-              "edition": "2026",
+              "edition": "2026-update",
               "edition_title": "2026 Edition",
               "type": "static"
           }
@@ -1018,7 +1018,7 @@ Feature: Static Dataset Versions PUT API
                       "title": "csv"
                   }
               ],
-              "edition": "2026",
+              "edition": "2026-update",
               "edition_title": "2026 Edition",
               "id": "static-version-webpage-link",
               "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
@@ -1027,14 +1027,14 @@ Feature: Static Dataset Versions PUT API
                       "id": "static-dataset"
                   },
                   "edition": {
-                      "href": "/datasets/static-dataset/editions/2026",
-                      "id": "2026"
+                      "href": "/datasets/static-dataset/editions/2026-update",
+                      "id": "2026-update"
                   },
                   "self": {
-                      "href": "/datasets/static-dataset/editions/2026/versions/1"
+                      "href": "/datasets/static-dataset/editions/2026-update/versions/1"
                   },
                   "web_page": {
-                      "href": "/businessindustryandtrade/datasets/static-dataset/editions/2026/versions/1"
+                      "href": "http://dp-frontend-router:20000/businessindustryandtrade/datasets/static-dataset/editions/2026-update/versions/1"
                   }
               },
               "release_date": "2025-01-01T09:00:00.000Z",
