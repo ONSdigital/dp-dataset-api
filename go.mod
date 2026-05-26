@@ -5,10 +5,7 @@ go 1.24.0
 // TODO: Remove once dp-dataset-api has been updated to use dp-component-test v1.0.1-alpha
 replace github.com/ONSdigital/dp-component-test => github.com/ONSdigital/dp-component-test v0.28.0
 
-replace github.com/ONSdigital/dp-mongodb/v3 => /Users/francesmoore/src/github.com/ONSdigital/dp-mongodb
-
-replace github.com/ONSdigital/dp-api-clients-go/v2 => /Users/francesmoore/src/github.com/ONSdigital/dp-api-clients-go
-replace github.com/ONSdigital/dp-authorisation/v2 => /Users/francesmoore/src/github.com/ONSdigital/dp-authorisation
+//replace github.com/ONSdigital/dp-mongodb/v3 => /Users/francesmoore/src/github.com/ONSdigital/dp-mongodb
 
 require (
 	github.com/ONSdigital/dp-api-clients-go v1.43.0

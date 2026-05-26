@@ -277,7 +277,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		Marshaller: schema.GenerateCMDDownloadsEvent,
 	}
 
-	searchContentUpdatedProducer := &api.SearchContentUpdatedProducer{
+	searchContentUpdatedProducer := &application.SearchContentUpdatedProducer{
 		Producer: adapter.NewProducerAdapter(svc.searchContentUpdatedKafkaProducer),
 	}
 
@@ -359,11 +359,11 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 
 	// will need to look at this for web mode
 	sm := GetStateMachine(ctx, ds)
-	svc.smDS = application.Setup(ds, smDownloadGenerators, sm)
+	svc.smDS = application.Setup(ds, smDownloadGenerators, sm, searchContentUpdatedProducer, svc.cloudflareClient, svc.config.CloudflareEnabled, urlBuilder)
 
 	auditService := application.NewAuditService(ds)
 
-	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, authorisation, enableURLRewriting, svc.smDS, auditService, permissionChecker, svc.identityClient, searchContentUpdatedProducer, svc.cloudflareClient)
+	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, authorisation, enableURLRewriting, svc.smDS, auditService, permissionChecker, svc.identityClient)
 
 	// Set the files API client on the DatasetAPI after initialisation
 	if svc.config.EnablePrivateEndpoints && svc.filesAPIClient != nil {

@@ -9,14 +9,12 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/ONSdigital/dp-api-clients-go/v2/headers"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/utils"
 	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
-	kafka "github.com/ONSdigital/dp-kafka/v4"
 	dpresponse "github.com/ONSdigital/dp-net/v3/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v3/http"
 	"github.com/ONSdigital/dp-net/v3/links"
@@ -896,7 +894,6 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 	logData := log.Data{"dataset_id": datasetID, "edition": edition, "version": version}
 
 	log.Info(ctx, "putState endpoint: endpoint called", logData)
-	fmt.Println(time.Now().String())
 
 	authEntityData, err := api.getAuthEntityData(r)
 	if err != nil {
@@ -919,25 +916,8 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// if err = models.CheckState("version", stateUpdate.State); err != nil {
-	// 	log.Error(ctx, "putState endpoint: state is invalid", err, log.Data{"state": stateUpdate.State})
-	// 	handleVersionAPIErr(ctx, models.ErrVersionStateInvalid, w, logData)
-	// 	return
-	// }
-
-	// currentVersion, err := api.dataStore.Backend.GetVersionStatic(ctx, datasetID, edition, versionID, "")
-	// if err != nil {
-	// 	log.Error(ctx, "putState endpoint: failed to get version", err, logData)
-	// 	handleVersionAPIErr(ctx, err, w, logData)
-	// 	return
-	// }
-
-	fmt.Println("GOT STATIC VERSION FOR EDITION", edition)
-	fmt.Println(time.Now().String())
-
 	// Create a version update with the target state
 	versionUpdate := &models.Version{
-		//ID:    currentVersion.ID,
 		ID:    strconv.Itoa(versionID),
 		State: stateUpdate.State,
 		Type:  models.Static.String(),
@@ -947,56 +927,6 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, logData)
 		return
-	}
-
-	// move to state machine
-	// if stateUpdate.State == models.PublishedState && updatedVersion.Distributions != nil && len(*updatedVersion.Distributions) > 0 {
-	// 	err = api.publishDistributionFiles(ctx, updatedVersion, logData, fetchAccessTokenFromHeader(r))
-	// 	if err != nil {
-	// 		log.Error(ctx, "putState endpoint: failed to publish distribution files", err, logData)
-	// 		handleVersionAPIErr(ctx, err, w, logData)
-	// 		return
-	// 	}
-	// }
-
-	if updatedVersion.State == models.PublishedState {
-		searchContentUpdatedEvent := map[string]interface{}{
-			"dataset_id": datasetID,
-			"uri":        fmt.Sprintf("/datasets/%s", datasetID),
-			//"title":        currentVersion.EditionTitle,
-			"title": updatedVersion.EditionTitle,
-			//"edition":      currentVersion.Edition,
-			"edition":      updatedVersion.Edition,
-			"content_type": "dataset_landing_page",
-			//"release_date": currentVersion.ReleaseDate,
-			"release_date": updatedVersion.ReleaseDate,
-		}
-
-		jsonBytes, err := json.Marshal(searchContentUpdatedEvent)
-		logData["search_content_updated_event"] = searchContentUpdatedEvent
-		if err != nil {
-			log.Error(ctx, "failed to marshal searchContentUpdatedEvent for kafka", err, logData)
-			handleVersionAPIErr(ctx, err, w, logData)
-			return
-		} else {
-			go func() {
-				api.searchContentUpdatedProducer.Producer.Output() <- kafka.BytesMessage{Value: jsonBytes, Context: ctx}
-			}()
-			log.Info(ctx, "putState endpoint: queued search content update for kafka", logData)
-		}
-	}
-
-	// Purge Cloudflare cache if enabled and version is being published
-	if api.cloudflareEnabled && stateUpdate.State == models.PublishedState {
-		prefixes := utils.GeneratePurgePrefixes(api.urlBuilder.GetWebsiteURL().String(), api.urlBuilder.GetAPIRouterPublicURL().String(), datasetID, edition, version)
-		logData["purge_prefixes"] = prefixes
-
-		err := api.cloudflareClient.PurgeByPrefixes(ctx, prefixes)
-		if err != nil {
-			log.Error(ctx, "putState endpoint: failed to purge cache by prefixes", err, logData)
-		} else {
-			log.Info(ctx, "putState endpoint: successfully purged cache by prefixes", logData)
-		}
 	}
 
 	// ID and Email are the same as auth middleware can only provide userID
@@ -1016,11 +946,6 @@ func (api *DatasetAPI) publishDistributionFiles(ctx context.Context, version *mo
 		return fmt.Errorf("files API client not configured")
 	}
 
-	// Already validated above
-	// if version.Distributions == nil || len(*version.Distributions) == 0 {
-	// 	return nil
-	// }
-
 	var lastError error
 	var filesAPIError error
 	totalFiles := len(*version.Distributions)
@@ -1038,26 +963,7 @@ func (api *DatasetAPI) publishDistributionFiles(ctx context.Context, version *mo
 			"distribution_title":  distribution.Title,
 			"distribution_format": distribution.Format,
 		}
-		// Is this causing the slowdown?
-		//maps.Copy(fileLogData, logData)
 
-		// Could potentially just return the error from the mark file published to handle both
-		// _, err := api.filesAPIClient.GetFile(ctx, filepath, filesAPISDK.Headers{
-		// 	Authorization: accessToken,
-		// })
-		// if err != nil {
-		// 	log.Error(ctx, "failed to get file metadata", err, fileLogData)
-
-		// 	if strings.Contains(err.Error(), "FileNotRegistered") ||
-		// 		strings.Contains(err.Error(), "file not registered") ||
-		// 		strings.Contains(err.Error(), "not found") {
-		// 		filesAPIError = errs.ErrFileMetadataNotFound
-		// 	}
-		// 	lastError = err
-		// 	continue
-		// }
-
-		fmt.Println("SENDING REQUEST TO MARK FILE PUBLISHED AT " + filepath + " " + time.Now().String())
 		err := api.filesAPIClient.MarkFilePublished(ctx, filepath, filesAPISDK.Headers{Authorization: accessToken})
 		if err != nil {
 			log.Error(ctx, "failed to publish file", err, log.Data{

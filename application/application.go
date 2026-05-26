@@ -2,8 +2,8 @@ package application
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -11,9 +11,14 @@ import (
 
 	"github.com/ONSdigital/dp-api-clients-go/headers"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
+	"github.com/ONSdigital/dp-dataset-api/cloudflare"
+	"github.com/ONSdigital/dp-dataset-api/download"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/dp-dataset-api/url"
+	"github.com/ONSdigital/dp-dataset-api/utils"
 	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
+	kafka "github.com/ONSdigital/dp-kafka/v4"
 	dprequest "github.com/ONSdigital/dp-net/v3/request"
 	"github.com/ONSdigital/dp-permissions-api/sdk"
 	"github.com/ONSdigital/log.go/v2/log"
@@ -48,12 +53,20 @@ type DownloadsGenerator interface {
 	Generate(ctx context.Context, datasetID, instanceID, edition, version string) error
 }
 
+type SearchContentUpdatedProducer struct {
+	Producer download.KafkaProducer
+}
+
 type StateMachineDatasetAPI struct {
-	DataStore          store.DataStore
-	DownloadGenerators map[models.DatasetType]DownloadsGenerator
-	StateMachine       *StateMachine
-	FilesAPIClient     filesAPISDK.Clienter
-	authToken          string
+	DataStore                    store.DataStore
+	DownloadGenerators           map[models.DatasetType]DownloadsGenerator
+	StateMachine                 *StateMachine
+	FilesAPIClient               filesAPISDK.Clienter
+	authToken                    string
+	searchContentUpdatedProducer *SearchContentUpdatedProducer
+	cloudflareClient             cloudflare.Clienter
+	cloudflareEnabled            bool
+	urlBuilder                   *url.Builder
 }
 
 // SetFilesAPIClient sets the files API client and auth token for the API
@@ -62,11 +75,15 @@ func (smDS *StateMachineDatasetAPI) SetFilesAPIClient(client filesAPISDK.Cliente
 	smDS.authToken = authToken
 }
 
-func Setup(dataStoreVal store.DataStore, downloadGenerators map[models.DatasetType]DownloadsGenerator, stateMachine *StateMachine) *StateMachineDatasetAPI {
+func Setup(dataStoreVal store.DataStore, downloadGenerators map[models.DatasetType]DownloadsGenerator, stateMachine *StateMachine, searchContentUpdatedProducer *SearchContentUpdatedProducer, cloudflareClient cloudflare.Clienter, cloudflareEnabled bool, urlBuilder *url.Builder) *StateMachineDatasetAPI {
 	newDS := &StateMachineDatasetAPI{
-		DataStore:          dataStoreVal,
-		DownloadGenerators: downloadGenerators,
-		StateMachine:       stateMachine,
+		DataStore:                    dataStoreVal,
+		DownloadGenerators:           downloadGenerators,
+		StateMachine:                 stateMachine,
+		searchContentUpdatedProducer: searchContentUpdatedProducer,
+		cloudflareClient:             cloudflareClient,
+		cloudflareEnabled:            cloudflareEnabled,
+		urlBuilder:                   urlBuilder,
 	}
 
 	return newDS
@@ -83,19 +100,7 @@ func (smDS *StateMachineDatasetAPI) AmendVersion(ctx context.Context, vars map[s
 		version:   vars["version"],
 	}
 
-	fmt.Println("RECEIVED AMENDVERSION FOR ", version.Edition)
-	fmt.Println(time.Now().String())
-
-	if version.Type == models.Static.String() {
-		//lockID, lockErr := smDS.DataStore.Backend.AcquireVersionsLock(ctx, version.ID)
-		// lockID, lockErr := smDS.DataStore.Backend.AcquireVersionsSLock(ctx, version.Edition, 100)
-		// if lockErr != nil {
-		// 	return nil, lockErr
-		// }
-		// defer func() {
-		// 	smDS.DataStore.Backend.UnlockVersions(ctx, lockID)
-		// }()
-	} else {
+	if version.Type != models.Static.String() {
 		lockID, lockErr := smDS.DataStore.Backend.AcquireInstanceLock(ctx, version.ID)
 		if lockErr != nil {
 			return nil, lockErr
@@ -110,9 +115,6 @@ func (smDS *StateMachineDatasetAPI) AmendVersion(ctx context.Context, vars map[s
 		log.Error(ctx, "amendVersion: creating models failed", err)
 		return nil, err
 	}
-
-	fmt.Println("THE CURRENT VERSION IS BEFORE TRANSITION")
-	fmt.Println(currentVersion)
 
 	if err := smDS.StateMachine.Transition(ctx, smDS, currentVersion, versionUpdate, versionDetails, vars[hasDownloads], authEntityData, accessToken); err != nil {
 		log.Error(ctx, "amendVersion: state machine transition failed", err)
@@ -632,14 +634,6 @@ func UpdateVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 					log.Error(ctx, "putVersion endpoint: UpdateVersionStatic returned an error", err)
 					return errVersion
 				}
-				// fmt.Println("ABOUT TO CALL DATABASE - CURRENT VERSION IS")
-				// fmt.Println(currentVersion)
-				// updatedV, errVersion := smDS.DataStore.Backend.UpdateStateStatic(ctx, currentVersion, &models.StateUpdate{State: "published"}, eTag)
-				// if errVersion != nil {
-				// 	log.Error(ctx, "putVersion endpoint: UpdateVersionStatic returned an error", err)
-				// 	return nil, errVersion
-				// }
-				// return updatedV, nil
 			} else {
 				if _, errVersion := smDS.DataStore.Backend.UpdateVersion(ctx, currentVersion, versionUpdate, eTag); errVersion != nil {
 					log.Error(ctx, "putVersion endpoint: UpdateVersion returned an error", err)
@@ -688,6 +682,8 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 	versionDetails VersionDetails,
 	authEntityData *sdk.EntityData,
 	accessToken string) (updatedVersion *models.Version, err error) {
+
+	logData := log.Data{"dataset_id": versionDetails.datasetID, "edition": versionDetails.edition, "version": versionDetails.version}
 	eTag := headers.IfMatchAnyETag
 	if currentVersion.ETag != "" {
 		eTag = currentVersion.ETag
@@ -705,29 +701,52 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 	var doUpdate = func() (*models.Version, error) {
 		if versionUpdate != nil {
 			if versionUpdate.Type == models.Static.String() {
-				// if _, errVersion := smDS.DataStore.Backend.UpdateVersionStatic(ctx, currentVersion, versionUpdate, eTag); errVersion != nil {
-				// 	log.Error(ctx, "putVersion endpoint: UpdateVersionStatic returned an error", err)
-				// 	return errVersion
-				// }
-				fmt.Println("ABOUT TO CALL DATABASE - CURRENT VERSION IS")
-				fmt.Println(currentVersion)
-				fmt.Println(time.Now().String())
+
 				updatedV, errVersion := smDS.DataStore.Backend.UpdateStateStatic(ctx, currentVersion, &models.StateUpdate{State: "published"}, eTag)
-				fmt.Println("finished database update for ", currentVersion.Edition)
-				fmt.Println(time.Now().String())
 				if errVersion != nil {
 					log.Error(ctx, "putVersion endpoint: UpdateVersionStatic returned an error", err)
 					return nil, errVersion
 				}
 
-				fmt.Println("ABOUT TO PUBLISH DISTRIBUTION FILES")
-				fmt.Println(authEntityData.UserID)
 				err = smDS.publishDistributionFiles(ctx, updatedV, log.Data{}, accessToken)
 				if err != nil {
 					log.Error(ctx, "putState endpoint: failed to publish distribution files", err, log.Data{})
-					//handleVersionAPIErr(ctx, err, w, logData)
-					return nil, err
+					return updatedV, err
 				}
+				searchContentUpdatedEvent := map[string]interface{}{
+					"dataset_id":   versionDetails.datasetID,
+					"uri":          fmt.Sprintf("/datasets/%s", versionDetails.datasetID),
+					"title":        updatedV.EditionTitle,
+					"edition":      updatedV.Edition,
+					"content_type": "dataset_landing_page",
+					"release_date": updatedV.ReleaseDate,
+				}
+
+				logData["search_content_updated_event"] = searchContentUpdatedEvent
+				jsonBytes, err := json.Marshal(searchContentUpdatedEvent)
+				if err != nil {
+					log.Error(ctx, "failed to marshal searchContentUpdatedEvent for kafka", err, logData)
+					return updatedV, err
+				} else {
+					go func() {
+						smDS.searchContentUpdatedProducer.Producer.Output() <- kafka.BytesMessage{Value: jsonBytes, Context: ctx}
+					}()
+					log.Info(ctx, "putState endpoint: queued search content update for kafka", logData)
+				}
+
+				// Purge Cloudflare cache if enabled and version is being published
+				if smDS.cloudflareEnabled {
+					prefixes := utils.GeneratePurgePrefixes(smDS.urlBuilder.GetWebsiteURL().String(), smDS.urlBuilder.GetAPIRouterPublicURL().String(), versionDetails.datasetID, versionDetails.edition, versionDetails.version)
+					logData["purge_prefixes"] = prefixes
+
+					err := smDS.cloudflareClient.PurgeByPrefixes(ctx, prefixes)
+					if err != nil {
+						log.Error(ctx, "putState endpoint: failed to purge cache by prefixes", err, logData)
+					} else {
+						log.Info(ctx, "putState endpoint: successfully purged cache by prefixes", logData)
+					}
+				}
+
 				return updatedV, nil
 			} else {
 				if _, errVersion := smDS.DataStore.Backend.UpdateVersion(ctx, currentVersion, versionUpdate, eTag); errVersion != nil {
@@ -741,7 +760,6 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 	}
 
 	if versionUpdate, err := doUpdate(); err != nil {
-		fmt.Println("IN THE DO UPDATE THING")
 		if err == errs.ErrDatasetNotFound {
 			if versionUpdate != nil {
 				if versionUpdate.Type == models.Static.String() {
@@ -760,7 +778,6 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 			}
 
 			if _, err := doUpdate(); err != nil {
-				fmt.Println("DOING THE UPDATE again")
 				log.Error(ctx, "putVersion endpoint: failed to update version document on 2nd attempt", err)
 				return nil, err
 			}
@@ -981,9 +998,6 @@ func (smDS *StateMachineDatasetAPI) publishDistributionFiles(ctx context.Context
 	for index := range *version.Distributions {
 		distribution := &(*version.Distributions)[index]
 		wg.Add(1)
-		fmt.Println("Starting loop: "+strconv.Itoa(index)+"at: ", time.Now().String())
-		fmt.Println("Number of goroutines on startup", runtime.NumGoroutine())
-		fmt.Println("ABOUT TO EXECUTE PUBLISH FILE")
 		if distribution.DownloadURL == "" {
 			continue
 		}
@@ -995,61 +1009,14 @@ func (smDS *StateMachineDatasetAPI) publishDistributionFiles(ctx context.Context
 			"distribution_title":  distribution.Title,
 			"distribution_format": distribution.Format,
 		}
-		// Is this causing the slowdown?
-		//maps.Copy(fileLogData, logData)
 
-		// Could potentially just return the error from the mark file published to handle both
-		// _, err := api.filesAPIClient.GetFile(ctx, filepath, filesAPISDK.Headers{
-		// 	Authorization: accessToken,
-		// })
-		// if err != nil {
-		// 	log.Error(ctx, "failed to get file metadata", err, fileLogData)
-
-		// 	if strings.Contains(err.Error(), "FileNotRegistered") ||
-		// 		strings.Contains(err.Error(), "file not registered") ||
-		// 		strings.Contains(err.Error(), "not found") {
-		// 		filesAPIError = errs.ErrFileMetadataNotFound
-		// 	}
-		// 	lastError = err
-		// 	continue
-		// }
-
-		fmt.Println("SENDING REQUEST TO MARK FILE PUBLISHED AT " + filepath + " " + time.Now().String())
 		go publishFile(ctx, smDS.FilesAPIClient, *distribution, accessToken, ch, &wg)
-		fmt.Println("Ending loop: "+strconv.Itoa(index)+"at: ", time.Now().String())
-		fmt.Println("Number of goroutines after", runtime.NumGoroutine())
-		// err := smDS.FilesAPIClient.MarkFilePublished(ctx, filepath, filesAPISDK.Headers{Authorization: accessToken})
-		// if err != nil {
-		// 	log.Error(ctx, "failed to publish file", err, log.Data{
-		// 		"filepath":            filepath,
-		// 		"distribution_title":  distribution.Title,
-		// 		"distribution_format": distribution.Format,
-		// 	})
-
-		// 	if strings.Contains(err.Error(), "FileNotRegistered") ||
-		// 		strings.Contains(err.Error(), "file not registered") ||
-		// 		strings.Contains(err.Error(), "not found") {
-		// 		filesAPIError = errs.ErrFileMetadataNotFound
-		// 	}
-
-		// 	if strings.Contains(err.Error(), "FileStateError") ||
-		// 		strings.Contains(err.Error(), "file is not set as publishable") ||
-		// 		strings.Contains(err.Error(), "file state is not in state uploaded") {
-		// 		filesAPIError = errs.ErrFileNotInCorrectState
-		// 	}
-
-		// 	lastError = err
-		// 	continue
-		// }
 
 		successCount++
 		log.Info(ctx, "successfully published file", fileLogData)
 	}
 
-	fmt.Println("Waiting...")
 	wg.Wait()
-
-	fmt.Println("After goroutines launched:", runtime.NumGoroutine())
 
 	log.Info(ctx, "completed publishing distribution files", log.Data{
 		"total_files": totalFiles,
@@ -1070,9 +1037,6 @@ func (smDS *StateMachineDatasetAPI) publishDistributionFiles(ctx context.Context
 
 func publishFile(ctx context.Context, filesAPIClient filesAPISDK.Clienter, distribution models.Distribution, accessToken string, ch chan string, wg *sync.WaitGroup) error {
 	defer wg.Done()
-
-	fmt.Println("Starting publish file for ", distribution.DownloadURL)
-	fmt.Println(time.Now().String())
 
 	var filesAPIError error
 	err := filesAPIClient.MarkFilePublished(ctx, distribution.DownloadURL, filesAPISDK.Headers{Authorization: accessToken})
@@ -1095,8 +1059,6 @@ func publishFile(ctx context.Context, filesAPIClient filesAPISDK.Clienter, distr
 			filesAPIError = errs.ErrFileNotInCorrectState
 		}
 		return filesAPIError
-		//lastError = err
-		//continue
 	}
 
 	ch <- distribution.DownloadURL
