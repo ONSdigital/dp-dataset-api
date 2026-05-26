@@ -1675,6 +1675,162 @@ func TestCreateVersion_Success(t *testing.T) {
 			})
 		})
 	})
+
+	Convey("When is_latest=true, dataset is updated with latest_version link", t, func() {
+		validVersionJSON, err := json.Marshal(validVersion)
+		So(err, ShouldBeNil)
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
+				return false, nil
+			},
+			AddVersionStaticFunc: func(context.Context, *models.Version) (*models.Version, error) {
+				return expectedVersion, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					Next: &models.Dataset{
+						State: models.AssociatedState,
+						Links: &models.DatasetLinks{},
+					},
+				}, nil
+			},
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
+				return nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, version *models.Version) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1?is_latest=true", bytes.NewBuffer(validVersionJSON))
+		vars := map[string]string{
+			"dataset_id": "123",
+			"edition":    "edition1",
+			"version":    "1",
+		}
+		r = mux.SetURLVars(r, vars)
+		w := httptest.NewRecorder()
+
+		Convey("When createVersion is called", func() {
+			successResponse, errorResponse := api.createVersion(w, r)
+
+			Convey("Then it should return a 201 status code", func() {
+				So(errorResponse, ShouldBeNil)
+				So(successResponse.Status, ShouldEqual, http.StatusCreated)
+			})
+
+			Convey("And GetDataset and UpsertDataset should have been called to update latest_version", func() {
+				So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
+				So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 1)
+
+				upsertCall := mockedDataStore.UpsertDatasetCalls()[0]
+				So(upsertCall.DatasetDoc.Next.Links.LatestVersion.ID, ShouldEqual, "1")
+				So(upsertCall.DatasetDoc.Next.Links.LatestVersion.HRef, ShouldEqual, "/datasets/123/editions/edition1/versions/1")
+			})
+		})
+	})
+
+	Convey("When is_latest=false, dataset is not updated", t, func() {
+		validVersionJSON, err := json.Marshal(validVersion)
+		So(err, ShouldBeNil)
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
+				return false, nil
+			},
+			AddVersionStaticFunc: func(context.Context, *models.Version) (*models.Version, error) {
+				return expectedVersion, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, version *models.Version) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1?is_latest=false", bytes.NewBuffer(validVersionJSON))
+		vars := map[string]string{
+			"dataset_id": "123",
+			"edition":    "edition1",
+			"version":    "1",
+		}
+		r = mux.SetURLVars(r, vars)
+		w := httptest.NewRecorder()
+
+		Convey("When createVersion is called", func() {
+			successResponse, errorResponse := api.createVersion(w, r)
+
+			Convey("Then it should return a 201 status code", func() {
+				So(errorResponse, ShouldBeNil)
+				So(successResponse.Status, ShouldEqual, http.StatusCreated)
+			})
+
+			Convey("And GetDataset and UpsertDataset should not have been called", func() {
+				So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 0)
+				So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 0)
+			})
+		})
+	})
+
+	Convey("When is_latest is absent, dataset is not updated", t, func() {
+		validVersionJSON, err := json.Marshal(validVersion)
+		So(err, ShouldBeNil)
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
+				return false, nil
+			},
+			AddVersionStaticFunc: func(context.Context, *models.Version) (*models.Version, error) {
+				return expectedVersion, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, version *models.Version) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(validVersionJSON))
+		vars := map[string]string{
+			"dataset_id": "123",
+			"edition":    "edition1",
+			"version":    "1",
+		}
+		r = mux.SetURLVars(r, vars)
+		w := httptest.NewRecorder()
+
+		Convey("When createVersion is called", func() {
+			successResponse, errorResponse := api.createVersion(w, r)
+
+			Convey("Then it should return a 201 status code", func() {
+				So(errorResponse, ShouldBeNil)
+				So(successResponse.Status, ShouldEqual, http.StatusCreated)
+			})
+
+			Convey("And GetDataset and UpsertDataset should not have been called", func() {
+				So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 0)
+				So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 0)
+			})
+		})
+	})
 }
 
 func TestCreateVersion_Failure(t *testing.T) {
@@ -2282,5 +2438,249 @@ func TestCreateVersion_Failure(t *testing.T) {
 		So(errResp.Status, ShouldEqual, http.StatusBadRequest)
 		So(errResp.Errors[0].Code, ShouldEqual, models.ErrNoSpacesAllowedError)
 		So(errResp.Errors[0].Description, ShouldEqual, errs.ErrSpacesNotAllowedInID.Error())
+	})
+
+	Convey("When is_latest is not a valid boolean", t, func() {
+		validVersionJSON, err := json.Marshal(validVersion)
+		So(err, ShouldBeNil)
+
+		api := GetAPIWithCMDMocks(&storetest.StorerMock{}, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1?is_latest=ghgk", bytes.NewBuffer(validVersionJSON))
+		vars := map[string]string{
+			"dataset_id": "123",
+			"edition":    "edition1",
+			"version":    "1",
+		}
+		r = mux.SetURLVars(r, vars)
+		w := httptest.NewRecorder()
+
+		Convey("When createVersion is called", func() {
+			successResponse, errorResponse := api.createVersion(w, r)
+
+			Convey("Then it should return a 400 status code with an error message", func() {
+				So(successResponse, ShouldBeNil)
+				So(errorResponse.Status, ShouldEqual, http.StatusBadRequest)
+				So(errorResponse.Errors[0].Code, ShouldEqual, models.ErrInvalidQueryParameter)
+				So(errorResponse.Errors[0].Description, ShouldEqual, models.ErrInvalidQueryParameterDescription+": is_latest")
+			})
+		})
+	})
+}
+
+func TestAddDatasetVersionCondensed_IsMigration(t *testing.T) {
+	t.Parallel()
+
+	authorisationMock := &authMock.MiddlewareMock{
+		RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+			return handlerFunc
+		},
+		ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+			return testEntityData, nil
+		},
+	}
+
+	auditServiceMock := &applicationMocks.AuditServiceMock{
+		RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, version *models.Version) error {
+			return nil
+		},
+	}
+
+	Convey("When is_migration is true in the request body, it is stored and returned", t, func() {
+		trueVal := true
+
+		b := `{
+			"release_date": "2025-01-15",
+			"edition_title": "Edition Title 2025",
+			"is_migration": true,
+			"distributions": [{
+				"title": "Full Dataset (CSV)",
+				"download_url": "https://download.ons.gov.uk/my-dataset-download.csv",
+				"byte_size": 4300000,
+				"format": "csv"
+			}]
+		}`
+
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/time-series/versions", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			GetLatestVersionStaticFunc: func(context.Context, string, string, string) (*models.Version, error) {
+				return &models.Version{State: models.PublishedState}, nil
+			},
+			AddVersionStaticFunc: func(_ context.Context, v *models.Version) (*models.Version, error) {
+				return v, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated", Links: &models.DatasetLinks{}}}, nil
+			},
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
+
+		So(errorResponse, ShouldBeNil)
+		So(successResponse.Status, ShouldEqual, http.StatusCreated)
+
+		var version models.Version
+		err := json.Unmarshal(successResponse.Body, &version)
+		So(err, ShouldBeNil)
+		So(version.IsMigration, ShouldNotBeNil)
+		So(*version.IsMigration, ShouldEqual, trueVal)
+	})
+
+	Convey("When is_migration is absent from the request body, it is nil in the response", t, func() {
+		b := `{
+			"release_date": "2025-01-15",
+			"edition_title": "Edition Title 2025",
+			"distributions": [{
+				"title": "Full Dataset (CSV)",
+				"download_url": "https://download.ons.gov.uk/my-dataset-download.csv",
+				"byte_size": 4300000,
+				"format": "csv"
+			}]
+		}`
+
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/time-series/versions", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			GetLatestVersionStaticFunc: func(context.Context, string, string, string) (*models.Version, error) {
+				return &models.Version{State: models.PublishedState}, nil
+			},
+			AddVersionStaticFunc: func(_ context.Context, v *models.Version) (*models.Version, error) {
+				return v, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{State: "associated", Links: &models.DatasetLinks{}}}, nil
+			},
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
+
+		So(errorResponse, ShouldBeNil)
+		So(successResponse.Status, ShouldEqual, http.StatusCreated)
+
+		var version models.Version
+		err := json.Unmarshal(successResponse.Body, &version)
+		So(err, ShouldBeNil)
+		So(version.IsMigration, ShouldBeNil)
+	})
+}
+
+func TestCreateVersion_IsMigration(t *testing.T) {
+	t.Parallel()
+
+	authorisationMock := &authMock.MiddlewareMock{
+		RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+			return handlerFunc
+		},
+		ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+			return testEntityData, nil
+		},
+	}
+
+	auditServiceMock := &applicationMocks.AuditServiceMock{
+		RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, version *models.Version) error {
+			return nil
+		},
+	}
+
+	Convey("When is_migration is true in the request body, it is stored and returned", t, func() {
+		trueVal := true
+
+		versionInput := &models.Version{
+			EditionTitle: "New edition title",
+			ReleaseDate:  "2025-01-01",
+			Distributions: &[]models.Distribution{
+				{Title: "CSV", Format: "csv", DownloadURL: "path/to/download", ByteSize: 100, MediaType: "text/csv"},
+			},
+			Type:        models.Static.String(),
+			IsMigration: &trueVal,
+		}
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
+				return false, nil
+			},
+			AddVersionStaticFunc: func(_ context.Context, v *models.Version) (*models.Version, error) {
+				return v, nil
+			},
+		}
+
+		body, err := json.Marshal(versionInput)
+		So(err, ShouldBeNil)
+
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(body))
+		r = mux.SetURLVars(r, map[string]string{"dataset_id": "123", "edition": "edition1", "version": "1"})
+		w := httptest.NewRecorder()
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		successResponse, errorResponse := api.createVersion(w, r)
+
+		So(errorResponse, ShouldBeNil)
+		So(successResponse.Status, ShouldEqual, http.StatusCreated)
+
+		var version models.Version
+		err = json.Unmarshal(successResponse.Body, &version)
+		So(err, ShouldBeNil)
+		So(version.IsMigration, ShouldNotBeNil)
+		So(*version.IsMigration, ShouldEqual, trueVal)
+	})
+
+	Convey("When is_migration is absent from the request body, it is nil in the response", t, func() {
+		versionInput := &models.Version{
+			EditionTitle: "New edition title",
+			ReleaseDate:  "2025-01-01",
+			Distributions: &[]models.Distribution{
+				{Title: "CSV", Format: "csv", DownloadURL: "path/to/download", ByteSize: 100, MediaType: "text/csv"},
+			},
+			Type: models.Static.String(),
+		}
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
+				return false, nil
+			},
+			AddVersionStaticFunc: func(_ context.Context, v *models.Version) (*models.Version, error) {
+				return v, nil
+			},
+		}
+
+		body, err := json.Marshal(versionInput)
+		So(err, ShouldBeNil)
+
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(body))
+		r = mux.SetURLVars(r, map[string]string{"dataset_id": "123", "edition": "edition1", "version": "1"})
+		w := httptest.NewRecorder()
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		successResponse, errorResponse := api.createVersion(w, r)
+
+		So(errorResponse, ShouldBeNil)
+		So(successResponse.Status, ShouldEqual, http.StatusCreated)
+
+		var version models.Version
+		err = json.Unmarshal(successResponse.Body, &version)
+		So(err, ShouldBeNil)
+		So(version.IsMigration, ShouldBeNil)
 	})
 }

@@ -15,7 +15,7 @@ func TestUpdateVersionStatic(t *testing.T) {
 	Convey("Given a current version, version update and etag", t, func() {
 		ctx := context.Background()
 
-		mongoDB, _, err := getTestMongoDB(ctx)
+		mongoDB, err := getTestMongoDB(ctx, t)
 		So(err, ShouldBeNil)
 
 		_, err = setupVersionsTestData(ctx, mongoDB)
@@ -53,10 +53,10 @@ func TestUpdateVersionStatic(t *testing.T) {
 }
 
 func TestGetStaticVersionsByState(t *testing.T) {
-	Convey("Given a static versions are retieved", t, func() {
+	Convey("Given static versions are retrieved", t, func() {
 		ctx := context.Background()
 
-		mongoDB, _, err := getTestMongoDB(ctx)
+		mongoDB, err := getTestMongoDB(ctx, t)
 		So(err, ShouldBeNil)
 
 		_, err = setupVersionsTestData(ctx, mongoDB)
@@ -68,7 +68,7 @@ func TestGetStaticVersionsByState(t *testing.T) {
 			Convey("Then the version is retrieved successfully", func() {
 				So(err, ShouldBeNil)
 				So(version, ShouldNotBeNil)
-				So(count, ShouldEqual, 2)
+				So(count, ShouldEqual, 3)
 				So(version[0].State, ShouldNotEqual, models.PublishedState)
 			})
 		})
@@ -87,9 +87,9 @@ func TestGetStaticVersionsByState(t *testing.T) {
 }
 
 func TestVersionsStatic(t *testing.T) {
-	Convey("Given an in-memory MongoDB is running and populated with static versions", t, func() {
+	Convey("Given MongoDB is running and populated with static versions", t, func() {
 		ctx := context.Background()
-		mongoDB, _, err := getTestMongoDB(ctx)
+		mongoDB, err := getTestMongoDB(ctx, t)
 		So(err, ShouldBeNil)
 
 		_, err = setupVersionsTestData(ctx, mongoDB)
@@ -107,14 +107,10 @@ func TestVersionsStatic(t *testing.T) {
 }
 
 func TestGetAllStaticVersions(t *testing.T) {
-	Convey("Given an in-memory MongoDB is running and populated with static versions", t, func() {
+	Convey("Given MongoDB is running and populated with static versions", t, func() {
 		ctx := context.Background()
-		mongoStore, server, err := getTestMongoDB(ctx)
+		mongoStore, err := getTestMongoDB(ctx, t)
 		So(err, ShouldBeNil)
-
-		defer func() {
-			server.Stop(ctx)
-		}()
 
 		versions, err := setupVersionsTestData(ctx, mongoStore)
 		So(err, ShouldBeNil)
@@ -125,7 +121,7 @@ func TestGetAllStaticVersions(t *testing.T) {
 			retrievedVersions, count, err := mongoStore.GetAllStaticVersions(ctx, staticDatasetID, "", 0, 0)
 
 			So(err, ShouldBeNil)
-			So(count, ShouldEqual, 2)
+			So(count, ShouldEqual, 3)
 			So(retrievedVersions, ShouldHaveLength, 0)
 		})
 
@@ -133,7 +129,7 @@ func TestGetAllStaticVersions(t *testing.T) {
 			retrievedVersions, count, err := mongoStore.GetAllStaticVersions(ctx, staticDatasetID, "", 1, 1)
 
 			So(err, ShouldBeNil)
-			So(count, ShouldEqual, 2)
+			So(count, ShouldEqual, 3)
 			So(retrievedVersions, ShouldHaveLength, 1)
 			So(retrievedVersions[0].ID, ShouldEqual, "version1")
 		})
@@ -142,7 +138,7 @@ func TestGetAllStaticVersions(t *testing.T) {
 			retrievedVersions, count, err := mongoStore.GetAllStaticVersions(ctx, staticDatasetID, "", 0, 1)
 
 			So(err, ShouldBeNil)
-			So(count, ShouldEqual, 2)
+			So(count, ShouldEqual, 3)
 			So(retrievedVersions, ShouldHaveLength, 1)
 
 			So(retrievedVersions[0].ID, ShouldEqual, "version2")
@@ -158,10 +154,85 @@ func TestGetAllStaticVersions(t *testing.T) {
 	})
 }
 
-func TestCheckVersionExistsStatic(t *testing.T) {
-	Convey("Given a MongoDB instance with static versions", t, func() {
+func TestGetEditionsStatic(t *testing.T) {
+	Convey("Given MongoDB is running and populated with static versions", t, func() {
 		ctx := context.Background()
-		mongo, _, err := getTestMongoDB(ctx)
+		mongoStore, err := getTestMongoDB(ctx, t)
+		So(err, ShouldBeNil)
+
+		versions, err := setupVersionsTestData(ctx, mongoStore)
+		So(err, ShouldBeNil)
+		So(versions, ShouldNotBeEmpty)
+
+		Convey("When GetEditionsStatic is called with no state filter", func() {
+			retrievedEditions, count, err := mongoStore.GetEditionsStatic(ctx, staticDatasetID, "", 0, 20)
+
+			Convey("Then it returns the expected total number of unique editions", func() {
+				So(err, ShouldBeNil)
+				So(count, ShouldEqual, 2)
+				So(retrievedEditions, ShouldHaveLength, 2)
+			})
+
+			Convey("And the editions are ordered by version 1 release date in descending order", func() {
+				So(retrievedEditions[0].Next.Edition, ShouldEqual, "edition1")
+				So(retrievedEditions[1].Next.Edition, ShouldEqual, "edition2")
+			})
+
+			Convey("And each edition is mapped to the latest published and unpublished versions correctly", func() {
+				So(retrievedEditions[0].Current.Edition, ShouldEqual, "edition1")
+				So(retrievedEditions[0].Current.Version, ShouldEqual, 1)
+				So(retrievedEditions[0].Next.Edition, ShouldEqual, "edition1")
+				So(retrievedEditions[0].Next.Version, ShouldEqual, 1)
+
+				So(retrievedEditions[1].Current, ShouldBeNil)
+				So(retrievedEditions[1].Next.Edition, ShouldEqual, "edition2")
+				So(retrievedEditions[1].Next.Version, ShouldEqual, 2)
+			})
+		})
+
+		Convey("When GetEditionsStatic is called with pagination", func() {
+			retrievedEditions, count, err := mongoStore.GetEditionsStatic(ctx, staticDatasetID, "", 1, 1)
+
+			Convey("Then it returns a paginated subset while preserving the total edition count", func() {
+				So(err, ShouldBeNil)
+				So(count, ShouldEqual, 2)
+				So(retrievedEditions, ShouldHaveLength, 1)
+				So(retrievedEditions[0].Current, ShouldBeNil)
+				So(retrievedEditions[0].Next.Edition, ShouldEqual, "edition2")
+				So(retrievedEditions[0].Next.Version, ShouldEqual, 2)
+			})
+		})
+
+		Convey("When GetEditionsStatic is called with the published state", func() {
+			retrievedEditions, count, err := mongoStore.GetEditionsStatic(ctx, staticDatasetID, models.PublishedState, 0, 20)
+
+			Convey("Then it only returns editions that have published versions", func() {
+				So(err, ShouldBeNil)
+				So(count, ShouldEqual, 1)
+				So(retrievedEditions, ShouldHaveLength, 1)
+				So(retrievedEditions[0].Current.Edition, ShouldEqual, "edition1")
+				So(retrievedEditions[0].Current.Version, ShouldEqual, 1)
+				So(retrievedEditions[0].Next.Edition, ShouldEqual, "edition1")
+				So(retrievedEditions[0].Next.Version, ShouldEqual, 1)
+			})
+		})
+
+		Convey("When GetEditionsStatic is called with a non-existent datasetID", func() {
+			retrievedEditions, count, err := mongoStore.GetEditionsStatic(ctx, nonExistentDatasetID, "", 0, 20)
+
+			Convey("Then ErrEditionsNotFound is returned", func() {
+				So(err, ShouldEqual, errs.ErrEditionsNotFound)
+				So(count, ShouldEqual, 0)
+				So(retrievedEditions, ShouldBeNil)
+			})
+		})
+	})
+}
+
+func TestCheckVersionExistsStatic(t *testing.T) {
+	Convey("Given MongoDB is running with static versions", t, func() {
+		ctx := context.Background()
+		mongo, err := getTestMongoDB(ctx, t)
 		So(err, ShouldBeNil)
 
 		versions, err := setupVersionsTestData(ctx, mongo)
@@ -198,19 +269,16 @@ func TestCheckVersionExistsStatic(t *testing.T) {
 }
 
 func TestDeleteStaticDatasetVersion(t *testing.T) {
-	Convey("Given an in-memory MongoDB is running", t, func() {
+	Convey("Given MongoDB is running", t, func() {
 		ctx := context.Background()
 
 		Convey("When DeleteStaticDatasetVersion is called with a matching dataset, edition and unpublished version", func() {
-			mongoStore, server, err := getTestMongoDB(ctx)
+			mongoStore, err := getTestMongoDB(ctx, t)
 			So(err, ShouldBeNil)
-			defer func() {
-				server.Stop(ctx)
-			}()
 
 			versions, err := setupVersionsTestData(ctx, mongoStore)
 			So(err, ShouldBeNil)
-			So(versions, ShouldHaveLength, 4)
+			So(versions, ShouldHaveLength, 5)
 
 			datasetToDelete := staticDatasetID
 			editionToDelete := "edition2"
@@ -221,20 +289,16 @@ func TestDeleteStaticDatasetVersion(t *testing.T) {
 			selector := bson.M{"links.dataset.id": staticDatasetID}
 			totalCount, err := mongoStore.Connection.Collection(mongoStore.ActualCollectionName(config.VersionsCollection)).Count(ctx, selector)
 			So(err, ShouldBeNil)
-			So(totalCount, ShouldEqual, 1)
+			So(totalCount, ShouldEqual, 2)
 		})
 	})
 }
 
 func TestCheckEditionTitleExistsStatic(t *testing.T) {
-	Convey("Given a MongoDB instance with static versions", t, func() {
+	Convey("Given MongoDB is running with static versions", t, func() {
 		ctx := context.Background()
-		mongo, server, err := getTestMongoDB(ctx)
+		mongo, err := getTestMongoDB(ctx, t)
 		So(err, ShouldBeNil)
-
-		defer func() {
-			server.Stop(ctx)
-		}()
 
 		versions, err := setupVersionsTestData(ctx, mongo)
 		So(err, ShouldBeNil)

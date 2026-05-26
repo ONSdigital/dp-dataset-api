@@ -9,9 +9,8 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/models"
-	"github.com/ONSdigital/log.go/v2/log"
-
 	mongodriver "github.com/ONSdigital/dp-mongodb/v3/mongodb"
+	"github.com/ONSdigital/log.go/v2/log"
 	"go.mongodb.org/mongo-driver/bson"
 	bsonprim "go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -602,6 +601,10 @@ func createVersionUpdateQuery(version *models.Version, newETag string) bson.M {
 
 	if version.Distributions != nil {
 		setUpdates["distributions"] = version.Distributions
+	}
+
+	if version.IsMigration != nil {
+		setUpdates["is_migration"] = version.IsMigration
 	}
 
 	if newETag != "" {

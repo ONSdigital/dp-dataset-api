@@ -12,6 +12,7 @@ import (
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
 	"github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/application"
+	"github.com/ONSdigital/dp-dataset-api/cloudflare"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/dimension"
 	"github.com/ONSdigital/dp-dataset-api/download"
@@ -22,6 +23,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/url"
 	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	dprequest "github.com/ONSdigital/dp-net/v3/request"
+	topicAPISDK "github.com/ONSdigital/dp-topic-api/sdk"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 
@@ -69,28 +71,32 @@ type SearchContentUpdatedProducer struct {
 
 // DatasetAPI manages importing filters against a dataset
 type DatasetAPI struct {
-	Router                    *mux.Router
-	dataStore                 store.DataStore
-	urlBuilder                *url.Builder
-	enableURLRewriting        bool
-	host                      string
-	downloadServiceToken      string
-	EnablePrePublishView      bool
-	downloadGenerators        map[models.DatasetType]DownloadsGenerator
-	enablePrivateEndpoints    bool
-	enableDetachDataset       bool
-	enableDeleteStaticVersion bool
-	authMiddleware            auth.Middleware
-	instancePublishedChecker  *instance.PublishCheck
-	versionPublishedChecker   *PublishCheck
-	MaxRequestOptions         int
-	defaultLimit              int
-	smDatasetAPI              *application.StateMachineDatasetAPI
-	auditService              application.AuditService
-	filesAPIClient            filesAPISDK.Clienter
-	authToken                 string
-	permissionsChecker        auth.PermissionsChecker
-	idClient                  *clientsidentity.Client
+	Router                       *mux.Router
+	dataStore                    store.DataStore
+	urlBuilder                   *url.Builder
+	enableURLRewriting           bool
+	host                         string
+	downloadServiceToken         string
+	EnablePrePublishView         bool
+	downloadGenerators           map[models.DatasetType]DownloadsGenerator
+	enablePrivateEndpoints       bool
+	enableDetachDataset          bool
+	enableDeleteStaticVersion    bool
+	authMiddleware               auth.Middleware
+	instancePublishedChecker     *instance.PublishCheck
+	versionPublishedChecker      *PublishCheck
+	MaxRequestOptions            int
+	defaultLimit                 int
+	smDatasetAPI                 *application.StateMachineDatasetAPI
+	auditService                 application.AuditService
+	filesAPIClient               filesAPISDK.Clienter
+	authToken                    string
+	permissionsChecker           auth.PermissionsChecker
+	idClient                     *clientsidentity.Client
+	searchContentUpdatedProducer *SearchContentUpdatedProducer
+	cloudflareClient             cloudflare.Clienter
+	cloudflareEnabled            bool
+	topicAPIClient               topicAPISDK.Clienter
 }
 
 // Setup creates a new Dataset API instance and register the API routes based on the application configuration.
@@ -163,6 +169,11 @@ func (api *DatasetAPI) SetFilesAPIClient(client filesAPISDK.Clienter, authToken 
 	api.authToken = authToken
 }
 
+// SetTopicAPIClient sets the topic API client for the API
+func (api *DatasetAPI) SetTopicAPIClient(client topicAPISDK.Clienter) {
+	api.topicAPIClient = client
+}
+
 // enablePublicEndpoints register only the public GET endpoints.
 func (api *DatasetAPI) enablePublicEndpoints(paginator *pagination.Paginator) {
 	api.get("/datasets", paginator.Paginate(api.getDatasets))
@@ -189,7 +200,7 @@ func writeErrorResponse(w http.ResponseWriter, errorResponse *models.ErrorRespon
 	w.WriteHeader(errorResponse.Status)
 
 	if errorResponse.Status == http.StatusInternalServerError {
-		var filteredErrors []models.Error
+		filteredErrors := make([]models.Error, 0, len(errorResponse.Errors))
 		for _, err := range errorResponse.Errors {
 			if !internalServerErrWithMessage[err.Cause] {
 				err = models.NewError(err, models.InternalError, models.InternalErrorDescription)
@@ -476,9 +487,9 @@ func (api *DatasetAPI) checkUserPermission(r *http.Request, logData log.Data, pe
 		if err != nil {
 			return false
 		}
-		logData["entity_data"] = entityData
+		logData["entity_data"] = entityData.EntityData
 
-		hasPermission, err := api.permissionsChecker.HasPermission(r.Context(), *entityData, permission, attributes)
+		hasPermission, err := api.permissionsChecker.HasPermission(r.Context(), *entityData.EntityData, permission, attributes)
 		if err != nil {
 			log.Error(r.Context(), "permissions check errored", err, logData)
 			return false

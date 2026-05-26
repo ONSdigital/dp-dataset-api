@@ -349,7 +349,7 @@ func TestAmendVersionStaticSuccess(t *testing.T) {
 		So(len(mockedDataStore.AcquireVersionsLockCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UnlockVersionsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsStaticCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetVersionStaticCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionStaticCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpdateVersionStaticCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
 	})
@@ -1370,6 +1370,89 @@ func TestPopulateNewVersionDocWithDistributions(t *testing.T) {
 				So(version, ShouldNotBeNil)
 				So(version.Type, ShouldEqual, models.Filterable.String())
 				So(version.Distributions, ShouldBeNil)
+			})
+		})
+	})
+}
+
+func TestPopulateNewVersionDocWithIsMigration(t *testing.T) {
+	t.Parallel()
+	Convey("Given versions with is_migration field", t, func() {
+		trueVal := true
+		falseVal := false
+
+		Convey("When the current version has is_migration true and the update does not set it", func() {
+			currentVersion := &models.Version{
+				Type:        models.Static.String(),
+				IsMigration: &trueVal,
+			}
+
+			originalVersion := &models.Version{
+				Type: models.Static.String(),
+			}
+
+			Convey("Then is_migration is carried forward from the current version", func() {
+				version, err := populateNewVersionDoc(currentVersion, originalVersion)
+				So(err, ShouldBeNil)
+				So(version, ShouldNotBeNil)
+				So(version.IsMigration, ShouldNotBeNil)
+				So(*version.IsMigration, ShouldBeTrue)
+			})
+		})
+
+		Convey("When the update explicitly sets is_migration to false", func() {
+			currentVersion := &models.Version{
+				Type:        models.Static.String(),
+				IsMigration: &trueVal,
+			}
+
+			originalVersion := &models.Version{
+				Type:        models.Static.String(),
+				IsMigration: &falseVal,
+			}
+
+			Convey("Then is_migration is set to false from the update", func() {
+				version, err := populateNewVersionDoc(currentVersion, originalVersion)
+				So(err, ShouldBeNil)
+				So(version, ShouldNotBeNil)
+				So(version.IsMigration, ShouldNotBeNil)
+				So(*version.IsMigration, ShouldBeFalse)
+			})
+		})
+
+		Convey("When neither the current version nor the update sets is_migration", func() {
+			currentVersion := &models.Version{
+				Type: models.Static.String(),
+			}
+
+			originalVersion := &models.Version{
+				Type: models.Static.String(),
+			}
+
+			Convey("Then is_migration is nil", func() {
+				version, err := populateNewVersionDoc(currentVersion, originalVersion)
+				So(err, ShouldBeNil)
+				So(version, ShouldNotBeNil)
+				So(version.IsMigration, ShouldBeNil)
+			})
+		})
+
+		Convey("When the update explicitly sets is_migration to true and current version does not have it", func() {
+			currentVersion := &models.Version{
+				Type: models.Static.String(),
+			}
+
+			originalVersion := &models.Version{
+				Type:        models.Static.String(),
+				IsMigration: &trueVal,
+			}
+
+			Convey("Then is_migration is set to true from the update", func() {
+				version, err := populateNewVersionDoc(currentVersion, originalVersion)
+				So(err, ShouldBeNil)
+				So(version, ShouldNotBeNil)
+				So(version.IsMigration, ShouldNotBeNil)
+				So(*version.IsMigration, ShouldBeTrue)
 			})
 		})
 	})

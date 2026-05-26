@@ -20,11 +20,6 @@ import (
 )
 
 var (
-	// errors that should return a 204 status
-	datasetsNoContent = map[error]bool{
-		errs.ErrDeleteDatasetNotFound: true,
-	}
-
 	// errors that should return a 400 status
 	datasetsBadRequest = map[error]bool{
 		errs.ErrAddUpdateDatasetBadRequest: true,
@@ -50,6 +45,7 @@ var (
 	datasetsConflict = map[error]bool{
 		errs.ErrAddDatasetAlreadyExists:      true,
 		errs.ErrAddDatasetTitleAlreadyExists: true,
+		errs.ErrPublishedDatasetTopicChange:  true,
 	}
 )
 
@@ -189,11 +185,28 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 				return nil, err
 			}
 
+			identityType := log.USER
+			if authEntityData.IsServiceAuth {
+				identityType = log.SERVICE
+			}
+			logAuthOption := log.Auth(identityType, authEntityData.EntityData.UserID)
+
 			// ID and Email are the same as auth middleware can only provide userID
-			if err := api.auditService.RecordDatasetAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionRead, "/datasets/"+datasetID, dataset.Next); err != nil {
+			if err := api.auditService.RecordDatasetAuditEvent(ctx, models.RequestedBy{ID: authEntityData.EntityData.UserID, Email: authEntityData.EntityData.UserID}, models.ActionRead, "/datasets/"+datasetID, dataset.Next); err != nil {
+				log.Info(ctx, "failed to create dataset audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+					"action":   models.ActionRead,
+					"endpoint": "/datasets/" + datasetID,
+					"outcome":  "failure",
+					"reason":   err.Error(),
+				})
 				log.Error(ctx, "getDataset endpoint: failed to record dataset audit event", err, logData)
 				return nil, err
 			}
+			log.Info(ctx, "successfully created dataset audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+				"action":   models.ActionRead,
+				"endpoint": "/datasets/" + datasetID,
+				"outcome":  "success",
+			})
 		}
 
 		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
@@ -379,6 +392,12 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	identityType := log.USER
+	if authEntityData.IsServiceAuth {
+		identityType = log.SERVICE
+	}
+	logAuthOption := log.Auth(identityType, authEntityData.EntityData.UserID)
+
 	dataset, err := models.CreateDataset(r.Body)
 	if err != nil {
 		log.Error(ctx, "addDatasetNew endpoint: failed to model dataset resource based on request", err)
@@ -466,11 +485,22 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// ID and Email are the same as auth middleware can only provide userID
-	if err := api.auditService.RecordDatasetAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionCreate, "/datasets/"+datasetID, dataset); err != nil {
+	if err := api.auditService.RecordDatasetAuditEvent(ctx, models.RequestedBy{ID: authEntityData.EntityData.UserID, Email: authEntityData.EntityData.UserID}, models.ActionCreate, "/datasets/"+datasetID, dataset); err != nil {
+		log.Info(ctx, "failed to created dataset audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+			"action":   models.ActionCreate,
+			"endpoint": "/datasets/" + datasetID,
+			"outcome":  "failure",
+			"reason":   err.Error(),
+		})
 		log.Error(ctx, "addDatasetNew endpoint: failed to record dataset audit event", err, logData)
 		handleDatasetAPIErr(ctx, err, w, logData)
 		return
 	}
+	log.Info(ctx, "successfully created dataset audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+		"action":   models.ActionCreate,
+		"endpoint": "/datasets/" + datasetID,
+		"outcome":  "success",
+	})
 
 	if err = api.dataStore.Backend.UpsertDataset(ctx, datasetID, datasetDoc); err != nil {
 		logData["new_dataset"] = datasetID
@@ -495,6 +525,7 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 	log.Info(ctx, "addDatasetNew endpoint: request completed successfully", logData)
 }
 
+//nolint:gocognit,gocyclo // complexity is high (22)
 func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 	defer dphttp.DrainBody(r)
 
@@ -509,6 +540,12 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 		handleDatasetAPIErr(ctx, err, w, data)
 		return
 	}
+
+	identityType := log.USER
+	if authEntityData.IsServiceAuth {
+		identityType = log.SERVICE
+	}
+	logAuthOption := log.Auth(identityType, authEntityData.EntityData.UserID)
 
 	b, err := func() ([]byte, error) {
 		dataset, err := models.CreateDataset(r.Body)
@@ -549,6 +586,12 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 				log.Error(ctx, "putDataset endpoint: unable to update a dataset with title that already exists", errs.ErrAddDatasetTitleAlreadyExists, data)
 				return nil, errs.ErrAddDatasetTitleAlreadyExists
 			}
+
+			if currentDataset.Current != nil && currentDataset.Current.State == models.PublishedState &&
+				currentDataset.Current.Topics[0] != dataset.Topics[0] {
+				log.Error(ctx, "putDataset endpoint: unable to update canonical topic of a published dataset", errs.ErrPublishedDatasetTopicChange, data)
+				return nil, errs.ErrPublishedDatasetTopicChange
+			}
 		}
 
 		if dataset.State == models.PublishedState {
@@ -564,10 +607,21 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// ID and Email are the same as auth middleware can only provide userID
-		if err := api.auditService.RecordDatasetAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionUpdate, "/datasets/"+datasetID, dataset); err != nil {
+		if err := api.auditService.RecordDatasetAuditEvent(ctx, models.RequestedBy{ID: authEntityData.EntityData.UserID, Email: authEntityData.EntityData.UserID}, models.ActionUpdate, "/datasets/"+datasetID, dataset); err != nil {
+			log.Info(ctx, "failed to create dataset audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+				"action":   models.ActionUpdate,
+				"endpoint": "/datasets/" + datasetID,
+				"outcome":  "failure",
+				"reason":   err.Error(),
+			})
 			log.Error(ctx, "putDataset endpoint: failed to record dataset audit event", err, data)
 			return nil, err
 		}
+		log.Info(ctx, "successfully created dataset audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+			"action":   models.ActionUpdate,
+			"endpoint": "/datasets/" + datasetID,
+			"outcome":  "success",
+		})
 
 		b, err := json.Marshal(dataset)
 		if err != nil {
@@ -637,12 +691,17 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// attempt to delete the dataset.
+	identityType := log.USER
+	if authEntityData.IsServiceAuth {
+		identityType = log.SERVICE
+	}
+	logAuthOption := log.Auth(identityType, authEntityData.EntityData.UserID)
+
 	err = func() error {
 		currentDataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 		if err == errs.ErrDatasetNotFound {
-			log.Info(ctx, "cannot delete dataset, it does not exist", logData)
-			return errs.ErrDeleteDatasetNotFound
+			log.Info(ctx, "cannot delete dataset that does not exist", logData)
+			return err
 		}
 		if err != nil {
 			log.Error(ctx, "failed to run query for existing dataset", err, logData)
@@ -714,10 +773,21 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// ID and Email are the same as auth middleware can only provide userID
-		if err := api.auditService.RecordDatasetAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionDelete, "/datasets/"+datasetID, currentDataset.Next); err != nil {
+		if err := api.auditService.RecordDatasetAuditEvent(ctx, models.RequestedBy{ID: authEntityData.EntityData.UserID, Email: authEntityData.EntityData.UserID}, models.ActionDelete, "/datasets/"+datasetID, currentDataset.Next); err != nil {
+			log.Info(ctx, "failed to create dataset audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+				"action":   models.ActionDelete,
+				"endpoint": "/datasets/" + datasetID,
+				"outcome":  "failure",
+				"reason":   err.Error(),
+			})
 			log.Error(ctx, "deleteDataset endpoint: failed to record dataset audit event", err, logData)
 			return err
 		}
+		log.Info(ctx, "successfully created dataset audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+			"action":   models.ActionDelete,
+			"endpoint": "/datasets/" + datasetID,
+			"outcome":  "success",
+		})
 
 		log.Info(ctx, "dataset deleted successfully", logData)
 		return nil
@@ -753,8 +823,6 @@ func handleDatasetAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 	switch {
 	case datasetsForbidden[err]:
 		status = http.StatusForbidden
-	case datasetsNoContent[err]:
-		status = http.StatusNoContent
 	case datasetsBadRequest[err], strings.HasPrefix(err.Error(), "invalid fields:"):
 		status = http.StatusBadRequest
 	case datasetsConflict[err]:

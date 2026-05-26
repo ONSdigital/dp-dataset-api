@@ -63,9 +63,10 @@ var (
 	datasetAPIURL      = &neturl.URL{Scheme: "http", Host: "localhost:22000"}
 	downloadServiceURL = &neturl.URL{Scheme: "http", Host: "localhost:23600"}
 	importAPIURL       = &neturl.URL{Scheme: "http", Host: "localhost:21800"}
-	websiteURL         = &neturl.URL{Scheme: "http", Host: "localhost:20000"}
+	publicWebsiteURL   = &neturl.URL{Scheme: "http", Host: "localhost:20000"}
+	privateWebsiteURL  = &neturl.URL{Scheme: "http", Host: "localhost:20000"}
 	apiRouterPublicURL = &neturl.URL{Scheme: "http", Host: "localhost:23200", Path: "v1"}
-	urlBuilder         = url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL, apiRouterPublicURL)
+	urlBuilder         = url.NewBuilder(publicWebsiteURL, privateWebsiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL, apiRouterPublicURL)
 	enableURLRewriting = false
 	mu                 sync.Mutex
 )
@@ -2592,6 +2593,52 @@ func TestPutDatasetReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 	})
+
+	Convey("When PUT dataset calls trying to change canonical topic returns 409 response", t, func() {
+		b := datasetPayloadWithStatePublished
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					ID:      "123",
+					Current: &models.Dataset{Type: models.Static.String(), State: models.PublishedState, Topics: []string{"topic-change", "topic-1"}},
+					Next:    &models.Dataset{Type: models.Static.String(), Title: "StaticPublished"},
+				}, nil
+			},
+			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
+				return false, nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordDatasetAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, dataset *models.Dataset) error {
+				return nil
+			},
+		}
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusConflict)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckDatasetTitleExistCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateDatasetCalls()), ShouldEqual, 0)
+
+		Convey("then the request body has been drained", func() {
+			_, err := r.Body.Read(make([]byte, 1))
+			So(err, ShouldEqual, io.EOF)
+		})
+	})
 }
 
 func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
@@ -2647,9 +2694,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
 			},
 			GetEditionsFunc: func(context.Context, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
-				var items []*models.EditionUpdate
-				items = append(items, &models.EditionUpdate{})
-				return items, 0, nil
+				return []*models.EditionUpdate{{}}, 0, nil
 			},
 			DeleteEditionFunc: func(context.Context, string) error {
 				return nil
@@ -2965,7 +3010,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
 		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusNoContent)
+		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.DeleteEditionCalls()), ShouldEqual, 0)

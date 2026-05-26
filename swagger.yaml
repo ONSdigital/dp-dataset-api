@@ -192,6 +192,12 @@ parameters:
             downloads:
               allOf:
                 - readOnly: false
+  is_latest:
+    name: is_latest
+    description: "A boolean value which, when true, sets the latest_version information at series level using the version number and edition provided in the path"
+    in: query
+    required: false
+    type: boolean
   limit:
     name: limit
     description: "Maximum number of items that will be returned. A value of zero will return zero items."
@@ -633,6 +639,7 @@ paths:
         - $ref: "#/parameters/edition"
         - $ref: "#/parameters/version"
         - $ref: "#/parameters/new_version"
+        - $ref: "#/parameters/is_latest"  
       security:
         - {}
         - Authorization: []
@@ -648,6 +655,7 @@ paths:
               * dataset id was incorrect
               * edition was incorrect
               * an unpublished version of the dataset already exists
+              * is_latest parameter is not a valid boolean
         401:
           description: "Unauthorised to update version of dataset"
         404:
@@ -2655,6 +2663,9 @@ definitions:
         example: July to September 2017
       is_based_on:
         $ref: "#/definitions/IsBasedOn"
+      is_migration:
+        description: "Indicates whether this version was created as part of a dataset migration"
+        type: boolean
       last_updated:
         $ref: "#/definitions/LastUpdated"
       latest_changes:
@@ -2908,13 +2919,22 @@ definitions:
             description: "A URL to this resource"
             type: string
             example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/july-september-2017/versions/5"
+      web_page:
+        description: "A link to the location of this version of the dataset on the web"
+        readOnly: true
+        type: object
+        properties:
+          href:
+            description: "The uri to the location of this version of the dataset on the web"
+            type: string
+            example: "https://www.ons.gov.uk/businessindustryandtrade/datasets/my-dataset/editions/july-september-2017/versions/5"
       versions:
         type: object
         readOnly: true
         properties:
           href:
             description: "A URL to all versions for an edition of a dataset"
-            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/edition/july-september-2017/versions"
+            example: "https://api.beta.ons.gov.uk/v1/datasets/my-dataset/editions/july-september-2017/versions"
             type: string
   DatasetLink:
     description: "An object containing the dataset id and link"

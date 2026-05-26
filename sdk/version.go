@@ -148,8 +148,9 @@ func (m VersionDimensionOptionsList) ToString() string {
 	var b bytes.Buffer
 
 	if len(m.Items) > 0 {
-		b.WriteString(fmt.Sprintf("\n\tTitle: %s\n", m.Items[0].Name))
-		var labels, options []string
+		fmt.Fprintf(&b, "\n\tTitle: %s\n", m.Items[0].Name)
+		labels := make([]string, 0, len(m.Items))
+		options := make([]string, 0, len(m.Items))
 
 		for i := range m.Items {
 			dim := m.Items[i]
@@ -157,8 +158,8 @@ func (m VersionDimensionOptionsList) ToString() string {
 			options = append(options, dim.Option)
 		}
 
-		b.WriteString(fmt.Sprintf("\tLabels: %s\n", labels))
-		b.WriteString(fmt.Sprintf("\tOptions: %v\n", options))
+		fmt.Fprintf(&b, "\tLabels: %s\n", labels)
+		fmt.Fprintf(&b, "\tOptions: %v\n", options)
 	}
 
 	return b.String()
@@ -462,7 +463,7 @@ func (c *Client) PutVersionState(ctx context.Context, headers Headers, datasetID
 }
 
 // PostVersion creates a specific version for a dataset series
-func (c *Client) PostVersion(ctx context.Context, headers Headers, datasetID, editionID, versionID string, version models.Version) (createdVersion *models.Version, err error) {
+func (c *Client) PostVersion(ctx context.Context, headers Headers, datasetID, editionID, versionID string, version models.Version, isLatest bool) (createdVersion *models.Version, err error) {
 	if err := validateRequiredParams(map[string]string{
 		"datasetID": datasetID,
 		"editionID": editionID,
@@ -475,6 +476,12 @@ func (c *Client) PostVersion(ctx context.Context, headers Headers, datasetID, ed
 	uri.Path, err = url.JoinPath(c.hcCli.URL, "datasets", datasetID, "editions", editionID, "versions", versionID)
 	if err != nil {
 		return createdVersion, err
+	}
+
+	if isLatest {
+		query := uri.Query()
+		query.Set("is_latest", "true")
+		uri.RawQuery = query.Encode()
 	}
 
 	requestBody, err := json.Marshal(version)

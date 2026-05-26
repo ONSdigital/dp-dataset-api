@@ -2,12 +2,14 @@ package steps
 
 import (
 	"context"
-	"crypto/rsa"
+	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	permissionsSDK "github.com/ONSdigital/dp-permissions-api/sdk"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/ONSdigital/dp-authorisation/v2/authorisation"
 	"github.com/ONSdigital/dp-authorisation/v2/authorisationtest"
@@ -16,6 +18,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/cloudflare"
 	cloudflareMocks "github.com/ONSdigital/dp-dataset-api/cloudflare/mocks"
 	"github.com/ONSdigital/dp-dataset-api/config"
+	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/service"
 	serviceMock "github.com/ONSdigital/dp-dataset-api/service/mock"
@@ -27,6 +30,10 @@ import (
 	kafka "github.com/ONSdigital/dp-kafka/v4"
 	"github.com/ONSdigital/dp-kafka/v4/kafkatest"
 	mongodriver "github.com/ONSdigital/dp-mongodb/v3/mongodb"
+	topicAPIModels "github.com/ONSdigital/dp-topic-api/models"
+	topicAPISDK "github.com/ONSdigital/dp-topic-api/sdk"
+	topicAPISDKErrors "github.com/ONSdigital/dp-topic-api/sdk/errors"
+	topicAPISDKMocks "github.com/ONSdigital/dp-topic-api/sdk/mocks"
 	"github.com/ONSdigital/log.go/v2/log"
 )
 
@@ -49,8 +56,6 @@ type DatasetComponent struct {
 	producer                kafka.IProducer
 	initialiser             service.Initialiser
 	AuthorisationMiddleware authorisation.Middleware
-	viewerPrivKey           *rsa.PrivateKey
-	viewerKID               string
 	fakePermissionsAPI      *authorisationtest.FakePermissionsAPI
 }
 
@@ -81,10 +86,15 @@ func NewDatasetComponent(mongoURI, zebedeeURL string) (*DatasetComponent, error)
 
 	c.Config.ZebedeeURL = zebedeeURL
 
+	parsedMongoURI, err := url.Parse(mongoURI)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse MongoDB URI: %w", err)
+	}
+
 	mongodb := &mongo.Mongo{
 		MongoConfig: config.MongoConfig{
 			MongoDriverConfig: mongodriver.MongoDriverConfig{
-				ClusterEndpoint: mongoURI,
+				ClusterEndpoint: parsedMongoURI.Host,
 				Database:        utils.RandomDatabase(),
 				Collections:     c.Config.Collections,
 				ConnectTimeout:  c.Config.ConnectTimeout,
@@ -111,6 +121,12 @@ func (c *DatasetComponent) Reset() error {
 	if err := c.MongoClient.Init(ctx); err != nil {
 		log.Warn(ctx, "error initialising MongoClient during Reset", log.Data{"err": err.Error()})
 	}
+
+	key, err := c.apiFeature.JWTFeature.EnsureKeys()
+	if err != nil {
+		return err
+	}
+	c.Config.AuthConfig.JWTVerificationPublicKeys[key.KID] = key.PublicKeyB64
 
 	c.Config.EnablePrivateEndpoints = false
 	c.Config.EnableURLRewriting = false
@@ -289,12 +305,36 @@ func (c *DatasetComponent) DoGetCloudflareClientOk(ctx context.Context, cloudfla
 	return cloudflareClient, nil
 }
 
+func (c *DatasetComponent) DoGetTopicAPIClientOk(ctx context.Context, cfg *config.Configuration) topicAPISDK.Clienter {
+	return &topicAPISDKMocks.ClienterMock{
+		GetTopicPrivateFunc: func(ctx context.Context, reqHeaders topicAPISDK.Headers, id string) (*topicAPIModels.TopicResponse, topicAPISDKErrors.Error) {
+			switch id {
+			case "economy-topic-id":
+				return &topicAPIModels.TopicResponse{
+					Next: &topicAPIModels.Topic{
+						Slug: "economy",
+					},
+				}, nil
+			case "businessindustryandtrade-topic-id":
+				return &topicAPIModels.TopicResponse{
+					Next: &topicAPIModels.Topic{
+						Slug: "businessindustryandtrade",
+					},
+				}, nil
+			default:
+				return nil, topicAPISDKErrors.StatusError{Code: http.StatusInternalServerError, Err: errors.New("topicID does not match any known topics")}
+			}
+		},
+	}
+}
+
 func (c *DatasetComponent) setInitialiserMock() {
 	c.initialiser = &serviceMock.InitialiserMock{
 		DoGetMongoDBFunc:                 c.DoGetMongoDB,
 		DoGetGraphDBFunc:                 c.DoGetGraphDBOk,
 		DoGetFilesAPIClientFunc:          c.DoGetFilesAPIClientOk,
 		DoGetCloudflareClientFunc:        c.DoGetCloudflareClientOk,
+		DoGetTopicAPIClientFunc:          c.DoGetTopicAPIClientOk,
 		DoGetKafkaProducerFunc:           c.DoGetMockedKafkaProducerOk,
 		DoGetHealthCheckFunc:             c.DoGetHealthcheckOk,
 		DoGetHTTPServerFunc:              c.DoGetHTTPServer,
@@ -307,6 +347,7 @@ func (c *DatasetComponent) setInitialiserRealKafka() {
 		DoGetGraphDBFunc:                 c.DoGetGraphDBOk,
 		DoGetFilesAPIClientFunc:          c.DoGetFilesAPIClientOk,
 		DoGetCloudflareClientFunc:        c.DoGetCloudflareClientOk,
+		DoGetTopicAPIClientFunc:          c.DoGetTopicAPIClientOk,
 		DoGetKafkaProducerFunc:           c.DoGetKafkaProducer,
 		DoGetHealthCheckFunc:             c.DoGetHealthcheckOk,
 		DoGetHTTPServerFunc:              c.DoGetHTTPServer,
@@ -499,4 +540,23 @@ func (c *DatasetComponent) updateViewerPreviewPolicies(values []string) error {
 	ensure(permissionDatasetEditionsVersionsRead) // "dataset-editions-versions:read" (for /editions, /versions and metadata)
 	c.fakePermissionsAPI.Reset()
 	return c.fakePermissionsAPI.UpdatePermissionsBundleResponse(&bundle)
+}
+
+func (c *DatasetComponent) theDatasetShouldHaveLatestVersionHref(datasetID, expectedHref string) error {
+	collectionName := c.MongoClient.ActualCollectionName(config.DatasetsCollection)
+	var dataset models.DatasetUpdate
+
+	if err := c.MongoClient.Connection.Collection(collectionName).FindOne(context.Background(), bson.M{"_id": datasetID}, &dataset); err != nil {
+		return fmt.Errorf("failed to find dataset %s: %w", datasetID, err)
+	}
+
+	if dataset.Next == nil || dataset.Next.Links == nil || dataset.Next.Links.LatestVersion == nil {
+		return fmt.Errorf("dataset %s has no latest_version link", datasetID)
+	}
+
+	if dataset.Next.Links.LatestVersion.HRef != expectedHref {
+		return fmt.Errorf("expected latest_version href %q but got %q", expectedHref, dataset.Next.Links.LatestVersion.HRef)
+	}
+
+	return nil
 }

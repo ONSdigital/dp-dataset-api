@@ -61,52 +61,15 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 	var totalCount int
 
 	if datasetType == models.Static.String() {
-		var versionResults []*models.Version
-		var unpublishedVersion *models.Version
-
-		versionResults, totalCount, err = api.dataStore.Backend.GetAllStaticVersions(ctx, datasetID, state, offset, limit)
+		results, totalCount, err = api.dataStore.Backend.GetEditionsStatic(ctx, datasetID, state, offset, limit)
 		if err != nil {
-			log.Error(ctx, "getEditions endpoint: unable to find versions for dataset", err, logData)
-			if err == errs.ErrVersionsNotFound {
-				http.Error(w, errs.ErrEditionsNotFound.Error(), http.StatusNotFound)
+			log.Error(ctx, "getEditions endpoint: unable to find editions for dataset", err, logData)
+			if err == errs.ErrEditionsNotFound {
+				http.Error(w, err.Error(), http.StatusNotFound)
 			} else {
 				http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
 			}
 			return nil, 0, err
-		}
-
-		editionMap := make(map[string][]*models.Version)
-		editionOrder := make([]string, 0) // maps are unordered, so a separate slice is needed to maintain the order returned from MongoDB
-
-		for _, version := range versionResults {
-			if _, exists := editionMap[version.Edition]; !exists {
-				editionOrder = append(editionOrder, version.Edition)
-			}
-			editionMap[version.Edition] = append(editionMap[version.Edition], version)
-		}
-
-		for _, editionID := range editionOrder {
-			publishedVersion, err := api.dataStore.Backend.GetLatestVersionStatic(ctx, datasetID, editionID, models.PublishedState)
-			if err != nil && err != errs.ErrVersionNotFound {
-				log.Error(ctx, "getEdition endpoint: unable to find latest published static version", err, logData)
-				return nil, 0, err
-			}
-
-			if authorised {
-				unpublishedVersion, err = api.dataStore.Backend.GetLatestVersionStatic(ctx, datasetID, editionID, "")
-				if err != nil && err != errs.ErrVersionNotFound {
-					log.Error(ctx, "getEdition endpoint: unable to find latest unpublished static version", err, logData)
-					return nil, 0, err
-				}
-			}
-
-			edition, err := utils.MapVersionsToEditionUpdate(publishedVersion, unpublishedVersion)
-			if err != nil {
-				log.Error(ctx, "getEditions endpoint: failed to map versions to edition", err, logData)
-				return nil, 0, err
-			}
-
-			results = append(results, edition)
 		}
 	} else {
 		results, totalCount, err = api.dataStore.Backend.GetEditions(ctx, datasetID, state, offset, limit, authorised)
@@ -150,6 +113,9 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 
 	publicResults := make([]*models.Edition, 0, len(results))
 	for i := range results {
+		if results[i].Current != nil {
+			results[i].Current.IsMigration = nil
+		}
 		publicResults = append(publicResults, results[i].Current)
 	}
 	log.Info(ctx, "getEditions endpoint: get all edition without auth", logData)
@@ -272,6 +238,9 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 				log.Info(ctx, "getEdition endpoint: get edition with auth", logData)
 			} else {
 				// User is not authenticated and hence has only access to current sub document
+				if edition.Current != nil {
+					edition.Current.IsMigration = nil
+				}
 				b, err = json.Marshal(edition.Current)
 				if err != nil {
 					log.Error(ctx, "getEdition endpoint: failed to marshal edition resource into bytes", err, logData)
@@ -288,18 +257,41 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 				return nil, err
 			}
 
+			identityType := log.USER
+			if authEntityData.IsServiceAuth {
+				identityType = log.SERVICE
+			}
+			logAuthOption := log.Auth(identityType, authEntityData.EntityData.UserID)
+
 			if datasetType == models.Static.String() {
-				if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+editionID, versionToAudit); err != nil {
+				if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.EntityData.UserID, Email: authEntityData.EntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+editionID, versionToAudit); err != nil {
+					log.Info(ctx, "failed to create version audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+						"action":   models.ActionRead,
+						"endpoint": "/datasets/" + datasetID + "/editions/" + editionID,
+						"outcome":  "failure",
+						"reason":   err.Error(),
+					})
 					log.Error(ctx, "getEdition endpoint: failed to record version audit event", err, logData)
 					return nil, err
 				}
 			} else {
 				editionToAudit := edition.Next
-				if err := api.auditService.RecordEditionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+editionID, editionToAudit); err != nil {
+				if err := api.auditService.RecordEditionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.EntityData.UserID, Email: authEntityData.EntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+editionID, editionToAudit); err != nil {
+					log.Info(ctx, "failed to create version audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+						"action":   models.ActionRead,
+						"endpoint": "/datasets/" + datasetID + "/editions/" + editionID,
+						"outcome":  "failure",
+						"reason":   err.Error(),
+					})
 					log.Error(ctx, "getEdition endpoint: failed to record edition audit event", err, logData)
 					return nil, err
 				}
 			}
+			log.Info(ctx, "successfully created edition audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+				"action":   models.ActionRead,
+				"endpoint": "/datasets/" + datasetID + "/editions/" + editionID,
+				"outcome":  "success",
+			})
 		}
 
 		log.Info(ctx, "getEdition endpoint: get edition", logData)

@@ -11,6 +11,7 @@ import (
 	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	kafka "github.com/ONSdigital/dp-kafka/v4"
+	topicAPISDK "github.com/ONSdigital/dp-topic-api/sdk"
 )
 
 //go:generate moq -out mock/initialiser.go -pkg mock . Initialiser
@@ -28,6 +29,7 @@ type Initialiser interface {
 	DoGetAuthorisationMiddleware(ctx context.Context, authorisationConfig *authorisation.Config) (authorisation.Middleware, error)
 	DoGetFilesAPIClient(ctx context.Context, cfg *config.Configuration) (filesAPISDK.Clienter, error)
 	DoGetCloudflareClient(ctx context.Context, cloudflareConfig *cloudflare.Config) (cloudflare.Clienter, error)
+	DoGetTopicAPIClient(ctx context.Context, cfg *config.Configuration) topicAPISDK.Clienter
 }
 
 // HTTPServer defines the required methods from the HTTP server

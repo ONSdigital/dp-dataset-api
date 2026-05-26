@@ -18,6 +18,7 @@ import (
 	dpresponse "github.com/ONSdigital/dp-net/v3/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v3/http"
 	"github.com/ONSdigital/dp-net/v3/links"
+	"github.com/ONSdigital/dp-permissions-api/sdk"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
@@ -141,6 +142,10 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 					}
 				}
 			}
+
+			if !authorised {
+				item.IsMigration = nil
+			}
 		}
 
 		if hasInvalidState {
@@ -158,8 +163,15 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 	if api.enableURLRewriting {
 		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 		codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetCodeListAPIURL())
+		websiteLinksBuilder := &links.Builder{}
 
-		list, err = utils.RewriteVersions(ctx, list, datasetLinksBuilder, codeListLinksBuilder, api.urlBuilder.GetDownloadServiceURL())
+		if api.enablePrivateEndpoints {
+			websiteLinksBuilder.URL = api.urlBuilder.GetPrivateWebsiteURL()
+		} else {
+			websiteLinksBuilder.URL = api.urlBuilder.GetPublicWebsiteURL()
+		}
+
+		list, err = utils.RewriteVersions(ctx, list, datasetLinksBuilder, codeListLinksBuilder, websiteLinksBuilder, api.urlBuilder.GetDownloadServiceURL())
 		if err != nil {
 			log.Error(ctx, "getVersions endpoint: error rewriting dimension, version, download or distribution links", err)
 			handleVersionAPIErr(ctx, err, w, logData)
@@ -275,6 +287,11 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 				}
 			}
 		}
+
+		if !authorised {
+			version.IsMigration = nil
+		}
+
 		return version, nil
 	}()
 	if getVersionErr != nil {
@@ -285,10 +302,17 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 	if api.enableURLRewriting {
 		datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 		codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetCodeListAPIURL())
+		websiteLinksBuilder := &links.Builder{}
+
+		if api.enablePrivateEndpoints {
+			websiteLinksBuilder.URL = api.urlBuilder.GetPrivateWebsiteURL()
+		} else {
+			websiteLinksBuilder.URL = api.urlBuilder.GetPublicWebsiteURL()
+		}
 
 		var err error
 
-		err = utils.RewriteVersionLinks(ctx, v.Links, datasetLinksBuilder)
+		err = utils.RewriteVersionLinks(ctx, v.Links, datasetLinksBuilder, websiteLinksBuilder)
 		if err != nil {
 			log.Error(ctx, "getVersion endpoint: failed to rewrite version links", err, logData)
 			return nil, models.NewErrorResponse(getVersionAPIErrStatusCode(err), nil, models.NewError(err, "failed to rewrite version links", "internal error"))
@@ -332,12 +356,29 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 			return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, responseError)
 		}
 
+		identityType := log.USER
+		if authEntityData.IsServiceAuth {
+			identityType = log.SERVICE
+		}
+		logAuthOption := log.Auth(identityType, authEntityData.EntityData.UserID)
+
 		// ID and Email are the same as auth middleware can only provide userID
-		if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+versionNumber, v); err != nil {
+		if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.EntityData.UserID, Email: authEntityData.EntityData.UserID}, models.ActionRead, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+versionNumber, v); err != nil {
+			log.Info(ctx, "failed to create version audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+				"action":   models.ActionRead,
+				"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + versionNumber,
+				"outcome":  "failure",
+				"reason":   err.Error(),
+			})
 			log.Error(ctx, "getVersion endpoint: failed to record version audit event", err, logData)
 			responseError := models.NewError(err, err.Error(), "internal error")
 			return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, responseError)
 		}
+		log.Info(ctx, "successfully created version audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+			"action":   models.ActionRead,
+			"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + versionNumber,
+			"outcome":  "success",
+		})
 	}
 
 	responseHeaders := map[string]string{
@@ -365,6 +406,13 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		handleVersionAPIErr(ctx, err, w, data)
 		return
 	}
+
+	identityType := log.USER
+	if authEntityData.IsServiceAuth {
+		identityType = log.SERVICE
+	}
+	logAuthOption := log.Auth(identityType, authEntityData.EntityData.UserID)
+
 	// Read body once and validate distributions before unmarshaling
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -455,18 +503,34 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 
 	var amendedVersion *models.Version
 
-	amendedVersion, err = api.smDatasetAPI.AmendVersion(r.Context(), vars, version, authEntityData, fetchAccessTokenFromHeader(r))
+	permissionEntity := sdk.EntityData{
+		UserID: authEntityData.EntityData.UserID,
+		Groups: authEntityData.EntityData.Groups,
+	}
+
+	amendedVersion, err = api.smDatasetAPI.AmendVersion(r.Context(), vars, version, &permissionEntity, fetchAccessTokenFromHeader(r))
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, data)
 		return
 	}
 
 	// ID and Email are the same as auth middleware can only provide userID
-	if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionUpdate, "/datasets/"+vars["dataset_id"]+"/editions/"+vars["edition"]+"/versions/"+vars["version"], amendedVersion); err != nil {
+	if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.EntityData.UserID, Email: authEntityData.EntityData.UserID}, models.ActionUpdate, "/datasets/"+vars["dataset_id"]+"/editions/"+vars["edition"]+"/versions/"+vars["version"], amendedVersion); err != nil {
+		log.Info(ctx, "failed to create version audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+			"action":   models.ActionUpdate,
+			"endpoint": "/datasets/" + vars["dataset_id"] + "/editions/" + vars["edition"] + "/versions/" + vars["version"],
+			"outcome":  "failure",
+			"reason":   err.Error(),
+		})
 		log.Error(ctx, "putVersion endpoint: failed to record version audit event", err, data)
 		handleVersionAPIErr(ctx, err, w, data)
 		return
 	}
+	log.Info(ctx, "successfully created version audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+		"action":   models.ActionUpdate,
+		"endpoint": "/datasets/" + vars["dataset_id"] + "/editions/" + vars["edition"] + "/versions/" + vars["version"],
+		"outcome":  "success",
+	})
 
 	versionBytes, err := json.Marshal(amendedVersion)
 	if err != nil {
@@ -507,6 +571,12 @@ func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	identityType := log.USER
+	if authEntityData.IsServiceAuth {
+		identityType = log.SERVICE
+	}
+	logAuthOption := log.Auth(identityType, authEntityData.EntityData.UserID)
+
 	versionNum, err := models.ParseAndValidateVersionNumber(ctx, versionStr)
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, logData)
@@ -536,11 +606,22 @@ func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// ID and Email are the same as auth middleware can only provide userID
-		if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionDelete, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+versionStr, deletedVersion); err != nil {
+		if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.EntityData.UserID, Email: authEntityData.EntityData.UserID}, models.ActionDelete, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+versionStr, deletedVersion); err != nil {
+			log.Info(ctx, "failed to create version audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+				"action":   models.ActionDelete,
+				"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + versionStr,
+				"outcome":  "failure",
+				"reason":   err.Error(),
+			})
 			log.Error(ctx, "deleteVersion endpoint: failed to record version audit event", err, logData)
 			handleVersionAPIErr(ctx, err, w, logData)
 			return
 		}
+		log.Info(ctx, "successfully created version audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+			"action":   models.ActionDelete,
+			"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + versionStr,
+			"outcome":  "success",
+		})
 
 		w.WriteHeader(http.StatusNoContent)
 		log.Info(ctx, "deleteVersion: successfully deleted static version", logData)
@@ -902,6 +983,12 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	identityType := log.USER
+	if authEntityData.IsServiceAuth {
+		identityType = log.SERVICE
+	}
+	logAuthOption := log.Auth(identityType, authEntityData.EntityData.UserID)
+
 	versionID, err := models.ParseAndValidateVersionNumber(ctx, version)
 	if err != nil {
 		log.Error(ctx, "putState endpoint: invalid version request", err, logData)
@@ -923,18 +1010,34 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 		Type:  models.Static.String(),
 	}
 
-	updatedVersion, err := api.smDatasetAPI.AmendVersion(r.Context(), vars, versionUpdate, authEntityData, fetchAccessTokenFromHeader(r))
+	permissionEntity := sdk.EntityData{
+		UserID: authEntityData.EntityData.UserID,
+		Groups: authEntityData.EntityData.Groups,
+	}
+
+	updatedVersion, err := api.smDatasetAPI.AmendVersion(r.Context(), vars, versionUpdate, &permissionEntity, fetchAccessTokenFromHeader(r))
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, logData)
 		return
 	}
 
 	// ID and Email are the same as auth middleware can only provide userID
-	if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.UserID, Email: authEntityData.UserID}, models.ActionUpdate, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+version+"/state", updatedVersion); err != nil {
+	if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.EntityData.UserID, Email: authEntityData.EntityData.UserID}, models.ActionUpdate, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+version+"/state", updatedVersion); err != nil {
+		log.Info(ctx, "failed to create version audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+			"action":   models.ActionUpdate,
+			"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + version + "/state",
+			"outcome":  "failure",
+			"reason":   err.Error(),
+		})
 		log.Error(ctx, "putState endpoint: failed to record version audit event", err, logData)
 		handleVersionAPIErr(ctx, err, w, logData)
 		return
 	}
+	log.Info(ctx, "successfully created version audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
+		"action":   models.ActionUpdate,
+		"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + version + "/state",
+		"outcome":  "success",
+	})
 
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusOK)

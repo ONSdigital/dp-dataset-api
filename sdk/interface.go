@@ -17,6 +17,7 @@ type Clienter interface {
 	URL() string
 
 	CreateDataset(ctx context.Context, headers Headers, dataset models.Dataset) (datasetUpdate models.DatasetUpdate, err error)
+	DeleteDataset(ctx context.Context, headers Headers, datasetID string) error
 	GetDataset(ctx context.Context, headers Headers, datasetID string) (dataset models.Dataset, err error)
 	GetDatasetByPath(ctx context.Context, headers Headers, path string) (dataset models.Dataset, err error)
 	GetDatasetCurrentAndNext(ctx context.Context, headers Headers, datasetID string) (dataset models.DatasetUpdate, err error)
@@ -33,7 +34,7 @@ type Clienter interface {
 	GetVersionWithResponse(ctx context.Context, headers Headers, datasetID, edition, versionID string) (v models.Version, resp *http.Response, err error)
 	GetVersions(ctx context.Context, headers Headers, datasetID, editionID string, queryParams *QueryParams) (versionsList VersionsList, err error)
 	GetVersionsInBatches(ctx context.Context, headers Headers, datasetID, edition string, batchSize, maxWorkers int) (versions VersionsList, err error)
-	PostVersion(ctx context.Context, headers Headers, datasetID, editionID, versionID string, version models.Version) (createdVersion *models.Version, err error)
+	PostVersion(ctx context.Context, headers Headers, datasetID, editionID, versionID string, version models.Version, isLatest bool) (createdVersion *models.Version, err error)
 	PutDataset(ctx context.Context, headers Headers, datasetID string, d models.Dataset) error
 	PutInstance(ctx context.Context, headers Headers, instanceID string, i UpdateInstance) (eTag string, err error)
 	PutMetadata(ctx context.Context, headers Headers, datasetID, edition, version string, metadata models.EditableMetadata) error

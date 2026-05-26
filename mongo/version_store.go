@@ -10,6 +10,7 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-dataset-api/utils"
 	mongodriver "github.com/ONSdigital/dp-mongodb/v3/mongodb"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -300,6 +301,107 @@ func (m *Mongo) GetAllStaticVersions(ctx context.Context, datasetID, state strin
 	}
 
 	return results, totalCount, nil
+}
+
+// GetEditionsStatic retrieves a paginated list of editions for a given dataset.
+// Response is ordered by the release date of the oldest version for each edition.
+// Each Version record is mapped to an EditionUpdate with Current and Next set depending on the state.
+func (m *Mongo) GetEditionsStatic(ctx context.Context, datasetID, state string, offset, limit int) ([]*models.EditionUpdate, int, error) {
+	selector := bson.M{"links.dataset.id": datasetID}
+	if state != "" {
+		selector["state"] = state
+	}
+
+	pipeline := []bson.M{
+		{"$match": selector},
+		{"$sort": bson.M{
+			"edition": 1,
+			"version": 1,
+		}},
+		{"$group": bson.M{
+			"_id": "$edition",
+			"oldest_version_release_date": bson.M{
+				"$first": "$release_date",
+			},
+		}},
+		{"$sort": bson.M{
+			"oldest_version_release_date": -1,
+			"_id":                         1,
+		}},
+	}
+
+	if offset > 0 {
+		pipeline = append(pipeline, bson.M{"$skip": offset})
+	}
+	if limit > 0 {
+		pipeline = append(pipeline, bson.M{"$limit": limit})
+	}
+
+	pipeline = append(pipeline, bson.M{
+		"$project": bson.M{
+			"_id":        0,
+			"edition_id": "$_id",
+		},
+	})
+
+	var editionResults []struct {
+		EditionID string `bson:"edition_id"`
+	}
+
+	if err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Aggregate(ctx, pipeline, &editionResults); err != nil {
+		return nil, 0, err
+	}
+
+	sortedEditionIDs := make([]string, 0, len(editionResults))
+	for _, result := range editionResults {
+		sortedEditionIDs = append(sortedEditionIDs, result.EditionID)
+	}
+
+	countPipeline := []bson.M{
+		{"$match": selector},
+		{"$group": bson.M{
+			"_id": "$edition",
+		}},
+		{"$count": "total_count"},
+	}
+
+	var countResults []struct {
+		TotalCount int `bson:"total_count"`
+	}
+
+	if err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Aggregate(ctx, countPipeline, &countResults); err != nil {
+		return nil, 0, err
+	}
+
+	if len(countResults) == 0 {
+		return nil, 0, errs.ErrEditionsNotFound
+	}
+
+	totalCount := countResults[0].TotalCount
+
+	editions := make([]*models.EditionUpdate, 0, len(sortedEditionIDs))
+	for _, editionID := range sortedEditionIDs {
+		publishedVersion, err := m.GetLatestVersionStatic(ctx, datasetID, editionID, models.PublishedState)
+		if err != nil && !errors.Is(err, errs.ErrVersionNotFound) {
+			return nil, 0, err
+		}
+
+		var unpublishedVersion *models.Version
+		if state != models.PublishedState {
+			unpublishedVersion, err = m.GetLatestVersionStatic(ctx, datasetID, editionID, "")
+			if err != nil && !errors.Is(err, errs.ErrVersionNotFound) {
+				return nil, 0, err
+			}
+		}
+
+		edition, err := utils.MapVersionsToEditionUpdate(publishedVersion, unpublishedVersion)
+		if err != nil {
+			return nil, 0, err
+		}
+		editions = append(editions, edition)
+	}
+
+	return editions, totalCount, nil
 }
 
 func (m *Mongo) DeleteStaticDatasetVersion(ctx context.Context, datasetID, editionID string, versionNumber int) (err error) {

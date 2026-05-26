@@ -37,9 +37,10 @@ var (
 	datasetAPIURL         = &neturl.URL{Scheme: "http", Host: "localhost:22000"}
 	downloadServiceURL    = &neturl.URL{Scheme: "http", Host: "localhost:23600"}
 	importAPIURL          = &neturl.URL{Scheme: "http", Host: "localhost:21800"}
-	websiteURL            = &neturl.URL{Scheme: "http", Host: "localhost:20000"}
+	publicWebsiteURL      = &neturl.URL{Scheme: "http", Host: "localhost:20000"}
+	privateWebsiteURL     = &neturl.URL{Scheme: "http", Host: "localhost:20000"}
 	apiRouterPublicURL    = &neturl.URL{Scheme: "http", Host: "localhost:23200", Path: "v1"}
-	urlBuilder            = url.NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL, apiRouterPublicURL)
+	urlBuilder            = url.NewBuilder(publicWebsiteURL, privateWebsiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL, apiRouterPublicURL)
 	enableURLRewriting    = false
 	mu                    sync.Mutex
 	testContext           = context.Background()

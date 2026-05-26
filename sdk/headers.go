@@ -29,8 +29,8 @@ var (
 // Contains the headers to be added to any request
 type Headers struct {
 	CollectionID         string
-	DownloadServiceToken string
-	AccessToken          string // could be user or service token for auth v2
+	DownloadServiceToken string `json:"-"`
+	AccessToken          string `json:"-"` // could be user or service token for auth v2
 	IfMatch              string
 }
 

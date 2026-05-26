@@ -1,19 +1,22 @@
 Feature: Static versions GET /versions
 
     Background: We have static datasets, editions and versions for testing
-        Given I have these datasets:
+        Given I have realistic datasets:
             """
             [
                 {
-                    "id": "test-static",
-                    "state": "created",
-                    "type": "static",
-                    "links": {
-                        "latest_version": {
-                            "id": "1",
-                            "href": "/datasets/test-static/editions/test-edition-static/versions/1"
+                    "next": {
+                        "id": "test-static",
+                        "state": "created",
+                        "type": "static",
+                        "links": {
+                            "latest_version": {
+                                "id": "1",
+                                "href": "/datasets/test-static/editions/test-edition-static/versions/1"
+                            }
                         }
-                    }
+                    },
+                    "current": null
                 }
             ]
             """
@@ -35,9 +38,12 @@ Feature: Static versions GET /versions
                         },
                         "self": {
                             "href": "/datasets/test-static/editions/test-edition-static/versions/1"
+                        },
+                        "web_page": {
+                            "href": "/economy/datasets/test-static/editions/test-edition-static/versions/1"
                         }
                     },
-                    "state": "created",
+                    "state": "associated",
                     "type": "static",
                     "distributions": [
                         {
@@ -47,7 +53,8 @@ Feature: Static versions GET /versions
                             "download_url": "/uuid/filename.csv",
                             "byte_size": 100000
                         }
-                    ]
+                    ],
+                    "is_migration": true
                 },
                 {
                     "id": "test-static-version-approved",
@@ -64,6 +71,9 @@ Feature: Static versions GET /versions
                         },
                         "self": {
                             "href": "/datasets/test-static/editions/test-edition-static-approved/versions/1"
+                        },
+                        "web_page": {
+                            "href": "/economy/datasets/test-static/editions/test-edition-static-approved/versions/1"
                         }
                     },
                     "state": "approved",
@@ -93,6 +103,9 @@ Feature: Static versions GET /versions
                         },
                         "self": {
                             "href": "/datasets/test-static/editions/test-edition-published/versions/1"
+                        },
+                        "web_page": {
+                            "href": "/economy/datasets/test-static/editions/test-edition-published/versions/1"
                         }
                     },
                     "state": "published",
@@ -109,7 +122,7 @@ Feature: Static versions GET /versions
                 }
             ]
             """
-    
+
     Scenario: GET /datasets/test-static/editions/test-edition-static-approved/versions in private mode returns all versions
         Given private endpoints are enabled
         And I am an admin user
@@ -136,6 +149,9 @@ Feature: Static versions GET /versions
                             },
                             "self": {
                                 "href": "/datasets/test-static/editions/test-edition-static-approved/versions/1"
+                            },
+                            "web_page": {
+                                "href": "/economy/datasets/test-static/editions/test-edition-static-approved/versions/1"
                             }
                         },
                         "edition": "test-edition-static-approved",
@@ -156,7 +172,104 @@ Feature: Static versions GET /versions
                 "total_count": 1
             }
             """
-    
+
+    Scenario: GET /datasets/test-static/editions/test-edition-static-approved/versions in private mode rewrites all links when URL rewriting is enabled
+        Given private endpoints are enabled
+        And URL rewriting is enabled
+        And I set the "X-Forwarded-Host" header to "api.example.com"
+        And I set the "X-Forwarded-Path-Prefix" header to "v1"
+        And I am an admin user
+        When I GET "/datasets/test-static/editions/test-edition-static-approved/versions"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "count": 1,
+                "items": [
+                    {
+                        "dataset_id": "test-static",
+                        "id": "test-static-version-approved",
+                        "last_updated":"2021-01-01T00:00:01Z",
+                        "type":"static",
+                        "version": 1,
+                        "state": "approved",
+                        "links": {
+                            "dataset": {
+                                "id": "test-static"
+                            },
+                            "edition": {
+                                "href": "https://api.example.com/v1/datasets/test-static/editions/test-edition-static-approved",
+                                "id": "test-edition-static-approved"
+                            },
+                            "self": {
+                                "href": "https://api.example.com/v1/datasets/test-static/editions/test-edition-static-approved/versions/1"
+                            },
+                            "web_page": {
+                                "href": "http://localhost:20000/economy/datasets/test-static/editions/test-edition-static-approved/versions/1"
+                            }
+                        },
+                        "edition": "test-edition-static-approved",
+                        "edition_title": "Test Edition Static Approved Title",
+                        "distributions": [
+                            {
+                                "title": "Distribution 1",
+                                "format": "csv",
+                                "media_type": "text/csv",
+                                "download_url": "http://localhost:23600/downloads/files/uuid/filename.csv",
+                                "byte_size": 100000
+                            }
+                        ]
+                    }
+                ],
+                "limit": 20,
+                "offset": 0,
+                "total_count": 1
+            }
+            """
+
+    Scenario: GET /datasets/test-static/editions/test-edition-static-approved/versions/1 in private mode rewrites all links when URL rewriting is enabled
+        Given private endpoints are enabled
+        And URL rewriting is enabled
+        And I set the "X-Forwarded-Host" header to "api.example.com"
+        And I set the "X-Forwarded-Path-Prefix" header to "v1"
+        And I am an admin user
+        When I GET "/datasets/test-static/editions/test-edition-static-approved/versions/1"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "id": "test-static-version-approved",
+                "last_updated":"2021-01-01T00:00:01Z",
+                "type":"static",
+                "version": 1,
+                "state": "approved",
+                "links": {
+                    "dataset": {
+                        "id": "test-static"
+                    },
+                    "edition": {
+                        "href": "https://api.example.com/v1/datasets/test-static/editions/test-edition-static-approved",
+                        "id": "test-edition-static-approved"
+                    },
+                    "self": {
+                        "href": "https://api.example.com/v1/datasets/test-static/editions/test-edition-static-approved/versions/1"
+                    },
+                    "web_page": {
+                        "href": "http://localhost:20000/economy/datasets/test-static/editions/test-edition-static-approved/versions/1"
+                    }
+                },
+                "edition": "test-edition-static-approved",
+                "edition_title": "Test Edition Static Approved Title",
+                "distributions": [
+                    {
+                        "title": "Distribution 1",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "download_url": "http://localhost:23600/downloads/files/uuid/filename.csv",
+                        "byte_size": 100000
+                    }
+                ]
+            }
+            """
+
     Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} records audit event with authorised user
         Given private endpoints are enabled
         And I am a publisher user
@@ -169,3 +282,55 @@ Feature: Static versions GET /versions
         When I GET "/datasets/test-static/editions/test-edition-published/versions/1"
         Then the HTTP status code should be "200"
         And the total number of audit events should be 0
+
+    Scenario: Get dataset with created state returns 404 in web mode
+        When I GET "/datasets/test-static"
+        Then the HTTP status code should be "404"
+
+    Scenario: Get dataset with created state returns dataset in private mode
+        When private endpoints are enabled
+        And I am an admin user
+        When I GET "/datasets/test-static"
+        Then the HTTP status code should be "200"
+
+    Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} returns is_migration when set
+        Given private endpoints are enabled
+        And I am an admin user
+        When I GET "/datasets/test-static/editions/test-edition-static/versions/1"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "id": "test-static-version",
+                "is_migration": true,
+                "last_updated": "2021-01-01T00:00:00Z",
+                "type": "static",
+                "version": 1,
+                "state": "associated",
+                "links": {
+                    "dataset": {
+                        "id": "test-static"
+                    },
+                    "edition": {
+                        "href": "/datasets/test-static/editions/test-edition-static",
+                        "id": "test-edition-static"
+                    },
+                    "self": {
+                        "href": "/datasets/test-static/editions/test-edition-static/versions/1"
+                    },
+                    "web_page": {
+                        "href": "/economy/datasets/test-static/editions/test-edition-static/versions/1"
+                    }
+                },
+                "edition": "test-edition-static",
+                "edition_title": "Test Edition Static Title",
+                "distributions": [
+                    {
+                        "title": "Distribution 1",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "download_url": "/uuid/filename.csv",
+                        "byte_size": 100000
+                    }
+                ]
+            }
+            """

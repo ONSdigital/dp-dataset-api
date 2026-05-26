@@ -50,6 +50,7 @@ type Version struct {
 	LowestGeography    string               `bson:"lowest_geography,omitempty"      json:"lowest_geography,omitempty"`
 	QualityDesignation QualityDesignation   `bson:"quality_designation,omitempty"   json:"quality_designation,omitempty"`
 	Distributions      *[]Distribution      `bson:"distributions,omitempty"         json:"distributions,omitempty"`
+	IsMigration        *bool                `bson:"is_migration,omitempty"          json:"is_migration,omitempty"`
 }
 
 // Alert represents an object containing information on an alert
@@ -128,6 +129,7 @@ type VersionLinks struct {
 	Self       *LinkObject `bson:"self,omitempty"        json:"self,omitempty"`
 	Spatial    *LinkObject `bson:"spatial,omitempty"     json:"spatial,omitempty"`
 	Version    *LinkObject `bson:"version,omitempty"     json:"-"`
+	WebPage    *LinkObject `bson:"web_page,omitempty"    json:"web_page,omitempty"`
 }
 
 func (vl *VersionLinks) DeepCopy() *VersionLinks {
@@ -166,6 +168,12 @@ func (vl *VersionLinks) DeepCopy() *VersionLinks {
 		dst.Version = &LinkObject{
 			ID:   vl.Version.ID,
 			HRef: vl.Version.HRef,
+		}
+	}
+	if vl.WebPage != nil {
+		dst.WebPage = &LinkObject{
+			ID:   vl.WebPage.ID,
+			HRef: vl.WebPage.HRef,
 		}
 	}
 	return dst

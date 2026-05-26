@@ -29,6 +29,9 @@ var _ sdk.Clienter = &ClienterMock{}
 //			CreateDatasetFunc: func(ctx context.Context, headers sdk.Headers, dataset models.Dataset) (models.DatasetUpdate, error) {
 //				panic("mock out the CreateDataset method")
 //			},
+//			DeleteDatasetFunc: func(ctx context.Context, headers sdk.Headers, datasetID string) error {
+//				panic("mock out the DeleteDataset method")
+//			},
 //			GetDatasetFunc: func(ctx context.Context, headers sdk.Headers, datasetID string) (models.Dataset, error) {
 //				panic("mock out the GetDataset method")
 //			},
@@ -80,7 +83,7 @@ var _ sdk.Clienter = &ClienterMock{}
 //			HealthFunc: func() *health.Client {
 //				panic("mock out the Health method")
 //			},
-//			PostVersionFunc: func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, versionID string, version models.Version) (*models.Version, error) {
+//			PostVersionFunc: func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, versionID string, version models.Version, isLatest bool) (*models.Version, error) {
 //				panic("mock out the PostVersion method")
 //			},
 //			PutDatasetFunc: func(ctx context.Context, headers sdk.Headers, datasetID string, d models.Dataset) error {
@@ -113,6 +116,9 @@ type ClienterMock struct {
 
 	// CreateDatasetFunc mocks the CreateDataset method.
 	CreateDatasetFunc func(ctx context.Context, headers sdk.Headers, dataset models.Dataset) (models.DatasetUpdate, error)
+
+	// DeleteDatasetFunc mocks the DeleteDataset method.
+	DeleteDatasetFunc func(ctx context.Context, headers sdk.Headers, datasetID string) error
 
 	// GetDatasetFunc mocks the GetDataset method.
 	GetDatasetFunc func(ctx context.Context, headers sdk.Headers, datasetID string) (models.Dataset, error)
@@ -166,7 +172,7 @@ type ClienterMock struct {
 	HealthFunc func() *health.Client
 
 	// PostVersionFunc mocks the PostVersion method.
-	PostVersionFunc func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, versionID string, version models.Version) (*models.Version, error)
+	PostVersionFunc func(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, versionID string, version models.Version, isLatest bool) (*models.Version, error)
 
 	// PutDatasetFunc mocks the PutDataset method.
 	PutDatasetFunc func(ctx context.Context, headers sdk.Headers, datasetID string, d models.Dataset) error
@@ -203,6 +209,15 @@ type ClienterMock struct {
 			Headers sdk.Headers
 			// Dataset is the dataset argument value.
 			Dataset models.Dataset
+		}
+		// DeleteDataset holds details about calls to the DeleteDataset method.
+		DeleteDataset []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Headers is the headers argument value.
+			Headers sdk.Headers
+			// DatasetID is the datasetID argument value.
+			DatasetID string
 		}
 		// GetDataset holds details about calls to the GetDataset method.
 		GetDataset []struct {
@@ -409,6 +424,8 @@ type ClienterMock struct {
 			VersionID string
 			// Version is the version argument value.
 			Version models.Version
+			// IsLatest is the isLatest argument value.
+			IsLatest bool
 		}
 		// PutDataset holds details about calls to the PutDataset method.
 		PutDataset []struct {
@@ -483,6 +500,7 @@ type ClienterMock struct {
 	}
 	lockChecker                    sync.RWMutex
 	lockCreateDataset              sync.RWMutex
+	lockDeleteDataset              sync.RWMutex
 	lockGetDataset                 sync.RWMutex
 	lockGetDatasetByPath           sync.RWMutex
 	lockGetDatasetCurrentAndNext   sync.RWMutex
@@ -582,6 +600,46 @@ func (mock *ClienterMock) CreateDatasetCalls() []struct {
 	mock.lockCreateDataset.RLock()
 	calls = mock.calls.CreateDataset
 	mock.lockCreateDataset.RUnlock()
+	return calls
+}
+
+// DeleteDataset calls DeleteDatasetFunc.
+func (mock *ClienterMock) DeleteDataset(ctx context.Context, headers sdk.Headers, datasetID string) error {
+	if mock.DeleteDatasetFunc == nil {
+		panic("ClienterMock.DeleteDatasetFunc: method is nil but Clienter.DeleteDataset was just called")
+	}
+	callInfo := struct {
+		Ctx       context.Context
+		Headers   sdk.Headers
+		DatasetID string
+	}{
+		Ctx:       ctx,
+		Headers:   headers,
+		DatasetID: datasetID,
+	}
+	mock.lockDeleteDataset.Lock()
+	mock.calls.DeleteDataset = append(mock.calls.DeleteDataset, callInfo)
+	mock.lockDeleteDataset.Unlock()
+	return mock.DeleteDatasetFunc(ctx, headers, datasetID)
+}
+
+// DeleteDatasetCalls gets all the calls that were made to DeleteDataset.
+// Check the length with:
+//
+//	len(mockedClienter.DeleteDatasetCalls())
+func (mock *ClienterMock) DeleteDatasetCalls() []struct {
+	Ctx       context.Context
+	Headers   sdk.Headers
+	DatasetID string
+} {
+	var calls []struct {
+		Ctx       context.Context
+		Headers   sdk.Headers
+		DatasetID string
+	}
+	mock.lockDeleteDataset.RLock()
+	calls = mock.calls.DeleteDataset
+	mock.lockDeleteDataset.RUnlock()
 	return calls
 }
 
@@ -1341,7 +1399,7 @@ func (mock *ClienterMock) HealthCalls() []struct {
 }
 
 // PostVersion calls PostVersionFunc.
-func (mock *ClienterMock) PostVersion(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, versionID string, version models.Version) (*models.Version, error) {
+func (mock *ClienterMock) PostVersion(ctx context.Context, headers sdk.Headers, datasetID string, editionID string, versionID string, version models.Version, isLatest bool) (*models.Version, error) {
 	if mock.PostVersionFunc == nil {
 		panic("ClienterMock.PostVersionFunc: method is nil but Clienter.PostVersion was just called")
 	}
@@ -1352,6 +1410,7 @@ func (mock *ClienterMock) PostVersion(ctx context.Context, headers sdk.Headers, 
 		EditionID string
 		VersionID string
 		Version   models.Version
+		IsLatest  bool
 	}{
 		Ctx:       ctx,
 		Headers:   headers,
@@ -1359,11 +1418,12 @@ func (mock *ClienterMock) PostVersion(ctx context.Context, headers sdk.Headers, 
 		EditionID: editionID,
 		VersionID: versionID,
 		Version:   version,
+		IsLatest:  isLatest,
 	}
 	mock.lockPostVersion.Lock()
 	mock.calls.PostVersion = append(mock.calls.PostVersion, callInfo)
 	mock.lockPostVersion.Unlock()
-	return mock.PostVersionFunc(ctx, headers, datasetID, editionID, versionID, version)
+	return mock.PostVersionFunc(ctx, headers, datasetID, editionID, versionID, version, isLatest)
 }
 
 // PostVersionCalls gets all the calls that were made to PostVersion.
@@ -1377,6 +1437,7 @@ func (mock *ClienterMock) PostVersionCalls() []struct {
 	EditionID string
 	VersionID string
 	Version   models.Version
+	IsLatest  bool
 } {
 	var calls []struct {
 		Ctx       context.Context
@@ -1385,6 +1446,7 @@ func (mock *ClienterMock) PostVersionCalls() []struct {
 		EditionID string
 		VersionID string
 		Version   models.Version
+		IsLatest  bool
 	}
 	mock.lockPostVersion.RLock()
 	calls = mock.calls.PostVersion

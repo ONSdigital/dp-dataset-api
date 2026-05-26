@@ -109,6 +109,9 @@ var _ store.MongoDB = &MongoDBMock{}
 //			GetEditionsFunc: func(ctx context.Context, ID string, state string, offset int, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
 //				panic("mock out the GetEditions method")
 //			},
+//			GetEditionsStaticFunc: func(ctx context.Context, datasetID string, state string, offset int, limit int) ([]*models.EditionUpdate, int, error) {
+//				panic("mock out the GetEditionsStatic method")
+//			},
 //			GetInstanceFunc: func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error) {
 //				panic("mock out the GetInstance method")
 //			},
@@ -301,6 +304,9 @@ type MongoDBMock struct {
 
 	// GetEditionsFunc mocks the GetEditions method.
 	GetEditionsFunc func(ctx context.Context, ID string, state string, offset int, limit int, authorised bool) ([]*models.EditionUpdate, int, error)
+
+	// GetEditionsStaticFunc mocks the GetEditionsStatic method.
+	GetEditionsStaticFunc func(ctx context.Context, datasetID string, state string, offset int, limit int) ([]*models.EditionUpdate, int, error)
 
 	// GetInstanceFunc mocks the GetInstance method.
 	GetInstanceFunc func(ctx context.Context, ID string, eTagSelector string) (*models.Instance, error)
@@ -679,6 +685,19 @@ type MongoDBMock struct {
 			Limit int
 			// Authorised is the authorised argument value.
 			Authorised bool
+		}
+		// GetEditionsStatic holds details about calls to the GetEditionsStatic method.
+		GetEditionsStatic []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// State is the state argument value.
+			State string
+			// Offset is the offset argument value.
+			Offset int
+			// Limit is the limit argument value.
+			Limit int
 		}
 		// GetInstance holds details about calls to the GetInstance method.
 		GetInstance []struct {
@@ -1059,6 +1078,7 @@ type MongoDBMock struct {
 	lockGetDimensionsFromInstance           sync.RWMutex
 	lockGetEdition                          sync.RWMutex
 	lockGetEditions                         sync.RWMutex
+	lockGetEditionsStatic                   sync.RWMutex
 	lockGetInstance                         sync.RWMutex
 	lockGetInstances                        sync.RWMutex
 	lockGetLatestVersionStatic              sync.RWMutex
@@ -2283,6 +2303,54 @@ func (mock *MongoDBMock) GetEditionsCalls() []struct {
 	mock.lockGetEditions.RLock()
 	calls = mock.calls.GetEditions
 	mock.lockGetEditions.RUnlock()
+	return calls
+}
+
+// GetEditionsStatic calls GetEditionsStaticFunc.
+func (mock *MongoDBMock) GetEditionsStatic(ctx context.Context, datasetID string, state string, offset int, limit int) ([]*models.EditionUpdate, int, error) {
+	if mock.GetEditionsStaticFunc == nil {
+		panic("MongoDBMock.GetEditionsStaticFunc: method is nil but MongoDB.GetEditionsStatic was just called")
+	}
+	callInfo := struct {
+		Ctx       context.Context
+		DatasetID string
+		State     string
+		Offset    int
+		Limit     int
+	}{
+		Ctx:       ctx,
+		DatasetID: datasetID,
+		State:     state,
+		Offset:    offset,
+		Limit:     limit,
+	}
+	mock.lockGetEditionsStatic.Lock()
+	mock.calls.GetEditionsStatic = append(mock.calls.GetEditionsStatic, callInfo)
+	mock.lockGetEditionsStatic.Unlock()
+	return mock.GetEditionsStaticFunc(ctx, datasetID, state, offset, limit)
+}
+
+// GetEditionsStaticCalls gets all the calls that were made to GetEditionsStatic.
+// Check the length with:
+//
+//	len(mockedMongoDB.GetEditionsStaticCalls())
+func (mock *MongoDBMock) GetEditionsStaticCalls() []struct {
+	Ctx       context.Context
+	DatasetID string
+	State     string
+	Offset    int
+	Limit     int
+} {
+	var calls []struct {
+		Ctx       context.Context
+		DatasetID string
+		State     string
+		Offset    int
+		Limit     int
+	}
+	mock.lockGetEditionsStatic.RLock()
+	calls = mock.calls.GetEditionsStatic
+	mock.lockGetEditionsStatic.RUnlock()
 	return calls
 }
 

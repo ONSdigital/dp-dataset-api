@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -17,7 +18,6 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
-	"github.com/ONSdigital/dp-dataset-api/utils"
 	permissionsAPISDK "github.com/ONSdigital/dp-permissions-api/sdk"
 	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
@@ -259,86 +259,6 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			},
 		}
 
-		versions := []*models.Version{
-			{
-				DatasetID:   "123",
-				Edition:     "2023",
-				ReleaseDate: "2023-10-01",
-				Links: &models.VersionLinks{
-					Dataset: &models.LinkObject{
-						HRef: "http://localhost:22000/datasets/123",
-						ID:   "123",
-					},
-					Version: &models.LinkObject{
-						HRef: "http://localhost:22000/datasets/123/editions/2023/versions/1",
-						ID:   "1",
-					},
-					Edition: &models.LinkObject{
-						HRef: "http://localhost:22000/datasets/123/editions/2023",
-						ID:   "2023",
-					},
-				},
-				Version:            1,
-				LastUpdated:        time.Date(2023, 9, 30, 12, 0, 0, 0, time.UTC),
-				Alerts:             &[]models.Alert{{Description: "Test alert"}},
-				UsageNotes:         &[]models.UsageNote{{Note: "Test usage note"}},
-				Distributions:      &[]models.Distribution{{Title: "Test distribution"}},
-				QualityDesignation: "Test quality designation",
-				State:              "published",
-			},
-			{
-				DatasetID:   "123",
-				Edition:     "2023",
-				ReleaseDate: "2023-10-01",
-				Links: &models.VersionLinks{
-					Dataset: &models.LinkObject{
-						HRef: "http://localhost:22000/datasets/123",
-						ID:   "123",
-					},
-					Version: &models.LinkObject{
-						HRef: "http://localhost:22000/datasets/123/editions/2023/versions/2",
-						ID:   "2",
-					},
-					Edition: &models.LinkObject{
-						HRef: "http://localhost:22000/datasets/123/editions/2023",
-						ID:   "2023",
-					},
-				},
-				Version:            2,
-				LastUpdated:        time.Date(2023, 9, 30, 12, 0, 0, 0, time.UTC),
-				Alerts:             &[]models.Alert{{Description: "Test alert"}},
-				UsageNotes:         &[]models.UsageNote{{Note: "Test usage note"}},
-				Distributions:      &[]models.Distribution{{Title: "Test distribution"}},
-				QualityDesignation: "Test quality designation",
-				State:              "published",
-			},
-		}
-		publishedLatestVersion := &models.Version{
-			DatasetID:   "123",
-			Edition:     "2023",
-			ReleaseDate: "2023-10-01",
-			Links: &models.VersionLinks{
-				Dataset: &models.LinkObject{
-					HRef: "http://localhost:22000/datasets/123",
-					ID:   "123",
-				},
-				Version: &models.LinkObject{
-					HRef: "http://localhost:22000/datasets/123/editions/2023/versions/2",
-					ID:   "2",
-				},
-				Edition: &models.LinkObject{
-					HRef: "http://localhost:22000/datasets/123/editions/2023",
-					ID:   "2023",
-				},
-			},
-			Version:            2,
-			LastUpdated:        time.Date(2023, 9, 30, 12, 0, 0, 0, time.UTC),
-			Alerts:             &[]models.Alert{{Description: "Test alert"}},
-			UsageNotes:         &[]models.UsageNote{{Note: "Test usage note"}},
-			Distributions:      &[]models.Distribution{{Title: "Test distribution"}},
-			QualityDesignation: "Test quality designation",
-			State:              "published",
-		}
 		mockedDataStore := &storetest.StorerMock{
 			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
 				return true, nil
@@ -346,11 +266,8 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
 				return models.Static.String(), nil
 			},
-			GetAllStaticVersionsFunc: func(ctx context.Context, ID, state string, offset, limit int) ([]*models.Version, int, error) {
-				return versions, 2, nil
-			},
-			GetLatestVersionStaticFunc: func(ctx context.Context, datasetID, editionID, state string) (*models.Version, error) {
-				return publishedLatestVersion, nil
+			GetEditionsStaticFunc: func(context.Context, string, string, int, int) ([]*models.EditionUpdate, int, error) {
+				return editionsList, 1, nil
 			},
 		}
 
@@ -364,14 +281,12 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 		}
 
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
-		_, totalCount, _ := api.getEditions(w, r, 20, 0)
-
-		editions, err := utils.MapVersionsToEditionUpdate(publishedLatestVersion, nil)
+		list, totalCount, err := api.getEditions(w, r, 20, 0)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.GetAllStaticVersionsCalls()), ShouldEqual, 1)
-		So([]*models.EditionUpdate{editions}, ShouldEqual, editionsList)
-		So(totalCount, ShouldEqual, 2)
+		So(len(mockedDataStore.GetEditionsStaticCalls()), ShouldEqual, 1)
+		So(list, ShouldEqual, editionsList)
+		So(totalCount, ShouldEqual, 1)
 		So(err, ShouldEqual, nil)
 	})
 
@@ -461,112 +376,6 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			},
 		}
 
-		versions := []*models.Version{
-			{
-				DatasetID:   "123",
-				Edition:     "2023",
-				ReleaseDate: "2023-10-01",
-				Links: &models.VersionLinks{
-					Dataset: &models.LinkObject{
-						HRef: "http://localhost:22000/datasets/123",
-						ID:   "123",
-					},
-					Version: &models.LinkObject{
-						HRef: "http://localhost:22000/datasets/123/editions/2023/versions/1",
-						ID:   "1",
-					},
-					Edition: &models.LinkObject{
-						HRef: "http://localhost:22000/datasets/123/editions/2023",
-						ID:   "2023",
-					},
-				},
-				Version:            1,
-				LastUpdated:        time.Date(2023, 9, 30, 12, 0, 0, 0, time.UTC),
-				Alerts:             &[]models.Alert{{Description: "Test alert"}},
-				UsageNotes:         &[]models.UsageNote{{Note: "Test usage note"}},
-				Distributions:      &[]models.Distribution{{Title: "Test distribution"}},
-				QualityDesignation: "Test quality designation",
-				State:              "published",
-			},
-			{
-				DatasetID:   "123",
-				Edition:     "2023",
-				ReleaseDate: "2023-10-01",
-				Links: &models.VersionLinks{
-					Dataset: &models.LinkObject{
-						HRef: "http://localhost:22000/datasets/123",
-						ID:   "123",
-					},
-					Version: &models.LinkObject{
-						HRef: "http://localhost:22000/datasets/123/editions/2023/versions/2",
-						ID:   "2",
-					},
-					Edition: &models.LinkObject{
-						HRef: "http://localhost:22000/datasets/123/editions/2023",
-						ID:   "2023",
-					},
-				},
-				Version:            2,
-				LastUpdated:        time.Date(2023, 9, 30, 12, 0, 0, 0, time.UTC),
-				Alerts:             &[]models.Alert{{Description: "Test alert"}},
-				UsageNotes:         &[]models.UsageNote{{Note: "Test usage note"}},
-				Distributions:      &[]models.Distribution{{Title: "Test distribution"}},
-				QualityDesignation: "Test quality designation",
-				State:              "associated",
-			},
-		}
-		publishedLatestVersion := &models.Version{
-			DatasetID:   "123",
-			Edition:     "2023",
-			ReleaseDate: "2023-10-01",
-			Links: &models.VersionLinks{
-				Dataset: &models.LinkObject{
-					HRef: "http://localhost:22000/datasets/123",
-					ID:   "123",
-				},
-				Version: &models.LinkObject{
-					HRef: "http://localhost:22000/datasets/123/editions/2023/versions/1",
-					ID:   "1",
-				},
-				Edition: &models.LinkObject{
-					HRef: "http://localhost:22000/datasets/123/editions/2023",
-					ID:   "2023",
-				},
-			},
-			Version:            1,
-			LastUpdated:        time.Date(2023, 9, 30, 12, 0, 0, 0, time.UTC),
-			Alerts:             &[]models.Alert{{Description: "Test alert"}},
-			UsageNotes:         &[]models.UsageNote{{Note: "Test usage note"}},
-			Distributions:      &[]models.Distribution{{Title: "Test distribution"}},
-			QualityDesignation: "Test quality designation",
-			State:              "published",
-		}
-		unpublishedLatestVersion := &models.Version{
-			DatasetID:   "123",
-			Edition:     "2023",
-			ReleaseDate: "2023-10-01",
-			Links: &models.VersionLinks{
-				Dataset: &models.LinkObject{
-					HRef: "http://localhost:22000/datasets/123",
-					ID:   "123",
-				},
-				Version: &models.LinkObject{
-					HRef: "http://localhost:22000/datasets/123/editions/2023/versions/2",
-					ID:   "2",
-				},
-				Edition: &models.LinkObject{
-					HRef: "http://localhost:22000/datasets/123/editions/2023",
-					ID:   "2023",
-				},
-			},
-			Version:            2,
-			LastUpdated:        time.Date(2023, 9, 30, 12, 0, 0, 0, time.UTC),
-			Alerts:             &[]models.Alert{{Description: "Test alert"}},
-			UsageNotes:         &[]models.UsageNote{{Note: "Test usage note"}},
-			Distributions:      &[]models.Distribution{{Title: "Test distribution"}},
-			QualityDesignation: "Test quality designation",
-			State:              "associated",
-		}
 		mockedDataStore := &storetest.StorerMock{
 			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
 				return true, nil
@@ -574,11 +383,8 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
 				return models.Static.String(), nil
 			},
-			GetAllStaticVersionsFunc: func(ctx context.Context, ID, state string, offset, limit int) ([]*models.Version, int, error) {
-				return versions, 2, nil
-			},
-			GetLatestVersionStaticFunc: func(ctx context.Context, datasetID, editionID, state string) (*models.Version, error) {
-				return publishedLatestVersion, nil
+			GetEditionsStaticFunc: func(context.Context, string, string, int, int) ([]*models.EditionUpdate, int, error) {
+				return editionsList, 1, nil
 			},
 		}
 
@@ -592,14 +398,12 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 		}
 
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
-		_, totalCount, _ := api.getEditions(w, r, 20, 0)
-
-		editions, err := utils.MapVersionsToEditionUpdate(publishedLatestVersion, unpublishedLatestVersion)
+		list, totalCount, err := api.getEditions(w, r, 20, 0)
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.GetAllStaticVersionsCalls()), ShouldEqual, 1)
-		So([]*models.EditionUpdate{editions}, ShouldEqual, editionsList)
-		So(totalCount, ShouldEqual, 2)
+		So(len(mockedDataStore.GetEditionsStaticCalls()), ShouldEqual, 1)
+		So(list, ShouldEqual, editionsList)
+		So(totalCount, ShouldEqual, 1)
 		So(err, ShouldEqual, nil)
 	})
 }
@@ -749,8 +553,8 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
 				return models.Static.String(), nil
 			},
-			GetAllStaticVersionsFunc: func(ctx context.Context, ID, state string, offset, limit int) ([]*models.Version, int, error) {
-				return nil, 0, errs.ErrVersionsNotFound
+			GetEditionsStaticFunc: func(context.Context, string, string, int, int) ([]*models.EditionUpdate, int, error) {
+				return nil, 0, errs.ErrEditionsNotFound
 			},
 		}
 
@@ -768,7 +572,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionsNotFound.Error())
-		So(len(mockedDataStore.GetAllStaticVersionsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetEditionsStaticCalls()), ShouldEqual, 1)
 	})
 }
 
@@ -1459,6 +1263,188 @@ func TestGetEditionAuditEventLogsErrorButContinues(t *testing.T) {
 
 			Convey("And the audit service was called", func() {
 				So(len(auditServiceMock.RecordVersionAuditEventCalls()), ShouldEqual, 1)
+			})
+		})
+	})
+}
+
+func TestGetEditionReturnsIsMigration(t *testing.T) {
+	t.Parallel()
+
+	Convey("Given a static dataset version with is_migration set to true", t, func() {
+		trueVal := true
+		publishedVersion := &models.Version{
+			DatasetID:   "123-456",
+			Edition:     "678",
+			Version:     1,
+			State:       models.PublishedState,
+			ReleaseDate: "1996-04-01",
+			IsMigration: &trueVal,
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123-456",
+					ID:   "123-456",
+				},
+				Self: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123-456/editions/678/versions/1",
+				},
+				Edition: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123-456/editions/678",
+					ID:   "678",
+				},
+				Version: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123-456/editions/678/versions/1",
+					ID:   "1",
+				},
+			},
+			LastUpdated: time.Date(2025, 3, 11, 0, 0, 0, 0, time.UTC),
+		}
+
+		mockedDataStore := &storetest.StorerMock{
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return true, nil
+			},
+			GetDatasetTypeFunc: func(context.Context, string, bool) (string, error) {
+				return models.Static.String(), nil
+			},
+			GetLatestVersionStaticFunc: func(ctx context.Context, datasetID, editionID, state string) (*models.Version, error) {
+				return publishedVersion, nil
+			},
+		}
+
+		Convey("When an unauthenticated user calls the GET edition endpoint", func() {
+			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678", http.NoBody)
+			w := httptest.NewRecorder()
+
+			authorisationMock := &authMock.MiddlewareMock{
+				RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+					return handlerFunc
+				},
+				ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+					return nil, permissionsAPISDK.ErrFailedToParsePermissionsResponse
+				},
+			}
+
+			api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+			api.Router.ServeHTTP(w, r)
+
+			Convey("Then it returns a 200 OK", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+			})
+
+			Convey("And is_migration is absent from the response body", func() {
+				var edition models.Edition
+				err := json.Unmarshal(w.Body.Bytes(), &edition)
+				So(err, ShouldBeNil)
+				So(edition.IsMigration, ShouldBeNil)
+			})
+		})
+
+		Convey("When an authenticated user calls the GET edition endpoint", func() {
+			r := createRequestWithAuth("GET", "http://localhost:22000/datasets/123-456/editions/678", nil)
+			w := httptest.NewRecorder()
+
+			authorisationMock := &authMock.MiddlewareMock{
+				RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+					return handlerFunc
+				},
+				RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+					return handlerFunc
+				},
+				ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+					return &permissionsAPISDK.EntityData{UserID: "test-user-id"}, nil
+				},
+			}
+
+			auditServiceMock := &applicationMocks.AuditServiceMock{
+				RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, versionDoc *models.Version) error {
+					return nil
+				},
+			}
+
+			api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+			api.Router.ServeHTTP(w, r)
+
+			Convey("Then it returns a 200 OK", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+			})
+
+			Convey("And is_migration is present in the response body", func() {
+				var editionUpdate models.EditionUpdate
+				err := json.Unmarshal(w.Body.Bytes(), &editionUpdate)
+				So(err, ShouldBeNil)
+				So(editionUpdate.Current, ShouldNotBeNil)
+				So(editionUpdate.Current.IsMigration, ShouldNotBeNil)
+				So(*editionUpdate.Current.IsMigration, ShouldBeTrue)
+			})
+		})
+	})
+
+	Convey("Given a static dataset version without is_migration set", t, func() {
+		publishedVersion := &models.Version{
+			DatasetID:   "123-456",
+			Edition:     "678",
+			Version:     1,
+			State:       models.PublishedState,
+			ReleaseDate: "1996-04-01",
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123-456",
+					ID:   "123-456",
+				},
+				Self: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123-456/editions/678/versions/1",
+				},
+				Edition: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123-456/editions/678",
+					ID:   "678",
+				},
+				Version: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/123-456/editions/678/versions/1",
+					ID:   "1",
+				},
+			},
+			LastUpdated: time.Date(2025, 3, 11, 0, 0, 0, 0, time.UTC),
+		}
+
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678", http.NoBody)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return true, nil
+			},
+			GetDatasetTypeFunc: func(context.Context, string, bool) (string, error) {
+				return models.Static.String(), nil
+			},
+			GetLatestVersionStaticFunc: func(ctx context.Context, datasetID, editionID, state string) (*models.Version, error) {
+				return publishedVersion, nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return nil, permissionsAPISDK.ErrFailedToParsePermissionsResponse
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+
+		Convey("When we call the GET edition endpoint", func() {
+			api.Router.ServeHTTP(w, r)
+
+			Convey("Then it returns a 200 OK", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+			})
+
+			Convey("And is_migration is absent from the response body", func() {
+				var edition models.Edition
+				err := json.Unmarshal(w.Body.Bytes(), &edition)
+				So(err, ShouldBeNil)
+				So(edition.IsMigration, ShouldBeNil)
 			})
 		})
 	})

@@ -1,13 +1,13 @@
 package url
 
 import (
-	"fmt"
 	"net/url"
 )
 
 // Builder encapsulates the building of urls in a central place, with knowledge of the url structures and base host names.
 type Builder struct {
-	websiteURL         *url.URL
+	publicWebsiteURL   *url.URL
+	privateWebsiteURL  *url.URL
 	downloadServiceURL *url.URL
 	datasetAPIURL      *url.URL
 	codeListAPIURL     *url.URL
@@ -16,9 +16,10 @@ type Builder struct {
 }
 
 // NewBuilder returns a new instance of url.Builder
-func NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL, apiRouterPublicURL *url.URL) *Builder {
+func NewBuilder(publicWebsiteURL, privateWebsiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL, apiRouterPublicURL *url.URL) *Builder {
 	return &Builder{
-		websiteURL:         websiteURL,
+		publicWebsiteURL:   publicWebsiteURL,
+		privateWebsiteURL:  privateWebsiteURL,
 		downloadServiceURL: downloadServiceURL,
 		datasetAPIURL:      datasetAPIURL,
 		codeListAPIURL:     codeListAPIURL,
@@ -27,8 +28,12 @@ func NewBuilder(websiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, i
 	}
 }
 
-func (builder *Builder) GetWebsiteURL() *url.URL {
-	return builder.websiteURL
+func (builder *Builder) GetPublicWebsiteURL() *url.URL {
+	return builder.publicWebsiteURL
+}
+
+func (builder *Builder) GetPrivateWebsiteURL() *url.URL {
+	return builder.privateWebsiteURL
 }
 
 func (builder *Builder) GetDownloadServiceURL() *url.URL {
@@ -49,10 +54,4 @@ func (builder *Builder) GetImportAPIURL() *url.URL {
 
 func (builder *Builder) GetAPIRouterPublicURL() *url.URL {
 	return builder.apiRouterPublicURL
-}
-
-// BuildWebsiteDatasetVersionURL returns the website URL for a specific dataset version
-func (builder Builder) BuildWebsiteDatasetVersionURL(datasetID, edition, version string) string {
-	return fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%s",
-		builder.websiteURL.String(), datasetID, edition, version)
 }

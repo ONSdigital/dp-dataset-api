@@ -121,6 +121,27 @@ func (smDS *StateMachineDatasetAPI) AmendVersion(ctx context.Context, vars map[s
 		return nil, err
 	}
 
+	if version.Type == models.Static.String() {
+		versionNumber, err := strconv.Atoi(versionDetails.version)
+		if err != nil {
+			log.Error(ctx, "amendVersion: failed to convert version to integer", err)
+			return nil, err
+		}
+
+		var editionId string
+		if versionUpdate.Edition != "" {
+			editionId = versionUpdate.Edition
+		} else {
+			editionId = versionDetails.edition
+		}
+
+		dbVersion, err := smDS.DataStore.Backend.GetVersionStatic(ctx, versionDetails.datasetID, editionId, versionNumber, "")
+		if err != nil {
+			log.Error(ctx, "amendVersion: error getting version from store after transition", err)
+			return nil, err
+		}
+		versionUpdate.LastUpdated = dbVersion.LastUpdated
+	}
 	return versionUpdate, nil
 }
 
@@ -311,6 +332,10 @@ func populateNewVersionDoc(currentVersion, originalVersion *models.Version) (*mo
 		}
 	} else {
 		version.Distributions = nil
+	}
+
+	if version.IsMigration == nil {
+		version.IsMigration = currentVersion.IsMigration
 	}
 
 	if version.UsageNotes == nil {
@@ -508,7 +533,7 @@ func ApproveVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 	authEntityData *sdk.EntityData,
 	accessToken string) error {
 	data := versionDetails.baseLogData()
-	log.Info(ctx, "putVersion endpoint (associateVersion): beginning associate version", data)
+	log.Info(ctx, "putVersion endpoint (approveVersion): beginning approve version", data)
 
 	errModel := models.ValidateVersion(versionUpdate)
 	if errModel != nil {
@@ -736,7 +761,7 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 
 				// Purge Cloudflare cache if enabled and version is being published
 				if smDS.cloudflareEnabled {
-					prefixes := utils.GeneratePurgePrefixes(smDS.urlBuilder.GetWebsiteURL().String(), smDS.urlBuilder.GetAPIRouterPublicURL().String(), versionDetails.datasetID, versionDetails.edition, versionDetails.version)
+					prefixes := utils.GeneratePurgePrefixes(smDS.urlBuilder.GetPublicWebsiteURL().String(), smDS.urlBuilder.GetAPIRouterPublicURL().String(), versionDetails.datasetID, versionDetails.edition, versionDetails.version)
 					logData["purge_prefixes"] = prefixes
 
 					err := smDS.cloudflareClient.PurgeByPrefixes(ctx, prefixes)

@@ -83,7 +83,10 @@ func TestGetAuthEntityData(t *testing.T) {
 
 			Convey("Then it should return the expected EntityData and no error", func() {
 				So(err, ShouldBeNil)
-				So(entityData, ShouldResemble, testEntityData)
+				So(entityData, ShouldResemble, &AuthEntityData{
+					EntityData:    testEntityData,
+					IsServiceAuth: false,
+				})
 			})
 		})
 
@@ -136,7 +139,10 @@ func TestGetAuthEntityData(t *testing.T) {
 
 			Convey("Then it should return the expected EntityData and no error", func() {
 				So(err, ShouldBeNil)
-				So(entityData, ShouldResemble, testServiceEntityData)
+				So(entityData, ShouldResemble, &AuthEntityData{
+					EntityData:    testServiceEntityData,
+					IsServiceAuth: true,
+				})
 			})
 		})
 	})

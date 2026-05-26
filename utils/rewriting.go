@@ -340,6 +340,8 @@ func RewriteEditionsWithoutAuth(ctx context.Context, results []*models.EditionUp
 			continue
 		}
 
+		item.Current.IsMigration = nil
+
 		err := RewriteEditionLinks(ctx, item.Current.Links, datasetLinksBuilder)
 		if err != nil {
 			log.Error(ctx, "failed to rewrite 'current' links", err)
@@ -407,6 +409,7 @@ func RewriteEditionWithoutAuth(ctx context.Context, edition *models.EditionUpdat
 	log.Info(ctx, "getEdition endpoint: caller not authorised returning edition", log.Data{"edition_id": edition.ID})
 
 	edition.Current.ID = edition.ID
+	edition.Current.IsMigration = nil
 	editionResponse = edition.Current
 	err := RewriteEditionLinks(ctx, editionResponse.Links, datasetLinksBuilder)
 	if err != nil {
@@ -474,7 +477,7 @@ func RewriteMetadataLinks(ctx context.Context, oldLinks *models.MetadataLinks, d
 	return nil
 }
 
-func RewriteVersions(ctx context.Context, results []models.Version, datasetLinksBuilder, codeListLinksBuilder *links.Builder, downloadServiceURL *url.URL) ([]models.Version, error) {
+func RewriteVersions(ctx context.Context, results []models.Version, datasetLinksBuilder, codeListLinksBuilder, websiteLinksBuilder *links.Builder, downloadServiceURL *url.URL) ([]models.Version, error) {
 	if len(results) == 0 {
 		return results, nil
 	}
@@ -491,7 +494,7 @@ func RewriteVersions(ctx context.Context, results []models.Version, datasetLinks
 			return nil, err
 		}
 
-		err = RewriteVersionLinks(ctx, item.Links, datasetLinksBuilder)
+		err = RewriteVersionLinks(ctx, item.Links, datasetLinksBuilder, websiteLinksBuilder)
 		if err != nil {
 			log.Error(ctx, "failed to rewrite version links", err)
 			return nil, err
@@ -515,7 +518,7 @@ func RewriteVersions(ctx context.Context, results []models.Version, datasetLinks
 	return items, nil
 }
 
-func RewriteVersionLinks(ctx context.Context, oldLinks *models.VersionLinks, datasetLinksBuilder *links.Builder) error {
+func RewriteVersionLinks(ctx context.Context, oldLinks *models.VersionLinks, datasetLinksBuilder, websiteLinksBuilder *links.Builder) error {
 	if oldLinks == nil {
 		return nil
 	}
@@ -537,6 +540,14 @@ func RewriteVersionLinks(ctx context.Context, oldLinks *models.VersionLinks, dat
 				log.Error(ctx, "failed to rewrite link", err, log.Data{"link": link.HRef})
 				return err
 			}
+		}
+	}
+
+	if oldLinks.WebPage != nil && oldLinks.WebPage.HRef != "" {
+		oldLinks.WebPage.HRef, err = websiteLinksBuilder.BuildLink(oldLinks.WebPage.HRef)
+		if err != nil {
+			log.Error(ctx, "failed to rewrite web page link", err, log.Data{"link": oldLinks.WebPage.HRef})
+			return err
 		}
 	}
 

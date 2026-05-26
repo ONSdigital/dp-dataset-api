@@ -105,7 +105,7 @@ Feature: Static Dataset Versions PUT API
                 ],
                 "edition": "2025",
                 "id": "static-version-update",
-                "last_updated": "0001-01-01T00:00:00Z",
+                "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
                 "links": {
                     "dataset": {
                         "id": "static-dataset-update"
@@ -152,7 +152,7 @@ Feature: Static Dataset Versions PUT API
                 ],
                 "edition": "2025",
                 "id": "static-version-update",
-                "last_updated": "0001-01-01T00:00:00Z",
+                "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
                 "links": {
                     "dataset": {
                         "id": "static-dataset-update"
@@ -202,7 +202,7 @@ Feature: Static Dataset Versions PUT API
                 "edition": "2025",
                 "edition_title": "Updated 2025 Edition",
                 "id": "static-version-update",
-                "last_updated": "0001-01-01T00:00:00Z",
+                "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
                 "links": {
                     "dataset": {
                         "id": "static-dataset-update"
@@ -351,7 +351,10 @@ Feature: Static Dataset Versions PUT API
                         "self": {
                             "href": "/datasets/static-dataset-publish"
                         }
-                    }
+                    },
+                    "topics": [
+                        "economy-topic-id", "businessindustryandtrade-topic-id" 
+                    ]
                 },
                 "version": {
                     "id": "static-version-approved",
@@ -393,12 +396,12 @@ Feature: Static Dataset Versions PUT API
         And the total number of audit events should be 1
         And the number of events with action "UPDATE" and resource "/datasets/static-dataset-publish/editions/2025/versions/1/state" should be 1
         And the following URL prefixes are purged by cloudflare:
-            | http://localhost:20000/datasets/static-dataset-publish                           |
-            | http://localhost:20000/datasets/static-dataset-publish/editions                  |
-            | http://localhost:20000/datasets/static-dataset-publish/editions/2025/versions    |
-            | http://localhost:23200/v1/datasets/static-dataset-publish                        |
-            | http://localhost:23200/v1/datasets/static-dataset-publish/editions               |
-            | http://localhost:23200/v1/datasets/static-dataset-publish/editions/2025/versions |
+            | http://localhost:20000/economy/datasets/static-dataset-publish                           |
+            | http://localhost:20000/economy/datasets/static-dataset-publish/editions                  |
+            | http://localhost:20000/economy/datasets/static-dataset-publish/editions/2025/versions    |
+            | http://localhost:23200/v1/datasets/static-dataset-publish                                |
+            | http://localhost:23200/v1/datasets/static-dataset-publish/editions                       |
+            | http://localhost:23200/v1/datasets/static-dataset-publish/editions/2025/versions         |
 
     Scenario: PUT state fails with invalid state transition from associated to published
         Given private endpoints are enabled
@@ -533,7 +536,10 @@ Feature: Static Dataset Versions PUT API
                     "id": "static-dataset-published",
                     "title": "Static Dataset Published Test",
                     "state": "published",
-                    "type": "static"
+                    "type": "static",
+                    "topics": [
+                        "businessindustryandtrade-topic-id", "economy-topic-id"
+                    ]
                 },
                 "version": {
                     "id": "static-version-published",
@@ -583,12 +589,12 @@ Feature: Static Dataset Versions PUT API
             }
             """
         And the following URL prefixes are purged by cloudflare:
-            | http://localhost:20000/datasets/static-dataset-published                           |
-            | http://localhost:20000/datasets/static-dataset-published/editions                  |
-            | http://localhost:20000/datasets/static-dataset-published/editions/2025/versions    |
-            | http://localhost:23200/v1/datasets/static-dataset-published                        |
-            | http://localhost:23200/v1/datasets/static-dataset-published/editions               |
-            | http://localhost:23200/v1/datasets/static-dataset-published/editions/2025/versions |
+            | http://localhost:20000/businessindustryandtrade/datasets/static-dataset-published                           |
+            | http://localhost:20000/businessindustryandtrade/datasets/static-dataset-published/editions                  |
+            | http://localhost:20000/businessindustryandtrade/datasets/static-dataset-published/editions/2025/versions    |
+            | http://localhost:23200/v1/datasets/static-dataset-published                                                 |
+            | http://localhost:23200/v1/datasets/static-dataset-published/editions                                        |
+            | http://localhost:23200/v1/datasets/static-dataset-published/editions/2025/versions                          |
 
     Scenario: PUT succeeds when updating edition ID to unique value within series
         Given private endpoints are enabled
@@ -825,4 +831,114 @@ Feature: Static Dataset Versions PUT API
         And I should receive the following response:
             """
             spaces are not allowed in the ID field
+            """
+
+    Scenario: PUT Updating the first (canonical) topic on a published dataset returns a 400
+        Given I have these datasets:
+            """
+            [
+                {
+                    "id": "update-published-topic-test",
+                    "contacts": [
+                          {
+                            "email": "contact@ons.gov.uk",
+                            "name": "Expert Statistical Team",
+                            "telephone": "+44 1234 111111"
+                          }
+                        ],
+                        "description": "This dataset is for testing",
+                        "keywords": [
+                          "dataset"
+                        ],
+                        "license": "Open Government Licence v3.0",
+                        "next_release": "To be announced",
+                        "title": "Static Dataset for Testing topic change",
+                    "title": "Static Dataset for Updates",
+                    "state": "published",
+                    "topics": [
+                      "topic-1",
+                      "topic-2"
+                    ],
+                    "type": "static"
+                }
+            ]
+            """
+        And private endpoints are enabled
+        And I am an admin user
+        When I PUT "/datasets/update-published-topic-test"
+            """
+            {
+                "id": "update-published-topic-test",
+                "contacts": [
+                      {
+                        "email": "contact@ons.gov.uk",
+                        "name": "Expert Statistical Team",
+                        "telephone": "+44 1234 111111"
+                      }
+                    ],
+                    "description": "This dataset is for testing",
+                    "keywords": [
+                      "dataset"
+                    ],
+                    "license": "Open Government Licence v3.0",
+                    "next_release": "To be announced",
+                    "title": "Static Dataset for Testing topic change",
+                "title": "Static Dataset for Updates",
+                "state": "published",
+                "topics": [
+                  "updated-topic-1",
+                  "topic-2"
+                ],
+                "type": "static"
+            }
+            """
+        Then the HTTP status code should be "409"
+        And I should receive the following response:
+              """
+              canonical topic can't be changed once a series is published
+              """
+
+    Scenario: PUT updates static dataset version with is_migration field
+        Given private endpoints are enabled
+        And I am an admin user
+        When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
+            """
+            {
+                "is_migration": true,
+                "type": "static"
+            }
+            """
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "dataset_id": "static-dataset-update",
+                "distributions": [
+                    {
+                        "byte_size": 125000,
+                        "download_url": "/uuid/filename.csv",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "title": "csv"
+                    }
+                ],
+                "edition": "2025",
+                "id": "static-version-update",
+                "is_migration": true,
+                "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
+                "links": {
+                    "dataset": {
+                        "id": "static-dataset-update"
+                    },
+                    "edition": {
+                        "href": "/datasets/static-dataset-update/editions/2025",
+                        "id": "2025"
+                    },
+                    "self": {
+                        "href": "/datasets/static-dataset-update/editions/2025/versions/1"
+                    }
+                },
+                "release_date": "2025-01-01T09:00:00.000Z",
+                "state": "associated",
+                "type": "static"
+            }
             """

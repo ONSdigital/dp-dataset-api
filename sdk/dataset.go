@@ -353,6 +353,32 @@ func (c *Client) PutDataset(ctx context.Context, headers Headers, datasetID stri
 	return nil
 }
 
+// DeleteDataset deletes a dataset by ID
+func (c *Client) DeleteDataset(ctx context.Context, headers Headers, datasetID string) error {
+	var err error
+	uri := &url.URL{}
+	uri.Path, err = url.JoinPath(c.hcCli.URL, "datasets", datasetID)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.doAuthenticatedDeleteRequest(ctx, headers, uri)
+	if err != nil {
+		return err
+	}
+	defer closeResponseBody(ctx, resp)
+
+	if resp.StatusCode != http.StatusNoContent {
+		responseBody, err := getStringResponseBody(resp)
+		if err != nil {
+			return fmt.Errorf("did not receive success response. received status %d", resp.StatusCode)
+		}
+		return fmt.Errorf("did not receive success response. received status %d, response body: %s", resp.StatusCode, *responseBody)
+	}
+
+	return nil
+}
+
 // CreateDataset creates a new dataset by posting to the POST /datasets endpoint
 func (c *Client) CreateDataset(ctx context.Context, headers Headers, dataset models.Dataset) (models.DatasetUpdate, error) {
 	var datasetUpdate models.DatasetUpdate

@@ -22,7 +22,6 @@ var (
 	ErrAddUpdateDatasetBadRequest         = errors.New("failed to parse json body")
 	ErrConflictUpdatingInstance           = errors.New("conflict updating instance resource")
 	ErrDatasetNotFound                    = errors.New("dataset not found")
-	ErrDeleteDatasetNotFound              = errors.New("delete dataset not found")
 	ErrDeletePublishedDatasetForbidden    = errors.New("a published dataset cannot be deleted")
 	ErrDeletePublishedVersionForbidden    = errors.New("a published version cannot be deleted")
 	ErrDimensionNodeNotFound              = errors.New("dimension node not found")
@@ -62,6 +61,7 @@ var (
 	ErrFileNotInCorrectState              = errors.New("file not in correct state")
 	ErrInvalidParamCombination            = errors.New("cannot request state and published parameters at the same time")
 	ErrMethodNotAllowed                   = errors.New("method not allowed")
+	ErrPublishedDatasetTopicChange        = errors.New("canonical topic can't be changed once a series is published")
 
 	ErrExpectedResourceStateOfCreated          = errors.New("unable to update resource, expected resource to have a state of created")
 	ErrExpectedResourceStateOfSubmitted        = errors.New("unable to update resource, expected resource to have a state of submitted")

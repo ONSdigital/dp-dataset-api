@@ -38,14 +38,24 @@ const (
 	Invalid
 )
 
+const (
+	filterableType              = "filterable"
+	cantabularTableType         = "cantabular_table"
+	cantabularBlobType          = "cantabular_blob"
+	cantabularFlexibleTableType = "cantabular_flexible_table"
+	cantabularMultivariateType  = "cantabular_multivariate_table"
+	staticType                  = "static"
+	invalidType                 = "invalid"
+)
+
 var datasetTypes = []string{
-	"filterable",
-	"cantabular_table",
-	"cantabular_blob",
-	"cantabular_flexible_table",
-	"cantabular_multivariate_table",
-	"static",
-	"invalid",
+	filterableType,
+	cantabularTableType,
+	cantabularBlobType,
+	cantabularFlexibleTableType,
+	cantabularMultivariateType,
+	staticType,
+	invalidType,
 }
 
 func (dt DatasetType) String() string {
@@ -53,21 +63,19 @@ func (dt DatasetType) String() string {
 }
 
 // GetDatasetType returns a dataset type for a given dataset
-//
-//nolint:goconst // "static" is part of a type definition slice
 func GetDatasetType(datasetType string) (DatasetType, error) {
 	switch datasetType {
-	case "filterable", "v4", "":
+	case filterableType, "v4", "":
 		return Filterable, nil
-	case "cantabular_table":
+	case cantabularTableType:
 		return CantabularTable, nil
-	case "cantabular_blob":
+	case cantabularBlobType:
 		return CantabularBlob, nil
-	case "cantabular_flexible_table":
+	case cantabularFlexibleTableType:
 		return CantabularFlexibleTable, nil
-	case "cantabular_multivariate_table":
+	case cantabularMultivariateType:
 		return CantabularMultivariateTable, nil
-	case "static":
+	case staticType:
 		return Static, nil
 	default:
 		return Invalid, errs.ErrDatasetTypeInvalid
@@ -181,6 +189,7 @@ type Edition struct {
 	Alerts             *[]Alert            `bson:"alerts,omitempty"              json:"alerts,omitempty"`
 	UsageNotes         *[]UsageNote        `bson:"usage_notes,omitempty"         json:"usage_notes,omitempty"`
 	Distributions      *[]Distribution     `bson:"distributions,omitempty"       json:"distributions,omitempty"`
+	IsMigration        *bool               `bson:"is_migration,omitempty"        json:"is_migration,omitempty"`
 	IsBasedOn          *IsBasedOn          `bson:"is_based_on,omitempty"         json:"is_based_on,omitempty"`
 	Type               string              `bson:"type,omitempty"                json:"type,omitempty"`
 	QualityDesignation QualityDesignation  `bson:"quality_designation,omitempty" json:"quality_designation,omitempty"`

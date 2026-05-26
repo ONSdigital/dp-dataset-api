@@ -12,8 +12,9 @@ import (
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
 )
 
-// getAuthEntityData returns the EntityData associated with the provided access token
-func (api *DatasetAPI) getAuthEntityData(r *http.Request) (*permissionsAPISDK.EntityData, error) {
+// getAuthEntityData returns the AuthEntityData associated with the provided access token,
+// including whether the token belongs to a service account or user
+func (api *DatasetAPI) getAuthEntityData(r *http.Request) (*AuthEntityData, error) {
 	accessToken := strings.TrimPrefix(r.Header.Get(request.AuthHeaderKey), request.BearerPrefix)
 	entityData, err := api.authMiddleware.Parse(accessToken)
 	if err != nil {
@@ -23,12 +24,31 @@ func (api *DatasetAPI) getAuthEntityData(r *http.Request) (*permissionsAPISDK.En
 			return nil, fmt.Errorf("failed to parse access token: %w", err)
 		}
 		// valid
-		entityData = &permissionsAPISDK.EntityData{UserID: resp.Identifier}
+		return CreateAuthEntityData(&permissionsAPISDK.EntityData{UserID: resp.Identifier}, true), nil
 	}
-	return entityData, nil
+	return CreateAuthEntityData(entityData, false), nil
 }
 
 // getAccessTokenFromRequest extracts the access token from the Authorization header of the request
 func getAccessTokenFromRequest(r *http.Request) string {
 	return strings.TrimPrefix(r.Header.Get(dprequest.AuthHeaderKey), dprequest.BearerPrefix)
+}
+
+// AuthEntityData holds the entity data for an authenticated request along with
+// whether the request was made by a service account or user
+type AuthEntityData struct {
+	EntityData    *permissionsAPISDK.EntityData
+	IsServiceAuth bool
+}
+
+// CreateAuthEntityData creates an AuthEntityData from the provided EntityData and
+// a bool indicating whether the token belongs to a service account
+func CreateAuthEntityData(entityData *permissionsAPISDK.EntityData, isService bool) *AuthEntityData {
+	return &AuthEntityData{
+		EntityData: &permissionsAPISDK.EntityData{
+			UserID: entityData.UserID,
+			Groups: entityData.Groups,
+		},
+		IsServiceAuth: isService,
+	}
 }
