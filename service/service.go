@@ -382,7 +382,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 
 	// Set the topic API client on the DatasetAPI after initialisation
 	if svc.config.EnablePrivateEndpoints && svc.topicAPIClient != nil {
-		svc.api.SetTopicAPIClient(svc.topicAPIClient)
+		svc.smDS.SetTopicAPIClient(svc.topicAPIClient)
 		log.Info(ctx, "topic API client set on dataset API")
 	}
 

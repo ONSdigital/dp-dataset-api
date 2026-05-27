@@ -4666,9 +4666,7 @@ func TestPutStateReturnsOk(t *testing.T) {
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1/state", bytes.NewBufferString(`{"state":"published"}`))
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &storetest.StorerMock{
-			GetVersionStaticFunc: func(ctx context.Context, datasetID string, editionID string, version int, state string) (*models.Version, error) {
-				jsonData := `{
+		jsonData := `{
 						"alerts": [
 						  {}
 						],
@@ -4694,11 +4692,13 @@ func TestPutStateReturnsOk(t *testing.T) {
 						},
 						"release_date": "2025-01-15",
 						"state": "associated",
-						"temporal": [
+						"distributions": [
 						  {
-							"end_date": "2025-01-31",
-							"frequency": "Monthly",
-							"start_date": "2025-01-01"
+							"title": "Full Dataset (CSV)",
+							"download_url": "test/test.csv",
+							"byte_size": 4300000,
+							"format": "csv",
+							"media_type": "text/csv"
 						  }
 						],
 						"usage_notes": [
@@ -4711,17 +4711,18 @@ func TestPutStateReturnsOk(t *testing.T) {
 						"type": "static"
 					  }`
 
-				var versionModel models.Version
+		var versionModel models.Version
 
-				err := json.Unmarshal([]byte(jsonData), &versionModel)
-				So(err, ShouldBeNil)
+		err := json.Unmarshal([]byte(jsonData), &versionModel)
+		So(err, ShouldBeNil)
 
-				versionModel.Links.Version = &models.LinkObject{
-					ID:   "1",
-					HRef: "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1",
-				}
+		versionModel.Links.Version = &models.LinkObject{
+			ID:   "1",
+			HRef: "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1",
+		}
 
-				versionModel.Distributions = nil
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionStaticFunc: func(ctx context.Context, datasetID string, editionID string, version int, state string) (*models.Version, error) {
 
 				return &versionModel, nil
 			},
@@ -4739,6 +4740,10 @@ func TestPutStateReturnsOk(t *testing.T) {
 
 			UpdateVersionStaticFunc: func(ctx context.Context, currentVersion *models.Version, versionUpdate *models.Version, eTagSelector string) (string, error) {
 				return "", nil
+			},
+
+			UpdateStateStaticFunc: func(ctx context.Context, currentVersion *models.Version, updatedState *models.StateUpdate, eTagSelector string) (*models.Version, error) {
+				return &versionModel, nil
 			},
 
 			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
@@ -4844,6 +4849,7 @@ func TestPutStateReturnsOk(t *testing.T) {
 		So(mockedDataStore.AcquireVersionsLockCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.UnlockVersionsCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.UpdateVersionStaticCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpdateStateStaticCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.GetDatasetTypeCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 2)
 		So(mockedDataStore.UpsertVersionStaticCalls(), ShouldHaveLength, 1)

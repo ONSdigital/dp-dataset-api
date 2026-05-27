@@ -21,6 +21,7 @@ import (
 	kafka "github.com/ONSdigital/dp-kafka/v4"
 	dprequest "github.com/ONSdigital/dp-net/v3/request"
 	"github.com/ONSdigital/dp-permissions-api/sdk"
+	topicAPISDK "github.com/ONSdigital/dp-topic-api/sdk"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/jinzhu/copier"
 	"github.com/pkg/errors"
@@ -67,6 +68,12 @@ type StateMachineDatasetAPI struct {
 	cloudflareClient             cloudflare.Clienter
 	cloudflareEnabled            bool
 	urlBuilder                   *url.Builder
+	topicAPIClient               topicAPISDK.Clienter
+}
+
+// SetTopicAPIClient sets the topic API client for the API
+func (smDS *StateMachineDatasetAPI) SetTopicAPIClient(client topicAPISDK.Clienter) {
+	smDS.topicAPIClient = client
 }
 
 // SetFilesAPIClient sets the files API client and auth token for the API
@@ -761,10 +768,27 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 
 				// Purge Cloudflare cache if enabled and version is being published
 				if smDS.cloudflareEnabled {
-					prefixes := utils.GeneratePurgePrefixes(smDS.urlBuilder.GetPublicWebsiteURL().String(), smDS.urlBuilder.GetAPIRouterPublicURL().String(), versionDetails.datasetID, versionDetails.edition, versionDetails.version)
+
+					dataset, err := smDS.DataStore.Backend.GetDataset(ctx, versionDetails.datasetID)
+					if err != nil {
+						log.Error(ctx, "Publish version: failed to get dataset", err, logData)
+						return updatedV, err
+					}
+
+					topicSDKHeaders := topicAPISDK.Headers{
+						ServiceAuthToken: accessToken,
+					}
+
+					// Retrieve canonical topic from Topic API in order to get topic slug
+					topic, err := smDS.topicAPIClient.GetTopicPrivate(ctx, topicSDKHeaders, dataset.Next.Topics[0])
+					if err != nil {
+						log.Error(ctx, "Publish version: failed to get topic from Topic API", err, logData)
+						return updatedV, err
+					}
+					prefixes := utils.GeneratePurgePrefixes(smDS.urlBuilder.GetPublicWebsiteURL().String(), smDS.urlBuilder.GetAPIRouterPublicURL().String(), topic.Next.Slug, versionDetails.datasetID, versionDetails.edition, versionDetails.version)
 					logData["purge_prefixes"] = prefixes
 
-					err := smDS.cloudflareClient.PurgeByPrefixes(ctx, prefixes)
+					err = smDS.cloudflareClient.PurgeByPrefixes(ctx, prefixes)
 					if err != nil {
 						log.Error(ctx, "putState endpoint: failed to purge cache by prefixes", err, logData)
 					} else {
@@ -1002,14 +1026,6 @@ func (smDS *StateMachineDatasetAPI) DeleteStaticVersion(ctx context.Context, dat
 }
 
 func (smDS *StateMachineDatasetAPI) publishDistributionFiles(ctx context.Context, version *models.Version, logData log.Data, accessToken string) error {
-	// if api.filesAPIClient == nil {
-	// 	return fmt.Errorf("files API client not configured")
-	// }
-
-	// Already validated above
-	// if version.Distributions == nil || len(*version.Distributions) == 0 {
-	// 	return nil
-	// }
 
 	var lastError error
 	var filesAPIError error

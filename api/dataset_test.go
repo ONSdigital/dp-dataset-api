@@ -197,7 +197,7 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 		}
 	}
 
-	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, authorisationMock, enableURLRewriting, &mockStatemachineDatasetAPI, auditServiceMock, permissionsChecker, testIdentityClient, &searchContentUpdated, cloudflareMock)
+	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, authorisationMock, enableURLRewriting, &mockStatemachineDatasetAPI, auditServiceMock, permissionsChecker, testIdentityClient)
 }
 
 // GetAPIWithCMDMocks also used in other tests, so exported
@@ -257,7 +257,7 @@ func GetAPIWithCantabularMocks(mockedDataStore store.Storer, mockedGeneratedDown
 
 	permissionsChecker := &authMock.PermissionsCheckerMock{}
 
-	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, authorisationMock, enableURLRewriting, &mockStatemachineDatasetAPI, auditServiceMock, permissionsChecker, testIdentityClient, nil, cloudflareMock)
+	return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, authorisationMock, enableURLRewriting, &mockStatemachineDatasetAPI, auditServiceMock, permissionsChecker, testIdentityClient)
 }
 
 func createRequestWithAuth(method, target string, body io.Reader) *http.Request {
@@ -729,7 +729,7 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := GetWebAPIWithMocks(context.Background(), mockedDataStore, &mocks.DownloadsGeneratorMock{}, &authMock.MiddlewareMock{}, &authMock.PermissionsCheckerMock{}, &clientsidentity.Client{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetWebAPIWithMocks(context.Background(), mockedDataStore, &mocks.DownloadsGeneratorMock{}, &authMock.MiddlewareMock{}, &authMock.PermissionsCheckerMock{}, &clientsidentity.Client{}, &applicationMocks.AuditServiceMock{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -770,7 +770,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetWebAPIWithMocks(context.Background(), mockedDataStore, &mocks.DownloadsGeneratorMock{}, &authMock.MiddlewareMock{}, &authMock.PermissionsCheckerMock{}, &clientsidentity.Client{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetWebAPIWithMocks(context.Background(), mockedDataStore, &mocks.DownloadsGeneratorMock{}, &authMock.MiddlewareMock{}, &authMock.PermissionsCheckerMock{}, &clientsidentity.Client{}, &applicationMocks.AuditServiceMock{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
