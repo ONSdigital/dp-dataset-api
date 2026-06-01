@@ -376,6 +376,15 @@ Feature: Static Dataset Versions PUT API
                             "id": "1"
                         }
                     },
+                    "distributions": [
+                        {
+                            "title": "Full Dataset (CSV)",
+                            "byte_size": 4300000,
+                            "download_url": "testing/test.csv",
+                            "format": "csv",
+                            "media_type": "text/csv"
+                        }
+                    ],
                     "version": 1,
                     "release_date": "2025-02-01T09:00:00.000Z",
                     "state": "approved",

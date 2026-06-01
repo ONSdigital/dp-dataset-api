@@ -550,6 +550,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("GOT IN TO THE HANDLER")
 	defer dphttp.DrainBody(r)
 
 	ctx := r.Context()
@@ -906,6 +907,8 @@ func getVersionAPIErrStatusCode(err error) int {
 		status = http.StatusBadRequest
 	case strings.HasPrefix(err.Error(), "state not allowed to transition"):
 		status = http.StatusBadRequest
+	case strings.HasPrefix(err.Error(), "incorrect state,"):
+		status = http.StatusBadRequest
 	case strings.HasPrefix(err.Error(), "a published version cannot be deleted"):
 		status = http.StatusForbidden
 	case strings.Contains(err.Error(), "format field is missing"):
@@ -1000,6 +1003,12 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&stateUpdate); err != nil {
 		log.Error(ctx, "putState endpoint: failed to unmarshal state update", err, logData)
 		handleVersionAPIErr(ctx, errs.ErrUnableToParseJSON, w, logData)
+		return
+	}
+
+	if stateUpdate.State == "" {
+		log.Error(ctx, "putState endpoint: invalid state", err, logData)
+		handleVersionAPIErr(ctx, errs.ErrStateNotFound, w, logData)
 		return
 	}
 

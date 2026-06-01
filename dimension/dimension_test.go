@@ -2071,5 +2071,5 @@ func getAPIWithCMDMocks(ctx context.Context, mockedDataStore store.Storer, mocke
 
 	testIdentityClient := clientsidentity.New(cfg.ZebedeeURL)
 
-	return api.Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, downloadGenerators, authorisationMock, enableURLRewriting, &mockStatemachineDatasetAPI, auditServiceMock, permissionsChecker, testIdentityClient, nil, cloudflareMock)
+	return api.Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, downloadGenerators, authorisationMock, enableURLRewriting, &mockStatemachineDatasetAPI, auditServiceMock, permissionsChecker, testIdentityClient, nil)
 }

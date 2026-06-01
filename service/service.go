@@ -240,21 +240,11 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		return err
 	}
 
-	if err := svc.initFilesAPIClient(ctx); err != nil {
-		return err
-	}
-
-	if err := svc.initCloudflareClient(ctx); err != nil {
-		return err
-	}
-
-	svc.initTopicAPIClient(ctx)
-
 	ds := store.DataStore{Backend: DatsetAPIStore{svc.mongoDB, svc.graphDB}}
 
-	// Get GenerateDownloads Kafka Producer
+	// Set clients only required in publishing mode
 	if !svc.config.EnablePrivateEndpoints {
-		log.Info(ctx, "skipping kafka producer creation, because it is not required by the enabled endpoints", log.Data{
+		log.Info(ctx, "skipping kafka producer, filesAPI, topicAPI, and cloudflare client creation, because they are not required by the enabled endpoints", log.Data{
 			"EnablePrivateEndpoints": svc.config.EnablePrivateEndpoints,
 		})
 	} else {
@@ -273,6 +263,16 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 			log.Fatal(ctx, "could not obtain search content updated producer", err)
 			return err
 		}
+
+		if err := svc.initFilesAPIClient(ctx); err != nil {
+			return err
+		}
+
+		if err := svc.initCloudflareClient(ctx); err != nil {
+			return err
+		}
+
+		svc.initTopicAPIClient(ctx)
 	}
 
 	downloadGeneratorCantabular := &download.CantabularGenerator{
@@ -365,26 +365,12 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		svc.searchContentUpdatedKafkaProducer.LogErrors(ctx)
 	}
 
-	// will need to look at this for web mode
 	sm := GetStateMachine(ctx, ds)
-	svc.smDS = application.Setup(ds, smDownloadGenerators, sm, searchContentUpdatedProducer, svc.cloudflareClient, svc.config.CloudflareEnabled, urlBuilder)
+	svc.smDS = application.Setup(ds, smDownloadGenerators, sm, searchContentUpdatedProducer, svc.cloudflareClient, svc.config.CloudflareEnabled, urlBuilder, svc.topicAPIClient, svc.filesAPIClient)
 
 	auditService := application.NewAuditService(ds)
 
-	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, authorisation, enableURLRewriting, svc.smDS, auditService, permissionChecker, svc.identityClient)
-
-	// Set the files API client on the DatasetAPI after initialisation
-	if svc.config.EnablePrivateEndpoints && svc.filesAPIClient != nil {
-		svc.api.SetFilesAPIClient(svc.filesAPIClient, svc.config.ServiceAuthToken)
-		svc.smDS.SetFilesAPIClient(svc.filesAPIClient, svc.config.ServiceAuthToken)
-		log.Info(ctx, "files API client set on dataset API")
-	}
-
-	// Set the topic API client on the DatasetAPI after initialisation
-	if svc.config.EnablePrivateEndpoints && svc.topicAPIClient != nil {
-		svc.smDS.SetTopicAPIClient(svc.topicAPIClient)
-		log.Info(ctx, "topic API client set on dataset API")
-	}
+	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, authorisation, enableURLRewriting, svc.smDS, auditService, permissionChecker, svc.identityClient, svc.filesAPIClient)
 
 	svc.healthCheck.Start(ctx)
 
@@ -613,10 +599,10 @@ func (svc *Service) registerCheckers(ctx context.Context) (err error) {
 			log.Error(ctx, "error adding check for search content updated kafka producer", err)
 		}
 
-		// if err = svc.healthCheck.AddCheck("Files API Client", svc.filesAPIClient.Checker); err != nil {
-		// 	hasErrors = true
-		// 	log.Error(ctx, "error adding check for files api client", err)
-		// }
+		if err = svc.healthCheck.AddCheck("Files API Client", svc.filesAPIClient.Checker); err != nil {
+			hasErrors = true
+			log.Error(ctx, "error adding check for files api client", err)
+		}
 
 		if err = svc.healthCheck.AddCheck("Topic API Client", svc.topicAPIClient.Checker); err != nil {
 			hasErrors = true

@@ -74,7 +74,6 @@ type dataMongoDB interface {
 	AcquireInstanceLock(ctx context.Context, instanceID string) (lockID string, err error)
 	UnlockInstance(ctx context.Context, lockID string)
 	AcquireVersionsLock(ctx context.Context, versionID string) (lockID string, err error)
-	//AcquireVersionsSLock(ctx context.Context, versionID string, maxConcurrent int) (lockID string, err error)
 	UnlockVersions(ctx context.Context, lockID string)
 	RemoveDatasetVersionAndEditionLinks(ctx context.Context, id string) error
 	DeleteStaticDatasetVersion(ctx context.Context, datasetID, editionID string, version int) error

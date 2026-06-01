@@ -19,14 +19,8 @@ import (
 
 // AcquireVersionsLock tries to lock the provided versionID.
 func (m *Mongo) AcquireVersionsLock(ctx context.Context, versionID string) (lockID string, err error) {
-
 	return m.lockClientVersionsCollection.Acquire(ctx, versionID)
 }
-
-// AcquireVersionsSLock tries to create multiple locks (used for concurrent processing).
-// func (m *Mongo) AcquireVersionsSLock(ctx context.Context, versionID string, maxConcurrent int) (lockID string, err error) {
-// 	return m.lockClientVersionsCollection.AcquireSLock(ctx, versionID, maxConcurrent)
-// }
 
 func (m *Mongo) UnlockVersions(ctx context.Context, lockID string) {
 	m.lockClientVersionsCollection.Unlock(ctx, lockID)
@@ -263,7 +257,6 @@ func (m *Mongo) UpdateVersionStatic(ctx context.Context, currentVersion, version
 
 // UpdateVersionStatic updates an existing version document
 func (m *Mongo) UpdateStateStatic(ctx context.Context, currentVersion *models.Version, updatedState *models.StateUpdate, eTagSelector string) (updatedVersion *models.Version, err error) {
-
 	update := bson.M{
 		"$set": bson.M{
 			"state":        updatedState.State,

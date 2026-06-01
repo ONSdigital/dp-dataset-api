@@ -17,6 +17,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	filesAPISDKMocks "github.com/ONSdigital/dp-files-api/sdk/mocks"
 	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
 	"go.mongodb.org/mongo-driver/bson"
@@ -379,5 +380,5 @@ func GetWebAPIWithMocks(ctx context.Context, mockedDataStore store.Storer, mocke
 	cfg.DatasetAPIURL = host
 	cfg.EnablePrivateEndpoints = false
 
-	return Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapDownloadGenerators, authorisationMock, enableURLRewriting, &mockStatemachineDatasetAPI, auditServiceMock, permissionsMock, testIDClient)
+	return Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapDownloadGenerators, authorisationMock, enableURLRewriting, &mockStatemachineDatasetAPI, auditServiceMock, permissionsMock, testIDClient, &filesAPISDKMocks.ClienterMock{})
 }

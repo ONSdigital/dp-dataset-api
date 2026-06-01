@@ -2,13 +2,26 @@ package application
 
 import (
 	"context"
+	neturl "net/url"
 	"testing"
 
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	"github.com/ONSdigital/dp-dataset-api/url"
 	. "github.com/smartystreets/goconvey/convey"
+)
+
+var (
+	codeListAPIURL     = &neturl.URL{Scheme: "http", Host: "localhost:22400"}
+	datasetAPIURL      = &neturl.URL{Scheme: "http", Host: "localhost:22000"}
+	downloadServiceURL = &neturl.URL{Scheme: "http", Host: "localhost:23600"}
+	importAPIURL       = &neturl.URL{Scheme: "http", Host: "localhost:21800"}
+	publicWebsiteURL   = &neturl.URL{Scheme: "http", Host: "localhost:20000"}
+	privateWebsiteURL  = &neturl.URL{Scheme: "http", Host: "localhost:20000"}
+	apiRouterPublicURL = &neturl.URL{Scheme: "http", Host: "localhost:23200", Path: "v1"}
+	urlBuilder         = url.NewBuilder(publicWebsiteURL, privateWebsiteURL, downloadServiceURL, datasetAPIURL, codeListAPIURL, importAPIURL, apiRouterPublicURL)
 )
 
 func TestCastStateToState(t *testing.T) {
@@ -48,10 +61,10 @@ func TestTransition(t *testing.T) {
 	}
 
 	stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
-	smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+	smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, urlBuilder, nil, nil)
 
 	Convey("The transition is successful", t, func() {
-		err := smDS.StateMachine.Transition(testContext, smDS, currentVersionEditionConfirmed, versionUpdateAssociated, versionDetails, "true")
+		err := smDS.StateMachine.Transition(testContext, smDS, currentVersionEditionConfirmed, versionUpdateAssociated, versionDetails, "true", nil, "")
 
 		So(err, ShouldBeNil)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
@@ -74,7 +87,7 @@ func TestTransition(t *testing.T) {
 			CollectionID: "3434",
 		}
 
-		err := smDS.StateMachine.Transition(testContext, smDS, currentIncorrectState, incorrectStateVersion, versionDetails, "true")
+		err := smDS.StateMachine.Transition(testContext, smDS, currentIncorrectState, incorrectStateVersion, versionDetails, "true", nil, "")
 
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldContainSubstring, "state not allowed to transition")
@@ -95,7 +108,7 @@ func TestTransition(t *testing.T) {
 			ID:          "789",
 		}
 
-		err := smDS.StateMachine.Transition(testContext, smDS, currentVersionApproved, versionUpdateApproved, versionDetails, "true")
+		err := smDS.StateMachine.Transition(testContext, smDS, currentVersionApproved, versionUpdateApproved, versionDetails, "true", nil, "")
 
 		So(err, ShouldBeNil)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 2)

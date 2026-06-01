@@ -63,34 +63,24 @@ type StateMachineDatasetAPI struct {
 	DownloadGenerators           map[models.DatasetType]DownloadsGenerator
 	StateMachine                 *StateMachine
 	FilesAPIClient               filesAPISDK.Clienter
-	authToken                    string
-	searchContentUpdatedProducer *SearchContentUpdatedProducer
-	cloudflareClient             cloudflare.Clienter
-	cloudflareEnabled            bool
-	urlBuilder                   *url.Builder
-	topicAPIClient               topicAPISDK.Clienter
+	SearchContentUpdatedProducer *SearchContentUpdatedProducer
+	CloudflareClient             cloudflare.Clienter
+	CloudflareEnabled            bool
+	UrlBuilder                   *url.Builder
+	TopicAPIClient               topicAPISDK.Clienter
 }
 
-// SetTopicAPIClient sets the topic API client for the API
-func (smDS *StateMachineDatasetAPI) SetTopicAPIClient(client topicAPISDK.Clienter) {
-	smDS.topicAPIClient = client
-}
-
-// SetFilesAPIClient sets the files API client and auth token for the API
-func (smDS *StateMachineDatasetAPI) SetFilesAPIClient(client filesAPISDK.Clienter, authToken string) {
-	smDS.FilesAPIClient = client
-	smDS.authToken = authToken
-}
-
-func Setup(dataStoreVal store.DataStore, downloadGenerators map[models.DatasetType]DownloadsGenerator, stateMachine *StateMachine, searchContentUpdatedProducer *SearchContentUpdatedProducer, cloudflareClient cloudflare.Clienter, cloudflareEnabled bool, urlBuilder *url.Builder) *StateMachineDatasetAPI {
+func Setup(dataStoreVal store.DataStore, downloadGenerators map[models.DatasetType]DownloadsGenerator, stateMachine *StateMachine, searchContentUpdatedProducer *SearchContentUpdatedProducer, cloudflareClient cloudflare.Clienter, cloudflareEnabled bool, urlBuilder *url.Builder, topicAPIClient topicAPISDK.Clienter, filesAPIClient filesAPISDK.Clienter) *StateMachineDatasetAPI {
 	newDS := &StateMachineDatasetAPI{
 		DataStore:                    dataStoreVal,
 		DownloadGenerators:           downloadGenerators,
 		StateMachine:                 stateMachine,
-		searchContentUpdatedProducer: searchContentUpdatedProducer,
-		cloudflareClient:             cloudflareClient,
-		cloudflareEnabled:            cloudflareEnabled,
-		urlBuilder:                   urlBuilder,
+		SearchContentUpdatedProducer: searchContentUpdatedProducer,
+		CloudflareClient:             cloudflareClient,
+		CloudflareEnabled:            cloudflareEnabled,
+		UrlBuilder:                   urlBuilder,
+		TopicAPIClient:               topicAPIClient,
+		FilesAPIClient:               filesAPIClient,
 	}
 
 	return newDS
@@ -207,42 +197,6 @@ func (smDS *StateMachineDatasetAPI) PopulateVersionInfo(ctx context.Context, ver
 			}
 		}
 	}
-
-	// if versionUpdate != nil {
-	// 	if versionUpdate.Type == models.Static.String() {
-	// 		// currentVersion, err = smDS.DataStore.Backend.GetVersionStatic(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
-	// 		// if err != nil {
-	// 		// 	log.Error(ctx, "UpdateVersion: datastore.GetVersionStatic returned an error", err, data)
-	// 		// 	return nil, nil, err
-	// 		// }
-	// 	} else {
-	// 		currentVersion, err = smDS.DataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
-	// 		if err != nil {
-	// 			log.Error(ctx, "UpdateVersion: datastore.GetVersion returned an error", err, data)
-	// 			return nil, nil, err
-	// 		}
-	// 	}
-	// }
-
-	// if versionUpdate != nil && versionUpdate.Edition != "" && versionUpdate.Edition != currentVersion.Edition {
-	// 	if currentVersion.Type == models.Static.String() {
-	// 		// err = smDS.DataStore.Backend.CheckEditionExistsStatic(ctx, versionDetails.datasetID, versionUpdate.Edition, "")
-	// 		// if err == nil {
-	// 		// 	log.Error(ctx, "UpdateVersion: edition-id already exists", errs.ErrEditionAlreadyExists, log.Data{
-	// 		// 		"dataset_id":       versionDetails.datasetID,
-	// 		// 		"existing_edition": currentVersion.Edition,
-	// 		// 		"new_edition":      versionUpdate.Edition,
-	// 		// 	})
-	// 		// 	return nil, nil, errs.ErrEditionAlreadyExists
-	// 		// } else if err != errs.ErrEditionNotFound {
-	// 		// 	log.Error(ctx, "UpdateVersion: error checking if edition exists", err, data)
-	// 		// 	return nil, nil, err
-	// 		// }
-	// 	} else {
-	// 		log.Error(ctx, "UpdateVersion: attempted to update edition-id for non-static dataset type", errs.ErrInvalidDatasetTypeForEditionUpdate, data)
-	// 		return nil, nil, errs.ErrInvalidDatasetTypeForEditionUpdate
-	// 	}
-	// }
 
 	// doUpdate is an aux function that combines the existing version document with the update received in the body request,
 	// then it validates the new model, and performs the update in MongoDB, passing the existing model ETag (if it exists) to be used in the query selector
@@ -592,15 +546,6 @@ func PublishVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 	data := versionDetails.baseLogData()
 	log.Info(ctx, "putVersion endpoint (publishVersion): beginning transition to published", data)
 
-	// This needs to do the validation on required fields etc.
-	// if versionUpdate.Type != "static" {
-	// 	err := models.ValidateVersion(versionUpdate)
-	// 	if err != nil {
-	// 		log.Error(ctx, "State machine - Publishing: ValidateVersion : failed to validate version", err, data)
-	// 		return err
-	// 	}
-	// }
-
 	versionUpdate, err := PublishVersionInfo(ctx, smDS, currentVersion, versionUpdate, versionDetails, authEntityData, accessToken)
 	if err != nil {
 		log.Error(ctx, "State machine - Publish: UpdateVersionInfo : failed to update the version", err, data)
@@ -714,7 +659,6 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 	versionDetails VersionDetails,
 	authEntityData *sdk.EntityData,
 	accessToken string) (updatedVersion *models.Version, err error) {
-
 	logData := log.Data{"dataset_id": versionDetails.datasetID, "edition": versionDetails.edition, "version": versionDetails.version}
 	eTag := headers.IfMatchAnyETag
 	if currentVersion.ETag != "" {
@@ -733,14 +677,13 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 	var doUpdate = func() (*models.Version, error) {
 		if versionUpdate != nil {
 			if versionUpdate.Type == models.Static.String() {
-
 				updatedV, errVersion := smDS.DataStore.Backend.UpdateStateStatic(ctx, currentVersion, &models.StateUpdate{State: "published"}, eTag)
 				if errVersion != nil {
 					log.Error(ctx, "putVersion endpoint: UpdateVersionStatic returned an error", err)
 					return nil, errVersion
 				}
 
-				err = smDS.publishDistributionFiles(ctx, updatedV, log.Data{}, accessToken)
+				err = smDS.publishDistributionFiles(ctx, updatedV, accessToken)
 				if err != nil {
 					log.Error(ctx, "putState endpoint: failed to publish distribution files", err, log.Data{})
 					return updatedV, err
@@ -761,14 +704,13 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 					return updatedV, err
 				} else {
 					go func() {
-						smDS.searchContentUpdatedProducer.Producer.Output() <- kafka.BytesMessage{Value: jsonBytes, Context: ctx}
+						smDS.SearchContentUpdatedProducer.Producer.Output() <- kafka.BytesMessage{Value: jsonBytes, Context: ctx}
 					}()
 					log.Info(ctx, "putState endpoint: queued search content update for kafka", logData)
 				}
 
 				// Purge Cloudflare cache if enabled and version is being published
-				if smDS.cloudflareEnabled {
-
+				if smDS.CloudflareEnabled {
 					dataset, err := smDS.DataStore.Backend.GetDataset(ctx, versionDetails.datasetID)
 					if err != nil {
 						log.Error(ctx, "Publish version: failed to get dataset", err, logData)
@@ -780,15 +722,15 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 					}
 
 					// Retrieve canonical topic from Topic API in order to get topic slug
-					topic, err := smDS.topicAPIClient.GetTopicPrivate(ctx, topicSDKHeaders, dataset.Next.Topics[0])
+					topic, err := smDS.TopicAPIClient.GetTopicPrivate(ctx, topicSDKHeaders, dataset.Next.Topics[0])
 					if err != nil {
 						log.Error(ctx, "Publish version: failed to get topic from Topic API", err, logData)
 						return updatedV, err
 					}
-					prefixes := utils.GeneratePurgePrefixes(smDS.urlBuilder.GetPublicWebsiteURL().String(), smDS.urlBuilder.GetAPIRouterPublicURL().String(), topic.Next.Slug, versionDetails.datasetID, versionDetails.edition, versionDetails.version)
+					prefixes := utils.GeneratePurgePrefixes(smDS.UrlBuilder.GetPublicWebsiteURL().String(), smDS.UrlBuilder.GetAPIRouterPublicURL().String(), topic.Next.Slug, versionDetails.datasetID, versionDetails.edition, versionDetails.version)
 					logData["purge_prefixes"] = prefixes
 
-					err = smDS.cloudflareClient.PurgeByPrefixes(ctx, prefixes)
+					err = smDS.CloudflareClient.PurgeByPrefixes(ctx, prefixes)
 					if err != nil {
 						log.Error(ctx, "putState endpoint: failed to purge cache by prefixes", err, logData)
 					} else {
@@ -1025,8 +967,7 @@ func (smDS *StateMachineDatasetAPI) DeleteStaticVersion(ctx context.Context, dat
 	return versionDoc, nil
 }
 
-func (smDS *StateMachineDatasetAPI) publishDistributionFiles(ctx context.Context, version *models.Version, logData log.Data, accessToken string) error {
-
+func (smDS *StateMachineDatasetAPI) publishDistributionFiles(ctx context.Context, version *models.Version, accessToken string) error {
 	var lastError error
 	var filesAPIError error
 	totalFiles := len(*version.Distributions)
@@ -1034,8 +975,8 @@ func (smDS *StateMachineDatasetAPI) publishDistributionFiles(ctx context.Context
 
 	var wg sync.WaitGroup
 	ch := make(chan string, totalFiles)
+	errCh := make(chan error, totalFiles)
 
-	//for index, distribution := range *version.Distributions {
 	for index := range *version.Distributions {
 		distribution := &(*version.Distributions)[index]
 		wg.Add(1)
@@ -1051,13 +992,18 @@ func (smDS *StateMachineDatasetAPI) publishDistributionFiles(ctx context.Context
 			"distribution_format": distribution.Format,
 		}
 
-		go publishFile(ctx, smDS.FilesAPIClient, *distribution, accessToken, ch, &wg)
+		go publishFile(ctx, smDS.FilesAPIClient, *distribution, accessToken, ch, &wg, errCh)
 
 		successCount++
 		log.Info(ctx, "successfully published file", fileLogData)
 	}
 
 	wg.Wait()
+	close(errCh)
+	for err := range errCh {
+		filesAPIError = err
+		log.Error(ctx, "something went wrong when processing content items", err)
+	}
 
 	log.Info(ctx, "completed publishing distribution files", log.Data{
 		"total_files": totalFiles,
@@ -1076,7 +1022,7 @@ func (smDS *StateMachineDatasetAPI) publishDistributionFiles(ctx context.Context
 	return nil
 }
 
-func publishFile(ctx context.Context, filesAPIClient filesAPISDK.Clienter, distribution models.Distribution, accessToken string, ch chan string, wg *sync.WaitGroup) error {
+func publishFile(ctx context.Context, filesAPIClient filesAPISDK.Clienter, distribution models.Distribution, accessToken string, ch chan string, wg *sync.WaitGroup, errCh chan error) {
 	defer wg.Done()
 
 	var filesAPIError error
@@ -1099,9 +1045,9 @@ func publishFile(ctx context.Context, filesAPIClient filesAPISDK.Clienter, distr
 			strings.Contains(err.Error(), "file state is not in state uploaded") {
 			filesAPIError = errs.ErrFileNotInCorrectState
 		}
-		return filesAPIError
+		errCh <- filesAPIError
+		return
 	}
 
 	ch <- distribution.DownloadURL
-	return nil
 }
