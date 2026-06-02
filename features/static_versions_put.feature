@@ -948,7 +948,7 @@ Feature: Static Dataset Versions PUT API
           """
           {
               "dataset": {
-                  "id": "static-dataset",
+                  "id": "edition-change-dataset",
                   "title": "Change topic in version link test",
                   "state": "associated",
                   "type": "static",
@@ -962,22 +962,22 @@ Feature: Static Dataset Versions PUT API
                   "edition_title": "2025 Edition links",
                   "links": {
                       "dataset": {
-                          "href": "/datasets/static-dataset",
-                          "id": "static-dataset"
+                          "href": "/datasets/edition-change-dataset",
+                          "id": "edition-change-dataset"
                       },
                       "edition": {
-                          "href": "/datasets/static-dataset/editions/2025-links",
+                          "href": "/datasets/edition-change-dataset/editions/2025-links",
                           "id": "2025-links"
                       },
                       "self": {
-                          "href": "/datasets/static-dataset/editions/2025-links/versions/1"
+                          "href": "/datasets/edition-change-dataset/editions/2025-links/versions/1"
                       },
                       "version": {
-                          "href": "/datasets/static-dataset/editions/2025-links/versions/1",
+                          "href": "/datasets/edition-change-dataset/editions/2025-links/versions/1",
                           "id": "1"
                       },
                       "web_page": {
-                          "href": "/businessindustryandtrade/datasets/static-dataset/editions/2025-links/versions/1"
+                          "href": "/businessindustryandtrade/datasets/edition-change-dataset/editions/2025-links/versions/1"
                       }
                   },
                   "version": 1,
@@ -998,7 +998,7 @@ Feature: Static Dataset Versions PUT API
           """
       And private endpoints are enabled
       And I am an admin user
-      When I PUT "/datasets/static-dataset/editions/2025-links/versions/1"
+      When I PUT "/datasets/edition-change-dataset/editions/2025-links/versions/1"
           """
           {
               "edition": "2026-update",
@@ -1010,7 +1010,7 @@ Feature: Static Dataset Versions PUT API
       Then I should receive the following JSON response with status "200":
           """
           {
-              "dataset_id": "static-dataset",
+              "dataset_id": "edition-change-dataset",
               "distributions": [
                   {
                       "byte_size": 125000,
@@ -1026,18 +1026,18 @@ Feature: Static Dataset Versions PUT API
               "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
               "links": {
                   "dataset": {
-                      "href": "/datasets/static-dataset",
-                      "id": "static-dataset"
+                      "href": "/datasets/edition-change-dataset",
+                      "id": "edition-change-dataset"
                   },
                   "edition": {
-                      "href": "/datasets/static-dataset/editions/2026-update",
+                      "href": "/datasets/edition-change-dataset/editions/2026-update",
                       "id": "2026-update"
                   },
                   "self": {
-                      "href": "/datasets/static-dataset/editions/2026-update/versions/1"
+                      "href": "/datasets/edition-change-dataset/editions/2026-update/versions/1"
                   },
                   "web_page": {
-                      "href": "/businessindustryandtrade/datasets/static-dataset/editions/2026-update/versions/1"
+                      "href": "/businessindustryandtrade/datasets/edition-change-dataset/editions/2026-update/versions/1"
                   }
               },
               "release_date": "2025-01-01T09:00:00.000Z",
