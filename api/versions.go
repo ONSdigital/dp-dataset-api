@@ -13,6 +13,7 @@ import (
 
 	"github.com/ONSdigital/dp-api-clients-go/v2/headers"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
+	"github.com/ONSdigital/dp-dataset-api/application"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/utils"
 	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
@@ -886,6 +887,8 @@ func handleVersionAPIErr(ctx context.Context, err error, w http.ResponseWriter, 
 func getVersionAPIErrStatusCode(err error) int {
 	var status int
 	switch {
+	case err == errs.ErrFileMetadataNotFound:
+		status = http.StatusUnprocessableEntity
 	case notFound[err] || errs.NotFoundMap[err]:
 		status = http.StatusNotFound
 	case badRequest[err] || errs.BadRequestMap[err]:
@@ -1019,7 +1022,8 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 		Type:  models.Static.String(),
 	}
 
-	updatedVersion, err := api.smDatasetAPI.AmendVersion(r.Context(), vars, versionUpdate)
+	ctxWithToken := context.WithValue(ctx, application.AccessTokenKey, fetchAccessTokenFromHeader(r))
+	updatedVersion, err := api.smDatasetAPI.AmendVersion(ctxWithToken, vars, versionUpdate)
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, logData)
 		return
@@ -1142,22 +1146,7 @@ func (api *DatasetAPI) publishDistributionFiles(ctx context.Context, version *mo
 		}
 		maps.Copy(fileLogData, logData)
 
-		_, err := api.filesAPIClient.GetFile(ctx, filepath, filesAPISDK.Headers{
-			Authorization: accessToken,
-		})
-		if err != nil {
-			log.Error(ctx, "failed to get file metadata", err, fileLogData)
-
-			if strings.Contains(err.Error(), "FileNotRegistered") ||
-				strings.Contains(err.Error(), "file not registered") ||
-				strings.Contains(err.Error(), "not found") {
-				filesAPIError = errs.ErrFileMetadataNotFound
-			}
-			lastError = err
-			continue
-		}
-
-		err = api.filesAPIClient.MarkFilePublished(ctx, filepath, filesAPISDK.Headers{Authorization: accessToken})
+		err := api.filesAPIClient.MarkFilePublished(ctx, filepath, filesAPISDK.Headers{Authorization: accessToken})
 		if err != nil {
 			log.Error(ctx, "failed to publish file", err, fileLogData)
 

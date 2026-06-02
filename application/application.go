@@ -35,6 +35,10 @@ var (
 	trueStringified = strconv.FormatBool(true)
 )
 
+type contextKey string
+
+const AccessTokenKey contextKey = "access_token"
+
 // VersionDetails contains the details that uniquely identify a version resource
 type VersionDetails struct {
 	datasetID string
@@ -50,6 +54,7 @@ type StateMachineDatasetAPI struct {
 	DataStore          store.DataStore
 	DownloadGenerators map[models.DatasetType]DownloadsGenerator
 	StateMachine       *StateMachine
+	FilesAPIClient     filesAPISDK.Clienter
 }
 
 func Setup(dataStoreVal store.DataStore, downloadGenerators map[models.DatasetType]DownloadsGenerator, stateMachine *StateMachine) *StateMachineDatasetAPI {
@@ -60,6 +65,10 @@ func Setup(dataStoreVal store.DataStore, downloadGenerators map[models.DatasetTy
 	}
 
 	return newDS
+}
+
+func (smDS *StateMachineDatasetAPI) SetFilesAPIClient(client filesAPISDK.Clienter) {
+	smDS.FilesAPIClient = client
 }
 
 func (v VersionDetails) baseLogData() log.Data {
@@ -491,6 +500,14 @@ func ApproveVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 		return errModel
 	}
 
+	if smDS.FilesAPIClient != nil && versionUpdate.Distributions != nil && len(*versionUpdate.Distributions) > 0 {
+		accessToken, _ := ctx.Value(AccessTokenKey).(string)
+		if err := checkDistributionFilesExist(ctx, smDS.FilesAPIClient, versionUpdate, accessToken); err != nil {
+			log.Error(ctx, "State machine - Approving: checkDistributionFilesExist: distribution file(s) not found", err, data)
+			return err
+		}
+	}
+
 	_, err := UpdateVersionInfo(ctx, smDS, currentVersion, versionUpdate, versionDetails)
 	if err != nil {
 		log.Error(ctx, "State machine - Approving: UpdateVersionInfo : failed to update the version", err, data)
@@ -828,4 +845,28 @@ func (smDS *StateMachineDatasetAPI) DeleteStaticVersion(ctx context.Context, dat
 
 	log.Info(ctx, "DeleteStaticVersion: successfully deleted static version", logData)
 	return versionDoc, nil
+}
+
+func checkDistributionFilesExist(ctx context.Context, filesAPIClient filesAPISDK.Clienter, version *models.Version, accessToken string) error {
+	if version.Distributions == nil || len(*version.Distributions) == 0 {
+		return nil
+	}
+
+	for _, distribution := range *version.Distributions {
+		if distribution.DownloadURL == "" {
+			continue
+		}
+
+		_, err := filesAPIClient.GetFile(ctx, distribution.DownloadURL, filesAPISDK.Headers{
+			Authorization: accessToken,
+		})
+		if err != nil {
+			log.Error(ctx, "checkDistributionFilesExist: file not found in files API", err, log.Data{
+				"filepath": distribution.DownloadURL,
+			})
+			return errs.ErrFileMetadataNotFound
+		}
+	}
+
+	return nil
 }

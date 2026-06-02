@@ -10,6 +10,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	filesAPIModels "github.com/ONSdigital/dp-files-api/files"
 	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	filesAPISDKMocks "github.com/ONSdigital/dp-files-api/sdk/mocks"
 	. "github.com/smartystreets/goconvey/convey"
@@ -3394,5 +3395,119 @@ func TestDeleteStaticVersion_Errors(t *testing.T) {
 		So(len(mockFilesAPIClient.DeleteFileCalls()), ShouldEqual, 1)
 		So(len(mocked.DeleteStaticDatasetVersionCalls()), ShouldEqual, 1)
 		So(len(mocked.UpsertDatasetCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestApproveVersionDistributionFilesCheck(t *testing.T) {
+	t.Parallel()
+
+	distributions := []models.Distribution{
+		{
+			Title:       "Full Dataset (CSV)",
+			Format:      "csv",
+			DownloadURL: "datasets/test-dataset/editions/test-edition/myfile.csv",
+		},
+	}
+
+	currentVersion := &models.Version{
+		State:        models.AssociatedState,
+		CollectionID: "3434",
+		Type:         models.Static.String(),
+	}
+
+	versionUpdate := &models.Version{
+		State:         models.ApprovedState,
+		ReleaseDate:   "2024-12-31",
+		ID:            "789",
+		CollectionID:  "3434",
+		Type:          models.Static.String(),
+		Distributions: &distributions,
+	}
+
+	generatorMock := &mocks.DownloadsGeneratorMock{
+		GenerateFunc: func(context.Context, string, string, string, string) error {
+			return nil
+		},
+	}
+
+	mockedDataStore := &storetest.StorerMock{
+		UpdateVersionStaticFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
+			return "", nil
+		},
+	}
+
+	states, transitions := setUpStatesTransitions()
+	stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
+
+	Convey("When FilesAPIClient is nil, the file check is skipped and approve succeeds", t, func() {
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+		smDS.FilesAPIClient = nil
+
+		err := ApproveVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
+
+		So(err, ShouldBeNil)
+		So(len(mockedDataStore.UpdateVersionStaticCalls()), ShouldEqual, 1)
+	})
+
+	Convey("When FilesAPIClient is set and all files exist, approve succeeds", t, func() {
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+
+		filesClient := &filesAPISDKMocks.ClienterMock{
+			GetFileFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) (*filesAPIModels.StoredRegisteredMetaData, error) {
+				return &filesAPIModels.StoredRegisteredMetaData{}, nil
+			},
+		}
+		smDS.SetFilesAPIClient(filesClient)
+
+		ctxWithToken := context.WithValue(testContext, AccessTokenKey, "test-token")
+		err := ApproveVersion(ctxWithToken, smDS, currentVersion, versionUpdate, versionDetails, "")
+
+		So(err, ShouldBeNil)
+		So(filesClient.GetFileCalls(), ShouldHaveLength, 1)
+		So(filesClient.GetFileCalls()[0].FilePath, ShouldEqual, "datasets/test-dataset/editions/test-edition/myfile.csv")
+	})
+
+	Convey("When FilesAPIClient is set and a file does not exist, approve returns ErrFileMetadataNotFound", t, func() {
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+
+		filesClient := &filesAPISDKMocks.ClienterMock{
+			GetFileFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) (*filesAPIModels.StoredRegisteredMetaData, error) {
+				return nil, errs.ErrFileMetadataNotFound
+			},
+		}
+		smDS.SetFilesAPIClient(filesClient)
+
+		ctxWithToken := context.WithValue(testContext, AccessTokenKey, "test-token")
+		err := ApproveVersion(ctxWithToken, smDS, currentVersion, versionUpdate, versionDetails, "")
+
+		So(err, ShouldEqual, errs.ErrFileMetadataNotFound)
+		So(filesClient.GetFileCalls(), ShouldHaveLength, 1)
+	})
+
+	Convey("When the version has no distributions, the file check is skipped and approve succeeds", t, func() {
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+
+		getFileCalled := false
+		filesClient := &filesAPISDKMocks.ClienterMock{
+			GetFileFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) (*filesAPIModels.StoredRegisteredMetaData, error) {
+				getFileCalled = true
+				return &filesAPIModels.StoredRegisteredMetaData{}, nil
+			},
+		}
+		smDS.SetFilesAPIClient(filesClient)
+
+		versionUpdateNoDistributions := &models.Version{
+			State:        models.ApprovedState,
+			ReleaseDate:  "2024-12-31",
+			ID:           "789",
+			CollectionID: "3434",
+			Type:         models.Static.String(),
+		}
+
+		ctxWithToken := context.WithValue(testContext, AccessTokenKey, "test-token")
+		err := ApproveVersion(ctxWithToken, smDS, currentVersion, versionUpdateNoDistributions, versionDetails, "")
+
+		So(err, ShouldBeNil)
+		So(getFileCalled, ShouldBeFalse)
 	})
 }

@@ -375,7 +375,8 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	// Set the files API client on the DatasetAPI after initialisation
 	if svc.config.EnablePrivateEndpoints && svc.filesAPIClient != nil {
 		svc.api.SetFilesAPIClient(svc.filesAPIClient, svc.config.ServiceAuthToken)
-		log.Info(ctx, "files API client set on dataset API")
+		svc.smDS.SetFilesAPIClient(svc.filesAPIClient)
+		log.Info(ctx, "files API client set on dataset API and state machine")
 	}
 
 	// Set the topic API client on the DatasetAPI after initialisation

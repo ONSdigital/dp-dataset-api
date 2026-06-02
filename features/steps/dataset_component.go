@@ -24,6 +24,7 @@ import (
 	serviceMock "github.com/ONSdigital/dp-dataset-api/service/mock"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	storeMock "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	filesAPIModels "github.com/ONSdigital/dp-files-api/files"
 	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	filesAPISDKMocks "github.com/ONSdigital/dp-files-api/sdk/mocks"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
@@ -290,6 +291,15 @@ func (c *DatasetComponent) DoGetFilesAPIClientOk(ctx context.Context, cfg *confi
 			if filePath == "/fail/to/delete.csv" {
 				return fmt.Errorf("failed to delete file at path: %s", filePath)
 			}
+			return nil
+		},
+		GetFileFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) (*filesAPIModels.StoredRegisteredMetaData, error) {
+			if filePath == "datasets/test-static-dataset/editions/test-edition/missing-file.csv" {
+				return nil, fmt.Errorf("FileNotRegistered: file not found")
+			}
+			return &filesAPIModels.StoredRegisteredMetaData{}, nil
+		},
+		MarkFilePublishedFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) error {
 			return nil
 		},
 	}, nil
