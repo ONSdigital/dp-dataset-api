@@ -325,10 +325,8 @@ func updateEditionLinks(currentVersion *models.Version, newEdition string) *mode
 	}
 
 	if links.WebPage != nil {
-		re := regexp.MustCompile(`/([A-Za-z0-9_-]+)/datasets/`)
-		match := re.FindStringSubmatch(links.WebPage.HRef)
-		topicSlug := match[1]
-		links.WebPage.HRef = fmt.Sprintf("%s/%s/datasets/%s/editions/%s/versions/%d", host, topicSlug, datasetID, newEdition, versionNum)
+		re := regexp.MustCompile(`^(.*/editions/)[^/]+(/versions/.*)$`)
+		links.WebPage.HRef = re.ReplaceAllString(links.WebPage.HRef, "${1}"+newEdition+"${2}")
 	}
 
 	return links

@@ -598,18 +598,13 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 			if currentDataset.Next != nil && currentDataset.Current == nil && currentDataset.Next.State != models.PublishedState {
 				if len(currentDataset.Next.Topics) > 0 && len(dataset.Topics) > 0 && currentDataset.Next.Topics[0] != dataset.Topics[0] {
 					state := ""
-					editions, _, err := api.dataStore.Backend.GetEditionsStatic(ctx, datasetID, state, 0, 0)
+					versions, _, err := api.dataStore.Backend.GetAllStaticVersions(ctx, datasetID, state, 0, 100)
 					if err != nil {
-						log.Error(ctx, "putDataset endpoint: error getting editions for dataset", err, data)
+						log.Error(ctx, "putDataset endpoint: error getting versions for dataset", err, data)
 						return nil, err
 					}
-					for eCount := range editions {
-						versions, _, err := api.dataStore.Backend.GetVersionsStatic(ctx, datasetID, editions[eCount].Next.Edition, state, 0, 100)
-						if err != nil {
-							log.Error(ctx, "putDataset endpoint: error getting versions for dataset", err, data)
-							return nil, err
-						}
 
+					if len(versions) != 0 {
 						topicSDKHeaders := topicAPISDK.Headers{
 							ServiceAuthToken: fetchAccessTokenFromHeader(r),
 						}
@@ -619,9 +614,9 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 							return nil, err
 						}
 						for vCount := range versions {
-							currentVersion := &versions[vCount]
+							currentVersion := versions[vCount]
 							updatedVersion := new(models.Version)
-							*updatedVersion = versions[vCount]
+							*updatedVersion = *versions[vCount]
 
 							if updatedVersion.Links == nil {
 								updatedVersion.Links = &models.VersionLinks{}

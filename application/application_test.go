@@ -1052,7 +1052,7 @@ func TestUpdateEditionLinks(t *testing.T) {
 				Edition: &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2017", ID: "2017"},
 				Version: &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1", ID: "1"},
 				Self:    &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1"},
-				WebPage: &models.LinkObject{HRef: "http://dp-frontend-router:20000/businessindustryandtrade/datasets/123/editions/2017/versions/1"},
+				WebPage: &models.LinkObject{HRef: "http://localhost:20000/businessindustryandtrade/datasets/123/editions/2017/versions/1"},
 			},
 		}
 
@@ -1063,7 +1063,7 @@ func TestUpdateEditionLinks(t *testing.T) {
 		So(updatedLinks.Edition.ID, ShouldEqual, "new-edition")
 		So(updatedLinks.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/123/editions/new-edition/versions/1")
 		So(updatedLinks.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/123/editions/new-edition/versions/1")
-		So(updatedLinks.WebPage.HRef, ShouldEqual, "http://localhost:22000/businessindustryandtrade/datasets/123/editions/new-edition/versions/1")
+		So(updatedLinks.WebPage.HRef, ShouldEqual, "http://localhost:20000/businessindustryandtrade/datasets/123/editions/new-edition/versions/1")
 	})
 
 	Convey("When dataset href is missing, updateEditionLinks returns a deep copy without rewriting", t, func() {
