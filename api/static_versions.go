@@ -13,6 +13,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/utils"
 	dpresponse "github.com/ONSdigital/dp-net/v3/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v3/http"
+	topicAPISDK "github.com/ONSdigital/dp-topic-api/sdk"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -246,6 +247,26 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	versionRequest.Links = api.generateVersionLinks(datasetID, edition, nextVersion, versionRequest.Links)
 	versionRequest.Type = models.Static.String()
 
+	datasetDoc, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
+	if err != nil {
+		log.Error(ctx, "failed to get dataset", err, logData)
+		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, "failed to get dataset", "internal error"))
+	}
+
+	if api.topicAPIClient != nil && len(datasetDoc.Next.Topics) > 0 {
+		topicSDKHeaders := topicAPISDK.Headers{
+			ServiceAuthToken: fetchAccessTokenFromHeader(r),
+		}
+		topic, err := api.topicAPIClient.GetTopicPrivate(ctx, topicSDKHeaders, datasetDoc.Next.Topics[0])
+		if err != nil {
+			log.Error(ctx, "addDatasetVersionCondensed endpoint: failed to get topic from Topic API", err, logData)
+			return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, models.ErrTopicAPIFailure, models.ErrTopicAPIFailureDescription))
+		}
+		versionRequest.Links.WebPage = &models.LinkObject{
+			HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%d", topic.Next.Slug, datasetID, edition, nextVersion),
+		}
+	}
+
 	// ID and Email are the same as auth middleware can only provide userID
 	if err := api.auditService.RecordVersionAuditEvent(ctx, models.RequestedBy{ID: authEntityData.EntityData.UserID, Email: authEntityData.EntityData.UserID}, models.ActionCreate, "/datasets/"+datasetID+"/editions/"+edition+"/versions/"+strconv.Itoa(nextVersion), versionRequest); err != nil {
 		log.Info(ctx, "failed to create version audit event", log.Classification(log.ProtectiveMonitoring), logAuthOption, log.Data{
@@ -270,14 +291,11 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, "failed to add version", "internal error"))
 	}
 
-	datasetDoc, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
-	if err != nil {
-		log.Error(ctx, "failed to get dataset", err, logData)
-		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, "failed to get dataset", "internal error"))
-	}
-
 	datasetDoc.Next.LastUpdated = newVersion.LastUpdated
 	datasetDoc.Next.State = models.AssociatedState
+	if datasetDoc.Next.Links == nil {
+		datasetDoc.Next.Links = &models.DatasetLinks{}
+	}
 	datasetDoc.Next.Links.LatestVersion = &models.LinkObject{
 		HRef: fmt.Sprintf("/datasets/%s/editions/%s/versions/%d", datasetID, edition, nextVersion),
 		ID:   strconv.Itoa(nextVersion),
@@ -304,7 +322,7 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	return models.NewSuccessResponse(response, http.StatusCreated, headers), nil
 }
 
-//nolint:gocyclo // high cyclomatic complexity not in scope for maintenance
+//nolint:gocyclo,gocognit // high cyclomatic complexity not in scope for maintenance
 func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*models.SuccessResponse, *models.ErrorResponse) {
 	ctx := r.Context()
 
@@ -438,6 +456,26 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, models.InternalError, models.InternalErrorDescription))
 	}
 
+	datasetDoc, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
+	if err != nil {
+		log.Error(ctx, "createVersion endpoint: failed to get dataset", err, logData)
+		return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, models.InternalError, models.InternalErrorDescription))
+	}
+
+	if api.topicAPIClient != nil && len(datasetDoc.Next.Topics) > 0 {
+		topicSDKHeaders := topicAPISDK.Headers{
+			ServiceAuthToken: fetchAccessTokenFromHeader(r),
+		}
+		topic, err := api.topicAPIClient.GetTopicPrivate(ctx, topicSDKHeaders, datasetDoc.Next.Topics[0])
+		if err != nil {
+			log.Error(ctx, "createVersion endpoint: failed to get topic from Topic API", err, logData)
+			return nil, models.NewErrorResponse(http.StatusInternalServerError, nil, models.NewError(err, models.ErrTopicAPIFailure, models.ErrTopicAPIFailureDescription))
+		}
+		newVersion.Links.WebPage = &models.LinkObject{
+			HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%d", topic.Next.Slug, datasetID, edition, versionNumber),
+		}
+	}
+
 	versionExists, err := api.dataStore.Backend.CheckVersionExistsStatic(ctx, datasetID, edition, versionNumber)
 	if err != nil {
 		log.Error(ctx, "createVersion endpoint: failed to check version existence", err, logData)
@@ -472,13 +510,6 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 	}
 
 	if isLatest {
-		datasetDoc, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
-		if err != nil {
-			log.Error(ctx, "createVersion endpoint: failed to get dataset", err, logData)
-			return nil, models.NewErrorResponse(http.StatusInternalServerError, nil,
-				models.NewError(err, "failed to get dataset", models.InternalErrorDescription))
-		}
-
 		if datasetDoc.Next.Links == nil {
 			datasetDoc.Next.Links = &models.DatasetLinks{}
 		}

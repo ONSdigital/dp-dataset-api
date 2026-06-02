@@ -818,3 +818,107 @@ Scenario: POST creates a static version with is_migration true and it is returne
             "version": 2
         }
         """
+
+Scenario: Successfully creating a version includes web_page link when dataset has topics
+    Given private endpoints are enabled
+    And I am an admin user
+    And I have these datasets:
+        """
+        [
+            {
+                "id": "static-dataset-with-topics",
+                "title": "Static dataset with topics",
+                "state": "published",
+                "type": "static",
+                "topics": ["economy-topic-id"]
+            }
+        ]
+        """
+    When I POST "/datasets/static-dataset-with-topics/editions/2024/versions/1"
+        """
+        {
+            "release_date": "2024-12-01T09:00:00.000Z",
+            "edition_title": "2024",
+            "distributions": [
+                {
+                    "title": "Full Dataset CSV",
+                    "format": "csv",
+                    "download_url": "/uuid/filename.csv",
+                    "byte_size": 100
+                }
+            ],
+            "type": "static"
+        }
+        """
+    Then I should receive the following JSON response with status "201":
+        """
+        {
+            "dataset_id": "static-dataset-with-topics",
+            "distributions": [
+                {
+                    "byte_size": 100,
+                    "download_url": "/uuid/filename.csv",
+                    "format": "csv",
+                    "media_type": "text/csv",
+                    "title": "Full Dataset CSV"
+                }
+            ],
+            "edition": "2024",
+            "edition_title": "2024",
+            "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
+            "links": {
+                "dataset": {
+                    "href": "http://localhost:22000/datasets/static-dataset-with-topics",
+                    "id": "static-dataset-with-topics"
+                },
+                "edition": {
+                    "href": "http://localhost:22000/datasets/static-dataset-with-topics/editions/2024",
+                    "id": "2024"
+                },
+                "self": {
+                    "href": "http://localhost:22000/datasets/static-dataset-with-topics/editions/2024/versions/1"
+                },
+                "web_page": {
+                    "href": "economy/datasets/static-dataset-with-topics/editions/2024/versions/1"
+                }
+            },
+            "release_date": "2024-12-01T09:00:00.000Z",
+            "state": "associated",
+            "type": "static",
+            "version": 1
+        }
+        """
+    And the response header "ETag" should not be empty
+
+Scenario: Creating a version with an unknown topic ID returns 500
+    Given private endpoints are enabled
+    And I am an admin user
+    And I have these datasets:
+        """
+        [
+            {
+                "id": "static-dataset-unknown-topic",
+                "title": "Static dataset with unknown topic",
+                "state": "published",
+                "type": "static",
+                "topics": ["unknown-topic-id"]
+            }
+        ]
+        """
+    When I POST "/datasets/static-dataset-unknown-topic/editions/2024/versions/1"
+        """
+        {
+            "release_date": "2024-12-01T09:00:00.000Z",
+            "edition_title": "2024",
+            "distributions": [
+                {
+                    "title": "Full Dataset CSV",
+                    "format": "csv",
+                    "download_url": "/uuid/filename.csv",
+                    "byte_size": 100
+                }
+            ],
+            "type": "static"
+        }
+        """
+    Then the HTTP status code should be "500"
