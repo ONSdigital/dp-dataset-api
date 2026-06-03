@@ -491,6 +491,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 					handleVersionAPIErr(ctx, checkErr, w, data)
 					return
 				}
+				version.PreviousEditionId = append(existingVersion.PreviousEditionId, existingVersion.Edition)
 			}
 
 			if titleChanged {

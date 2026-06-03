@@ -291,6 +291,10 @@ func populateNewVersionDoc(currentVersion, originalVersion *models.Version) (*mo
 		version.UsageNotes = currentVersion.UsageNotes
 	}
 
+	if version.PreviousEditionId == nil {
+		version.PreviousEditionId = currentVersion.PreviousEditionId
+	}
+
 	return &version, nil
 }
 
