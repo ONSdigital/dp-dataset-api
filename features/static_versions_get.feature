@@ -168,7 +168,7 @@ Feature: Static versions GET /versions
                     {
                         "dataset_id": "test-static",
                         "id": "test-static-version-approved",
-                        "last_updated":"2021-01-01T00:00:01Z",
+                        "last_updated":"2021-01-01T00:00:02Z",
                         "type":"static",
                         "version": 1,
                         "state": "approved",
@@ -221,7 +221,7 @@ Feature: Static versions GET /versions
                     {
                         "dataset_id": "test-static",
                         "id": "test-static-version-approved",
-                        "last_updated":"2021-01-01T00:00:01Z",
+                        "last_updated":"2021-01-01T00:00:02Z",
                         "type":"static",
                         "version": 1,
                         "state": "approved",
@@ -270,7 +270,7 @@ Feature: Static versions GET /versions
             """
             {
                 "id": "test-static-version-approved",
-                "last_updated":"2021-01-01T00:00:01Z",
+                "last_updated":"2021-01-01T00:00:02Z",
                 "type":"static",
                 "version": 1,
                 "state": "approved",
@@ -376,7 +376,7 @@ Feature: Static versions GET /versions
             """
             {
                 "id": "test-static-version-previous-editions",
-                "last_updated": "2021-01-01T00:00:00Z",
+                "last_updated": "2021-01-01T00:00:01Z",
                 "type": "static",
                 "version": 1,
                 "state": "published",
@@ -417,7 +417,7 @@ Feature: Static versions GET /versions
             """
             {
                 "id": "test-static-version-previous-editions",
-                "last_updated": "2021-01-01T00:00:00Z",
+                "last_updated": "2021-01-01T00:00:01Z",
                 "type": "static",
                 "version": 1,
                 "state": "published",
