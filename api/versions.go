@@ -479,11 +479,8 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 			}
 
 			// Detect whether edition ID or title has changed
-			editionProvided := version.Edition != ""
-			titleProvided := version.EditionTitle != ""
-
-			editionChanged := editionProvided && existingVersion.Edition != version.Edition
-			titleChanged := titleProvided && existingVersion.EditionTitle != version.EditionTitle
+			editionChanged := existingVersion.Edition != version.Edition
+			titleChanged := existingVersion.EditionTitle != version.EditionTitle
 
 			// Only validate uniqueness IF edition or title is changing
 			if editionChanged {
@@ -497,8 +494,10 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 					handleVersionAPIErr(ctx, checkErr, w, data)
 					return
 				}
-				version.PreviousEditionId = append([]string{}, existingVersion.PreviousEditionId...)
-				version.PreviousEditionId = append(version.PreviousEditionId, existingVersion.Edition)
+				if version.Edition != "" {
+					version.PreviousEditionId = append([]string{}, existingVersion.PreviousEditionId...)
+					version.PreviousEditionId = append(version.PreviousEditionId, existingVersion.Edition)
+				}
 			}
 
 			if titleChanged {
