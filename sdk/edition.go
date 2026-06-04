@@ -3,6 +3,7 @@ package sdk
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -29,8 +30,30 @@ func (c *Client) GetEdition(ctx context.Context, headers Headers, datasetID, edi
 
 	defer closeResponseBody(ctx, resp)
 
-	// Unmarshal the response body to target
-	err = unmarshalResponseBodyExpectingStringError(resp, &edition)
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return edition, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return edition, fmt.Errorf("did not receive success response. received status %d, response body: %s", resp.StatusCode, string(b))
+	}
+
+	// Response could be either an Edition or an EditionUpdate.
+	var bodyMap map[string]interface{}
+	if err := json.Unmarshal(b, &bodyMap); err != nil {
+		return edition, err
+	}
+
+	// If the response is an EditionUpdate, return the "next" edition.
+	if next, ok := bodyMap["next"]; ok {
+		b, err = json.Marshal(next)
+		if err != nil {
+			return edition, err
+		}
+	}
+
+	err = json.Unmarshal(b, &edition)
 
 	return edition, err
 }
@@ -75,14 +98,13 @@ func (c *Client) GetEditions(ctx context.Context, headers Headers, datasetID str
 
 	defer closeResponseBody(ctx, resp)
 
-	if resp.StatusCode != http.StatusOK {
-		err = unmarshalResponseBodyExpectingStringError(resp, &editionList)
-		return editionList, err
-	}
-
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return editionList, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return editionList, fmt.Errorf("did not receive success response. received status %d, response body: %s", resp.StatusCode, string(b))
 	}
 
 	var body map[string]interface{}
@@ -91,7 +113,7 @@ func (c *Client) GetEditions(ctx context.Context, headers Headers, datasetID str
 	}
 
 	if body["items"] != nil {
-		if _, ok := body["items"].([]interface{})[0].(map[string]interface{})["next"]; ok && headers.AccessToken != "" {
+		if _, ok := body["items"].([]interface{})[0].(map[string]interface{})["next"]; ok {
 			var items []map[string]interface{}
 			for _, item := range body["items"].([]interface{}) {
 				items = append(items, item.(map[string]interface{})["next"].(map[string]interface{}))
