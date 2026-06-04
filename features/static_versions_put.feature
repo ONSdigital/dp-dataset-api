@@ -1101,6 +1101,9 @@ Feature: Static Dataset Versions PUT API
                       "href": "/businessindustryandtrade/datasets/edition-change-dataset/editions/2026-update/versions/1"
                   }
               },
+              "previous_edition_id": [
+                  "2025-links"
+              ],
               "release_date": "2025-01-01T09:00:00.000Z",
               "state": "associated",
               "type": "static"
