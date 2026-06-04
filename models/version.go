@@ -51,6 +51,7 @@ type Version struct {
 	QualityDesignation QualityDesignation   `bson:"quality_designation,omitempty"   json:"quality_designation,omitempty"`
 	Distributions      *[]Distribution      `bson:"distributions,omitempty"         json:"distributions,omitempty"`
 	IsMigration        *bool                `bson:"is_migration,omitempty"          json:"is_migration,omitempty"`
+	PreviousEditionId  []string             `bson:"previous_edition_id,omitempty"    json:"previous_edition_id,omitempty"`
 }
 
 // Alert represents an object containing information on an alert

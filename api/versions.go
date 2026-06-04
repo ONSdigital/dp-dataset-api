@@ -148,6 +148,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 
 			if !authorised {
 				item.IsMigration = nil
+				item.PreviousEditionId = nil
 			}
 		}
 
@@ -293,6 +294,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 
 		if !authorised {
 			version.IsMigration = nil
+			version.PreviousEditionId = nil
 		}
 
 		return version, nil
@@ -491,6 +493,10 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 					log.Error(ctx, "failed to check edition ID existence", checkErr, data)
 					handleVersionAPIErr(ctx, checkErr, w, data)
 					return
+				}
+				if version.Edition != "" {
+					version.PreviousEditionId = append([]string{}, existingVersion.PreviousEditionId...)
+					version.PreviousEditionId = append(version.PreviousEditionId, existingVersion.Edition)
 				}
 			}
 

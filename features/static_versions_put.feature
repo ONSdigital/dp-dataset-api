@@ -1101,8 +1101,117 @@ Feature: Static Dataset Versions PUT API
                       "href": "/businessindustryandtrade/datasets/edition-change-dataset/editions/2026-update/versions/1"
                   }
               },
+              "previous_edition_id": [
+                  "2025-links"
+              ],
               "release_date": "2025-01-01T09:00:00.000Z",
               "state": "associated",
               "type": "static"
           }
           """
+
+    Scenario: PUT updates static dataset version edition and saves previous edition ID
+        Given I have a static dataset with version:
+          """
+          {
+              "dataset": {
+                  "id": "previous-edition-dataset",
+                  "title": "Previous edition saved",
+                  "state": "associated",
+                  "type": "static",
+                  "topics": [
+                      "businessindustryandtrade-topic-id"
+                  ]
+              },
+              "version": {
+                  "id": "static-dataset-previous-edition",
+                  "edition": "old-edition",
+                  "edition_title": "2025 Edition",
+                  "links": {
+                      "dataset": {
+                          "href": "/datasets/previous-edition-dataset",
+                          "id": "previous-edition-dataset"
+                      },
+                      "edition": {
+                          "href": "/datasets/previous-edition-dataset/editions/old-edition",
+                          "id": "old-edition"
+                      },
+                      "self": {
+                          "href": "/datasets/previous-edition-dataset/editions/old-edition/versions/1"
+                      },
+                      "version": {
+                          "href": "/datasets/previous-edition-dataset/editions/old-edition/versions/1",
+                          "id": "1"
+                      },
+                      "web_page": {
+                          "href": "/businessindustryandtrade/datasets/previous-edition-dataset/editions/old-edition/versions/1"
+                      }
+                  },
+                  "version": 1,
+                  "release_date": "2025-01-01T09:00:00.000Z",
+                  "state": "associated",
+                  "type": "static",
+                  "distributions": [
+                      {
+                          "title": "csv",
+                          "format": "csv",
+                          "media_type": "text/csv",
+                          "download_url": "/uuid/filename.csv",
+                          "byte_size": 125000
+                      }
+                  ]
+              }
+          }
+          """
+        And private endpoints are enabled
+        And I am an admin user
+        When I PUT "/datasets/previous-edition-dataset/editions/old-edition/versions/1"
+            """
+            {
+                "edition": "new-edition",
+                "edition_title": "2026 Edition",
+                "state": "associated",
+                "type": "static"
+            }
+            """
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "dataset_id": "previous-edition-dataset",
+                "distributions": [
+                    {
+                        "byte_size": 125000,
+                        "download_url": "/uuid/filename.csv",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "title": "csv"
+                    }
+                ],
+                "edition": "new-edition",
+                "edition_title": "2026 Edition",
+                "id": "static-dataset-previous-edition",
+                "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
+                "links": {
+                    "dataset": {
+                        "href": "/datasets/previous-edition-dataset",
+                        "id": "previous-edition-dataset"
+                    },
+                    "edition": {
+                        "href": "/datasets/previous-edition-dataset/editions/new-edition",
+                        "id": "new-edition"
+                    },
+                    "self": {
+                        "href": "/datasets/previous-edition-dataset/editions/new-edition/versions/1"
+                    },
+                    "web_page": {
+                        "href": "/businessindustryandtrade/datasets/previous-edition-dataset/editions/new-edition/versions/1"
+                    }
+                },
+                "previous_edition_id": [
+                    "old-edition"
+                ],
+                "release_date": "2025-01-01T09:00:00.000Z",
+                "state": "associated",
+                "type": "static"
+            }
+            """
