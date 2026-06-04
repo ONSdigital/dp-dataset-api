@@ -376,7 +376,7 @@ Feature: Static versions GET /versions
             """
             {
                 "id": "test-static-version-previous-editions",
-                "last_updated": "2021-01-01T00:00:01Z",
+                "last_updated": "2021-01-01T00:00:00Z",
                 "type": "static",
                 "version": 1,
                 "state": "published",
@@ -417,7 +417,7 @@ Feature: Static versions GET /versions
             """
             {
                 "id": "test-static-version-previous-editions",
-                "last_updated": "2021-01-01T00:00:01Z",
+                "last_updated": "2021-01-01T00:00:00Z",
                 "type": "static",
                 "version": 1,
                 "state": "published",
