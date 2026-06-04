@@ -142,7 +142,10 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
-			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+			CheckEditionExistsStaticFunc: func(_ context.Context, _ string, editionID string, _ string) error {
+				if editionID == "new-edition" {
+					return errs.ErrEditionNotFound
+				}
 				return nil
 			},
 			GetVersionsFunc: func(context.Context, string, string, string, int, int) ([]models.Version, int, error) {
@@ -5956,5 +5959,275 @@ func TestPutVersionIsMigration(t *testing.T) {
 			So(capturedVersionUpdate.IsMigration, ShouldNotBeNil)
 			So(*capturedVersionUpdate.IsMigration, ShouldBeTrue)
 		})
+	})
+}
+
+func TestPutVersionSavesPreviousEditionID(t *testing.T) {
+	t.Parallel()
+
+	Convey("When edition ID changes on a static version, previous_edition_id is populated with the old edition", t, func() {
+		var capturedVersionUpdate *models.Version
+
+		b := `{"edition":"new-edition","edition_title":"New Edition Title","release_date":"2017-04-04","state":"associated","type":"static"}`
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/old-edition/versions/1", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			IsStaticDatasetFunc: func(context.Context, string) (bool, error) {
+				return true, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					Next: &models.Dataset{Type: models.Static.String()},
+				}, nil
+			},
+			CheckEditionExistsStaticFunc: func(_ context.Context, _ string, editionID string, _ string) error {
+				if editionID == "new-edition" {
+					return errs.ErrEditionNotFound
+				}
+				return nil
+			},
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					ID:           "version-id-1",
+					Edition:      "old-edition",
+					EditionTitle: "Old Edition Title",
+					State:        models.AssociatedState,
+					Type:         models.Static.String(),
+					ReleaseDate:  "2017-04-04",
+					Links: &models.VersionLinks{
+						Dataset: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123",
+							ID:   "123",
+						},
+						Self: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/old-edition/versions/1",
+						},
+						Version: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/old-edition/versions/1",
+							ID:   "1",
+						},
+						Edition: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/old-edition",
+							ID:   "old-edition",
+						},
+					},
+				}, nil
+			},
+			CheckEditionTitleExistsStaticFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{Type: models.Static.String()}, nil
+			},
+			UpdateVersionStaticFunc: func(ctx context.Context, currentVersion *models.Version, versionUpdate *models.Version, eTagSelector string) (string, error) {
+				capturedVersionUpdate = versionUpdate
+				return testETag, nil
+			},
+			AcquireVersionsLockFunc: func(context.Context, string) (string, error) {
+				return testLockID, nil
+			},
+			UnlockVersionsFunc: func(context.Context, string) {},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, version *models.Version) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(capturedVersionUpdate, ShouldNotBeNil)
+		So(capturedVersionUpdate.PreviousEditionId, ShouldResemble, []string{"old-edition"})
+		So(len(mockedDataStore.UpdateVersionStaticCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsStaticCalls()), ShouldEqual, 3)
+	})
+
+	Convey("When edition ID does NOT change on a static version, previous_edition_id is not modified", t, func() {
+		var capturedVersionUpdate *models.Version
+
+		b := `{"edition":"same-edition","edition_title":"New Title","release_date":"2017-04-04","state":"associated","type":"static"}`
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/same-edition/versions/1", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			IsStaticDatasetFunc: func(context.Context, string) (bool, error) {
+				return true, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					Next: &models.Dataset{Type: models.Static.String()},
+				}, nil
+			},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					ID:           "version-id-1",
+					Edition:      "same-edition",
+					EditionTitle: "Old Title",
+					State:        models.AssociatedState,
+					Type:         models.Static.String(),
+					ReleaseDate:  "2017-04-04",
+					Links: &models.VersionLinks{
+						Dataset: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123",
+							ID:   "123",
+						},
+						Self: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/same-edition/versions/1",
+						},
+						Version: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/same-edition/versions/1",
+							ID:   "1",
+						},
+						Edition: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/same-edition",
+							ID:   "same-edition",
+						},
+					},
+				}, nil
+			},
+			CheckEditionTitleExistsStaticFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{Type: models.Static.String()}, nil
+			},
+			UpdateVersionStaticFunc: func(ctx context.Context, currentVersion *models.Version, versionUpdate *models.Version, eTagSelector string) (string, error) {
+				capturedVersionUpdate = versionUpdate
+				return testETag, nil
+			},
+			AcquireVersionsLockFunc: func(context.Context, string) (string, error) {
+				return testLockID, nil
+			},
+			UnlockVersionsFunc: func(context.Context, string) {},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, version *models.Version) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(capturedVersionUpdate, ShouldNotBeNil)
+		So(capturedVersionUpdate.PreviousEditionId, ShouldBeNil)
+		So(len(mockedDataStore.UpdateVersionStaticCalls()), ShouldEqual, 1)
+	})
+
+	Convey("When version already has a previous_edition_id, new old edition is appended", t, func() {
+		var capturedVersionUpdate *models.Version
+
+		b := `{"edition":"newer-edition","edition_title":"Newer Edition Title","release_date":"2017-04-04","state":"associated","type":"static"}`
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/current-edition/versions/1", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			IsStaticDatasetFunc: func(context.Context, string) (bool, error) {
+				return true, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					Next: &models.Dataset{Type: models.Static.String()},
+				}, nil
+			},
+			CheckEditionExistsStaticFunc: func(_ context.Context, _ string, editionID string, _ string) error {
+				if editionID == "newer-edition" {
+					return errs.ErrEditionNotFound
+				}
+				return nil
+			},
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					ID:                "version-id-1",
+					Edition:           "current-edition",
+					EditionTitle:      "Current Edition Title",
+					PreviousEditionId: []string{"very-old-edition", "old-edition"},
+					State:             models.AssociatedState,
+					Type:              models.Static.String(),
+					ReleaseDate:       "2017-04-04",
+					Links: &models.VersionLinks{
+						Dataset: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123",
+							ID:   "123",
+						},
+						Self: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/current-edition/versions/1",
+						},
+						Version: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/current-edition/versions/1",
+							ID:   "1",
+						},
+						Edition: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/current-edition",
+							ID:   "current-edition",
+						},
+					},
+				}, nil
+			},
+			CheckEditionTitleExistsStaticFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{Type: models.Static.String()}, nil
+			},
+			UpdateVersionStaticFunc: func(ctx context.Context, currentVersion *models.Version, versionUpdate *models.Version, eTagSelector string) (string, error) {
+				capturedVersionUpdate = versionUpdate
+				return testETag, nil
+			},
+			AcquireVersionsLockFunc: func(context.Context, string) (string, error) {
+				return testLockID, nil
+			},
+			UnlockVersionsFunc: func(context.Context, string) {},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, version *models.Version) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(capturedVersionUpdate, ShouldNotBeNil)
+		So(capturedVersionUpdate.PreviousEditionId, ShouldResemble, []string{"very-old-edition", "old-edition", "current-edition"})
+		So(len(mockedDataStore.UpdateVersionStaticCalls()), ShouldEqual, 1)
 	})
 }
