@@ -91,10 +91,6 @@ func Setup(dataStoreVal store.DataStore, downloadGenerators map[models.DatasetTy
 	return newDS
 }
 
-func (smDS *StateMachineDatasetAPI) SetFilesAPIClient(client filesAPISDK.Clienter) {
-	smDS.FilesAPIClient = client
-}
-
 func (v VersionDetails) baseLogData() log.Data {
 	return log.Data{"dataset_id": v.datasetID, "edition": v.edition, "version": v.version}
 }
@@ -522,7 +518,6 @@ func ApproveVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 	}
 
 	if smDS.FilesAPIClient != nil && versionUpdate.Distributions != nil && len(*versionUpdate.Distributions) > 0 {
-		accessToken, _ := ctx.Value(AccessTokenKey).(string)
 		if err := checkDistributionFilesExist(ctx, smDS.FilesAPIClient, versionUpdate, accessToken); err != nil {
 			log.Error(ctx, "State machine - Approving: checkDistributionFilesExist: distribution file(s) not found", err, data)
 			return err
@@ -1077,4 +1072,29 @@ func publishFile(ctx context.Context, filesAPIClient filesAPISDK.Clienter, distr
 	}
 
 	ch <- distribution.DownloadURL
+}
+
+func checkDistributionFilesExist(ctx context.Context, filesAPIClient filesAPISDK.Clienter, version *models.Version, accessToken string) error {
+	if version.Distributions == nil || len(*version.Distributions) == 0 {
+		return nil
+	}
+
+	for _, distribution := range *version.Distributions {
+		if distribution.DownloadURL == "" {
+			continue
+		}
+
+		_, err := filesAPIClient.GetFile(ctx, distribution.DownloadURL, filesAPISDK.Headers{Authorization: accessToken})
+		if err != nil {
+			errData := log.Data{"filepath": distribution.DownloadURL}
+			if strings.Contains(err.Error(), "file not registered") || strings.Contains(err.Error(), "file metadata not found") {
+				log.Error(ctx, "checkDistributionFilesExist: file not found in files API", err, errData)
+				return errs.ErrFileMetadataNotFound
+			}
+			log.Error(ctx, "checkDistributionFilesExist: problem with files API", err, errData)
+			return errs.ErrInternalServer
+		}
+	}
+
+	return nil
 }

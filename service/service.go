@@ -220,11 +220,6 @@ func (svc *Service) SetGraphDBErrorConsumer(graphDBErrorConsumer Closer) {
 	svc.graphDBErrorConsumer = graphDBErrorConsumer
 }
 
-// SetFilesAPIClient sets the files API client for a service
-func (svc *Service) SetFilesAPIClient(filesAPIClient filesAPISDK.Clienter) {
-	svc.filesAPIClient = filesAPIClient
-}
-
 // Run the service
 //
 // TODO: refactor this function to reduce cyclomatic complexity.
@@ -370,7 +365,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 
 	auditService := application.NewAuditService(ds)
 
-	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, authorisation, enableURLRewriting, svc.smDS, auditService, permissionChecker, svc.identityClient, svc.filesAPIClient)
+	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, authorisation, enableURLRewriting, svc.smDS, auditService, permissionChecker, svc.identityClient, svc.filesAPIClient, svc.topicAPIClient)
 
 	svc.healthCheck.Start(ctx)
 

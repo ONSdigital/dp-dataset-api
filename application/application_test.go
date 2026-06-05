@@ -2274,6 +2274,10 @@ func TestPublishVersionDatasetDownloadsOK(t *testing.T) {
 		So(len(mockedDataStore.UpsertVersionStaticCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
+
+		Convey("The GetFile check is no longer called", func() {
+			So(len(mockFilesAPIClient.GetFileCalls()), ShouldEqual, 0)
+		})
 	})
 }
 
@@ -3399,27 +3403,25 @@ func TestApproveVersionDistributionFilesCheck(t *testing.T) {
 	stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
 	Convey("When FilesAPIClient is nil, the file check is skipped and approve succeeds", t, func() {
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, &SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, false, &url.Builder{}, &topicAPISDK.Client{}, nil)
 		smDS.FilesAPIClient = nil
 
-		err := ApproveVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
+		err := ApproveVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "", authEntityData, "")
 
 		So(err, ShouldBeNil)
 		So(len(mockedDataStore.UpdateVersionStaticCalls()), ShouldEqual, 1)
 	})
 
 	Convey("When FilesAPIClient is set and all files exist, approve succeeds", t, func() {
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-
 		filesClient := &filesAPISDKMocks.ClienterMock{
 			GetFileFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) (*filesAPIModels.StoredRegisteredMetaData, error) {
 				return &filesAPIModels.StoredRegisteredMetaData{}, nil
 			},
 		}
-		smDS.SetFilesAPIClient(filesClient)
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, &SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, false, &url.Builder{}, &topicAPISDK.Client{}, filesClient)
 
 		ctxWithToken := context.WithValue(testContext, AccessTokenKey, "test-token")
-		err := ApproveVersion(ctxWithToken, smDS, currentVersion, versionUpdate, versionDetails, "")
+		err := ApproveVersion(ctxWithToken, smDS, currentVersion, versionUpdate, versionDetails, "", authEntityData, "")
 
 		So(err, ShouldBeNil)
 		So(filesClient.GetFileCalls(), ShouldHaveLength, 1)
@@ -3427,46 +3429,17 @@ func TestApproveVersionDistributionFilesCheck(t *testing.T) {
 	})
 
 	Convey("When FilesAPIClient is set and a file does not exist, approve returns ErrFileMetadataNotFound", t, func() {
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-
 		filesClient := &filesAPISDKMocks.ClienterMock{
 			GetFileFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) (*filesAPIModels.StoredRegisteredMetaData, error) {
 				return nil, errs.ErrFileMetadataNotFound
 			},
 		}
-		smDS.SetFilesAPIClient(filesClient)
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, &SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, false, &url.Builder{}, &topicAPISDK.Client{}, filesClient)
 
 		ctxWithToken := context.WithValue(testContext, AccessTokenKey, "test-token")
-		err := ApproveVersion(ctxWithToken, smDS, currentVersion, versionUpdate, versionDetails, "")
+		err := ApproveVersion(ctxWithToken, smDS, currentVersion, versionUpdate, versionDetails, "", authEntityData, "")
 
 		So(err, ShouldEqual, errs.ErrFileMetadataNotFound)
 		So(filesClient.GetFileCalls(), ShouldHaveLength, 1)
-	})
-
-	Convey("When the version has no distributions, the file check is skipped and approve succeeds", t, func() {
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-
-		getFileCalled := false
-		filesClient := &filesAPISDKMocks.ClienterMock{
-			GetFileFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) (*filesAPIModels.StoredRegisteredMetaData, error) {
-				getFileCalled = true
-				return &filesAPIModels.StoredRegisteredMetaData{}, nil
-			},
-		}
-		smDS.SetFilesAPIClient(filesClient)
-
-		versionUpdateNoDistributions := &models.Version{
-			State:        models.ApprovedState,
-			ReleaseDate:  "2024-12-31",
-			ID:           "789",
-			CollectionID: "3434",
-			Type:         models.Static.String(),
-		}
-
-		ctxWithToken := context.WithValue(testContext, AccessTokenKey, "test-token")
-		err := ApproveVersion(ctxWithToken, smDS, currentVersion, versionUpdateNoDistributions, versionDetails, "")
-
-		So(err, ShouldBeNil)
-		So(getFileCalled, ShouldBeFalse)
 	})
 }

@@ -5906,8 +5906,8 @@ func TestPutStateApproveDistributionFilesCheck(t *testing.T) {
 			DataStore:          store.DataStore{Backend: mockedDataStore},
 			DownloadGenerators: mockedMapSMGeneratedDownloads,
 			StateMachine:       application.NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore}),
+			FilesAPIClient:     filesClient,
 		}
-		smDS.SetFilesAPIClient(filesClient)
 
 		testIdentityClient := clientsidentity.New(cfg.ZebedeeURL)
 		permissionsChecker := &authMock.PermissionsCheckerMock{
@@ -5918,7 +5918,7 @@ func TestPutStateApproveDistributionFilesCheck(t *testing.T) {
 
 		mockedMapGeneratedDownloads := map[models.DatasetType]DownloadsGenerator{}
 
-		return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, authorisationMock, enableURLRewriting, smDS, auditServiceMock, permissionsChecker, testIdentityClient, nil, &cloudflareMocks.ClienterMock{})
+		return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, authorisationMock, enableURLRewriting, smDS, auditServiceMock, permissionsChecker, testIdentityClient, filesClient, &topicAPISDKMocks.ClienterMock{})
 	}
 
 	distributions := []models.Distribution{
@@ -6056,76 +6056,6 @@ func TestPutStateApproveDistributionFilesCheck(t *testing.T) {
 			So(filesClient.GetFileCalls(), ShouldHaveLength, 1)
 		})
 	})
-
-	Convey("When publishing a version, GetFile is not called", t, func() {
-		mockedDataStore := &storetest.StorerMock{
-			GetVersionStaticFunc: func(ctx context.Context, datasetID, editionID string, version int, state string) (*models.Version, error) {
-				v := baseVersion()
-				v.State = models.ApprovedState
-				return v, nil
-			},
-			AcquireVersionsLockFunc: func(context.Context, string) (string, error) {
-				return testLockID, nil
-			},
-			UnlockVersionsFunc: func(context.Context, string) {},
-			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
-				return nil
-			},
-			UpdateVersionStaticFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
-				return "", nil
-			},
-			GetDatasetTypeFunc: func(context.Context, string, bool) (string, error) {
-				return models.Static.String(), nil
-			},
-			UpsertVersionStaticFunc: func(context.Context, *models.Version) error {
-				return nil
-			},
-			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{
-					ID: "test-dataset",
-					Next: &models.Dataset{
-						State: models.ApprovedState,
-						Type:  models.Static.String(),
-						Links: &models.DatasetLinks{},
-					},
-				}, nil
-			},
-			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
-				return nil
-			},
-		}
-
-		getFileCalled := false
-		filesClient := &filesAPISDKMocks.ClienterMock{
-			GetFileFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) (*filesAPIModels.StoredRegisteredMetaData, error) {
-				getFileCalled = true
-				return &filesAPIModels.StoredRegisteredMetaData{}, nil
-			},
-			MarkFilePublishedFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) error {
-				return nil
-			},
-		}
-
-		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/test-dataset/editions/test-edition/versions/1/state", bytes.NewBufferString(`{"state":"published"}`))
-		w := httptest.NewRecorder()
-
-		scuProducerMock := getSearchContentUpdatedMock()
-		searchContentUpdated := SearchContentUpdatedProducer{Producer: scuProducerMock}
-
-		api := buildAPIWithApproval(mockedDataStore, filesClient, authorisationMock, auditServiceMock)
-		api.SetFilesAPIClient(filesClient, "")
-		api.searchContentUpdatedProducer = &searchContentUpdated
-
-		api.Router.ServeHTTP(w, r)
-
-		Convey("Then GetFile is never called during publish", func() {
-			So(getFileCalled, ShouldBeFalse)
-		})
-
-		Convey("And MarkFilePublished is called instead", func() {
-			So(filesClient.MarkFilePublishedCalls(), ShouldHaveLength, 1)
-		})
-	})
 }
 
 func TestPutVersionSavesPreviousEditionID(t *testing.T) {
@@ -6211,7 +6141,7 @@ func TestPutVersionSavesPreviousEditionID(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, &topicAPISDKMocks.ClienterMock{}, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -6298,7 +6228,7 @@ func TestPutVersionSavesPreviousEditionID(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, &topicAPISDKMocks.ClienterMock{}, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -6388,7 +6318,7 @@ func TestPutVersionSavesPreviousEditionID(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, &topicAPISDKMocks.ClienterMock{}, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)

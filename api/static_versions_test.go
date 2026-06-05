@@ -2795,8 +2795,7 @@ func TestCreateVersion_WebPageLink(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
-		api.SetTopicAPIClient(topicClientMock)
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, topicClientMock, &filesAPISDKMocks.ClienterMock{})
 
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(validVersionJSON))
 		r = mux.SetURLVars(r, map[string]string{"dataset_id": "123", "edition": "edition1", "version": "1"})
@@ -2847,8 +2846,7 @@ func TestCreateVersion_WebPageLink(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
-		api.SetTopicAPIClient(topicClientMock)
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, topicClientMock, &filesAPISDKMocks.ClienterMock{})
 
 		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(validVersionJSON))
 		r = mux.SetURLVars(r, map[string]string{"dataset_id": "123", "edition": "edition1", "version": "1"})
@@ -2933,8 +2931,7 @@ func TestAddDatasetVersionCondensed_WebPageLink(t *testing.T) {
 		r = mux.SetURLVars(r, map[string]string{"dataset_id": "123", "edition": "time-series"})
 		w := httptest.NewRecorder()
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
-		api.SetTopicAPIClient(topicClientMock)
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, topicClientMock, &filesAPISDKMocks.ClienterMock{})
 
 		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
 
@@ -2987,8 +2984,7 @@ func TestAddDatasetVersionCondensed_WebPageLink(t *testing.T) {
 		r = mux.SetURLVars(r, map[string]string{"dataset_id": "123", "edition": "time-series"})
 		w := httptest.NewRecorder()
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
-		api.SetTopicAPIClient(topicClientMock)
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, topicClientMock, &filesAPISDKMocks.ClienterMock{})
 
 		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
 

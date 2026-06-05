@@ -556,7 +556,6 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *DatasetAPI) deleteVersion(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("GOT IN TO THE HANDLER")
 	defer dphttp.DrainBody(r)
 
 	ctx := r.Context()

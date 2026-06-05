@@ -1029,5 +1029,5 @@ func getAPIWithCantabularMocks(ctx context.Context, mockedDataStore store.Storer
 	}
 	testIdentityClient := clientsidentity.New(cfg.ZebedeeURL)
 
-	return api.Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapDownloadGenerators, am, enableURLRewriting, &mockStatemachineDatasetAPI, auditServiceMock, permissionsChecker, testIdentityClient, nil)
+	return api.Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapDownloadGenerators, am, enableURLRewriting, &mockStatemachineDatasetAPI, auditServiceMock, permissionsChecker, testIdentityClient, nil, nil)
 }
