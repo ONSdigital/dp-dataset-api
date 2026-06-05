@@ -990,7 +990,6 @@ func (smDS *StateMachineDatasetAPI) DeleteStaticVersion(ctx context.Context, dat
 }
 
 func (smDS *StateMachineDatasetAPI) publishDistributionFiles(ctx context.Context, version *models.Version, accessToken string) error {
-
 	var filesAPIError error
 	totalFiles := len(*version.Distributions)
 	successCount := 0
