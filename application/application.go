@@ -990,7 +990,7 @@ func (smDS *StateMachineDatasetAPI) DeleteStaticVersion(ctx context.Context, dat
 }
 
 func (smDS *StateMachineDatasetAPI) publishDistributionFiles(ctx context.Context, version *models.Version, accessToken string) error {
-	var lastError error
+
 	var filesAPIError error
 	totalFiles := len(*version.Distributions)
 	successCount := 0
@@ -1006,25 +1006,17 @@ func (smDS *StateMachineDatasetAPI) publishDistributionFiles(ctx context.Context
 			continue
 		}
 
-		filepath := distribution.DownloadURL
-
-		fileLogData := log.Data{
-			"filepath":            filepath,
-			"distribution_title":  distribution.Title,
-			"distribution_format": distribution.Format,
-		}
-
 		go publishFile(ctx, smDS.FilesAPIClient, *distribution, accessToken, ch, &wg, errCh)
 
 		successCount++
-		log.Info(ctx, "successfully published file", fileLogData)
 	}
 
 	wg.Wait()
 	close(errCh)
 	for err := range errCh {
 		filesAPIError = err
-		log.Error(ctx, "something went wrong when processing content items", err)
+		log.Error(ctx, "one or more errors occurred while publishing files:", filesAPIError)
+		successCount--
 	}
 
 	log.Info(ctx, "completed publishing distribution files", log.Data{
@@ -1033,15 +1025,8 @@ func (smDS *StateMachineDatasetAPI) publishDistributionFiles(ctx context.Context
 		"failed":      totalFiles - successCount,
 	})
 
-	if filesAPIError != nil {
-		return filesAPIError
-	}
-
-	if lastError != nil {
-		return fmt.Errorf("one or more errors occurred while publishing files: %w", lastError)
-	}
-
-	return nil
+	// This will be nil if no errors found, allows for the correct log messages to be correlated above
+	return filesAPIError
 }
 
 func publishFile(ctx context.Context, filesAPIClient filesAPISDK.Clienter, distribution models.Distribution, accessToken string, ch chan string, wg *sync.WaitGroup, errCh chan error) {
@@ -1071,6 +1056,11 @@ func publishFile(ctx context.Context, filesAPIClient filesAPISDK.Clienter, distr
 		return
 	}
 
+	log.Info(ctx, "Successfully published file", log.Data{
+		"filepath":            distribution.DownloadURL,
+		"distribution_title":  distribution.Title,
+		"distribution_format": distribution.Format,
+	})
 	ch <- distribution.DownloadURL
 }
 

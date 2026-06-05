@@ -105,7 +105,7 @@ func GetListStaticTransitions() []application.Transition {
 	associatedTransition := application.Transition{
 		Label:               "associated",
 		TargetState:         application.Associated,
-		AllowedSourceStates: []string{"created", "associated"},
+		AllowedSourceStates: []string{"created", "associated", "approved"},
 		Type:                "static",
 	}
 
