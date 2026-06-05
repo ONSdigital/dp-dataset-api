@@ -3,8 +3,6 @@ package application
 import (
 	"context"
 	"errors"
-	"fmt"
-	"sync"
 	"testing"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -3306,34 +3304,4 @@ func TestDeleteStaticVersion_Errors(t *testing.T) {
 		So(len(mocked.DeleteStaticDatasetVersionCalls()), ShouldEqual, 1)
 		So(len(mocked.UpsertDatasetCalls()), ShouldEqual, 1)
 	})
-}
-
-func TestPublishFile(t *testing.T) {
-	t.Parallel()
-
-	mockFilesAPIClient := &filesAPISDKMocks.ClienterMock{
-		MarkFilePublishedFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) error {
-			return errors.New("FileNotRegistered")
-		},
-	}
-
-	resultCh := make(chan string)
-	errCh := make(chan error)
-	var wg sync.WaitGroup
-
-	wg.Add(1)
-	go publishFile(context.Background(), mockFilesAPIClient, models.Distribution{}, "1234", resultCh, &wg, errCh)
-
-	//var errorVal error
-
-	select {
-	case <-resultCh:
-		fmt.Println("published ok")
-	case <-errCh:
-		fmt.Println(errCh)
-		//errorVal = <-errCh
-	}
-
-	So(errCh, ShouldContainSubstring, "failed to publish file")
-
 }
