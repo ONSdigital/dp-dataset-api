@@ -255,7 +255,7 @@ func (m *Mongo) UpdateVersionStatic(ctx context.Context, currentVersion, version
 	return newETag, nil
 }
 
-// UpdateVersionStatic updates an existing version document
+// UpdateStateStatic only updates the date and last updated fields for a version
 func (m *Mongo) UpdateStateStatic(ctx context.Context, currentVersion *models.Version, updatedState *models.StateUpdate, eTagSelector string) (updatedVersion *models.Version, err error) {
 	update := bson.M{
 		"$set": bson.M{
