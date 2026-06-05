@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
 	"github.com/ONSdigital/dp-authorisation/v2/authorisation"
 	authMock "github.com/ONSdigital/dp-authorisation/v2/authorisation/mock"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -23,6 +24,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-dataset-api/store"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	filesAPIModels "github.com/ONSdigital/dp-files-api/files"
 	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
@@ -49,12 +51,7 @@ const (
 )
 
 type mockFilesClient struct {
-	GetFileFunc           func(ctx context.Context, path string) (*filesAPIModels.StoredRegisteredMetaData, error)
 	MarkFilePublishedFunc func(ctx context.Context, path string) error
-}
-
-func (m *mockFilesClient) GetFile(ctx context.Context, path string) (*filesAPIModels.StoredRegisteredMetaData, error) {
-	return m.GetFileFunc(ctx, path)
 }
 
 func (m *mockFilesClient) MarkFilePublished(ctx context.Context, path string) error {
@@ -145,7 +142,10 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
-			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+			CheckEditionExistsStaticFunc: func(_ context.Context, _ string, editionID string, _ string) error {
+				if editionID == "new-edition" {
+					return errs.ErrEditionNotFound
+				}
 				return nil
 			},
 			GetVersionsFunc: func(context.Context, string, string, string, int, int) ([]models.Version, int, error) {
@@ -5057,14 +5057,9 @@ func TestPublishDistributionFiles(t *testing.T) {
 		logData := log.Data{}
 
 		Convey("When publishDistributionFiles is called with a mocked files client that succeeds", func() {
-			getFileCalls := 0
 			markPublishedCalls := 0
 
 			mockClient := &mockFilesClient{
-				GetFileFunc: func(ctx context.Context, path string) (*filesAPIModels.StoredRegisteredMetaData, error) {
-					getFileCalls++
-					return &filesAPIModels.StoredRegisteredMetaData{}, nil
-				},
 				MarkFilePublishedFunc: func(ctx context.Context, path string) error {
 					markPublishedCalls++
 					return nil
@@ -5072,72 +5067,24 @@ func TestPublishDistributionFiles(t *testing.T) {
 			}
 
 			testFunc := func() error {
-				getFileFn := func(ctx context.Context, path string) (*filesAPIModels.StoredRegisteredMetaData, error) {
-					return mockClient.GetFile(ctx, path)
-				}
-
 				markPublishedFn := func(ctx context.Context, path string) error {
 					return mockClient.MarkFilePublished(ctx, path)
 				}
-
-				return publishDistributionFilesTest(ctx, version, logData, getFileFn, markPublishedFn)
+				return publishDistributionFilesTest(ctx, version, logData, markPublishedFn)
 			}
 
 			err := testFunc()
 
 			Convey("Then no error should be returned", func() {
 				So(err, ShouldBeNil)
-				So(getFileCalls, ShouldEqual, 2)
 				So(markPublishedCalls, ShouldEqual, 2)
 			})
 		})
 
-		Convey("When publishDistributionFiles is called with a mocked files client that fails on GetFile", func() {
-			getFileCalls := 0
-			markPublishedCalls := 0
-
-			mockClient := &mockFilesClient{
-				GetFileFunc: func(ctx context.Context, path string) (*filesAPIModels.StoredRegisteredMetaData, error) {
-					getFileCalls++
-					return &filesAPIModels.StoredRegisteredMetaData{}, errors.New("get file error")
-				},
-				MarkFilePublishedFunc: func(ctx context.Context, path string) error {
-					markPublishedCalls++
-					return nil
-				},
-			}
-
-			testFunc := func() error {
-				getFileFn := func(ctx context.Context, path string) (*filesAPIModels.StoredRegisteredMetaData, error) {
-					return mockClient.GetFile(ctx, path)
-				}
-
-				markPublishedFn := func(ctx context.Context, path string) error {
-					return mockClient.MarkFilePublished(ctx, path)
-				}
-
-				return publishDistributionFilesTest(ctx, version, logData, getFileFn, markPublishedFn)
-			}
-
-			err := testFunc()
-
-			Convey("Then an error should be returned", func() {
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "get file error")
-				So(getFileCalls, ShouldEqual, 2)
-				So(markPublishedCalls, ShouldEqual, 0)
-			})
-		})
-
 		Convey("When publishDistributionFiles is called with a mocked files client that fails on MarkFilePublished", func() {
-			getFileCalls := 0
 			markPublishedCalls := 0
 
 			mockClient := &mockFilesClient{
-				GetFileFunc: func(ctx context.Context, path string) (*filesAPIModels.StoredRegisteredMetaData, error) {
-					getFileCalls++
-					return &filesAPIModels.StoredRegisteredMetaData{}, nil
-				},
 				MarkFilePublishedFunc: func(ctx context.Context, path string) error {
 					markPublishedCalls++
 					return errors.New("mark published error")
@@ -5145,15 +5092,10 @@ func TestPublishDistributionFiles(t *testing.T) {
 			}
 
 			testFunc := func() error {
-				getFileFn := func(ctx context.Context, path string) (*filesAPIModels.StoredRegisteredMetaData, error) {
-					return mockClient.GetFile(ctx, path)
-				}
-
 				markPublishedFn := func(ctx context.Context, path string) error {
 					return mockClient.MarkFilePublished(ctx, path)
 				}
-
-				return publishDistributionFilesTest(ctx, version, logData, getFileFn, markPublishedFn)
+				return publishDistributionFilesTest(ctx, version, logData, markPublishedFn)
 			}
 
 			err := testFunc()
@@ -5161,7 +5103,6 @@ func TestPublishDistributionFiles(t *testing.T) {
 			Convey("Then an error should be returned", func() {
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldContainSubstring, "mark published error")
-				So(getFileCalls, ShouldEqual, 2)
 				So(markPublishedCalls, ShouldEqual, 2)
 			})
 		})
@@ -5280,7 +5221,6 @@ func TestPutStatePublishDistributionFilesCondition(t *testing.T) {
 }
 
 func publishDistributionFilesTest(ctx context.Context, version *models.Version, logData log.Data,
-	getFileFn func(context.Context, string) (*filesAPIModels.StoredRegisteredMetaData, error),
 	markPublishedFn func(context.Context, string) error) error {
 	if version.Distributions == nil || len(*version.Distributions) == 0 {
 		return nil
@@ -5302,19 +5242,11 @@ func publishDistributionFilesTest(ctx context.Context, version *models.Version, 
 			"distribution_title":  distribution.Title,
 			"distribution_format": distribution.Format,
 		}
-
 		for k, v := range logData {
 			fileLogData[k] = v
 		}
 
-		_, err := getFileFn(ctx, filepath)
-		if err != nil {
-			log.Error(ctx, "failed to get file metadata", err, fileLogData)
-			lastError = err
-			continue
-		}
-
-		err = markPublishedFn(ctx, filepath)
+		err := markPublishedFn(ctx, filepath)
 		if err != nil {
 			log.Error(ctx, "failed to publish file", err, fileLogData)
 			lastError = err
@@ -5334,7 +5266,6 @@ func publishDistributionFilesTest(ctx context.Context, version *models.Version, 
 	if lastError != nil {
 		return fmt.Errorf("one or more errors occurred while publishing files: %w", lastError)
 	}
-
 	return nil
 }
 
@@ -5418,21 +5349,6 @@ func TestPublishDistributionFilesErrorMapping(t *testing.T) {
 	t.Parallel()
 
 	Convey("When testing error mapping logic in publishDistributionFiles", t, func() {
-		Convey("Given ErrFileNotRegistered", func() {
-			err := filesAPIErrors.ErrFileNotRegistered
-			var filesAPIError error
-
-			if strings.Contains(err.Error(), "FileNotRegistered") ||
-				strings.Contains(err.Error(), "file not registered") ||
-				strings.Contains(err.Error(), "not found") {
-				filesAPIError = errs.ErrFileMetadataNotFound
-			}
-
-			Convey("Then it should be mapped to ErrFileMetadataNotFound", func() {
-				So(filesAPIError, ShouldEqual, errs.ErrFileMetadataNotFound)
-			})
-		})
-
 		Convey("Given ErrFileNotInUploadedState", func() {
 			err := filesAPIErrors.ErrFileNotInUploadedState
 			var filesAPIError error
@@ -5447,51 +5363,6 @@ func TestPublishDistributionFilesErrorMapping(t *testing.T) {
 				So(filesAPIError, ShouldEqual, errs.ErrFileNotInCorrectState)
 			})
 		})
-
-		Convey("Given error with 'FileNotRegistered' in message", func() {
-			err := errors.New("FileNotRegistered: file not found")
-			var filesAPIError error
-
-			if strings.Contains(err.Error(), "FileNotRegistered") ||
-				strings.Contains(err.Error(), "file not registered") ||
-				strings.Contains(err.Error(), "not found") {
-				filesAPIError = errs.ErrFileMetadataNotFound
-			}
-
-			Convey("Then it should be mapped to ErrFileMetadataNotFound", func() {
-				So(filesAPIError, ShouldEqual, errs.ErrFileMetadataNotFound)
-			})
-		})
-
-		Convey("Given error with 'file not registered' in message", func() {
-			err := errors.New("file not registered")
-			var filesAPIError error
-
-			if strings.Contains(err.Error(), "FileNotRegistered") ||
-				strings.Contains(err.Error(), "file not registered") ||
-				strings.Contains(err.Error(), "not found") {
-				filesAPIError = errs.ErrFileMetadataNotFound
-			}
-
-			Convey("Then it should be mapped to ErrFileMetadataNotFound", func() {
-				So(filesAPIError, ShouldEqual, errs.ErrFileMetadataNotFound)
-			})
-		})
-
-		Convey("Given error with 'not found' in message", func() {
-			err := errors.New("resource not found")
-			var filesAPIError error
-
-			if strings.Contains(err.Error(), "FileNotRegistered") ||
-				strings.Contains(err.Error(), "file not registered") ||
-				strings.Contains(err.Error(), "not found") {
-				filesAPIError = errs.ErrFileMetadataNotFound
-			}
-
-			Convey("Then it should be mapped to ErrFileMetadataNotFound", func() {
-				So(filesAPIError, ShouldEqual, errs.ErrFileMetadataNotFound)
-			})
-		})
 	})
 }
 
@@ -5502,8 +5373,8 @@ func TestErrorStatusCodeMapping(t *testing.T) {
 		Convey("Given ErrFileMetadataNotFound", func() {
 			statusCode := getVersionAPIErrStatusCode(errs.ErrFileMetadataNotFound)
 
-			Convey("Then it should return 404", func() {
-				So(statusCode, ShouldEqual, http.StatusNotFound)
+			Convey("Then it should return 422", func() {
+				So(statusCode, ShouldEqual, http.StatusUnprocessableEntity)
 			})
 		})
 
@@ -5979,5 +5850,550 @@ func TestPutVersionIsMigration(t *testing.T) {
 			So(capturedVersionUpdate.IsMigration, ShouldNotBeNil)
 			So(*capturedVersionUpdate.IsMigration, ShouldBeTrue)
 		})
+	})
+}
+
+func TestPutStateApproveDistributionFilesCheck(t *testing.T) {
+	buildAPIWithApproval := func(
+		mockedDataStore store.Storer,
+		filesClient filesAPISDK.Clienter,
+		authorisationMock *authMock.MiddlewareMock,
+		auditServiceMock *applicationMocks.AuditServiceMock,
+	) *DatasetAPI {
+		mu.Lock()
+		defer mu.Unlock()
+
+		cfg, err := config.Get()
+		So(err, ShouldBeNil)
+		cfg.ServiceAuthToken = authToken
+		cfg.DatasetAPIURL = host
+		cfg.EnablePrivateEndpoints = true
+		cfg.DefaultLimit = 0
+		cfg.DefaultOffset = 0
+		cfg.EnableDeleteStaticVersion = true
+		cfg.EnablePermissionsAuth = true
+		cfg.CloudflareEnabled = false
+
+		mockedMapSMGeneratedDownloads := map[models.DatasetType]application.DownloadsGenerator{}
+
+		states := []application.State{
+			application.Published,
+			application.Associated,
+			application.Approved,
+		}
+		transitions := []application.Transition{
+			{
+				Label:               "associated",
+				TargetState:         application.Associated,
+				AllowedSourceStates: []string{"created", "associated"},
+				Type:                "static",
+			},
+			{
+				Label:               "approved",
+				TargetState:         application.Approved,
+				AllowedSourceStates: []string{"associated"},
+				Type:                "static",
+			},
+			{
+				Label:               "published",
+				TargetState:         application.Published,
+				AllowedSourceStates: []string{"approved"},
+				Type:                "static",
+			},
+		}
+
+		smDS := &application.StateMachineDatasetAPI{
+			DataStore:          store.DataStore{Backend: mockedDataStore},
+			DownloadGenerators: mockedMapSMGeneratedDownloads,
+			StateMachine:       application.NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore}),
+		}
+		smDS.SetFilesAPIClient(filesClient)
+
+		testIdentityClient := clientsidentity.New(cfg.ZebedeeURL)
+		permissionsChecker := &authMock.PermissionsCheckerMock{
+			HasPermissionFunc: func(ctx context.Context, entityData permissionsAPISDK.EntityData, permission string, attributes map[string]string) (bool, error) {
+				return true, nil
+			},
+		}
+
+		mockedMapGeneratedDownloads := map[models.DatasetType]DownloadsGenerator{}
+
+		return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, authorisationMock, enableURLRewriting, smDS, auditServiceMock, permissionsChecker, testIdentityClient, nil, &cloudflareMocks.ClienterMock{})
+	}
+
+	distributions := []models.Distribution{
+		{
+			Title:       "Full Dataset (CSV)",
+			Format:      "csv",
+			DownloadURL: "datasets/test-dataset/editions/test-edition/myfile.csv",
+		},
+	}
+
+	baseVersion := func() *models.Version {
+		return &models.Version{
+			ID:            "789",
+			State:         models.AssociatedState,
+			Type:          models.Static.String(),
+			Edition:       "test-edition",
+			EditionTitle:  "Test Edition",
+			ReleaseDate:   "2025-01-01T00:00:00Z",
+			Distributions: &distributions,
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/test-dataset",
+					ID:   "test-dataset",
+				},
+				Edition: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/test-dataset/editions/test-edition",
+					ID:   "test-edition",
+				},
+				Self: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/test-dataset/editions/test-edition/versions/1",
+				},
+				Version: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/test-dataset/editions/test-edition/versions/1",
+					ID:   "1",
+				},
+			},
+		}
+	}
+
+	authorisationMock := &authMock.MiddlewareMock{
+		RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+			return handlerFunc
+		},
+		RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+			return handlerFunc
+		},
+		ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+			return testEntityData, nil
+		},
+	}
+
+	auditServiceMock := &applicationMocks.AuditServiceMock{
+		RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, version *models.Version) error {
+			return nil
+		},
+	}
+
+	Convey("When approving a version and all distribution files exist in files API", t, func() {
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionStaticFunc: func(ctx context.Context, datasetID, editionID string, version int, state string) (*models.Version, error) {
+				return baseVersion(), nil
+			},
+			AcquireVersionsLockFunc: func(context.Context, string) (string, error) {
+				return testLockID, nil
+			},
+			UnlockVersionsFunc: func(context.Context, string) {},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			UpdateVersionStaticFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
+				return "", nil
+			},
+		}
+
+		filesClient := &filesAPISDKMocks.ClienterMock{
+			GetFileFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) (*filesAPIModels.StoredRegisteredMetaData, error) {
+				return &filesAPIModels.StoredRegisteredMetaData{}, nil
+			},
+		}
+
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/test-dataset/editions/test-edition/versions/1/state", bytes.NewBufferString(`{"state":"approved"}`))
+		w := httptest.NewRecorder()
+
+		api := buildAPIWithApproval(mockedDataStore, filesClient, authorisationMock, auditServiceMock)
+		api.Router.ServeHTTP(w, r)
+
+		Convey("Then a 200 response is returned", func() {
+			So(w.Code, ShouldEqual, http.StatusOK)
+		})
+
+		Convey("And GetFile was called for the distribution", func() {
+			So(filesClient.GetFileCalls(), ShouldHaveLength, 1)
+			So(filesClient.GetFileCalls()[0].FilePath, ShouldEqual, "datasets/test-dataset/editions/test-edition/myfile.csv")
+		})
+	})
+
+	Convey("When approving a version and a distribution file does not exist in files API", t, func() {
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionStaticFunc: func(ctx context.Context, datasetID, editionID string, version int, state string) (*models.Version, error) {
+				return baseVersion(), nil
+			},
+			AcquireVersionsLockFunc: func(context.Context, string) (string, error) {
+				return testLockID, nil
+			},
+			UnlockVersionsFunc: func(context.Context, string) {},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			UpdateVersionStaticFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
+				return "", nil
+			},
+		}
+
+		filesClient := &filesAPISDKMocks.ClienterMock{
+			GetFileFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) (*filesAPIModels.StoredRegisteredMetaData, error) {
+				return nil, errs.ErrFileMetadataNotFound
+			},
+		}
+
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/test-dataset/editions/test-edition/versions/1/state", bytes.NewBufferString(`{"state":"approved"}`))
+		w := httptest.NewRecorder()
+
+		api := buildAPIWithApproval(mockedDataStore, filesClient, authorisationMock, auditServiceMock)
+		api.Router.ServeHTTP(w, r)
+
+		Convey("Then a 422 response is returned", func() {
+			So(w.Code, ShouldEqual, http.StatusUnprocessableEntity)
+		})
+
+		Convey("And the error message states distribution files could not be found", func() {
+			So(w.Body.String(), ShouldContainSubstring, errs.ErrFileMetadataNotFound.Error())
+		})
+
+		Convey("And GetFile was called for the distribution", func() {
+			So(filesClient.GetFileCalls(), ShouldHaveLength, 1)
+		})
+	})
+
+	Convey("When publishing a version, GetFile is not called", t, func() {
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionStaticFunc: func(ctx context.Context, datasetID, editionID string, version int, state string) (*models.Version, error) {
+				v := baseVersion()
+				v.State = models.ApprovedState
+				return v, nil
+			},
+			AcquireVersionsLockFunc: func(context.Context, string) (string, error) {
+				return testLockID, nil
+			},
+			UnlockVersionsFunc: func(context.Context, string) {},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			UpdateVersionStaticFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
+				return "", nil
+			},
+			GetDatasetTypeFunc: func(context.Context, string, bool) (string, error) {
+				return models.Static.String(), nil
+			},
+			UpsertVersionStaticFunc: func(context.Context, *models.Version) error {
+				return nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					ID: "test-dataset",
+					Next: &models.Dataset{
+						State: models.ApprovedState,
+						Type:  models.Static.String(),
+						Links: &models.DatasetLinks{},
+					},
+				}, nil
+			},
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
+				return nil
+			},
+		}
+
+		getFileCalled := false
+		filesClient := &filesAPISDKMocks.ClienterMock{
+			GetFileFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) (*filesAPIModels.StoredRegisteredMetaData, error) {
+				getFileCalled = true
+				return &filesAPIModels.StoredRegisteredMetaData{}, nil
+			},
+			MarkFilePublishedFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) error {
+				return nil
+			},
+		}
+
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/test-dataset/editions/test-edition/versions/1/state", bytes.NewBufferString(`{"state":"published"}`))
+		w := httptest.NewRecorder()
+
+		scuProducerMock := getSearchContentUpdatedMock()
+		searchContentUpdated := SearchContentUpdatedProducer{Producer: scuProducerMock}
+
+		api := buildAPIWithApproval(mockedDataStore, filesClient, authorisationMock, auditServiceMock)
+		api.SetFilesAPIClient(filesClient, "")
+		api.searchContentUpdatedProducer = &searchContentUpdated
+
+		api.Router.ServeHTTP(w, r)
+
+		Convey("Then GetFile is never called during publish", func() {
+			So(getFileCalled, ShouldBeFalse)
+		})
+
+		Convey("And MarkFilePublished is called instead", func() {
+			So(filesClient.MarkFilePublishedCalls(), ShouldHaveLength, 1)
+		})
+	})
+}
+
+func TestPutVersionSavesPreviousEditionID(t *testing.T) {
+	t.Parallel()
+
+	Convey("When edition ID changes on a static version, previous_edition_id is populated with the old edition", t, func() {
+		var capturedVersionUpdate *models.Version
+
+		b := `{"edition":"new-edition","edition_title":"New Edition Title","release_date":"2017-04-04","state":"associated","type":"static"}`
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/old-edition/versions/1", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			IsStaticDatasetFunc: func(context.Context, string) (bool, error) {
+				return true, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					Next: &models.Dataset{Type: models.Static.String()},
+				}, nil
+			},
+			CheckEditionExistsStaticFunc: func(_ context.Context, _ string, editionID string, _ string) error {
+				if editionID == "new-edition" {
+					return errs.ErrEditionNotFound
+				}
+				return nil
+			},
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					ID:           "version-id-1",
+					Edition:      "old-edition",
+					EditionTitle: "Old Edition Title",
+					State:        models.AssociatedState,
+					Type:         models.Static.String(),
+					ReleaseDate:  "2017-04-04",
+					Links: &models.VersionLinks{
+						Dataset: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123",
+							ID:   "123",
+						},
+						Self: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/old-edition/versions/1",
+						},
+						Version: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/old-edition/versions/1",
+							ID:   "1",
+						},
+						Edition: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/old-edition",
+							ID:   "old-edition",
+						},
+					},
+				}, nil
+			},
+			CheckEditionTitleExistsStaticFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{Type: models.Static.String()}, nil
+			},
+			UpdateVersionStaticFunc: func(ctx context.Context, currentVersion *models.Version, versionUpdate *models.Version, eTagSelector string) (string, error) {
+				capturedVersionUpdate = versionUpdate
+				return testETag, nil
+			},
+			AcquireVersionsLockFunc: func(context.Context, string) (string, error) {
+				return testLockID, nil
+			},
+			UnlockVersionsFunc: func(context.Context, string) {},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, version *models.Version) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(capturedVersionUpdate, ShouldNotBeNil)
+		So(capturedVersionUpdate.PreviousEditionId, ShouldResemble, []string{"old-edition"})
+		So(len(mockedDataStore.UpdateVersionStaticCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsStaticCalls()), ShouldEqual, 3)
+	})
+
+	Convey("When edition ID does NOT change on a static version, previous_edition_id is not modified", t, func() {
+		var capturedVersionUpdate *models.Version
+
+		b := `{"edition":"same-edition","edition_title":"New Title","release_date":"2017-04-04","state":"associated","type":"static"}`
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/same-edition/versions/1", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			IsStaticDatasetFunc: func(context.Context, string) (bool, error) {
+				return true, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					Next: &models.Dataset{Type: models.Static.String()},
+				}, nil
+			},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					ID:           "version-id-1",
+					Edition:      "same-edition",
+					EditionTitle: "Old Title",
+					State:        models.AssociatedState,
+					Type:         models.Static.String(),
+					ReleaseDate:  "2017-04-04",
+					Links: &models.VersionLinks{
+						Dataset: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123",
+							ID:   "123",
+						},
+						Self: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/same-edition/versions/1",
+						},
+						Version: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/same-edition/versions/1",
+							ID:   "1",
+						},
+						Edition: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/same-edition",
+							ID:   "same-edition",
+						},
+					},
+				}, nil
+			},
+			CheckEditionTitleExistsStaticFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{Type: models.Static.String()}, nil
+			},
+			UpdateVersionStaticFunc: func(ctx context.Context, currentVersion *models.Version, versionUpdate *models.Version, eTagSelector string) (string, error) {
+				capturedVersionUpdate = versionUpdate
+				return testETag, nil
+			},
+			AcquireVersionsLockFunc: func(context.Context, string) (string, error) {
+				return testLockID, nil
+			},
+			UnlockVersionsFunc: func(context.Context, string) {},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, version *models.Version) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(capturedVersionUpdate, ShouldNotBeNil)
+		So(capturedVersionUpdate.PreviousEditionId, ShouldBeNil)
+		So(len(mockedDataStore.UpdateVersionStaticCalls()), ShouldEqual, 1)
+	})
+
+	Convey("When version already has a previous_edition_id, new old edition is appended", t, func() {
+		var capturedVersionUpdate *models.Version
+
+		b := `{"edition":"newer-edition","edition_title":"Newer Edition Title","release_date":"2017-04-04","state":"associated","type":"static"}`
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/current-edition/versions/1", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			IsStaticDatasetFunc: func(context.Context, string) (bool, error) {
+				return true, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					Next: &models.Dataset{Type: models.Static.String()},
+				}, nil
+			},
+			CheckEditionExistsStaticFunc: func(_ context.Context, _ string, editionID string, _ string) error {
+				if editionID == "newer-edition" {
+					return errs.ErrEditionNotFound
+				}
+				return nil
+			},
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					ID:                "version-id-1",
+					Edition:           "current-edition",
+					EditionTitle:      "Current Edition Title",
+					PreviousEditionId: []string{"very-old-edition", "old-edition"},
+					State:             models.AssociatedState,
+					Type:              models.Static.String(),
+					ReleaseDate:       "2017-04-04",
+					Links: &models.VersionLinks{
+						Dataset: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123",
+							ID:   "123",
+						},
+						Self: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/current-edition/versions/1",
+						},
+						Version: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/current-edition/versions/1",
+							ID:   "1",
+						},
+						Edition: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/current-edition",
+							ID:   "current-edition",
+						},
+					},
+				}, nil
+			},
+			CheckEditionTitleExistsStaticFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{Type: models.Static.String()}, nil
+			},
+			UpdateVersionStaticFunc: func(ctx context.Context, currentVersion *models.Version, versionUpdate *models.Version, eTagSelector string) (string, error) {
+				capturedVersionUpdate = versionUpdate
+				return testETag, nil
+			},
+			AcquireVersionsLockFunc: func(context.Context, string) (string, error) {
+				return testLockID, nil
+			},
+			UnlockVersionsFunc: func(context.Context, string) {},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, version *models.Version) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(capturedVersionUpdate, ShouldNotBeNil)
+		So(capturedVersionUpdate.PreviousEditionId, ShouldResemble, []string{"very-old-edition", "old-edition", "current-edition"})
+		So(len(mockedDataStore.UpdateVersionStaticCalls()), ShouldEqual, 1)
 	})
 }

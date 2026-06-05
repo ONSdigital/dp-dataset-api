@@ -19,6 +19,7 @@ const (
 	ErrEditionAlreadyExists      = "ErrEditionAlreadyExists"
 	ErrEditionTitleAlreadyExists = "ErrEditionTitleAlreadyExists"
 	ErrNoSpacesAllowedError      = "ErrSpacesNotAllowed"
+	ErrTopicAPIFailure           = "ErrTopicAPIFailure"
 )
 
 // API error descriptions
@@ -40,4 +41,5 @@ const (
 	ErrTypeNotStaticDescription                   = "version type should be static"
 	ErrEditionAlreadyExistsDescription            = "edition already exists"
 	ErrEditionTitleAlreadyExistsDescription       = "edition title already exists"
+	ErrTopicAPIFailureDescription                 = "topic not found in Topic API"
 )

@@ -57,6 +57,39 @@ Feature: Static versions GET /versions
                     "is_migration": true
                 },
                 {
+                    "id": "test-static-version-previous-editions",
+                    "version": 1,
+                    "edition": "test-edition-static-previous-editions",
+                    "edition_title": "Test Edition Static Previous Editions",
+                    "links": {
+                        "dataset": {
+                            "id": "test-static"
+                        },
+                        "edition": {
+                            "href": "/datasets/test-static/editions/test-edition-static-previous-editions",
+                            "id": "test-edition-static-previous-editions"
+                        },
+                        "self": {
+                            "href": "/datasets/test-static/editions/test-edition-static-previous-editions/versions/1"
+                        },
+                        "web_page": {
+                            "href": "/economy/datasets/test-static/editions/test-edition-static-previous-editions/versions/1"
+                        }
+                    },
+                    "state": "published",
+                    "type": "static",
+                    "distributions": [
+                        {
+                            "title": "Distribution 1",
+                            "format": "csv",
+                            "media_type": "text/csv",
+                            "download_url": "/uuid/filename.csv",
+                            "byte_size": 100000
+                        }
+                    ],
+                    "previous_edition_id": ["old-edition"]
+                },
+                {
                     "id": "test-static-version-approved",
                     "version": 1,
                     "edition": "test-edition-static-approved",
@@ -135,7 +168,7 @@ Feature: Static versions GET /versions
                     {
                         "dataset_id": "test-static",
                         "id": "test-static-version-approved",
-                        "last_updated":"2021-01-01T00:00:01Z",
+                        "last_updated":"2021-01-01T00:00:02Z",
                         "type":"static",
                         "version": 1,
                         "state": "approved",
@@ -188,7 +221,7 @@ Feature: Static versions GET /versions
                     {
                         "dataset_id": "test-static",
                         "id": "test-static-version-approved",
-                        "last_updated":"2021-01-01T00:00:01Z",
+                        "last_updated":"2021-01-01T00:00:02Z",
                         "type":"static",
                         "version": 1,
                         "state": "approved",
@@ -237,7 +270,7 @@ Feature: Static versions GET /versions
             """
             {
                 "id": "test-static-version-approved",
-                "last_updated":"2021-01-01T00:00:01Z",
+                "last_updated":"2021-01-01T00:00:02Z",
                 "type":"static",
                 "version": 1,
                 "state": "approved",
@@ -323,6 +356,88 @@ Feature: Static versions GET /versions
                 },
                 "edition": "test-edition-static",
                 "edition_title": "Test Edition Static Title",
+                "distributions": [
+                    {
+                        "title": "Distribution 1",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "download_url": "/uuid/filename.csv",
+                        "byte_size": 100000
+                    }
+                ]
+            }
+            """
+
+    Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} returns previous edition names when present
+        Given private endpoints are enabled
+        And I am an admin user
+        When I GET "/datasets/test-static/editions/test-edition-static-previous-editions/versions/1"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "id": "test-static-version-previous-editions",
+                "last_updated": "2021-01-01T00:00:01Z",
+                "type": "static",
+                "version": 1,
+                "state": "published",
+                "links": {
+                    "dataset": {
+                        "id": "test-static"
+                    },
+                    "edition": {
+                        "href": "/datasets/test-static/editions/test-edition-static-previous-editions",
+                        "id": "test-edition-static-previous-editions"
+                    },
+                    "self": {
+                        "href": "/datasets/test-static/editions/test-edition-static-previous-editions/versions/1"
+                    },
+                    "web_page": {
+                        "href": "/economy/datasets/test-static/editions/test-edition-static-previous-editions/versions/1"
+                    }
+                },
+                "edition": "test-edition-static-previous-editions",
+                "edition_title": "Test Edition Static Previous Editions",
+                "previous_edition_id": ["old-edition"],
+                "distributions": [
+                    {
+                        "title": "Distribution 1",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "download_url": "/uuid/filename.csv",
+                        "byte_size": 100000
+                    }
+                ]
+            }
+            """
+
+    Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} does not return previous edition names to public
+        And I am not authenticated
+        When I GET "/datasets/test-static/editions/test-edition-static-previous-editions/versions/1"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "id": "test-static-version-previous-editions",
+                "last_updated": "2021-01-01T00:00:01Z",
+                "type": "static",
+                "version": 1,
+                "state": "published",
+                "links": {
+                    "dataset": {
+                        "id": "test-static"
+                    },
+                    "edition": {
+                        "href": "/datasets/test-static/editions/test-edition-static-previous-editions",
+                        "id": "test-edition-static-previous-editions"
+                    },
+                    "self": {
+                        "href": "/datasets/test-static/editions/test-edition-static-previous-editions/versions/1"
+                    },
+                    "web_page": {
+                        "href": "/economy/datasets/test-static/editions/test-edition-static-previous-editions/versions/1"
+                    }
+                },
+                "edition": "test-edition-static-previous-editions",
+                "edition_title": "Test Edition Static Previous Editions",
                 "distributions": [
                     {
                         "title": "Distribution 1",

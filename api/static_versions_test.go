@@ -19,6 +19,10 @@ import (
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	filesAPISDKMocks "github.com/ONSdigital/dp-files-api/sdk/mocks"
 	permissionsAPISDK "github.com/ONSdigital/dp-permissions-api/sdk"
+	topicModels "github.com/ONSdigital/dp-topic-api/models"
+	topicSDK "github.com/ONSdigital/dp-topic-api/sdk"
+	apiError "github.com/ONSdigital/dp-topic-api/sdk/errors"
+	topicMocks "github.com/ONSdigital/dp-topic-api/sdk/mocks"
 	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -1452,6 +1456,9 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 					State: models.PublishedState,
 				}, nil
 			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{}}, nil
+			},
 		}
 
 		authorisationMock := &authMock.MiddlewareMock{
@@ -1604,6 +1611,9 @@ func TestCreateVersion_Success(t *testing.T) {
 		},
 		AddVersionStaticFunc: func(context.Context, *models.Version) (*models.Version, error) {
 			return expectedVersion, nil
+		},
+		GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+			return &models.DatasetUpdate{Next: &models.Dataset{}}, nil
 		},
 	}
 
@@ -1762,6 +1772,9 @@ func TestCreateVersion_Success(t *testing.T) {
 			AddVersionStaticFunc: func(context.Context, *models.Version) (*models.Version, error) {
 				return expectedVersion, nil
 			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{}}, nil
+			},
 		}
 
 		auditServiceMock := &applicationMocks.AuditServiceMock{
@@ -1789,7 +1802,7 @@ func TestCreateVersion_Success(t *testing.T) {
 			})
 
 			Convey("And GetDataset and UpsertDataset should not have been called", func() {
-				So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 0)
+				So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
 				So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 0)
 			})
 		})
@@ -1808,6 +1821,9 @@ func TestCreateVersion_Success(t *testing.T) {
 			},
 			AddVersionStaticFunc: func(context.Context, *models.Version) (*models.Version, error) {
 				return expectedVersion, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{}}, nil
 			},
 		}
 
@@ -1835,8 +1851,8 @@ func TestCreateVersion_Success(t *testing.T) {
 				So(successResponse.Status, ShouldEqual, http.StatusCreated)
 			})
 
-			Convey("And GetDataset and UpsertDataset should not have been called", func() {
-				So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 0)
+			Convey("And GetDataset should have been called once for topic lookup, UpsertDataset should not have been called", func() {
+				So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
 				So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 0)
 			})
 		})
@@ -2116,6 +2132,9 @@ func TestCreateVersion_Failure(t *testing.T) {
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{}}, nil
+			},
 			CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
 				return true, nil
 			},
@@ -2151,6 +2170,9 @@ func TestCreateVersion_Failure(t *testing.T) {
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{}}, nil
+			},
 			CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
 				return false, errs.ErrInternalServer
 			},
@@ -2185,6 +2207,9 @@ func TestCreateVersion_Failure(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{}}, nil
 			},
 			CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
 				return false, nil
@@ -2229,6 +2254,9 @@ func TestCreateVersion_Failure(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{}}, nil
 			},
 			CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
 				return false, nil
@@ -2631,6 +2659,9 @@ func TestCreateVersion_IsMigration(t *testing.T) {
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{}}, nil
+			},
 			CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
 				return false, nil
 			},
@@ -2673,6 +2704,9 @@ func TestCreateVersion_IsMigration(t *testing.T) {
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{}}, nil
+			},
 			CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
 				return false, nil
 			},
@@ -2698,5 +2732,271 @@ func TestCreateVersion_IsMigration(t *testing.T) {
 		err = json.Unmarshal(successResponse.Body, &version)
 		So(err, ShouldBeNil)
 		So(version.IsMigration, ShouldBeNil)
+	})
+}
+
+func TestCreateVersion_WebPageLink(t *testing.T) {
+	t.Parallel()
+
+	authorisationMock := &authMock.MiddlewareMock{
+		RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+			return handlerFunc
+		},
+		ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+			return testEntityData, nil
+		},
+	}
+
+	auditServiceMock := &applicationMocks.AuditServiceMock{
+		RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, version *models.Version) error {
+			return nil
+		},
+	}
+
+	validVersion := &models.Version{
+		EditionTitle: "New edition title",
+		ReleaseDate:  "2025-01-01",
+		Distributions: &[]models.Distribution{
+			{Title: "CSV", Format: "csv", DownloadURL: "path/to/download", ByteSize: 100, MediaType: "text/csv"},
+		},
+		Type: models.Static.String(),
+	}
+
+	Convey("When topic API client is set and returns a valid slug, web_page link is set on the version", t, func() {
+		validVersionJSON, err := json.Marshal(validVersion)
+		So(err, ShouldBeNil)
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					Next: &models.Dataset{
+						Topics: []string{"topic-0"},
+					},
+				}, nil
+			},
+			CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
+				return false, nil
+			},
+			AddVersionStaticFunc: func(_ context.Context, v *models.Version) (*models.Version, error) {
+				return v, nil
+			},
+		}
+
+		topicClientMock := &topicMocks.ClienterMock{
+			GetTopicPrivateFunc: func(ctx context.Context, reqHeaders topicSDK.Headers, id string) (*topicModels.TopicResponse, apiError.Error) {
+				return &topicModels.TopicResponse{
+					Next: &topicModels.Topic{
+						Slug: "businessindustryandtrade",
+					},
+				}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api.SetTopicAPIClient(topicClientMock)
+
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(validVersionJSON))
+		r = mux.SetURLVars(r, map[string]string{"dataset_id": "123", "edition": "edition1", "version": "1"})
+		w := httptest.NewRecorder()
+
+		successResponse, errorResponse := api.createVersion(w, r)
+
+		So(errorResponse, ShouldBeNil)
+		So(successResponse.Status, ShouldEqual, http.StatusCreated)
+
+		var version models.Version
+		err = json.Unmarshal(successResponse.Body, &version)
+		So(err, ShouldBeNil)
+		So(version.Links, ShouldNotBeNil)
+		So(version.Links.WebPage, ShouldNotBeNil)
+		So(version.Links.WebPage.HRef, ShouldEqual, "businessindustryandtrade/datasets/123/editions/edition1/versions/1")
+
+		So(topicClientMock.GetTopicPrivateCalls(), ShouldHaveLength, 1)
+		So(topicClientMock.GetTopicPrivateCalls()[0].ID, ShouldEqual, "topic-0")
+	})
+
+	Convey("When topic API call fails, version creation returns a 500 error", t, func() {
+		validVersionJSON, err := json.Marshal(validVersion)
+		So(err, ShouldBeNil)
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					Next: &models.Dataset{
+						Topics: []string{"topic-0"},
+					},
+				}, nil
+			},
+			CheckVersionExistsStaticFunc: func(context.Context, string, string, int) (bool, error) {
+				return false, nil
+			},
+			AddVersionStaticFunc: func(_ context.Context, v *models.Version) (*models.Version, error) {
+				return v, nil
+			},
+		}
+
+		topicClientMock := &topicMocks.ClienterMock{
+			GetTopicPrivateFunc: func(ctx context.Context, reqHeaders topicSDK.Headers, id string) (*topicModels.TopicResponse, apiError.Error) {
+				return nil, apiError.StatusError{Err: errors.New("topic api error"), Code: 500}
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api.SetTopicAPIClient(topicClientMock)
+
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/edition1/versions/1", bytes.NewBuffer(validVersionJSON))
+		r = mux.SetURLVars(r, map[string]string{"dataset_id": "123", "edition": "edition1", "version": "1"})
+		w := httptest.NewRecorder()
+
+		successResponse, errorResponse := api.createVersion(w, r)
+
+		So(successResponse, ShouldBeNil)
+		So(errorResponse.Status, ShouldEqual, http.StatusInternalServerError)
+		So(errorResponse.Errors[0].Code, ShouldEqual, models.ErrTopicAPIFailure)
+		So(errorResponse.Errors[0].Description, ShouldEqual, models.ErrTopicAPIFailureDescription)
+
+		So(topicClientMock.GetTopicPrivateCalls(), ShouldHaveLength, 1)
+	})
+}
+
+func TestAddDatasetVersionCondensed_WebPageLink(t *testing.T) {
+	t.Parallel()
+
+	authorisationMock := &authMock.MiddlewareMock{
+		RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+			return handlerFunc
+		},
+		ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+			return testEntityData, nil
+		},
+	}
+
+	auditServiceMock := &applicationMocks.AuditServiceMock{
+		RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, version *models.Version) error {
+			return nil
+		},
+	}
+
+	body := `{
+		"edition_title": "Edition Title 2025",
+		"release_date": "2025-01-15",
+		"distributions": [{
+			"title": "Full Dataset (CSV)",
+			"download_url": "https://download.ons.gov.uk/my-dataset-download.csv",
+			"byte_size": 4300000,
+			"format": "csv"
+		}]
+	}`
+
+	Convey("When topic API client is set and returns a valid slug, web_page link is set on the version", t, func() {
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			GetLatestVersionStaticFunc: func(context.Context, string, string, string) (*models.Version, error) {
+				return &models.Version{State: models.PublishedState}, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					Next: &models.Dataset{
+						State:  models.AssociatedState,
+						Links:  &models.DatasetLinks{},
+						Topics: []string{"topic-0"},
+					},
+				}, nil
+			},
+			AddVersionStaticFunc: func(_ context.Context, v *models.Version) (*models.Version, error) {
+				return v, nil
+			},
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
+				return nil
+			},
+		}
+
+		topicClientMock := &topicMocks.ClienterMock{
+			GetTopicPrivateFunc: func(ctx context.Context, reqHeaders topicSDK.Headers, id string) (*topicModels.TopicResponse, apiError.Error) {
+				return &topicModels.TopicResponse{
+					Next: &topicModels.Topic{
+						Slug: "businessindustryandtrade",
+					},
+				}, nil
+			},
+		}
+
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/time-series/versions", bytes.NewBufferString(body))
+		r = mux.SetURLVars(r, map[string]string{"dataset_id": "123", "edition": "time-series"})
+		w := httptest.NewRecorder()
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api.SetTopicAPIClient(topicClientMock)
+
+		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
+
+		So(errorResponse, ShouldBeNil)
+		So(successResponse.Status, ShouldEqual, http.StatusCreated)
+
+		var version models.Version
+		err := json.Unmarshal(successResponse.Body, &version)
+		So(err, ShouldBeNil)
+		So(version.Links, ShouldNotBeNil)
+		So(version.Links.WebPage, ShouldNotBeNil)
+		So(version.Links.WebPage.HRef, ShouldEqual, "businessindustryandtrade/datasets/123/editions/time-series/versions/1")
+
+		So(topicClientMock.GetTopicPrivateCalls(), ShouldHaveLength, 1)
+		So(topicClientMock.GetTopicPrivateCalls()[0].ID, ShouldEqual, "topic-0")
+	})
+
+	Convey("When topic API call fails, version creation returns a 500 error", t, func() {
+		mockedDataStore := &storetest.StorerMock{
+			CheckDatasetExistsFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			GetLatestVersionStaticFunc: func(context.Context, string, string, string) (*models.Version, error) {
+				return &models.Version{State: models.PublishedState}, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					Next: &models.Dataset{
+						State:  models.AssociatedState,
+						Links:  &models.DatasetLinks{},
+						Topics: []string{"topic-0"},
+					},
+				}, nil
+			},
+			AddVersionStaticFunc: func(_ context.Context, v *models.Version) (*models.Version, error) {
+				return v, nil
+			},
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
+				return nil
+			},
+		}
+
+		topicClientMock := &topicMocks.ClienterMock{
+			GetTopicPrivateFunc: func(ctx context.Context, reqHeaders topicSDK.Headers, id string) (*topicModels.TopicResponse, apiError.Error) {
+				return nil, apiError.StatusError{Err: errors.New("topic api error"), Code: 500}
+			},
+		}
+
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets/123/editions/time-series/versions", bytes.NewBufferString(body))
+		r = mux.SetURLVars(r, map[string]string{"dataset_id": "123", "edition": "time-series"})
+		w := httptest.NewRecorder()
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api.SetTopicAPIClient(topicClientMock)
+
+		successResponse, errorResponse := api.addDatasetVersionCondensed(w, r)
+
+		So(successResponse, ShouldBeNil)
+		So(errorResponse.Status, ShouldEqual, http.StatusInternalServerError)
+		So(errorResponse.Errors[0].Code, ShouldEqual, models.ErrTopicAPIFailure)
+		So(errorResponse.Errors[0].Description, ShouldEqual, models.ErrTopicAPIFailureDescription)
+
+		So(topicClientMock.GetTopicPrivateCalls(), ShouldHaveLength, 1)
 	})
 }

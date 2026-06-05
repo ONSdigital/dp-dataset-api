@@ -423,6 +423,67 @@ Feature: Static Dataset Versions PUT API
             """
         Then the HTTP status code should be "400"
 
+    Scenario: PUT state returns 422 when approving and distribution file does not exist in files API
+        Given private endpoints are enabled
+        And I am an admin user
+        And I have a static dataset with version:
+                """
+                {
+                    "dataset": {
+                        "id": "static-dataset-missing-file",
+                        "title": "Static Dataset Missing File Test",
+                        "state": "associated",
+                        "type": "static"
+                    },
+                    "version": {
+                        "id": "static-version-missing-file",
+                        "edition": "2025",
+                        "edition_title": "2025 Edition",
+                        "links": {
+                            "dataset": {
+                                "id": "static-dataset-missing-file"
+                            },
+                            "edition": {
+                                "href": "/datasets/static-dataset-missing-file/editions/2025",
+                                "id": "2025"
+                            },
+                            "self": {
+                                "href": "/datasets/static-dataset-missing-file/editions/2025/versions/1"
+                            }
+                        },
+                        "version": 1,
+                        "release_date": "2025-01-01T09:00:00.000Z",
+                        "state": "associated",
+                        "type": "static",
+                        "distributions": [
+                            {
+                                "title": "Missing File (CSV)",
+                                "format": "csv",
+                                "download_url": "datasets/test-static-dataset/editions/test-edition/missing-file.csv"
+                            }
+                        ]
+                    }
+                }
+                """
+        When I PUT "/datasets/static-dataset-missing-file/editions/2025/versions/1/state"
+                """
+                {"state": "approved"}
+                """
+        Then the HTTP status code should be "422"
+        And I should receive the following response:
+                """
+                file metadata not found
+                """
+
+    Scenario: PUT state returns 200 when approving and all distribution files exist in files API
+        Given private endpoints are enabled
+        And I am an admin user
+        When I PUT "/datasets/static-dataset-update/editions/2025/versions/1/state"
+                """
+                {"state": "approved"}
+                """
+        Then the HTTP status code should be "200"
+
     Scenario: PUT state fails with invalid state
         Given private endpoints are enabled
         And I am an admin user
@@ -946,6 +1007,218 @@ Feature: Static Dataset Versions PUT API
                         "href": "/datasets/static-dataset-update/editions/2025/versions/1"
                     }
                 },
+                "release_date": "2025-01-01T09:00:00.000Z",
+                "state": "associated",
+                "type": "static"
+            }
+            """
+
+    Scenario: PUT updates static version edition ID and updates webpage link
+      Given I have a static dataset with version:
+          """
+          {
+              "dataset": {
+                  "id": "edition-change-dataset",
+                  "title": "Change topic in version link test",
+                  "state": "associated",
+                  "type": "static",
+                  "topics": [
+                      "businessindustryandtrade-topic-id"
+                  ]
+              },
+              "version": {
+                  "id": "static-version-webpage-link",
+                  "edition": "2025-links",
+                  "edition_title": "2025 Edition links",
+                  "links": {
+                      "dataset": {
+                          "href": "/datasets/edition-change-dataset",
+                          "id": "edition-change-dataset"
+                      },
+                      "edition": {
+                          "href": "/datasets/edition-change-dataset/editions/2025-links",
+                          "id": "2025-links"
+                      },
+                      "self": {
+                          "href": "/datasets/edition-change-dataset/editions/2025-links/versions/1"
+                      },
+                      "version": {
+                          "href": "/datasets/edition-change-dataset/editions/2025-links/versions/1",
+                          "id": "1"
+                      },
+                      "web_page": {
+                          "href": "/businessindustryandtrade/datasets/edition-change-dataset/editions/2025-links/versions/1"
+                      }
+                  },
+                  "version": 1,
+                  "release_date": "2025-01-01T09:00:00.000Z",
+                  "state": "associated",
+                  "type": "static",
+                  "distributions": [
+                      {
+                          "title": "csv",
+                          "format": "csv",
+                          "media_type": "text/csv",
+                          "download_url": "/uuid/filename.csv",
+                          "byte_size": 125000
+                      }
+                  ]
+              }
+          }
+          """
+      And private endpoints are enabled
+      And I am an admin user
+      When I PUT "/datasets/edition-change-dataset/editions/2025-links/versions/1"
+          """
+          {
+              "edition": "2026-update",
+              "edition_title": "2026 Edition",
+              "type": "static",
+              "state": "associated"
+          }
+          """
+      Then I should receive the following JSON response with status "200":
+          """
+          {
+              "dataset_id": "edition-change-dataset",
+              "distributions": [
+                  {
+                      "byte_size": 125000,
+                      "download_url": "/uuid/filename.csv",
+                      "format": "csv",
+                      "media_type": "text/csv",
+                      "title": "csv"
+                  }
+              ],
+              "edition": "2026-update",
+              "edition_title": "2026 Edition",
+              "id": "static-version-webpage-link",
+              "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
+              "links": {
+                  "dataset": {
+                      "href": "/datasets/edition-change-dataset",
+                      "id": "edition-change-dataset"
+                  },
+                  "edition": {
+                      "href": "/datasets/edition-change-dataset/editions/2026-update",
+                      "id": "2026-update"
+                  },
+                  "self": {
+                      "href": "/datasets/edition-change-dataset/editions/2026-update/versions/1"
+                  },
+                  "web_page": {
+                      "href": "/businessindustryandtrade/datasets/edition-change-dataset/editions/2026-update/versions/1"
+                  }
+              },
+              "previous_edition_id": [
+                  "2025-links"
+              ],
+              "release_date": "2025-01-01T09:00:00.000Z",
+              "state": "associated",
+              "type": "static"
+          }
+          """
+
+    Scenario: PUT updates static dataset version edition and saves previous edition ID
+        Given I have a static dataset with version:
+          """
+          {
+              "dataset": {
+                  "id": "previous-edition-dataset",
+                  "title": "Previous edition saved",
+                  "state": "associated",
+                  "type": "static",
+                  "topics": [
+                      "businessindustryandtrade-topic-id"
+                  ]
+              },
+              "version": {
+                  "id": "static-dataset-previous-edition",
+                  "edition": "old-edition",
+                  "edition_title": "2025 Edition",
+                  "links": {
+                      "dataset": {
+                          "href": "/datasets/previous-edition-dataset",
+                          "id": "previous-edition-dataset"
+                      },
+                      "edition": {
+                          "href": "/datasets/previous-edition-dataset/editions/old-edition",
+                          "id": "old-edition"
+                      },
+                      "self": {
+                          "href": "/datasets/previous-edition-dataset/editions/old-edition/versions/1"
+                      },
+                      "version": {
+                          "href": "/datasets/previous-edition-dataset/editions/old-edition/versions/1",
+                          "id": "1"
+                      },
+                      "web_page": {
+                          "href": "/businessindustryandtrade/datasets/previous-edition-dataset/editions/old-edition/versions/1"
+                      }
+                  },
+                  "version": 1,
+                  "release_date": "2025-01-01T09:00:00.000Z",
+                  "state": "associated",
+                  "type": "static",
+                  "distributions": [
+                      {
+                          "title": "csv",
+                          "format": "csv",
+                          "media_type": "text/csv",
+                          "download_url": "/uuid/filename.csv",
+                          "byte_size": 125000
+                      }
+                  ]
+              }
+          }
+          """
+        And private endpoints are enabled
+        And I am an admin user
+        When I PUT "/datasets/previous-edition-dataset/editions/old-edition/versions/1"
+            """
+            {
+                "edition": "new-edition",
+                "edition_title": "2026 Edition",
+                "state": "associated",
+                "type": "static"
+            }
+            """
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "dataset_id": "previous-edition-dataset",
+                "distributions": [
+                    {
+                        "byte_size": 125000,
+                        "download_url": "/uuid/filename.csv",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "title": "csv"
+                    }
+                ],
+                "edition": "new-edition",
+                "edition_title": "2026 Edition",
+                "id": "static-dataset-previous-edition",
+                "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
+                "links": {
+                    "dataset": {
+                        "href": "/datasets/previous-edition-dataset",
+                        "id": "previous-edition-dataset"
+                    },
+                    "edition": {
+                        "href": "/datasets/previous-edition-dataset/editions/new-edition",
+                        "id": "new-edition"
+                    },
+                    "self": {
+                        "href": "/datasets/previous-edition-dataset/editions/new-edition/versions/1"
+                    },
+                    "web_page": {
+                        "href": "/businessindustryandtrade/datasets/previous-edition-dataset/editions/new-edition/versions/1"
+                    }
+                },
+                "previous_edition_id": [
+                    "old-edition"
+                ],
                 "release_date": "2025-01-01T09:00:00.000Z",
                 "state": "associated",
                 "type": "static"

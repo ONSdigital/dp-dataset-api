@@ -15,6 +15,7 @@ import (
 	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	dphttp "github.com/ONSdigital/dp-net/v3/http"
 	"github.com/ONSdigital/dp-net/v3/links"
+	topicAPISDK "github.com/ONSdigital/dp-topic-api/sdk"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 )
@@ -588,9 +589,58 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if currentDataset.Current != nil && currentDataset.Current.State == models.PublishedState &&
+				len(currentDataset.Current.Topics) > 0 && len(dataset.Topics) > 0 &&
 				currentDataset.Current.Topics[0] != dataset.Topics[0] {
 				log.Error(ctx, "putDataset endpoint: unable to update canonical topic of a published dataset", errs.ErrPublishedDatasetTopicChange, data)
 				return nil, errs.ErrPublishedDatasetTopicChange
+			}
+
+			if currentDataset.Next != nil && currentDataset.Current == nil && currentDataset.Next.State != models.PublishedState {
+				if len(currentDataset.Next.Topics) > 0 && len(dataset.Topics) > 0 && currentDataset.Next.Topics[0] != dataset.Topics[0] {
+					state := ""
+					versions, _, err := api.dataStore.Backend.GetAllStaticVersions(ctx, datasetID, state, 0, 100)
+					if err != nil {
+						log.Error(ctx, "putDataset endpoint: error getting versions for dataset", err, data)
+						return nil, err
+					}
+
+					if len(versions) != 0 {
+						topicSDKHeaders := topicAPISDK.Headers{
+							ServiceAuthToken: fetchAccessTokenFromHeader(r),
+						}
+						topic, err := api.topicAPIClient.GetTopicPrivate(ctx, topicSDKHeaders, dataset.Topics[0])
+						if err != nil {
+							log.Error(ctx, "putVersion endpoint: failed to get topic from Topic API", err, data)
+							return nil, err
+						}
+						for vCount := range versions {
+							currentVersion := versions[vCount]
+							updatedVersion := new(models.Version)
+							*updatedVersion = *versions[vCount]
+
+							if updatedVersion.Links == nil {
+								updatedVersion.Links = &models.VersionLinks{}
+							}
+							if updatedVersion.Links.WebPage == nil {
+								updatedVersion.Links.WebPage = &models.LinkObject{}
+							}
+
+							updatedVersion.Links.WebPage.HRef = fmt.Sprintf(
+								"/%s/datasets/%s/editions/%s/versions/%d",
+								topic.Current.Slug,
+								datasetID,
+								currentVersion.Edition,
+								currentVersion.Version,
+							)
+
+							_, err := api.dataStore.Backend.UpdateVersionStatic(ctx, currentVersion, updatedVersion, currentVersion.ETag)
+							if err != nil {
+								log.Error(ctx, "putDataset endpoint: failed to update version", err, data)
+								return nil, err
+							}
+						}
+					}
+				}
 			}
 		}
 

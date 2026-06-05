@@ -607,6 +607,10 @@ func createVersionUpdateQuery(version *models.Version, newETag string) bson.M {
 		setUpdates["is_migration"] = version.IsMigration
 	}
 
+	if version.PreviousEditionId != nil {
+		setUpdates["previous_edition_id"] = version.PreviousEditionId
+	}
+
 	if newETag != "" {
 		setUpdates["e_tag"] = newETag
 	}
@@ -635,6 +639,10 @@ func updateLinksFields(version *models.Version, setUpdates bson.M) {
 
 	if version.Links.Self != nil && version.Links.Self.HRef != "" {
 		setUpdates["links.self.href"] = version.Links.Self.HRef
+	}
+
+	if version.Links.WebPage != nil && version.Links.WebPage.HRef != "" {
+		setUpdates["links.web_page.href"] = version.Links.WebPage.HRef
 	}
 }
 

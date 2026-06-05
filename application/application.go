@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -42,6 +43,10 @@ const (
 var (
 	trueStringified = strconv.FormatBool(true)
 )
+
+type contextKey string
+
+const AccessTokenKey contextKey = "access_token"
 
 // VersionDetails contains the details that uniquely identify a version resource
 type VersionDetails struct {
@@ -84,6 +89,10 @@ func Setup(dataStoreVal store.DataStore, downloadGenerators map[models.DatasetTy
 	}
 
 	return newDS
+}
+
+func (smDS *StateMachineDatasetAPI) SetFilesAPIClient(client filesAPISDK.Clienter) {
+	smDS.FilesAPIClient = client
 }
 
 func (v VersionDetails) baseLogData() log.Data {
@@ -220,6 +229,7 @@ func (smDS *StateMachineDatasetAPI) PopulateVersionInfo(ctx context.Context, ver
 	return currentVersion, combinedVersionUpdate, nil
 }
 
+//nolint:gocyclo // cyclomatic complexity 21 of func `populateNewVersionDoc` is high (> 20)
 func populateNewVersionDoc(currentVersion, originalVersion *models.Version) (*models.Version, error) {
 	var version models.Version
 	err := copier.Copy(&version, originalVersion) // create local copy that escapes to the HEAP at the end of this function
@@ -303,6 +313,10 @@ func populateNewVersionDoc(currentVersion, originalVersion *models.Version) (*mo
 		version.UsageNotes = currentVersion.UsageNotes
 	}
 
+	if version.PreviousEditionId == nil {
+		version.PreviousEditionId = currentVersion.PreviousEditionId
+	}
+
 	return &version, nil
 }
 
@@ -334,6 +348,11 @@ func updateEditionLinks(currentVersion *models.Version, newEdition string) *mode
 
 	if links.Self != nil {
 		links.Self.HRef = fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%d", host, datasetID, newEdition, versionNum)
+	}
+
+	if links.WebPage != nil {
+		re := regexp.MustCompile(`^(.*/editions/)[^/]+(/versions/.*)$`)
+		links.WebPage.HRef = re.ReplaceAllString(links.WebPage.HRef, "${1}"+newEdition+"${2}")
 	}
 
 	return links
@@ -500,6 +519,14 @@ func ApproveVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 	if errModel != nil {
 		log.Error(ctx, "State machine - Approving: ValidateVersion : failed to validate version", errModel, data)
 		return errModel
+	}
+
+	if smDS.FilesAPIClient != nil && versionUpdate.Distributions != nil && len(*versionUpdate.Distributions) > 0 {
+		accessToken, _ := ctx.Value(AccessTokenKey).(string)
+		if err := checkDistributionFilesExist(ctx, smDS.FilesAPIClient, versionUpdate, accessToken); err != nil {
+			log.Error(ctx, "State machine - Approving: checkDistributionFilesExist: distribution file(s) not found", err, data)
+			return err
+		}
 	}
 
 	_, err := UpdateVersionInfo(ctx, smDS, currentVersion, versionUpdate, versionDetails)
