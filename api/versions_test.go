@@ -31,9 +31,6 @@ import (
 	filesAPISDKMocks "github.com/ONSdigital/dp-files-api/sdk/mocks"
 	filesAPIErrors "github.com/ONSdigital/dp-files-api/store"
 	permissionsAPISDK "github.com/ONSdigital/dp-permissions-api/sdk"
-	topicAPIModels "github.com/ONSdigital/dp-topic-api/models"
-	topicAPISDK "github.com/ONSdigital/dp-topic-api/sdk"
-	topicAPISDKErrors "github.com/ONSdigital/dp-topic-api/sdk/errors"
 	topicAPISDKMocks "github.com/ONSdigital/dp-topic-api/sdk/mocks"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
@@ -4681,16 +4678,15 @@ func TestPutStateReturnsOk(t *testing.T) {
 							"href": "http://dp-dataset-api:22000/datasets/test-static-dataset",
 							"id": "test-static-dataset"
 						  },
-						  "dimensions": {
-							"href": "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1/dimensions",
-							"id": "test-static-dataset"
-						  },
 						  "edition": {
 							"href": "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1",
 							"id": "test-edition-1"
 						  },
 						  "self": {
 							"href": "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1"
+						  },
+						 "web_page": {
+							"href": "economy/datasets/test-static-dataset/editions/test-edition-1/versions/1"
 						  }
 						},
 						"release_date": "2025-01-15",
@@ -4837,31 +4833,19 @@ func TestPutStateReturnsOk(t *testing.T) {
 			},
 		}
 
-		topicAPIMock := &topicAPISDKMocks.ClienterMock{
-			GetTopicPrivateFunc: func(ctx context.Context, reqHeaders topicAPISDK.Headers, id string) (*topicAPIModels.TopicResponse, topicAPISDKErrors.Error) {
-				return &topicAPIModels.TopicResponse{
-					Next: &topicAPIModels.Topic{
-						ID:   id,
-						Slug: "economy",
-					},
-				}, nil
-			},
-		}
-
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, searchContentUpdated, cloudflareMock, auditServiceMock, topicAPIMock, &mockFilesAPIClient)
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, searchContentUpdated, cloudflareMock, auditServiceMock, &topicAPISDKMocks.ClienterMock{}, &mockFilesAPIClient)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(mockedDataStore.GetVersionStaticCalls(), ShouldHaveLength, 3)
 		So(mockedDataStore.UpdateStateStaticCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.GetDatasetTypeCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 2)
+		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.UpsertVersionStaticCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.CheckEditionExistsStaticCalls(), ShouldHaveLength, 1)
 		So(mockFilesAPIClient.MarkFilePublishedCalls(), ShouldHaveLength, 1)
 		So(len(scuProducerMock.OutputCalls()), ShouldEqual, 1)
-		So(topicAPIMock.GetTopicPrivateCalls(), ShouldHaveLength, 1)
 		So(cloudflareMock.PurgeByPrefixesCalls(), ShouldHaveLength, 1)
 		So(auditServiceMock.RecordVersionAuditEventCalls(), ShouldHaveLength, 1)
 		So(auditServiceMock.RecordVersionAuditEventCalls()[0].Resource, ShouldEqual, "/datasets/test-static-dataset/editions/test-edition-1/versions/1/state")

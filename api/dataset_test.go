@@ -192,7 +192,6 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 		CloudflareEnabled:            cfg.CloudflareEnabled,
 		UrlBuilder:                   urlBuilder,
 		CloudflareClient:             cloudflareMock,
-		TopicAPIClient:               topicAPISDKMock,
 	}
 
 	testIdentityClient := clientsidentity.New(cfg.ZebedeeURL)

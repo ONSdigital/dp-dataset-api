@@ -22,7 +22,6 @@ import (
 	kafka "github.com/ONSdigital/dp-kafka/v4"
 	dprequest "github.com/ONSdigital/dp-net/v3/request"
 	"github.com/ONSdigital/dp-permissions-api/sdk"
-	topicAPISDK "github.com/ONSdigital/dp-topic-api/sdk"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/jinzhu/copier"
 	"github.com/pkg/errors"
@@ -72,10 +71,9 @@ type StateMachineDatasetAPI struct {
 	CloudflareClient             cloudflare.Clienter
 	CloudflareEnabled            bool
 	UrlBuilder                   *url.Builder
-	TopicAPIClient               topicAPISDK.Clienter
 }
 
-func Setup(dataStoreVal store.DataStore, downloadGenerators map[models.DatasetType]DownloadsGenerator, stateMachine *StateMachine, searchContentUpdatedProducer *SearchContentUpdatedProducer, cloudflareClient cloudflare.Clienter, cloudflareEnabled bool, urlBuilder *url.Builder, topicAPIClient topicAPISDK.Clienter, filesAPIClient filesAPISDK.Clienter) *StateMachineDatasetAPI {
+func Setup(dataStoreVal store.DataStore, downloadGenerators map[models.DatasetType]DownloadsGenerator, stateMachine *StateMachine, searchContentUpdatedProducer *SearchContentUpdatedProducer, cloudflareClient cloudflare.Clienter, cloudflareEnabled bool, urlBuilder *url.Builder, filesAPIClient filesAPISDK.Clienter) *StateMachineDatasetAPI {
 	newDS := &StateMachineDatasetAPI{
 		DataStore:                    dataStoreVal,
 		DownloadGenerators:           downloadGenerators,
@@ -84,7 +82,6 @@ func Setup(dataStoreVal store.DataStore, downloadGenerators map[models.DatasetTy
 		CloudflareClient:             cloudflareClient,
 		CloudflareEnabled:            cloudflareEnabled,
 		UrlBuilder:                   urlBuilder,
-		TopicAPIClient:               topicAPIClient,
 		FilesAPIClient:               filesAPIClient,
 	}
 
@@ -733,23 +730,8 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 
 				// Purge Cloudflare cache if enabled and version is being published
 				if smDS.CloudflareEnabled {
-					dataset, err := smDS.DataStore.Backend.GetDataset(ctx, versionDetails.datasetID)
-					if err != nil {
-						log.Error(ctx, "Publish version: failed to get dataset", err, logData)
-						return updatedV, err
-					}
-
-					topicSDKHeaders := topicAPISDK.Headers{
-						ServiceAuthToken: accessToken,
-					}
-
-					// Retrieve canonical topic from Topic API in order to get topic slug
-					topic, err := smDS.TopicAPIClient.GetTopicPrivate(ctx, topicSDKHeaders, dataset.Next.Topics[0])
-					if err != nil {
-						log.Error(ctx, "Publish version: failed to get topic from Topic API", err, logData)
-						return updatedV, err
-					}
-					prefixes := utils.GeneratePurgePrefixes(smDS.UrlBuilder.GetPublicWebsiteURL().String(), smDS.UrlBuilder.GetAPIRouterPublicURL().String(), topic.Next.Slug, versionDetails.datasetID, versionDetails.edition, versionDetails.version)
+					topic := strings.Split(updatedV.Links.WebPage.HRef, "/")
+					prefixes := utils.GeneratePurgePrefixes(smDS.UrlBuilder.GetPublicWebsiteURL().String(), smDS.UrlBuilder.GetAPIRouterPublicURL().String(), topic[0], versionDetails.datasetID, versionDetails.edition, versionDetails.version)
 					logData["purge_prefixes"] = prefixes
 
 					err = smDS.CloudflareClient.PurgeByPrefixes(ctx, prefixes)

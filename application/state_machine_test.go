@@ -61,7 +61,7 @@ func TestTransition(t *testing.T) {
 	}
 
 	stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
-	smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, urlBuilder, nil, nil)
+	smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, urlBuilder, nil)
 
 	Convey("The transition is successful", t, func() {
 		err := smDS.StateMachine.Transition(testContext, smDS, currentVersionEditionConfirmed, versionUpdateAssociated, versionDetails, "true", nil, "")
