@@ -8,12 +8,20 @@ services:
       ZOOKEEPER_SERVER_ID: 1
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo ruok | nc localhost 2181 | grep imok"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+      start_period: 10s
+
   kafka-1:
     image: confluentinc/cp-kafka:6.0.0
     expose:
       - "9092" # exposed port to docker network so that the broker is reachable by other brokers, value needs to match PLAINTEXT port
     depends_on:
-      - zookeeper-1
+      zookeeper-1:
+        condition: service_healthy
     environment:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper-1:2181
       KAFKA_BROKER_ID: 1
