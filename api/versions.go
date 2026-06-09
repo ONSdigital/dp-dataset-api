@@ -1019,6 +1019,12 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err = models.CheckState("version", stateUpdate.State); err != nil {
+		log.Error(ctx, "putState endpoint: state is invalid", err, log.Data{"state": stateUpdate.State})
+		handleVersionAPIErr(ctx, models.ErrVersionStateInvalid, w, logData)
+		return
+	}
+
 	// Create a version update with the target state
 	versionUpdate := &models.Version{
 		ID:    strconv.Itoa(versionID),

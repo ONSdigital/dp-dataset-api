@@ -626,7 +626,7 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 							}
 
 							updatedVersion.Links.WebPage.HRef = fmt.Sprintf(
-								"/%s/datasets/%s/editions/%s/versions/%d",
+								"%s/datasets/%s/editions/%s/versions/%d",
 								topic.Current.Slug,
 								datasetID,
 								currentVersion.Edition,

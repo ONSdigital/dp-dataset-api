@@ -730,7 +730,8 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 
 				// Purge Cloudflare cache if enabled and version is being published
 				if smDS.CloudflareEnabled {
-					topic := strings.Split(updatedV.Links.WebPage.HRef, "/")
+					webLink := strings.TrimLeft(updatedV.Links.WebPage.HRef, "/")
+					topic := strings.Split(webLink, "/")
 					prefixes := utils.GeneratePurgePrefixes(smDS.UrlBuilder.GetPublicWebsiteURL().String(), smDS.UrlBuilder.GetAPIRouterPublicURL().String(), topic[0], versionDetails.datasetID, versionDetails.edition, versionDetails.version)
 					logData["purge_prefixes"] = prefixes
 
@@ -977,18 +978,12 @@ func (smDS *StateMachineDatasetAPI) publishDistributionFiles(ctx context.Context
 	successCount := 0
 
 	var wg sync.WaitGroup
-	ch := make(chan string, totalFiles)
 	errCh := make(chan error, totalFiles)
 
 	for index := range *version.Distributions {
 		distribution := &(*version.Distributions)[index]
 		wg.Add(1)
-		if distribution.DownloadURL == "" {
-			continue
-		}
-
-		go publishFile(ctx, smDS.FilesAPIClient, *distribution, accessToken, ch, &wg, errCh)
-
+		go publishFile(ctx, smDS.FilesAPIClient, *distribution, accessToken, &wg, errCh)
 		successCount++
 	}
 
@@ -1010,7 +1005,7 @@ func (smDS *StateMachineDatasetAPI) publishDistributionFiles(ctx context.Context
 	return filesAPIError
 }
 
-func publishFile(ctx context.Context, filesAPIClient filesAPISDK.Clienter, distribution models.Distribution, accessToken string, ch chan string, wg *sync.WaitGroup, errCh chan error) {
+func publishFile(ctx context.Context, filesAPIClient filesAPISDK.Clienter, distribution models.Distribution, accessToken string, wg *sync.WaitGroup, errCh chan error) {
 	defer wg.Done()
 
 	var filesAPIError error
@@ -1042,7 +1037,6 @@ func publishFile(ctx context.Context, filesAPIClient filesAPISDK.Clienter, distr
 		"distribution_title":  distribution.Title,
 		"distribution_format": distribution.Format,
 	})
-	ch <- distribution.DownloadURL
 }
 
 func checkDistributionFilesExist(ctx context.Context, filesAPIClient filesAPISDK.Clienter, version *models.Version, accessToken string) error {

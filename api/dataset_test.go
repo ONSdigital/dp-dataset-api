@@ -1997,7 +1997,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(updatedWebPageHref, ShouldEqual, "/businessindustryandtrade/datasets/123/editions/2025/versions/1")
+		So(updatedWebPageHref, ShouldEqual, "businessindustryandtrade/datasets/123/editions/2025/versions/1")
 		So(mockedDataStore.GetAllStaticVersionsCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.UpdateVersionStaticCalls(), ShouldHaveLength, 1)
 		So(topicAPIMock.GetTopicPrivateCalls(), ShouldHaveLength, 1)

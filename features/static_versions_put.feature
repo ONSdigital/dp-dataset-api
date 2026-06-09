@@ -376,7 +376,7 @@ Feature: Static Dataset Versions PUT API
                             "id": "1"
                         },
                         "web_page":{
-                            "href": "economy/static-dataset-publish/editions/2025/versions/1"
+                            "href": "/economy/static-dataset-publish/editions/2025/versions/1"
                         }
                     },
                     "distributions": [
