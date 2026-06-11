@@ -5,12 +5,11 @@ package storetest
 
 import (
 	"context"
-	"sync"
-
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/bson"
+	"sync"
 )
 
 // Ensure, that MongoDBMock does implement store.MongoDB.
@@ -95,7 +94,7 @@ var _ store.MongoDB = &MongoDBMock{}
 //			GetDimensionOptionsFromIDsFunc: func(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error) {
 //				panic("mock out the GetDimensionOptionsFromIDs method")
 //			},
-//			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]primitive.M, error) {
+//			GetDimensionsFunc: func(ctx context.Context, versionID string) ([]bson.M, error) {
 //				panic("mock out the GetDimensions method")
 //			},
 //			GetDimensionsFromInstanceFunc: func(ctx context.Context, ID string, offset int, limit int) ([]*models.DimensionOption, int, error) {
@@ -133,6 +132,9 @@ var _ store.MongoDB = &MongoDBMock{}
 //			},
 //			GetVersionStaticFunc: func(ctx context.Context, datasetID string, editionID string, version int, state string) (*models.Version, error) {
 //				panic("mock out the GetVersionStatic method")
+//			},
+//			GetVersionStaticByPreviousEditionIDFunc: func(ctx context.Context, datasetID string, previousEditionID string, versionID int) (*models.Version, error) {
+//				panic("mock out the GetVersionStaticByPreviousEditionID method")
 //			},
 //			GetVersionsFunc: func(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) ([]models.Version, int, error) {
 //				panic("mock out the GetVersions method")
@@ -286,7 +288,7 @@ type MongoDBMock struct {
 	GetDimensionOptionsFromIDsFunc func(ctx context.Context, version *models.Version, dimension string, ids []string) ([]*models.PublicDimensionOption, int, error)
 
 	// GetDimensionsFunc mocks the GetDimensions method.
-	GetDimensionsFunc func(ctx context.Context, versionID string) ([]primitive.M, error)
+	GetDimensionsFunc func(ctx context.Context, versionID string) ([]bson.M, error)
 
 	// GetDimensionsFromInstanceFunc mocks the GetDimensionsFromInstance method.
 	GetDimensionsFromInstanceFunc func(ctx context.Context, ID string, offset int, limit int) ([]*models.DimensionOption, int, error)
@@ -323,6 +325,9 @@ type MongoDBMock struct {
 
 	// GetVersionStaticFunc mocks the GetVersionStatic method.
 	GetVersionStaticFunc func(ctx context.Context, datasetID string, editionID string, version int, state string) (*models.Version, error)
+
+	// GetVersionStaticByPreviousEditionIDFunc mocks the GetVersionStaticByPreviousEditionID method.
+	GetVersionStaticByPreviousEditionIDFunc func(ctx context.Context, datasetID string, previousEditionID string, versionID int) (*models.Version, error)
 
 	// GetVersionsFunc mocks the GetVersions method.
 	GetVersionsFunc func(ctx context.Context, datasetID string, editionID string, state string, offset int, limit int) ([]models.Version, int, error)
@@ -769,6 +774,17 @@ type MongoDBMock struct {
 			// State is the state argument value.
 			State string
 		}
+		// GetVersionStaticByPreviousEditionID holds details about calls to the GetVersionStaticByPreviousEditionID method.
+		GetVersionStaticByPreviousEditionID []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// PreviousEditionID is the previousEditionID argument value.
+			PreviousEditionID string
+			// VersionID is the versionID argument value.
+			VersionID int
+		}
 		// GetVersions holds details about calls to the GetVersions method.
 		GetVersions []struct {
 			// Ctx is the ctx argument value.
@@ -1059,6 +1075,7 @@ type MongoDBMock struct {
 	lockGetUniqueDimensionAndOptions        sync.RWMutex
 	lockGetVersion                          sync.RWMutex
 	lockGetVersionStatic                    sync.RWMutex
+	lockGetVersionStaticByPreviousEditionID sync.RWMutex
 	lockGetVersions                         sync.RWMutex
 	lockGetVersionsStatic                   sync.RWMutex
 	lockIsStaticDataset                     sync.RWMutex
@@ -2062,7 +2079,7 @@ func (mock *MongoDBMock) GetDimensionOptionsFromIDsCalls() []struct {
 }
 
 // GetDimensions calls GetDimensionsFunc.
-func (mock *MongoDBMock) GetDimensions(ctx context.Context, versionID string) ([]primitive.M, error) {
+func (mock *MongoDBMock) GetDimensions(ctx context.Context, versionID string) ([]bson.M, error) {
 	if mock.GetDimensionsFunc == nil {
 		panic("MongoDBMock.GetDimensionsFunc: method is nil but MongoDB.GetDimensions was just called")
 	}
@@ -2638,6 +2655,50 @@ func (mock *MongoDBMock) GetVersionStaticCalls() []struct {
 	mock.lockGetVersionStatic.RLock()
 	calls = mock.calls.GetVersionStatic
 	mock.lockGetVersionStatic.RUnlock()
+	return calls
+}
+
+// GetVersionStaticByPreviousEditionID calls GetVersionStaticByPreviousEditionIDFunc.
+func (mock *MongoDBMock) GetVersionStaticByPreviousEditionID(ctx context.Context, datasetID string, previousEditionID string, versionID int) (*models.Version, error) {
+	if mock.GetVersionStaticByPreviousEditionIDFunc == nil {
+		panic("MongoDBMock.GetVersionStaticByPreviousEditionIDFunc: method is nil but MongoDB.GetVersionStaticByPreviousEditionID was just called")
+	}
+	callInfo := struct {
+		Ctx               context.Context
+		DatasetID         string
+		PreviousEditionID string
+		VersionID         int
+	}{
+		Ctx:               ctx,
+		DatasetID:         datasetID,
+		PreviousEditionID: previousEditionID,
+		VersionID:         versionID,
+	}
+	mock.lockGetVersionStaticByPreviousEditionID.Lock()
+	mock.calls.GetVersionStaticByPreviousEditionID = append(mock.calls.GetVersionStaticByPreviousEditionID, callInfo)
+	mock.lockGetVersionStaticByPreviousEditionID.Unlock()
+	return mock.GetVersionStaticByPreviousEditionIDFunc(ctx, datasetID, previousEditionID, versionID)
+}
+
+// GetVersionStaticByPreviousEditionIDCalls gets all the calls that were made to GetVersionStaticByPreviousEditionID.
+// Check the length with:
+//
+//	len(mockedMongoDB.GetVersionStaticByPreviousEditionIDCalls())
+func (mock *MongoDBMock) GetVersionStaticByPreviousEditionIDCalls() []struct {
+	Ctx               context.Context
+	DatasetID         string
+	PreviousEditionID string
+	VersionID         int
+} {
+	var calls []struct {
+		Ctx               context.Context
+		DatasetID         string
+		PreviousEditionID string
+		VersionID         int
+	}
+	mock.lockGetVersionStaticByPreviousEditionID.RLock()
+	calls = mock.calls.GetVersionStaticByPreviousEditionID
+	mock.lockGetVersionStaticByPreviousEditionID.RUnlock()
 	return calls
 }
 

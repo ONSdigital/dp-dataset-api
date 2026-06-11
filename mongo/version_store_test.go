@@ -106,6 +106,57 @@ func TestVersionsStatic(t *testing.T) {
 	})
 }
 
+func TestGetVersionStaticByPreviousEditionID(t *testing.T) {
+	Convey("Given MongoDB is running with a version that has a previous edition ID", t, func() {
+		ctx := context.Background()
+		mongoDB, err := getTestMongoDB(ctx, t)
+		So(err, ShouldBeNil)
+
+		err = mongoDB.Connection.DropDatabase(ctx)
+		So(err, ShouldBeNil)
+
+		version := &models.Version{
+			Version: 1,
+			Edition: "renamed-edition",
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{ID: staticDatasetID},
+			},
+			PreviousEditionId: []string{"previous-edition-id", "another-previous-edition-id"},
+		}
+
+		_, err = mongoDB.Connection.Collection(mongoDB.ActualCollectionName(config.VersionsCollection)).InsertOne(ctx, version)
+		So(err, ShouldBeNil)
+
+		Convey("When a matching previous edition ID is provided", func() {
+			retrievedVersion, err := mongoDB.GetVersionStaticByPreviousEditionID(ctx, staticDatasetID, "previous-edition-id", 1)
+
+			Convey("Then the correct version is returned", func() {
+				So(err, ShouldBeNil)
+				So(retrievedVersion, ShouldResemble, version)
+			})
+		})
+
+		Convey("When a non-matching previous edition ID is provided", func() {
+			_, err := mongoDB.GetVersionStaticByPreviousEditionID(ctx, staticDatasetID, "non-existent-previous-edition-id", 1)
+
+			Convey("Then a VersionNotFound error is returned", func() {
+				So(err, ShouldEqual, errs.ErrVersionNotFound)
+			})
+		})
+
+		Convey("When the MongoDB connection fails", func() {
+			err = mongoDB.Connection.Close(ctx)
+			So(err, ShouldBeNil)
+
+			_, err := mongoDB.GetVersionStaticByPreviousEditionID(ctx, staticDatasetID, "previous-edition-id", 1)
+
+			Convey("Then an error is returned", func() {
+				So(err, ShouldNotBeNil)
+			})
+		})
+	})
+}
+
 func TestGetAllStaticVersions(t *testing.T) {
 	Convey("Given MongoDB is running and populated with static versions", t, func() {
 		ctx := context.Background()
