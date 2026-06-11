@@ -29,9 +29,6 @@ var _ store.MongoDB = &MongoDBMock{}
 //			AcquireVersionsLockFunc: func(ctx context.Context, versionID string) (string, error) {
 //				panic("mock out the AcquireVersionsLock method")
 //			},
-//			AcquireVersionsSLockFunc: func(ctx context.Context, versionID string, maxConcurrent int) (string, error) {
-//				panic("mock out the AcquireVersionsSLock method")
-//			},
 //			AddEventToInstanceFunc: func(ctx context.Context, currentInstance *models.Instance, event *models.Event, eTagSelector string) (string, error) {
 //				panic("mock out the AddEventToInstance method")
 //			},
@@ -209,9 +206,6 @@ var _ store.MongoDB = &MongoDBMock{}
 //			UpsertVersionFunc: func(ctx context.Context, ID string, versionDoc *models.Version) error {
 //				panic("mock out the UpsertVersion method")
 //			},
-//			UpsertVersionStaticFunc: func(ctx context.Context, versionDoc *models.Version) error {
-//				panic("mock out the UpsertVersionStatic method")
-//			},
 //		}
 //
 //		// use mockedMongoDB in code that requires store.MongoDB
@@ -224,9 +218,6 @@ type MongoDBMock struct {
 
 	// AcquireVersionsLockFunc mocks the AcquireVersionsLock method.
 	AcquireVersionsLockFunc func(ctx context.Context, versionID string) (string, error)
-
-	// AcquireVersionsSLockFunc mocks the AcquireVersionsSLock method.
-	AcquireVersionsSLockFunc func(ctx context.Context, versionID string, maxConcurrent int) (string, error)
 
 	// AddEventToInstanceFunc mocks the AddEventToInstance method.
 	AddEventToInstanceFunc func(ctx context.Context, currentInstance *models.Instance, event *models.Event, eTagSelector string) (string, error)
@@ -405,9 +396,6 @@ type MongoDBMock struct {
 	// UpsertVersionFunc mocks the UpsertVersion method.
 	UpsertVersionFunc func(ctx context.Context, ID string, versionDoc *models.Version) error
 
-	// UpsertVersionStaticFunc mocks the UpsertVersionStatic method.
-	UpsertVersionStaticFunc func(ctx context.Context, versionDoc *models.Version) error
-
 	// calls tracks calls to the methods.
 	calls struct {
 		// AcquireInstanceLock holds details about calls to the AcquireInstanceLock method.
@@ -423,15 +411,6 @@ type MongoDBMock struct {
 			Ctx context.Context
 			// VersionID is the versionID argument value.
 			VersionID string
-		}
-		// AcquireVersionsSLock holds details about calls to the AcquireVersionsSLock method.
-		AcquireVersionsSLock []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// VersionID is the versionID argument value.
-			VersionID string
-			// MaxConcurrent is the maxConcurrent argument value.
-			MaxConcurrent int
 		}
 		// AddEventToInstance holds details about calls to the AddEventToInstance method.
 		AddEventToInstance []struct {
@@ -1042,17 +1021,9 @@ type MongoDBMock struct {
 			// VersionDoc is the versionDoc argument value.
 			VersionDoc *models.Version
 		}
-		// UpsertVersionStatic holds details about calls to the UpsertVersionStatic method.
-		UpsertVersionStatic []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// VersionDoc is the versionDoc argument value.
-			VersionDoc *models.Version
-		}
 	}
 	lockAcquireInstanceLock                 sync.RWMutex
 	lockAcquireVersionsLock                 sync.RWMutex
-	lockAcquireVersionsSLock                sync.RWMutex
 	lockAddEventToInstance                  sync.RWMutex
 	lockAddInstance                         sync.RWMutex
 	lockAddVersionStatic                    sync.RWMutex
@@ -1112,7 +1083,6 @@ type MongoDBMock struct {
 	lockUpsertDimensionsToInstance          sync.RWMutex
 	lockUpsertEdition                       sync.RWMutex
 	lockUpsertVersion                       sync.RWMutex
-	lockUpsertVersionStatic                 sync.RWMutex
 }
 
 // AcquireInstanceLock calls AcquireInstanceLockFunc.
@@ -1184,46 +1154,6 @@ func (mock *MongoDBMock) AcquireVersionsLockCalls() []struct {
 	mock.lockAcquireVersionsLock.RLock()
 	calls = mock.calls.AcquireVersionsLock
 	mock.lockAcquireVersionsLock.RUnlock()
-	return calls
-}
-
-// AcquireVersionsSLock calls AcquireVersionsSLockFunc.
-func (mock *MongoDBMock) AcquireVersionsSLock(ctx context.Context, versionID string, maxConcurrent int) (string, error) {
-	if mock.AcquireVersionsSLockFunc == nil {
-		panic("MongoDBMock.AcquireVersionsSLockFunc: method is nil but MongoDB.AcquireVersionsSLock was just called")
-	}
-	callInfo := struct {
-		Ctx           context.Context
-		VersionID     string
-		MaxConcurrent int
-	}{
-		Ctx:           ctx,
-		VersionID:     versionID,
-		MaxConcurrent: maxConcurrent,
-	}
-	mock.lockAcquireVersionsSLock.Lock()
-	mock.calls.AcquireVersionsSLock = append(mock.calls.AcquireVersionsSLock, callInfo)
-	mock.lockAcquireVersionsSLock.Unlock()
-	return mock.AcquireVersionsSLockFunc(ctx, versionID, maxConcurrent)
-}
-
-// AcquireVersionsSLockCalls gets all the calls that were made to AcquireVersionsSLock.
-// Check the length with:
-//
-//	len(mockedMongoDB.AcquireVersionsSLockCalls())
-func (mock *MongoDBMock) AcquireVersionsSLockCalls() []struct {
-	Ctx           context.Context
-	VersionID     string
-	MaxConcurrent int
-} {
-	var calls []struct {
-		Ctx           context.Context
-		VersionID     string
-		MaxConcurrent int
-	}
-	mock.lockAcquireVersionsSLock.RLock()
-	calls = mock.calls.AcquireVersionsSLock
-	mock.lockAcquireVersionsSLock.RUnlock()
 	return calls
 }
 
@@ -3741,22 +3671,4 @@ func (mock *MongoDBMock) UpsertVersionCalls() []struct {
 	calls = mock.calls.UpsertVersion
 	mock.lockUpsertVersion.RUnlock()
 	return calls
-}
-
-// UpsertVersionStatic calls UpsertVersionStaticFunc.
-func (mock *MongoDBMock) UpsertVersionStatic(ctx context.Context, versionDoc *models.Version) error {
-	if mock.UpsertVersionStaticFunc == nil {
-		panic("MongoDBMock.UpsertVersionStaticFunc: method is nil but MongoDB.UpsertVersionStatic was just called")
-	}
-	callInfo := struct {
-		Ctx        context.Context
-		VersionDoc *models.Version
-	}{
-		Ctx:        ctx,
-		VersionDoc: versionDoc,
-	}
-	mock.lockUpsertVersionStatic.Lock()
-	mock.calls.UpsertVersionStatic = append(mock.calls.UpsertVersionStatic, callInfo)
-	mock.lockUpsertVersionStatic.Unlock()
-	return mock.UpsertVersionStaticFunc(ctx, versionDoc)
 }

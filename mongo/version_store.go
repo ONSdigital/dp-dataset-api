@@ -26,23 +26,6 @@ func (m *Mongo) UnlockVersions(ctx context.Context, lockID string) {
 	m.lockClientVersionsCollection.Unlock(ctx, lockID)
 }
 
-// UpsertVersion adds or overrides an existing version document
-func (m *Mongo) UpsertVersionStatic(ctx context.Context, version *models.Version) (err error) {
-	version.LastUpdated = time.Now()
-	update := bson.M{
-		"$set": version,
-	}
-
-	sel := bson.M{
-		"edition": version.Edition,
-		"version": version.Version,
-		"e_tag":   version.ETag,
-	}
-
-	_, err = m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).UpsertOne(ctx, sel, update)
-	return err
-}
-
 // AddVersion to the versions collection
 func (m *Mongo) AddVersionStatic(ctx context.Context, version *models.Version) (inst *models.Version, err error) {
 	version.LastUpdated = time.Now().UTC()

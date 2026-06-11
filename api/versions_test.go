@@ -4737,10 +4737,6 @@ func TestPutStateReturnsOk(t *testing.T) {
 				return models.Static.String(), nil
 			},
 
-			UpsertVersionStaticFunc: func(ctx context.Context, versionDoc *models.Version) error {
-				return nil
-			},
-
 			GetDatasetFunc: func(ctx context.Context, ID string) (*models.DatasetUpdate, error) {
 				jsonData := `{
 					"id": "test-static-dataset",

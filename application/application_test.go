@@ -2225,9 +2225,6 @@ func TestPublishVersionDatasetDownloadsOK(t *testing.T) {
 					},
 				}, nil
 			},
-			UpsertVersionStaticFunc: func(context.Context, *models.Version) error {
-				return nil
-			},
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
