@@ -698,7 +698,6 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 	var doUpdate = func() (*models.Version, error) {
 		if versionUpdate != nil {
 			if versionUpdate.Type == models.Static.String() {
-
 				err = smDS.publishDistributionFiles(ctx, currentVersion, accessToken)
 				if err != nil {
 					log.Error(ctx, "putState endpoint: failed to publish distribution files", err, log.Data{})
