@@ -5,11 +5,12 @@ package storetest
 
 import (
 	"context"
+	"sync"
+
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"sync"
 )
 
 // Ensure, that MongoDBMock does implement store.MongoDB.
@@ -3758,22 +3759,4 @@ func (mock *MongoDBMock) UpsertVersionStatic(ctx context.Context, versionDoc *mo
 	mock.calls.UpsertVersionStatic = append(mock.calls.UpsertVersionStatic, callInfo)
 	mock.lockUpsertVersionStatic.Unlock()
 	return mock.UpsertVersionStaticFunc(ctx, versionDoc)
-}
-
-// UpsertVersionStaticCalls gets all the calls that were made to UpsertVersionStatic.
-// Check the length with:
-//
-//	len(mockedMongoDB.UpsertVersionStaticCalls())
-func (mock *MongoDBMock) UpsertVersionStaticCalls() []struct {
-	Ctx        context.Context
-	VersionDoc *models.Version
-} {
-	var calls []struct {
-		Ctx        context.Context
-		VersionDoc *models.Version
-	}
-	mock.lockUpsertVersionStatic.RLock()
-	calls = mock.calls.UpsertVersionStatic
-	mock.lockUpsertVersionStatic.RUnlock()
-	return calls
 }

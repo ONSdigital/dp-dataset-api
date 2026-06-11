@@ -572,25 +572,27 @@ func PublishVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 	}
 
 	if hasDownloads != trueStringified {
-		log.Info(ctx, "attempting to publish edition", data)
+		if versionUpdate.Type != models.Static.String() {
+			log.Info(ctx, "attempting to publish edition", data)
 
-		err = PublishEdition(ctx, smDS, versionUpdate, versionDetails, data)
-		if err != nil {
-			log.Error(ctx, "State machine - Publish: PublishEdition : failed to publish edition", err, data)
-			return err
-		}
-
-		dsType, err := models.GetDatasetType(currentVersion.Type)
-		if err != nil {
-			log.Error(ctx, "State machine - Publish: GetDatasetType : failed to get dataset type", err, data)
-			return err
-		}
-
-		if dsType == models.Filterable || dsType == models.CantabularFlexibleTable || dsType == models.CantabularMultivariateTable || dsType == models.CantabularTable {
-			err = PublishInstance(ctx, smDS, versionUpdate, data)
+			err = PublishEdition(ctx, smDS, versionUpdate, versionDetails, data)
 			if err != nil {
-				log.Error(ctx, "State machine - Publish: PublishInstance : failed to publish instance", err, data)
+				log.Error(ctx, "State machine - Publish: PublishEdition : failed to publish edition", err, data)
 				return err
+			}
+
+			dsType, err := models.GetDatasetType(currentVersion.Type)
+			if err != nil {
+				log.Error(ctx, "State machine - Publish: GetDatasetType : failed to get dataset type", err, data)
+				return err
+			}
+
+			if dsType == models.Filterable || dsType == models.CantabularFlexibleTable || dsType == models.CantabularMultivariateTable || dsType == models.CantabularTable {
+				err = PublishInstance(ctx, smDS, versionUpdate, data)
+				if err != nil {
+					log.Error(ctx, "State machine - Publish: PublishInstance : failed to publish instance", err, data)
+					return err
+				}
 			}
 		}
 
@@ -696,31 +698,26 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 	var doUpdate = func() (*models.Version, error) {
 		if versionUpdate != nil {
 			if versionUpdate.Type == models.Static.String() {
-				updatedV, errVersion := smDS.DataStore.Backend.UpdateStateStatic(ctx, currentVersion, &models.StateUpdate{State: "published"}, eTag)
-				if errVersion != nil {
-					log.Error(ctx, "putVersion endpoint: UpdateVersionStatic returned an error", err)
-					return nil, errVersion
-				}
 
-				err = smDS.publishDistributionFiles(ctx, updatedV, accessToken)
+				err = smDS.publishDistributionFiles(ctx, currentVersion, accessToken)
 				if err != nil {
 					log.Error(ctx, "putState endpoint: failed to publish distribution files", err, log.Data{})
-					return updatedV, err
+					return versionUpdate, err
 				}
 				searchContentUpdatedEvent := map[string]interface{}{
 					"dataset_id":   versionDetails.datasetID,
 					"uri":          fmt.Sprintf("/datasets/%s", versionDetails.datasetID),
-					"title":        updatedV.EditionTitle,
-					"edition":      updatedV.Edition,
+					"title":        currentVersion.EditionTitle,
+					"edition":      currentVersion.Edition,
 					"content_type": "dataset_landing_page",
-					"release_date": updatedV.ReleaseDate,
+					"release_date": currentVersion.ReleaseDate,
 				}
 
 				logData["search_content_updated_event"] = searchContentUpdatedEvent
 				jsonBytes, err := json.Marshal(searchContentUpdatedEvent)
 				if err != nil {
 					log.Error(ctx, "failed to marshal searchContentUpdatedEvent for kafka", err, logData)
-					return updatedV, err
+					return currentVersion, err
 				} else {
 					go func() {
 						smDS.SearchContentUpdatedProducer.Producer.Output() <- kafka.BytesMessage{Value: jsonBytes, Context: ctx}
@@ -730,17 +727,25 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 
 				// Purge Cloudflare cache if enabled and version is being published
 				if smDS.CloudflareEnabled {
-					webLink := strings.TrimLeft(updatedV.Links.WebPage.HRef, "/")
-					topic := strings.Split(webLink, "/")
-					prefixes := utils.GeneratePurgePrefixes(smDS.UrlBuilder.GetPublicWebsiteURL().String(), smDS.UrlBuilder.GetAPIRouterPublicURL().String(), topic[0], versionDetails.datasetID, versionDetails.edition, versionDetails.version)
-					logData["purge_prefixes"] = prefixes
+					go func() {
+						webLink := strings.TrimLeft(currentVersion.Links.WebPage.HRef, "/")
+						topic := strings.Split(webLink, "/")
+						prefixes := utils.GeneratePurgePrefixes(smDS.UrlBuilder.GetPublicWebsiteURL().String(), smDS.UrlBuilder.GetAPIRouterPublicURL().String(), topic[0], versionDetails.datasetID, versionDetails.edition, versionDetails.version)
+						logData["purge_prefixes"] = prefixes
 
-					err = smDS.CloudflareClient.PurgeByPrefixes(ctx, prefixes)
-					if err != nil {
-						log.Error(ctx, "putState endpoint: failed to purge cache by prefixes", err, logData)
-					} else {
-						log.Info(ctx, "putState endpoint: successfully purged cache by prefixes", logData)
-					}
+						err = smDS.CloudflareClient.PurgeByPrefixes(ctx, prefixes)
+						if err != nil {
+							log.Error(ctx, "putState endpoint: failed to purge cache by prefixes", err, logData)
+						} else {
+							log.Info(ctx, "putState endpoint: successfully purged cache by prefixes", logData)
+						}
+					}()
+				}
+
+				updatedV, errVersion := smDS.DataStore.Backend.UpdateStateStatic(ctx, currentVersion, &models.StateUpdate{State: "published"}, eTag)
+				if errVersion != nil {
+					log.Error(ctx, "putVersion endpoint: UpdateVersionStatic returned an error", err)
+					return nil, errVersion
 				}
 
 				return updatedV, nil
@@ -789,53 +794,26 @@ func PublishEdition(ctx context.Context, smDS *StateMachineDatasetAPI,
 	versionUpdate *models.Version, // Next version, that is the new version
 	versionDetails VersionDetails, data log.Data) error {
 	var editionDoc *models.EditionUpdate
-	var versionDoc *models.Version
 	var err error
 
-	datasetType, err := smDS.DataStore.Backend.GetDatasetType(ctx, versionDetails.datasetID, true)
+	editionDoc, err = smDS.DataStore.Backend.GetEdition(ctx, versionDetails.datasetID, versionDetails.edition, "")
 	if err != nil {
-		log.Error(ctx, "State Machine - Publish: PublishEdition: failed to find dataset type", err, data)
+		log.Error(ctx, "State Machine - Publish: PublishEdition: failed to find the edition we're trying to update", err, data)
 		return err
 	}
 
-	if datasetType == models.Static.String() {
-		version, err := strconv.Atoi(versionDetails.version)
-		if err != nil {
-			log.Error(ctx, "State Machine - Publish: PublishEdition: failed to convert version to integer", err, data)
-			return err
-		}
-		versionDoc, err = smDS.DataStore.Backend.GetVersionStatic(ctx, versionDetails.datasetID, versionDetails.edition, version, "")
-		if err != nil {
-			log.Error(ctx, "State Machine - Publish: PublishEdition: failed to find the version we're trying to update", err, data)
-			return err
-		}
-	} else {
-		editionDoc, err = smDS.DataStore.Backend.GetEdition(ctx, versionDetails.datasetID, versionDetails.edition, "")
-		if err != nil {
-			log.Error(ctx, "State Machine - Publish: PublishEdition: failed to find the edition we're trying to update", err, data)
-			return err
-		}
+	editionDoc.Next.State = models.PublishedState
 
-		editionDoc.Next.State = models.PublishedState
-
-		if err := editionDoc.PublishLinks(ctx, versionUpdate.Links.Version); err != nil {
-			log.Error(ctx, "State Machine - Publish: PublishEdition: failed to update the edition links for the version we're trying to publish", err, data)
-			return err
-		}
-
-		editionDoc.Current = editionDoc.Next
+	if err := editionDoc.PublishLinks(ctx, versionUpdate.Links.Version); err != nil {
+		log.Error(ctx, "State Machine - Publish: PublishEdition: failed to update the edition links for the version we're trying to publish", err, data)
+		return err
 	}
 
-	if datasetType == models.Static.String() {
-		if err := smDS.DataStore.Backend.UpsertVersionStatic(ctx, versionDoc); err != nil {
-			log.Error(ctx, "State Machine - Publish: PublishEdition: failed to update version during publishing", err, data)
-			return err
-		}
-	} else {
-		if err := smDS.DataStore.Backend.UpsertEdition(ctx, versionDetails.datasetID, versionDetails.edition, editionDoc); err != nil {
-			log.Error(ctx, "State Machine - Publish: PublishEdition: failed to update edition during publishing", err, data)
-			return err
-		}
+	editionDoc.Current = editionDoc.Next
+
+	if err := smDS.DataStore.Backend.UpsertEdition(ctx, versionDetails.datasetID, versionDetails.edition, editionDoc); err != nil {
+		log.Error(ctx, "State Machine - Publish: PublishEdition: failed to update edition during publishing", err, data)
+		return err
 	}
 
 	return nil

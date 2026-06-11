@@ -2268,11 +2268,8 @@ func TestPublishVersionDatasetDownloadsOK(t *testing.T) {
 
 		So(err, ShouldBeNil)
 		So(len(mockedDataStore.UpdateStateStaticCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetVersionStaticCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpsertVersionStaticCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
 
 		Convey("The GetFile check is no longer called", func() {
 			So(len(mockFilesAPIClient.GetFileCalls()), ShouldEqual, 0)
