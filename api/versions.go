@@ -14,7 +14,6 @@ import (
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/utils"
-	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	dpresponse "github.com/ONSdigital/dp-net/v3/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v3/http"
 	"github.com/ONSdigital/dp-net/v3/links"
@@ -1058,72 +1057,4 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusOK)
 	log.Info(ctx, "putState endpoint: request successful", logData)
-}
-
-func (api *DatasetAPI) publishDistributionFiles(ctx context.Context, version *models.Version, logData log.Data, accessToken string) error {
-	if api.filesAPIClient == nil {
-		return fmt.Errorf("files API client not configured")
-	}
-
-	var lastError error
-	var filesAPIError error
-	totalFiles := len(*version.Distributions)
-	successCount := 0
-
-	for _, distribution := range *version.Distributions {
-		if distribution.DownloadURL == "" {
-			continue
-		}
-
-		filepath := distribution.DownloadURL
-
-		fileLogData := log.Data{
-			"filepath":            filepath,
-			"distribution_title":  distribution.Title,
-			"distribution_format": distribution.Format,
-		}
-
-		err := api.filesAPIClient.MarkFilePublished(ctx, filepath, filesAPISDK.Headers{Authorization: accessToken})
-		if err != nil {
-			log.Error(ctx, "failed to publish file", err, log.Data{
-				"filepath":            filepath,
-				"distribution_title":  distribution.Title,
-				"distribution_format": distribution.Format,
-			})
-
-			if strings.Contains(err.Error(), "FileNotRegistered") ||
-				strings.Contains(err.Error(), "file not registered") ||
-				strings.Contains(err.Error(), "not found") {
-				filesAPIError = errs.ErrFileMetadataNotFound
-			}
-
-			if strings.Contains(err.Error(), "FileStateError") ||
-				strings.Contains(err.Error(), "file is not set as publishable") ||
-				strings.Contains(err.Error(), "file state is not in state uploaded") {
-				filesAPIError = errs.ErrFileNotInCorrectState
-			}
-
-			lastError = err
-			continue
-		}
-
-		successCount++
-		log.Info(ctx, "successfully published file", fileLogData)
-	}
-
-	log.Info(ctx, "completed publishing distribution files", log.Data{
-		"total_files": totalFiles,
-		"successful":  successCount,
-		"failed":      totalFiles - successCount,
-	})
-
-	if filesAPIError != nil {
-		return filesAPIError
-	}
-
-	if lastError != nil {
-		return fmt.Errorf("one or more errors occurred while publishing files: %w", lastError)
-	}
-
-	return nil
 }
