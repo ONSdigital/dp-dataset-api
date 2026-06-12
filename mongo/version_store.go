@@ -290,14 +290,10 @@ func (m *Mongo) GetEditionsStatic(ctx context.Context, datasetID, state string, 
 
 	pipeline := []bson.M{
 		{"$match": selector},
-		{"$sort": bson.M{
-			"edition": 1,
-			"version": 1,
-		}},
 		{"$group": bson.M{
 			"_id": "$edition",
 			"oldest_version_release_date": bson.M{
-				"$first": "$release_date",
+				"$min": "$release_date",
 			},
 		}},
 		{"$sort": bson.M{
