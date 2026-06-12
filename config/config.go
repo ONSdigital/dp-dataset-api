@@ -66,10 +66,9 @@ type Configuration struct {
 	OTBatchTimeout                 time.Duration `envconfig:"OTEL_BATCH_TIMEOUT"`
 	OtelEnabled                    bool          `envconfig:"OTEL_ENABLED"`
 	MongoConfig
-	AuthConfig               *authorisation.Config
-	CloudflareEnabled        bool `envconfig:"CLOUDFLARE_ENABLED"`
-	CloudflareConfig         *cloudflare.Config
-	CloudflareContextTimeout time.Duration `envconfig:"CLOUDFLARE_CTX_TIMEOUT"`
+	AuthConfig        *authorisation.Config
+	CloudflareEnabled bool `envconfig:"CLOUDFLARE_ENABLED"`
+	CloudflareConfig  *cloudflare.Config
 }
 
 var cfg *Configuration
@@ -157,11 +156,10 @@ func Get() (*Configuration, error) {
 			CodeListAPIURL: "http://localhost:22400",
 			DatasetAPIURL:  "http://localhost:22000",
 		},
-		ComponentTestUseLogFile:  false,
-		AuthConfig:               authorisation.NewDefaultConfig(),
-		CloudflareEnabled:        false,
-		CloudflareConfig:         cloudflare.NewDefaultConfig(),
-		CloudflareContextTimeout: 30 * time.Second,
+		ComponentTestUseLogFile: false,
+		AuthConfig:              authorisation.NewDefaultConfig(),
+		CloudflareEnabled:       false,
+		CloudflareConfig:        cloudflare.NewDefaultConfig(),
 	}
 
 	return cfg, envconfig.Process("", cfg)

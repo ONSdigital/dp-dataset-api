@@ -11,7 +11,6 @@ import (
 	neturl "net/url"
 	"sync"
 	"testing"
-	"time"
 
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
 	topicAPIModels "github.com/ONSdigital/dp-topic-api/models"
@@ -184,8 +183,6 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 			Type:                "static",
 		}}
 
-	clouflareTimeout := 2 * time.Second
-
 	mockStatemachineDatasetAPI := application.StateMachineDatasetAPI{
 		DataStore:                    store.DataStore{Backend: mockedDataStore},
 		DownloadGenerators:           mockedMapSMGeneratedDownloads,
@@ -195,7 +192,6 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 		CloudflareEnabled:            cfg.CloudflareEnabled,
 		UrlBuilder:                   urlBuilder,
 		CloudflareClient:             cloudflareMock,
-		CloudflareTimeout:            &clouflareTimeout,
 	}
 
 	testIdentityClient := clientsidentity.New(cfg.ZebedeeURL)

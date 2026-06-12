@@ -361,7 +361,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	}
 
 	sm := GetStateMachine(ctx, ds)
-	svc.smDS = application.Setup(ds, smDownloadGenerators, sm, searchContentUpdatedProducer, svc.cloudflareClient, svc.config.CloudflareEnabled, urlBuilder, svc.filesAPIClient, &svc.config.CloudflareContextTimeout)
+	svc.smDS = application.Setup(ds, smDownloadGenerators, sm, searchContentUpdatedProducer, svc.cloudflareClient, svc.config.CloudflareEnabled, urlBuilder, svc.filesAPIClient)
 
 	auditService := application.NewAuditService(ds)
 

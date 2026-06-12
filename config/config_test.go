@@ -78,7 +78,6 @@ func TestSpec(t *testing.T) {
 				So(cfg.AuthConfig, ShouldEqual, authorisation.NewDefaultConfig())
 				So(cfg.CloudflareEnabled, ShouldBeFalse)
 				So(cfg.CloudflareConfig, ShouldEqual, cloudflare.NewDefaultConfig())
-				So(cfg.CloudflareContextTimeout, ShouldEqual, 30*time.Second)
 			})
 		})
 	})

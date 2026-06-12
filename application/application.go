@@ -70,11 +70,10 @@ type StateMachineDatasetAPI struct {
 	SearchContentUpdatedProducer *SearchContentUpdatedProducer
 	CloudflareClient             cloudflare.Clienter
 	CloudflareEnabled            bool
-	CloudflareTimeout            *time.Duration
 	UrlBuilder                   *url.Builder
 }
 
-func Setup(dataStoreVal store.DataStore, downloadGenerators map[models.DatasetType]DownloadsGenerator, stateMachine *StateMachine, searchContentUpdatedProducer *SearchContentUpdatedProducer, cloudflareClient cloudflare.Clienter, cloudflareEnabled bool, urlBuilder *url.Builder, filesAPIClient filesAPISDK.Clienter, cloudflareTimeout *time.Duration) *StateMachineDatasetAPI {
+func Setup(dataStoreVal store.DataStore, downloadGenerators map[models.DatasetType]DownloadsGenerator, stateMachine *StateMachine, searchContentUpdatedProducer *SearchContentUpdatedProducer, cloudflareClient cloudflare.Clienter, cloudflareEnabled bool, urlBuilder *url.Builder, filesAPIClient filesAPISDK.Clienter) *StateMachineDatasetAPI {
 	newDS := &StateMachineDatasetAPI{
 		DataStore:                    dataStoreVal,
 		DownloadGenerators:           downloadGenerators,
@@ -82,7 +81,6 @@ func Setup(dataStoreVal store.DataStore, downloadGenerators map[models.DatasetTy
 		SearchContentUpdatedProducer: searchContentUpdatedProducer,
 		CloudflareClient:             cloudflareClient,
 		CloudflareEnabled:            cloudflareEnabled,
-		CloudflareTimeout:            cloudflareTimeout,
 		UrlBuilder:                   urlBuilder,
 		FilesAPIClient:               filesAPIClient,
 	}
@@ -705,20 +703,27 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 					log.Error(ctx, "putState endpoint: failed to publish distribution files", err, log.Data{})
 					return versionUpdate, err
 				}
+
+				updatedV, errVersion := smDS.DataStore.Backend.UpdateStateStatic(ctx, currentVersion, &models.StateUpdate{State: "published"}, eTag)
+				if errVersion != nil {
+					log.Error(ctx, "putVersion endpoint: UpdateVersionStatic returned an error", err)
+					return nil, errVersion
+				}
+
 				searchContentUpdatedEvent := map[string]interface{}{
 					"dataset_id":   versionDetails.datasetID,
 					"uri":          fmt.Sprintf("/datasets/%s", versionDetails.datasetID),
-					"title":        currentVersion.EditionTitle,
-					"edition":      currentVersion.Edition,
+					"title":        updatedV.EditionTitle,
+					"edition":      updatedV.Edition,
 					"content_type": "dataset_landing_page",
-					"release_date": currentVersion.ReleaseDate,
+					"release_date": updatedV.ReleaseDate,
 				}
 
 				logData["search_content_updated_event"] = searchContentUpdatedEvent
 				jsonBytes, err := json.Marshal(searchContentUpdatedEvent)
 				if err != nil {
 					log.Error(ctx, "failed to marshal searchContentUpdatedEvent for kafka", err, logData)
-					return currentVersion, err
+					return updatedV, err
 				} else {
 					go func() {
 						smDS.SearchContentUpdatedProducer.Producer.Output() <- kafka.BytesMessage{Value: jsonBytes, Context: ctx}
@@ -728,27 +733,17 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 
 				// Purge Cloudflare cache if enabled and version is being published
 				if smDS.CloudflareEnabled {
-					go func() {
-						webLink := strings.TrimLeft(currentVersion.Links.WebPage.HRef, "/")
-						topic := strings.Split(webLink, "/")
-						prefixes := utils.GeneratePurgePrefixes(smDS.UrlBuilder.GetPublicWebsiteURL().String(), smDS.UrlBuilder.GetAPIRouterPublicURL().String(), topic[0], versionDetails.datasetID, versionDetails.edition, versionDetails.version)
-						logData["purge_prefixes"] = prefixes
+					webLink := strings.TrimLeft(updatedV.Links.WebPage.HRef, "/")
+					topic := strings.Split(webLink, "/")
+					prefixes := utils.GeneratePurgePrefixes(smDS.UrlBuilder.GetPublicWebsiteURL().String(), smDS.UrlBuilder.GetAPIRouterPublicURL().String(), topic[0], versionDetails.datasetID, versionDetails.edition, versionDetails.version)
+					logData["purge_prefixes"] = prefixes
 
-						cfCtx, cancel := context.WithTimeout(ctx, *smDS.CloudflareTimeout)
-						defer cancel()
-						errPurge := smDS.CloudflareClient.PurgeByPrefixes(cfCtx, prefixes)
-						if errPurge != nil {
-							log.Error(cfCtx, "putState endpoint: failed to purge cache by prefixes", errPurge, logData)
-						} else {
-							log.Info(cfCtx, "putState endpoint: successfully purged cache by prefixes", logData)
-						}
-					}()
-				}
-
-				updatedV, errVersion := smDS.DataStore.Backend.UpdateStateStatic(ctx, currentVersion, &models.StateUpdate{State: "published"}, eTag)
-				if errVersion != nil {
-					log.Error(ctx, "putVersion endpoint: UpdateVersionStatic returned an error", err)
-					return nil, errVersion
+					errPurge := smDS.CloudflareClient.PurgeByPrefixes(ctx, prefixes)
+					if errPurge != nil {
+						log.Error(ctx, "putState endpoint: failed to purge cache by prefixes", errPurge, logData)
+					} else {
+						log.Info(ctx, "putState endpoint: successfully purged cache by prefixes", logData)
+					}
 				}
 
 				return updatedV, nil
