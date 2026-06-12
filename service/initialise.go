@@ -90,17 +90,14 @@ func (e *ExternalServiceList) GetMongoDB(ctx context.Context, cfg config.MongoCo
 
 // GetFilesAPIClient returns a files API client
 func (e *ExternalServiceList) GetFilesAPIClient(ctx context.Context, cfg *config.Configuration) (filesAPISDK.Clienter, error) {
-	if cfg.EnablePrivateEndpoints {
-		filesAPIClient, err := e.Init.DoGetFilesAPIClient(ctx, cfg)
-		if err != nil {
-			log.Error(ctx, "failed to initialise files API client", err)
-			return nil, err
-		}
-		e.FilesAPIClient = true
-		log.Info(ctx, "files API client created successfully", log.Data{"url": cfg.FilesAPIURL})
-		return filesAPIClient, nil
+	filesAPIClient, err := e.Init.DoGetFilesAPIClient(ctx, cfg)
+	if err != nil {
+		log.Error(ctx, "failed to initialise files API client", err)
+		return nil, err
 	}
-	return nil, nil
+	e.FilesAPIClient = true
+	log.Info(ctx, "files API client created successfully", log.Data{"url": cfg.FilesAPIURL})
+	return filesAPIClient, nil
 }
 
 // GetCloudflareClient returns a cloudflare client

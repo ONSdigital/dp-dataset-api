@@ -295,7 +295,7 @@ func (c *DatasetComponent) DoGetFilesAPIClientOk(ctx context.Context, cfg *confi
 		},
 		GetFileFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) (*filesAPIModels.StoredRegisteredMetaData, error) {
 			if filePath == "datasets/test-static-dataset/editions/test-edition/missing-file.csv" {
-				return nil, fmt.Errorf("FileNotRegistered: file not found")
+				return nil, fmt.Errorf("FileNotRegistered: file not registered")
 			}
 			return &filesAPIModels.StoredRegisteredMetaData{}, nil
 		},
