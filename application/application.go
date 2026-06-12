@@ -70,10 +70,11 @@ type StateMachineDatasetAPI struct {
 	SearchContentUpdatedProducer *SearchContentUpdatedProducer
 	CloudflareClient             cloudflare.Clienter
 	CloudflareEnabled            bool
+	CloudflareTimeout            *time.Duration
 	UrlBuilder                   *url.Builder
 }
 
-func Setup(dataStoreVal store.DataStore, downloadGenerators map[models.DatasetType]DownloadsGenerator, stateMachine *StateMachine, searchContentUpdatedProducer *SearchContentUpdatedProducer, cloudflareClient cloudflare.Clienter, cloudflareEnabled bool, urlBuilder *url.Builder, filesAPIClient filesAPISDK.Clienter) *StateMachineDatasetAPI {
+func Setup(dataStoreVal store.DataStore, downloadGenerators map[models.DatasetType]DownloadsGenerator, stateMachine *StateMachine, searchContentUpdatedProducer *SearchContentUpdatedProducer, cloudflareClient cloudflare.Clienter, cloudflareEnabled bool, urlBuilder *url.Builder, filesAPIClient filesAPISDK.Clienter, cloudflareTimeout *time.Duration) *StateMachineDatasetAPI {
 	newDS := &StateMachineDatasetAPI{
 		DataStore:                    dataStoreVal,
 		DownloadGenerators:           downloadGenerators,
@@ -81,6 +82,7 @@ func Setup(dataStoreVal store.DataStore, downloadGenerators map[models.DatasetTy
 		SearchContentUpdatedProducer: searchContentUpdatedProducer,
 		CloudflareClient:             cloudflareClient,
 		CloudflareEnabled:            cloudflareEnabled,
+		CloudflareTimeout:            cloudflareTimeout,
 		UrlBuilder:                   urlBuilder,
 		FilesAPIClient:               filesAPIClient,
 	}
@@ -732,11 +734,13 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 						prefixes := utils.GeneratePurgePrefixes(smDS.UrlBuilder.GetPublicWebsiteURL().String(), smDS.UrlBuilder.GetAPIRouterPublicURL().String(), topic[0], versionDetails.datasetID, versionDetails.edition, versionDetails.version)
 						logData["purge_prefixes"] = prefixes
 
-						errPurge := smDS.CloudflareClient.PurgeByPrefixes(ctx, prefixes)
+						cfCtx, cancel := context.WithTimeout(ctx, *smDS.CloudflareTimeout)
+						defer cancel()
+						errPurge := smDS.CloudflareClient.PurgeByPrefixes(cfCtx, prefixes)
 						if errPurge != nil {
-							log.Error(ctx, "putState endpoint: failed to purge cache by prefixes", errPurge, logData)
+							log.Error(cfCtx, "putState endpoint: failed to purge cache by prefixes", errPurge, logData)
 						} else {
-							log.Info(ctx, "putState endpoint: successfully purged cache by prefixes", logData)
+							log.Info(cfCtx, "putState endpoint: successfully purged cache by prefixes", logData)
 						}
 					}()
 				}
