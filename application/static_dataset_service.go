@@ -12,6 +12,13 @@ import (
 
 // StaticDatasetService defines the interface for operations related to static datasets, editions, and versions.
 //
+// WARNING: Before calling any method, the caller must ensure the following conditions are met:
+//   - The dataset exists
+//   - The dataset type is "static"
+//
+// These checks are not performed here to avoid duplicate database calls and optimise performance.
+// Handlers are expected to have already performed these checks before calling this service.
+//
 //go:generate moq -out mock/static_dataset_service.go -pkg mock . StaticDatasetService
 type StaticDatasetService interface {
 	GetVersionPublic(ctx context.Context, datasetID, editionID string, versionID int) (*models.Version, error)
@@ -29,26 +36,8 @@ func NewStaticDatasetService(dataStore store.DataStore) StaticDatasetService {
 	}
 }
 
-// ensureStaticDataset checks if the dataset is of type "static".
-func (ds *staticDatasetService) ensureStaticDataset(ctx context.Context, datasetID string, authorised bool) error {
-	datasetType, err := ds.dataStore.Backend.GetDatasetType(ctx, datasetID, authorised)
-	if err != nil {
-		return err
-	}
-
-	if datasetType != models.Static.String() {
-		return apierrors.ErrDatasetNotStatic
-	}
-
-	return nil
-}
-
 // GetVersionPublic retrieves a published version of a dataset edition.
 func (ds *staticDatasetService) GetVersionPublic(ctx context.Context, datasetID, editionID string, versionID int) (*models.Version, error) {
-	if err := ds.ensureStaticDataset(ctx, datasetID, false); err != nil {
-		return nil, err
-	}
-
 	if err := ds.dataStore.Backend.CheckEditionExistsStatic(ctx, datasetID, editionID, models.PublishedState); err != nil {
 		return nil, err
 	}
@@ -66,10 +55,6 @@ func (ds *staticDatasetService) GetVersionPublic(ctx context.Context, datasetID,
 // GetVersionPrivate retrieves a version of a dataset edition, regardless of its state.
 // If the editionID is not a direct match but matches a previous edition ID, it will still return the version.
 func (ds *staticDatasetService) GetVersionPrivate(ctx context.Context, datasetID, editionID string, versionID int) (*models.Version, error) {
-	if err := ds.ensureStaticDataset(ctx, datasetID, true); err != nil {
-		return nil, err
-	}
-
 	err := ds.dataStore.Backend.CheckEditionExistsStatic(ctx, datasetID, editionID, "")
 	if err == nil {
 		return ds.dataStore.Backend.GetVersionStatic(ctx, datasetID, editionID, versionID, "")

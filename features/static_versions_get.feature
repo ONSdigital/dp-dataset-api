@@ -230,7 +230,8 @@ Feature: Static versions GET /versions
                         },
                         "edition": "test-edition-static-approved",
                         "edition_title": "Test Edition Static Approved Title",
-                        "previous_edition_id": ["approved-old-edition-1", "approved-old-edition-2"],                        "previous_edition_id": ["approved-old-edition-1", "approved-old-edition-2"],                        "distributions": [
+                        "previous_edition_id": ["approved-old-edition-1", "approved-old-edition-2"],
+                        "distributions": [
                             {
                                 "title": "Distribution 1",
                                 "format": "csv",
