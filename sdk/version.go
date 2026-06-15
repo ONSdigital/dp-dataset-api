@@ -344,11 +344,16 @@ func (c *Client) GetVersionsInBatchesWithQueryParams(ctx context.Context, header
 	//   - We do a single memory allocation for the final array, making the code more memory efficient.
 	var processBatch VersionsBatchProcessor = func(batch VersionsList) (abort bool, err error) {
 		if len(versions.Items) == 0 { // first batch response being handled
-			versions.Count = reqLimit
+			versions.TotalCount = batch.TotalCount
 			versions.Offset = reqOffset
 			versions.Limit = reqLimit
-			versions.TotalCount = batch.TotalCount
-			versions.Items = make([]models.Version, reqLimit)
+			if batch.TotalCount-reqOffset < reqLimit {
+				versions.Count = batch.TotalCount - reqOffset
+				versions.Items = make([]models.Version, batch.TotalCount-reqOffset)
+			} else {
+				versions.Count = reqLimit
+				versions.Items = make([]models.Version, reqLimit)
+			}
 		}
 		for i := 0; i < len(batch.Items); i++ {
 			versions.Items[i+batch.Offset-reqOffset] = batch.Items[i]
