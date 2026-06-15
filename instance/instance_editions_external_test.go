@@ -32,7 +32,7 @@ func Test_UpdateInstanceToEditionConfirmedUnauthorised(t *testing.T) {
 			},
 		}
 
-		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
 
 		Convey("When the requested state change is to 'edition-confirmed'", func() {
 			body := strings.NewReader(`{"state":"edition-confirmed", "edition": "2017"}`)
@@ -73,7 +73,7 @@ func Test_UpdateInstanceToEditionConfirmedForbidden(t *testing.T) {
 			},
 		}
 
-		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
 
 		Convey("When the requested state change is to 'edition-confirmed'", func() {
 			body := strings.NewReader(`{"state":"edition-confirmed", "edition": "2017"}`)
@@ -114,7 +114,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsOk(t *testing.T) {
 			},
 		}
 
-		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
 
 		Convey("When the requested state change is to 'edition-confirmed'", func() {
 			body := strings.NewReader(`{"state":"edition-confirmed", "edition": "2017"}`)
@@ -160,7 +160,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsOk(t *testing.T) {
 			},
 		}
 
-		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
 
 		Convey("When the requested state change is to 'edition-confirmed'", func() {
 			body := strings.NewReader(`{"state":"edition-confirmed", "edition": "2017"}`)
@@ -236,7 +236,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 					},
 				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -278,7 +278,7 @@ func Test_UpdateInstanceToEditionConfirmedReturnsError(t *testing.T) {
 					},
 				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusForbidden)

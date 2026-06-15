@@ -364,8 +364,9 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	svc.smDS = application.Setup(ds, smDownloadGenerators, sm, searchContentUpdatedProducer, svc.cloudflareClient, svc.config.CloudflareEnabled, urlBuilder, svc.filesAPIClient)
 
 	auditService := application.NewAuditService(ds)
+	staticDatasetService := application.NewStaticDatasetService(ds)
 
-	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, authorisation, enableURLRewriting, svc.smDS, auditService, permissionChecker, svc.identityClient, svc.filesAPIClient, svc.topicAPIClient)
+	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, authorisation, enableURLRewriting, svc.smDS, auditService, staticDatasetService, permissionChecker, svc.identityClient, svc.filesAPIClient, svc.topicAPIClient)
 
 	svc.healthCheck.Start(ctx)
 

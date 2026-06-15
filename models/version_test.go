@@ -531,3 +531,41 @@ func TestQualityDesignation_IsValid(t *testing.T) {
 		}
 	})
 }
+
+func TestRedactPrivateFields(t *testing.T) {
+	Convey("Given a Version with private fields populated", t, func() {
+		isMigration := true
+		previousEditionId := []string{"previous-edition-id"}
+
+		version := &Version{
+			Version:           1,
+			IsMigration:       &isMigration,
+			PreviousEditionId: previousEditionId,
+		}
+
+		Convey("When RedactPrivateFields is called", func() {
+			version.RedactPrivateFields()
+
+			Convey("Then the private fields should be redacted", func() {
+				So(version.IsMigration, ShouldBeNil)
+				So(version.PreviousEditionId, ShouldBeNil)
+			})
+
+			Convey("And the public fields should remain unchanged", func() {
+				So(version.Version, ShouldEqual, 1)
+			})
+		})
+	})
+
+	Convey("Given a nil Version", t, func() {
+		var version *Version
+
+		Convey("When RedactPrivateFields is called", func() {
+			version.RedactPrivateFields()
+
+			Convey("Then it should not panic and version should still be nil", func() {
+				So(version, ShouldBeNil)
+			})
+		})
+	})
+}

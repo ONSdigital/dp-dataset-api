@@ -216,7 +216,7 @@ func Test_GetInstanceUnauthorised(t *testing.T) {
 			},
 		}
 
-		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
 
 		Convey("When a GET request to retrieve an instance resource is made, with a valid If-Match header", func() {
 			r, err := createRequestWithNoToken("GET", "http://localhost:21800/instances/123", http.NoBody)
@@ -251,7 +251,7 @@ func Test_GetInstanceForbidden(t *testing.T) {
 			},
 		}
 
-		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
 
 		Convey("When a GET request to retrieve an instance resource is made, with a valid If-Match header", func() {
 			r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", http.NoBody)
@@ -291,7 +291,7 @@ func Test_GetInstanceReturnsOK(t *testing.T) {
 			},
 		}
 
-		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
 
 		Convey("When a GET request to retrieve an instance resource is made, with a valid If-Match header", func() {
 			r, err := createRequestWithToken("GET", "http://localhost:21800/instances/123", http.NoBody)
@@ -355,7 +355,7 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 					},
 				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -382,7 +382,7 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 					},
 				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -409,7 +409,7 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 					},
 				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -437,7 +437,7 @@ func Test_GetInstanceReturnsError(t *testing.T) {
 					},
 				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusConflict)
@@ -469,7 +469,7 @@ func Test_AddInstanceUnauthorised(t *testing.T) {
 					},
 				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusUnauthorized)
@@ -499,7 +499,7 @@ func Test_AddInstanceForbidden(t *testing.T) {
 					},
 				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusForbidden)
@@ -533,7 +533,7 @@ func Test_AddInstanceReturnsCreated(t *testing.T) {
 					},
 				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusCreated)
@@ -565,7 +565,7 @@ func Test_AddInstanceReturnsError(t *testing.T) {
 					},
 				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -593,7 +593,7 @@ func Test_AddInstanceReturnsError(t *testing.T) {
 					},
 				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -621,7 +621,7 @@ func Test_AddInstanceReturnsError(t *testing.T) {
 					},
 				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -646,7 +646,7 @@ func Test_UpdateInstanceUnauthorised(t *testing.T) {
 			},
 		}
 
-		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
 
 		Convey("When a PUT request to update state of an instance resource to 'submitted' is made with a valid If-Match header", func() {
 			body := strings.NewReader(`{"state":"submitted"}`)
@@ -681,7 +681,7 @@ func Test_UpdateInstanceForbidden(t *testing.T) {
 			},
 		}
 
-		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
 
 		Convey("When a PUT request to update state of an instance resource to 'submitted' is made with a valid If-Match header", func() {
 			body := strings.NewReader(`{"state":"submitted"}`)
@@ -734,7 +734,7 @@ func Test_UpdateInstanceReturnsOk(t *testing.T) {
 			},
 		}
 
-		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
 
 		Convey("When a PUT request to update state of an instance resource to 'submitted' is made with a valid If-Match header", func() {
 			body := strings.NewReader(`{"state":"submitted"}`)
@@ -825,7 +825,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 					},
 				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -853,7 +853,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 					},
 				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -882,7 +882,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 					},
 				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -913,7 +913,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 					},
 				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -942,7 +942,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 					},
 				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -972,7 +972,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 					},
 				}
 
-				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+				datasetAPI := getAPIWithCantabularMocks(testContext, mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
 				datasetAPI.Router.ServeHTTP(w, r)
 
 				So(w.Code, ShouldEqual, http.StatusConflict)
@@ -985,7 +985,7 @@ func Test_UpdateInstanceReturnsError(t *testing.T) {
 	})
 }
 
-func getAPIWithCantabularMocks(ctx context.Context, mockedDataStore store.Storer, mockedGeneratedDownloads api.DownloadsGenerator, am *authMock.MiddlewareMock, cloudflareMock *cloudflareMocks.ClienterMock, auditServiceMock *applicationMocks.AuditServiceMock) *api.DatasetAPI {
+func getAPIWithCantabularMocks(ctx context.Context, mockedDataStore store.Storer, mockedGeneratedDownloads api.DownloadsGenerator, am *authMock.MiddlewareMock, cloudflareMock *cloudflareMocks.ClienterMock, auditServiceMock *applicationMocks.AuditServiceMock, staticDatasetServiceMock *applicationMocks.StaticDatasetServiceMock) *api.DatasetAPI {
 	mockedMapDownloadGenerators := map[models.DatasetType]api.DownloadsGenerator{
 		models.Filterable: mockedGeneratedDownloads,
 	}
@@ -1029,5 +1029,5 @@ func getAPIWithCantabularMocks(ctx context.Context, mockedDataStore store.Storer
 	}
 	testIdentityClient := clientsidentity.New(cfg.ZebedeeURL)
 
-	return api.Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapDownloadGenerators, am, enableURLRewriting, &mockStatemachineDatasetAPI, auditServiceMock, permissionsChecker, testIdentityClient, nil, nil)
+	return api.Setup(ctx, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapDownloadGenerators, am, enableURLRewriting, &mockStatemachineDatasetAPI, auditServiceMock, staticDatasetServiceMock, permissionsChecker, testIdentityClient, nil, nil)
 }

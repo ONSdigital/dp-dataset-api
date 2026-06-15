@@ -562,3 +562,13 @@ func ParseAndValidateVersionNumber(ctx context.Context, version string) (int, er
 
 	return versionNumber, nil
 }
+
+// RedactPrivateFields removes fields that should not be exposed through the public API.
+func (v *Version) RedactPrivateFields() {
+	if v == nil {
+		return
+	}
+
+	v.IsMigration = nil
+	v.PreviousEditionId = nil
+}

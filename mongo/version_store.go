@@ -182,6 +182,26 @@ func (m *Mongo) GetLatestVersionStatic(ctx context.Context, datasetID, editionID
 	return &version, nil
 }
 
+// GetVersionStaticByPreviousEditionID retrieves a version document for a dataset edition by matching the previous edition ID.
+func (m *Mongo) GetVersionStaticByPreviousEditionID(ctx context.Context, datasetID, previousEditionID string, versionID int) (*models.Version, error) {
+	selector := bson.M{
+		"links.dataset.id":    datasetID,
+		"previous_edition_id": previousEditionID,
+		"version":             versionID,
+	}
+
+	var version models.Version
+	err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).FindOne(ctx, selector, &version)
+	if err != nil {
+		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
+			return nil, errs.ErrVersionNotFound
+		}
+		return nil, err
+	}
+
+	return &version, nil
+}
+
 // GetDatasetType retrieves the type of a dataset
 func (m *Mongo) GetDatasetType(ctx context.Context, datasetID string, authorised bool) (string, error) {
 	selector := bson.M{

@@ -218,42 +218,29 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 			return nil, err
 		}
 
+		version := &models.Version{}
+
 		if isStatic {
 			authorised = api.checkUserPermission(r, logData, datasetEditionVersionReadPermission, attrs)
+
+			if authorised {
+				version, err = api.staticDatasetService.GetVersionPrivate(ctx, datasetID, edition, versionID)
+			} else {
+				version, err = api.staticDatasetService.GetVersionPublic(ctx, datasetID, edition, versionID)
+			}
 		} else {
 			authorised = api.checkUserPermission(r, logData, datasetEditionVersionReadPermission, nil)
-		}
 
-		var state string
-		if !authorised {
-			state = models.PublishedState
-		}
+			state := ""
+			if !authorised {
+				state = models.PublishedState
+			}
 
-		// get dataset if dataset exists
-		dataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
-		if err != nil {
-			log.Error(ctx, "failed to retrieve dataset details", err, logData)
-			return nil, err
-		}
+			if err = api.dataStore.Backend.CheckEditionExists(ctx, datasetID, edition, state); err != nil {
+				log.Error(ctx, "failed to verify edition existence for dataset", err, logData)
+				return nil, err
+			}
 
-		datasetType := dataset.Next.Type
-		// Check if edition exists based on dataset type
-		if datasetType == models.Static.String() {
-			err = api.dataStore.Backend.CheckEditionExistsStatic(ctx, datasetID, edition, state)
-		} else {
-			err = api.dataStore.Backend.CheckEditionExists(ctx, datasetID, edition, state)
-		}
-
-		if err != nil {
-			log.Error(ctx, "failed to verify edition existence for dataset", err, logData)
-			return nil, err
-		}
-
-		version := &models.Version{}
-		// Retrieve versions based on dataset type
-		if datasetType == models.Static.String() {
-			version, err = api.dataStore.Backend.GetVersionStatic(ctx, datasetID, edition, versionID, state)
-		} else {
 			version, err = api.dataStore.Backend.GetVersion(ctx, datasetID, edition, versionID, state)
 		}
 
@@ -286,11 +273,6 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 					version.Downloads.CSVW.Public = ""
 				}
 			}
-		}
-
-		if !authorised {
-			version.IsMigration = nil
-			version.PreviousEditionId = nil
 		}
 
 		return version, nil
