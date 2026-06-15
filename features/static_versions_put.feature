@@ -374,8 +374,20 @@ Feature: Static Dataset Versions PUT API
                         "version": {
                             "href": "/datasets/static-dataset-publish/editions/2025/versions/1",
                             "id": "1"
+                        },
+                        "web_page":{
+                            "href": "/economy/static-dataset-publish/editions/2025/versions/1"
                         }
                     },
+                    "distributions": [
+                        {
+                            "title": "Full Dataset (CSV)",
+                            "byte_size": 4300000,
+                            "download_url": "testing/test.csv",
+                            "format": "csv",
+                            "media_type": "text/csv"
+                        }
+                    ],
                     "version": 1,
                     "release_date": "2025-02-01T09:00:00.000Z",
                     "state": "approved",
@@ -588,74 +600,6 @@ Feature: Static Dataset Versions PUT API
             }
             """
         Then the HTTP status code should be "200"
-
-    Scenario: PUT state handles idempotent transitions correctly and purges URL's
-        Given I have a static dataset with version:
-            """
-            {
-                "dataset": {
-                    "id": "static-dataset-published",
-                    "title": "Static Dataset Published Test",
-                    "state": "published",
-                    "type": "static",
-                    "topics": [
-                        "businessindustryandtrade-topic-id", "economy-topic-id"
-                    ]
-                },
-                "version": {
-                    "id": "static-version-published",
-                    "edition": "2025",
-                    "edition_title": "2025 Edition",
-                    "links": {
-                        "dataset": {
-                            "id": "static-dataset-published"
-                        },
-                        "edition": {
-                            "href": "/datasets/static-dataset-published/editions/2025",
-                            "id": "2025"
-                        },
-                        "self": {
-                            "href": "/datasets/static-dataset-published/editions/2025/versions/1"
-                        }
-                    },
-                    "version": 1,
-                    "release_date": "2025-01-01T09:00:00.000Z",
-                    "state": "published",
-                    "type": "static"
-                }
-            }
-            """
-        And private endpoints are enabled
-        And cloudflare is enabled
-        And I am an admin user
-        And I have a real kafka container with topic "search-content-updated"
-        When I PUT "/datasets/static-dataset-published/editions/2025/versions/1/state"
-            """
-            {
-                "state": "published"
-            }
-            """
-        Then the HTTP status code should be "200"
-        And the total number of audit events should be 1
-        And the number of events with action "UPDATE" and resource "/datasets/static-dataset-published/editions/2025/versions/1/state" should be 1
-        And these kafka messages are produced:
-            """
-            {
-                "content_type": "dataset_landing_page",
-                "dataset_id": "static-dataset-published",
-                "edition": "2025",
-                "title": "2025 Edition",
-                "uri": "/datasets/static-dataset-published",
-                "release_date": "2025-01-01T09:00:00.000Z"
-            }
-            """
-        And the following URL prefixes are purged by cloudflare:
-            | http://localhost:20000/businessindustryandtrade/datasets/static-dataset-published                           |
-            | http://localhost:20000/businessindustryandtrade/datasets/static-dataset-published/editions                  |
-            | http://localhost:20000/businessindustryandtrade/datasets/static-dataset-published/editions/2025/versions    |
-            | http://localhost:23200/v1/datasets/static-dataset-published                                                 |
-            | http://localhost:23200/v1/datasets/static-dataset-published/editions                                        |
-            | http://localhost:23200/v1/datasets/static-dataset-published/editions/2025/versions                          |
 
     Scenario: PUT succeeds when updating edition ID to unique value within series
         Given private endpoints are enabled
@@ -1101,8 +1045,117 @@ Feature: Static Dataset Versions PUT API
                       "href": "/businessindustryandtrade/datasets/edition-change-dataset/editions/2026-update/versions/1"
                   }
               },
+              "previous_edition_id": [
+                  "2025-links"
+              ],
               "release_date": "2025-01-01T09:00:00.000Z",
               "state": "associated",
               "type": "static"
           }
           """
+
+    Scenario: PUT updates static dataset version edition and saves previous edition ID
+        Given I have a static dataset with version:
+          """
+          {
+              "dataset": {
+                  "id": "previous-edition-dataset",
+                  "title": "Previous edition saved",
+                  "state": "associated",
+                  "type": "static",
+                  "topics": [
+                      "businessindustryandtrade-topic-id"
+                  ]
+              },
+              "version": {
+                  "id": "static-dataset-previous-edition",
+                  "edition": "old-edition",
+                  "edition_title": "2025 Edition",
+                  "links": {
+                      "dataset": {
+                          "href": "/datasets/previous-edition-dataset",
+                          "id": "previous-edition-dataset"
+                      },
+                      "edition": {
+                          "href": "/datasets/previous-edition-dataset/editions/old-edition",
+                          "id": "old-edition"
+                      },
+                      "self": {
+                          "href": "/datasets/previous-edition-dataset/editions/old-edition/versions/1"
+                      },
+                      "version": {
+                          "href": "/datasets/previous-edition-dataset/editions/old-edition/versions/1",
+                          "id": "1"
+                      },
+                      "web_page": {
+                          "href": "/businessindustryandtrade/datasets/previous-edition-dataset/editions/old-edition/versions/1"
+                      }
+                  },
+                  "version": 1,
+                  "release_date": "2025-01-01T09:00:00.000Z",
+                  "state": "associated",
+                  "type": "static",
+                  "distributions": [
+                      {
+                          "title": "csv",
+                          "format": "csv",
+                          "media_type": "text/csv",
+                          "download_url": "/uuid/filename.csv",
+                          "byte_size": 125000
+                      }
+                  ]
+              }
+          }
+          """
+        And private endpoints are enabled
+        And I am an admin user
+        When I PUT "/datasets/previous-edition-dataset/editions/old-edition/versions/1"
+            """
+            {
+                "edition": "new-edition",
+                "edition_title": "2026 Edition",
+                "state": "associated",
+                "type": "static"
+            }
+            """
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "dataset_id": "previous-edition-dataset",
+                "distributions": [
+                    {
+                        "byte_size": 125000,
+                        "download_url": "/uuid/filename.csv",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "title": "csv"
+                    }
+                ],
+                "edition": "new-edition",
+                "edition_title": "2026 Edition",
+                "id": "static-dataset-previous-edition",
+                "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
+                "links": {
+                    "dataset": {
+                        "href": "/datasets/previous-edition-dataset",
+                        "id": "previous-edition-dataset"
+                    },
+                    "edition": {
+                        "href": "/datasets/previous-edition-dataset/editions/new-edition",
+                        "id": "new-edition"
+                    },
+                    "self": {
+                        "href": "/datasets/previous-edition-dataset/editions/new-edition/versions/1"
+                    },
+                    "web_page": {
+                        "href": "/businessindustryandtrade/datasets/previous-edition-dataset/editions/new-edition/versions/1"
+                    }
+                },
+                "previous_edition_id": [
+                    "old-edition"
+                ],
+                "release_date": "2025-01-01T09:00:00.000Z",
+                "state": "associated",
+                "type": "static"
+            }
+            """

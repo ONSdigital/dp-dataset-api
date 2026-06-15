@@ -14,6 +14,7 @@ import (
 	mongodriver "github.com/ONSdigital/dp-mongodb/v3/mongodb"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // AcquireVersionsLock tries to lock the provided versionID.
@@ -23,23 +24,6 @@ func (m *Mongo) AcquireVersionsLock(ctx context.Context, versionID string) (lock
 
 func (m *Mongo) UnlockVersions(ctx context.Context, lockID string) {
 	m.lockClientVersionsCollection.Unlock(ctx, lockID)
-}
-
-// UpsertVersion adds or overrides an existing version document
-func (m *Mongo) UpsertVersionStatic(ctx context.Context, version *models.Version) (err error) {
-	version.LastUpdated = time.Now()
-	update := bson.M{
-		"$set": version,
-	}
-
-	sel := bson.M{
-		"edition": version.Edition,
-		"version": version.Version,
-		"e_tag":   version.ETag,
-	}
-
-	_, err = m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).UpsertOne(ctx, sel, update)
-	return err
 }
 
 // AddVersion to the versions collection
@@ -254,6 +238,24 @@ func (m *Mongo) UpdateVersionStatic(ctx context.Context, currentVersion, version
 	return newETag, nil
 }
 
+// UpdateStateStatic only updates the date and last updated fields for a version
+func (m *Mongo) UpdateStateStatic(ctx context.Context, currentVersion *models.Version, updatedState *models.StateUpdate, eTagSelector string) (updatedVersion *models.Version, err error) {
+	update := bson.M{
+		"$set": bson.M{
+			"state":        updatedState.State,
+			"last_updated": time.Now(),
+		},
+	}
+
+	err = m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).
+		FindOneAndUpdate(ctx, currentVersion, update, &updatedVersion, mongodriver.ReturnDocument(options.After))
+	if err != nil {
+		return nil, err
+	}
+
+	return updatedVersion, nil
+}
+
 // NOTE: passing in limit as 0 will return the total count but no results
 func (m *Mongo) GetAllStaticVersions(ctx context.Context, datasetID, state string, offset, limit int) ([]*models.Version, int, error) {
 	selector := bson.M{"links.dataset.id": datasetID}
@@ -288,14 +290,10 @@ func (m *Mongo) GetEditionsStatic(ctx context.Context, datasetID, state string, 
 
 	pipeline := []bson.M{
 		{"$match": selector},
-		{"$sort": bson.M{
-			"edition": 1,
-			"version": 1,
-		}},
 		{"$group": bson.M{
 			"_id": "$edition",
 			"oldest_version_release_date": bson.M{
-				"$first": "$release_date",
+				"$min": "$release_date",
 			},
 		}},
 		{"$sort": bson.M{

@@ -2,18 +2,26 @@ package application
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ONSdigital/dp-api-clients-go/headers"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
+	"github.com/ONSdigital/dp-dataset-api/cloudflare"
+	"github.com/ONSdigital/dp-dataset-api/download"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
+	"github.com/ONSdigital/dp-dataset-api/url"
+	"github.com/ONSdigital/dp-dataset-api/utils"
 	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
+	kafka "github.com/ONSdigital/dp-kafka/v4"
 	dprequest "github.com/ONSdigital/dp-net/v3/request"
+	"github.com/ONSdigital/dp-permissions-api/sdk"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/jinzhu/copier"
 	"github.com/pkg/errors"
@@ -50,46 +58,48 @@ type DownloadsGenerator interface {
 	Generate(ctx context.Context, datasetID, instanceID, edition, version string) error
 }
 
-type StateMachineDatasetAPI struct {
-	DataStore          store.DataStore
-	DownloadGenerators map[models.DatasetType]DownloadsGenerator
-	StateMachine       *StateMachine
-	FilesAPIClient     filesAPISDK.Clienter
+type SearchContentUpdatedProducer struct {
+	Producer download.KafkaProducer
 }
 
-func Setup(dataStoreVal store.DataStore, downloadGenerators map[models.DatasetType]DownloadsGenerator, stateMachine *StateMachine) *StateMachineDatasetAPI {
+type StateMachineDatasetAPI struct {
+	DataStore                    store.DataStore
+	DownloadGenerators           map[models.DatasetType]DownloadsGenerator
+	StateMachine                 *StateMachine
+	FilesAPIClient               filesAPISDK.Clienter
+	SearchContentUpdatedProducer *SearchContentUpdatedProducer
+	CloudflareClient             cloudflare.Clienter
+	CloudflareEnabled            bool
+	UrlBuilder                   *url.Builder
+}
+
+func Setup(dataStoreVal store.DataStore, downloadGenerators map[models.DatasetType]DownloadsGenerator, stateMachine *StateMachine, searchContentUpdatedProducer *SearchContentUpdatedProducer, cloudflareClient cloudflare.Clienter, cloudflareEnabled bool, urlBuilder *url.Builder, filesAPIClient filesAPISDK.Clienter) *StateMachineDatasetAPI {
 	newDS := &StateMachineDatasetAPI{
-		DataStore:          dataStoreVal,
-		DownloadGenerators: downloadGenerators,
-		StateMachine:       stateMachine,
+		DataStore:                    dataStoreVal,
+		DownloadGenerators:           downloadGenerators,
+		StateMachine:                 stateMachine,
+		SearchContentUpdatedProducer: searchContentUpdatedProducer,
+		CloudflareClient:             cloudflareClient,
+		CloudflareEnabled:            cloudflareEnabled,
+		UrlBuilder:                   urlBuilder,
+		FilesAPIClient:               filesAPIClient,
 	}
 
 	return newDS
-}
-
-func (smDS *StateMachineDatasetAPI) SetFilesAPIClient(client filesAPISDK.Clienter) {
-	smDS.FilesAPIClient = client
 }
 
 func (v VersionDetails) baseLogData() log.Data {
 	return log.Data{"dataset_id": v.datasetID, "edition": v.edition, "version": v.version}
 }
 
-func (smDS *StateMachineDatasetAPI) AmendVersion(ctx context.Context, vars map[string]string, version *models.Version) (*models.Version, error) {
+func (smDS *StateMachineDatasetAPI) AmendVersion(ctx context.Context, vars map[string]string, version *models.Version, authEntityData *sdk.EntityData, accessToken string) (*models.Version, error) {
 	versionDetails := VersionDetails{
 		datasetID: vars["dataset_id"],
 		edition:   vars["edition"],
 		version:   vars["version"],
 	}
-	if version.Type == models.Static.String() {
-		lockID, lockErr := smDS.DataStore.Backend.AcquireVersionsLock(ctx, version.ID)
-		if lockErr != nil {
-			return nil, lockErr
-		}
-		defer func() {
-			smDS.DataStore.Backend.UnlockVersions(ctx, lockID)
-		}()
-	} else {
+
+	if version.Type != models.Static.String() {
 		lockID, lockErr := smDS.DataStore.Backend.AcquireInstanceLock(ctx, version.ID)
 		if lockErr != nil {
 			return nil, lockErr
@@ -105,7 +115,7 @@ func (smDS *StateMachineDatasetAPI) AmendVersion(ctx context.Context, vars map[s
 		return nil, err
 	}
 
-	if err := smDS.StateMachine.Transition(ctx, smDS, currentVersion, versionUpdate, versionDetails, vars[hasDownloads]); err != nil {
+	if err := smDS.StateMachine.Transition(ctx, smDS, currentVersion, versionUpdate, versionDetails, vars[hasDownloads], authEntityData, accessToken); err != nil {
 		log.Error(ctx, "amendVersion: state machine transition failed", err)
 		return nil, err
 	}
@@ -151,47 +161,42 @@ func (smDS *StateMachineDatasetAPI) PopulateVersionInfo(ctx context.Context, ver
 				log.Error(ctx, "UpdateVersion: failed to find version of dataset", err, data)
 				return nil, nil, err
 			}
-		} else {
-			if err = smDS.DataStore.Backend.CheckEditionExists(ctx, versionDetails.datasetID, versionDetails.edition, ""); err != nil {
-				log.Error(ctx, "UpdateVersion: failed to find edition of dataset", err, data)
-				return nil, nil, err
-			}
-		}
-	}
-
-	if versionUpdate != nil {
-		if versionUpdate.Type == models.Static.String() {
 			currentVersion, err = smDS.DataStore.Backend.GetVersionStatic(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
 			if err != nil {
 				log.Error(ctx, "UpdateVersion: datastore.GetVersionStatic returned an error", err, data)
 				return nil, nil, err
 			}
+
+			if versionUpdate.Edition != "" && versionUpdate.Edition != currentVersion.Edition {
+				err = smDS.DataStore.Backend.CheckEditionExistsStatic(ctx, versionDetails.datasetID, versionUpdate.Edition, "")
+				if err == nil {
+					log.Error(ctx, "UpdateVersion: edition-id already exists", errs.ErrEditionAlreadyExists, log.Data{
+						"dataset_id":       versionDetails.datasetID,
+						"existing_edition": currentVersion.Edition,
+						"new_edition":      versionUpdate.Edition,
+					})
+					return nil, nil, errs.ErrEditionAlreadyExists
+				} else if err != errs.ErrEditionNotFound {
+					log.Error(ctx, "UpdateVersion: error checking if edition exists", err, data)
+					return nil, nil, err
+				}
+			}
 		} else {
+			if err = smDS.DataStore.Backend.CheckEditionExists(ctx, versionDetails.datasetID, versionDetails.edition, ""); err != nil {
+				log.Error(ctx, "UpdateVersion: failed to find edition of dataset", err, data)
+				return nil, nil, err
+			}
+
 			currentVersion, err = smDS.DataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
 			if err != nil {
 				log.Error(ctx, "UpdateVersion: datastore.GetVersion returned an error", err, data)
 				return nil, nil, err
 			}
-		}
-	}
 
-	if versionUpdate != nil && versionUpdate.Edition != "" && versionUpdate.Edition != currentVersion.Edition {
-		if currentVersion.Type == models.Static.String() {
-			err = smDS.DataStore.Backend.CheckEditionExistsStatic(ctx, versionDetails.datasetID, versionUpdate.Edition, "")
-			if err == nil {
-				log.Error(ctx, "UpdateVersion: edition-id already exists", errs.ErrEditionAlreadyExists, log.Data{
-					"dataset_id":       versionDetails.datasetID,
-					"existing_edition": currentVersion.Edition,
-					"new_edition":      versionUpdate.Edition,
-				})
-				return nil, nil, errs.ErrEditionAlreadyExists
-			} else if err != errs.ErrEditionNotFound {
-				log.Error(ctx, "UpdateVersion: error checking if edition exists", err, data)
-				return nil, nil, err
+			if versionUpdate.Edition != "" && versionUpdate.Edition != currentVersion.Edition {
+				log.Error(ctx, "UpdateVersion: attempted to update edition-id for non-static dataset type", errs.ErrInvalidDatasetTypeForEditionUpdate, data)
+				return nil, nil, errs.ErrInvalidDatasetTypeForEditionUpdate
 			}
-		} else {
-			log.Error(ctx, "UpdateVersion: attempted to update edition-id for non-static dataset type", errs.ErrInvalidDatasetTypeForEditionUpdate, data)
-			return nil, nil, errs.ErrInvalidDatasetTypeForEditionUpdate
 		}
 	}
 
@@ -217,6 +222,7 @@ func (smDS *StateMachineDatasetAPI) PopulateVersionInfo(ctx context.Context, ver
 	return currentVersion, combinedVersionUpdate, nil
 }
 
+//nolint:gocyclo // cyclomatic complexity 21 of func `populateNewVersionDoc` is high (> 20)
 func populateNewVersionDoc(currentVersion, originalVersion *models.Version) (*models.Version, error) {
 	var version models.Version
 	err := copier.Copy(&version, originalVersion) // create local copy that escapes to the HEAP at the end of this function
@@ -298,6 +304,10 @@ func populateNewVersionDoc(currentVersion, originalVersion *models.Version) (*mo
 
 	if version.UsageNotes == nil {
 		version.UsageNotes = currentVersion.UsageNotes
+	}
+
+	if version.PreviousEditionId == nil {
+		version.PreviousEditionId = currentVersion.PreviousEditionId
 	}
 
 	return &version, nil
@@ -437,7 +447,9 @@ func AssociateVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 	currentVersion *models.Version, // Called Instances in Mongo
 	versionUpdate *models.Version, // Next version, that is the new version
 	versionDetails VersionDetails,
-	hasDownloads string) error {
+	hasDownloads string,
+	authEntityData *sdk.EntityData,
+	accessToken string) error {
 	data := versionDetails.baseLogData()
 	log.Info(ctx, "putVersion endpoint (associateVersion): beginning associate version", data)
 
@@ -490,7 +502,9 @@ func ApproveVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 	currentVersion *models.Version, // Called Instances in Mongo
 	versionUpdate *models.Version, // Next version, that is the new version
 	versionDetails VersionDetails,
-	hasDownloads string) error {
+	hasDownloads string,
+	authEntityData *sdk.EntityData,
+	accessToken string) error {
 	data := versionDetails.baseLogData()
 	log.Info(ctx, "putVersion endpoint (approveVersion): beginning approve version", data)
 
@@ -501,7 +515,6 @@ func ApproveVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 	}
 
 	if smDS.FilesAPIClient != nil && versionUpdate.Distributions != nil && len(*versionUpdate.Distributions) > 0 {
-		accessToken, _ := ctx.Value(AccessTokenKey).(string)
 		if err := checkDistributionFilesExist(ctx, smDS.FilesAPIClient, versionUpdate, accessToken); err != nil {
 			log.Error(ctx, "State machine - Approving: checkDistributionFilesExist: distribution file(s) not found", err, data)
 			return err
@@ -521,7 +534,9 @@ func EditionConfirmVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 	currentVersion *models.Version, // Called Instances in Mongo
 	versionUpdate *models.Version, // Next version, that is the new version
 	versionDetails VersionDetails,
-	_ string) error {
+	_ string,
+	authEntityData *sdk.EntityData,
+	accessToken string) error {
 	data := versionDetails.baseLogData()
 
 	log.Info(ctx, "putVersion endpoint (editionConfirmVersion): beginning transition to edition-confirmed", data)
@@ -544,43 +559,40 @@ func PublishVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 	currentVersion *models.Version, // Called Instances in Mongo
 	versionUpdate *models.Version, // Next version, that is the new version
 	versionDetails VersionDetails,
-	hasDownloads string) error {
+	hasDownloads string,
+	authEntityData *sdk.EntityData,
+	accessToken string) error {
 	data := versionDetails.baseLogData()
 	log.Info(ctx, "putVersion endpoint (publishVersion): beginning transition to published", data)
 
-	// This needs to do the validation on required fields etc.
-	err := models.ValidateVersion(versionUpdate)
-	if err != nil {
-		log.Error(ctx, "State machine - Publishing: ValidateVersion : failed to validate version", err, data)
-		return err
-	}
-
-	versionUpdate, err = UpdateVersionInfo(ctx, smDS, currentVersion, versionUpdate, versionDetails)
+	versionUpdate, err := PublishVersionInfo(ctx, smDS, currentVersion, versionUpdate, versionDetails, authEntityData, accessToken)
 	if err != nil {
 		log.Error(ctx, "State machine - Publish: UpdateVersionInfo : failed to update the version", err, data)
 		return err
 	}
 
 	if hasDownloads != trueStringified {
-		log.Info(ctx, "attempting to publish edition", data)
+		if versionUpdate.Type != models.Static.String() {
+			log.Info(ctx, "attempting to publish edition", data)
 
-		err = PublishEdition(ctx, smDS, versionUpdate, versionDetails, data)
-		if err != nil {
-			log.Error(ctx, "State machine - Publish: PublishEdition : failed to publish edition", err, data)
-			return err
-		}
-
-		dsType, err := models.GetDatasetType(currentVersion.Type)
-		if err != nil {
-			log.Error(ctx, "State machine - Publish: GetDatasetType : failed to get dataset type", err, data)
-			return err
-		}
-
-		if dsType == models.Filterable || dsType == models.CantabularFlexibleTable || dsType == models.CantabularMultivariateTable || dsType == models.CantabularTable {
-			err = PublishInstance(ctx, smDS, versionUpdate, data)
+			err = PublishEdition(ctx, smDS, versionUpdate, versionDetails, data)
 			if err != nil {
-				log.Error(ctx, "State machine - Publish: PublishInstance : failed to publish instance", err, data)
+				log.Error(ctx, "State machine - Publish: PublishEdition : failed to publish edition", err, data)
 				return err
+			}
+
+			dsType, err := models.GetDatasetType(currentVersion.Type)
+			if err != nil {
+				log.Error(ctx, "State machine - Publish: GetDatasetType : failed to get dataset type", err, data)
+				return err
+			}
+
+			if dsType == models.Filterable || dsType == models.CantabularFlexibleTable || dsType == models.CantabularMultivariateTable || dsType == models.CantabularTable {
+				err = PublishInstance(ctx, smDS, versionUpdate, data)
+				if err != nil {
+					log.Error(ctx, "State machine - Publish: PublishInstance : failed to publish instance", err, data)
+					return err
+				}
 			}
 		}
 
@@ -590,6 +602,7 @@ func PublishVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -648,7 +661,122 @@ func UpdateVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 				}
 			}
 
-			if err = doUpdate(); err != nil {
+			if err := doUpdate(); err != nil {
+				log.Error(ctx, "putVersion endpoint: failed to update version document on 2nd attempt", err)
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+	}
+
+	return currentVersion, nil
+}
+
+//nolint:gocognit // Complexity is acceptable for now, refactoring can be considered later if needed
+func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
+	currentVersion *models.Version, // Called Instances in Mongo
+	versionUpdate *models.Version,
+	versionDetails VersionDetails,
+	authEntityData *sdk.EntityData,
+	accessToken string) (updatedVersion *models.Version, err error) {
+	logData := log.Data{"dataset_id": versionDetails.datasetID, "edition": versionDetails.edition, "version": versionDetails.version}
+	eTag := headers.IfMatchAnyETag
+	if currentVersion.ETag != "" {
+		eTag = currentVersion.ETag
+	}
+
+	versionNumber, err := models.ParseAndValidateVersionNumber(ctx, versionDetails.version)
+	if err != nil {
+		log.Error(ctx, "putVersion endpoint: invalid version request", err)
+		return nil, err
+	}
+
+	// doUpdate is an aux function that combines the existing version document with the update received in the body request,
+	// then it validates the new model, and performs the update in MongoDB, passing the existing model ETag (if it exists) to be used in the query selector
+	// Note that the combined version update does not mutate versionUpdate because multiple retries might generate a different value depending on the currentVersion at that point.
+	var doUpdate = func() (*models.Version, error) {
+		if versionUpdate != nil {
+			if versionUpdate.Type == models.Static.String() {
+				err = smDS.publishDistributionFiles(ctx, currentVersion, accessToken)
+				if err != nil {
+					log.Error(ctx, "putState endpoint: failed to publish distribution files", err, log.Data{})
+					return versionUpdate, err
+				}
+
+				updatedV, errVersion := smDS.DataStore.Backend.UpdateStateStatic(ctx, currentVersion, &models.StateUpdate{State: "published"}, eTag)
+				if errVersion != nil {
+					log.Error(ctx, "putVersion endpoint: UpdateVersionStatic returned an error", err)
+					return nil, errVersion
+				}
+
+				searchContentUpdatedEvent := map[string]interface{}{
+					"dataset_id":   versionDetails.datasetID,
+					"uri":          fmt.Sprintf("/datasets/%s", versionDetails.datasetID),
+					"title":        updatedV.EditionTitle,
+					"edition":      updatedV.Edition,
+					"content_type": "dataset_landing_page",
+					"release_date": updatedV.ReleaseDate,
+				}
+
+				logData["search_content_updated_event"] = searchContentUpdatedEvent
+				jsonBytes, err := json.Marshal(searchContentUpdatedEvent)
+				if err != nil {
+					log.Error(ctx, "failed to marshal searchContentUpdatedEvent for kafka", err, logData)
+					return updatedV, err
+				} else {
+					go func() {
+						smDS.SearchContentUpdatedProducer.Producer.Output() <- kafka.BytesMessage{Value: jsonBytes, Context: ctx}
+					}()
+					log.Info(ctx, "putState endpoint: queued search content update for kafka", logData)
+				}
+
+				// Purge Cloudflare cache if enabled and version is being published
+				if smDS.CloudflareEnabled {
+					webLink := strings.TrimLeft(updatedV.Links.WebPage.HRef, "/")
+					topic := strings.Split(webLink, "/")
+					prefixes := utils.GeneratePurgePrefixes(smDS.UrlBuilder.GetPublicWebsiteURL().String(), smDS.UrlBuilder.GetAPIRouterPublicURL().String(), topic[0], versionDetails.datasetID, versionDetails.edition, versionDetails.version)
+					logData["purge_prefixes"] = prefixes
+
+					errPurge := smDS.CloudflareClient.PurgeByPrefixes(ctx, prefixes)
+					if errPurge != nil {
+						log.Error(ctx, "putState endpoint: failed to purge cache by prefixes", errPurge, logData)
+					} else {
+						log.Info(ctx, "putState endpoint: successfully purged cache by prefixes", logData)
+					}
+				}
+
+				return updatedV, nil
+			} else {
+				if _, errVersion := smDS.DataStore.Backend.UpdateVersion(ctx, currentVersion, versionUpdate, eTag); errVersion != nil {
+					log.Error(ctx, "putVersion endpoint: UpdateVersion returned an error", err)
+					return nil, errVersion
+				}
+			}
+		}
+
+		return nil, nil
+	}
+
+	if versionUpdate, err := doUpdate(); err != nil {
+		if err == errs.ErrDatasetNotFound {
+			if versionUpdate != nil {
+				if versionUpdate.Type == models.Static.String() {
+					currentVersion, err = smDS.DataStore.Backend.GetVersionStatic(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
+					if err != nil {
+						log.Error(ctx, "putVersion endpoint: datastore.GetVersionStatic returned an error", err)
+						return nil, err
+					}
+				} else {
+					currentVersion, err = smDS.DataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
+					if err != nil {
+						log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err)
+						return nil, err
+					}
+				}
+			}
+
+			if _, err := doUpdate(); err != nil {
 				log.Error(ctx, "putVersion endpoint: failed to update version document on 2nd attempt", err)
 				return nil, err
 			}
@@ -664,53 +792,26 @@ func PublishEdition(ctx context.Context, smDS *StateMachineDatasetAPI,
 	versionUpdate *models.Version, // Next version, that is the new version
 	versionDetails VersionDetails, data log.Data) error {
 	var editionDoc *models.EditionUpdate
-	var versionDoc *models.Version
 	var err error
 
-	datasetType, err := smDS.DataStore.Backend.GetDatasetType(ctx, versionDetails.datasetID, true)
+	editionDoc, err = smDS.DataStore.Backend.GetEdition(ctx, versionDetails.datasetID, versionDetails.edition, "")
 	if err != nil {
-		log.Error(ctx, "State Machine - Publish: PublishEdition: failed to find dataset type", err, data)
+		log.Error(ctx, "State Machine - Publish: PublishEdition: failed to find the edition we're trying to update", err, data)
 		return err
 	}
 
-	if datasetType == models.Static.String() {
-		version, err := strconv.Atoi(versionDetails.version)
-		if err != nil {
-			log.Error(ctx, "State Machine - Publish: PublishEdition: failed to convert version to integer", err, data)
-			return err
-		}
-		versionDoc, err = smDS.DataStore.Backend.GetVersionStatic(ctx, versionDetails.datasetID, versionDetails.edition, version, "")
-		if err != nil {
-			log.Error(ctx, "State Machine - Publish: PublishEdition: failed to find the version we're trying to update", err, data)
-			return err
-		}
-	} else {
-		editionDoc, err = smDS.DataStore.Backend.GetEdition(ctx, versionDetails.datasetID, versionDetails.edition, "")
-		if err != nil {
-			log.Error(ctx, "State Machine - Publish: PublishEdition: failed to find the edition we're trying to update", err, data)
-			return err
-		}
+	editionDoc.Next.State = models.PublishedState
 
-		editionDoc.Next.State = models.PublishedState
-
-		if err := editionDoc.PublishLinks(ctx, versionUpdate.Links.Version); err != nil {
-			log.Error(ctx, "State Machine - Publish: PublishEdition: failed to update the edition links for the version we're trying to publish", err, data)
-			return err
-		}
-
-		editionDoc.Current = editionDoc.Next
+	if err := editionDoc.PublishLinks(ctx, versionUpdate.Links.Version); err != nil {
+		log.Error(ctx, "State Machine - Publish: PublishEdition: failed to update the edition links for the version we're trying to publish", err, data)
+		return err
 	}
 
-	if datasetType == models.Static.String() {
-		if err := smDS.DataStore.Backend.UpsertVersionStatic(ctx, versionDoc); err != nil {
-			log.Error(ctx, "State Machine - Publish: PublishEdition: failed to update version during publishing", err, data)
-			return err
-		}
-	} else {
-		if err := smDS.DataStore.Backend.UpsertEdition(ctx, versionDetails.datasetID, versionDetails.edition, editionDoc); err != nil {
-			log.Error(ctx, "State Machine - Publish: PublishEdition: failed to update edition during publishing", err, data)
-			return err
-		}
+	editionDoc.Current = editionDoc.Next
+
+	if err := smDS.DataStore.Backend.UpsertEdition(ctx, versionDetails.datasetID, versionDetails.edition, editionDoc); err != nil {
+		log.Error(ctx, "State Machine - Publish: PublishEdition: failed to update edition during publishing", err, data)
+		return err
 	}
 
 	return nil
@@ -847,6 +948,73 @@ func (smDS *StateMachineDatasetAPI) DeleteStaticVersion(ctx context.Context, dat
 	return versionDoc, nil
 }
 
+func (smDS *StateMachineDatasetAPI) publishDistributionFiles(ctx context.Context, version *models.Version, accessToken string) error {
+	var filesAPIError error
+	totalFiles := len(*version.Distributions)
+	successCount := 0
+
+	var wg sync.WaitGroup
+	errCh := make(chan error, totalFiles)
+
+	for index := range *version.Distributions {
+		distribution := &(*version.Distributions)[index]
+		wg.Add(1)
+		go publishFile(ctx, smDS.FilesAPIClient, *distribution, accessToken, &wg, errCh)
+		successCount++
+	}
+
+	wg.Wait()
+	close(errCh)
+	for err := range errCh {
+		filesAPIError = err
+		log.Error(ctx, "one or more errors occurred while publishing files:", filesAPIError)
+		successCount--
+	}
+
+	log.Info(ctx, "completed publishing distribution files", log.Data{
+		"total_files": totalFiles,
+		"successful":  successCount,
+		"failed":      totalFiles - successCount,
+	})
+
+	// This will be nil if no errors found, allows for the correct log messages to be correlated above
+	return filesAPIError
+}
+
+func publishFile(ctx context.Context, filesAPIClient filesAPISDK.Clienter, distribution models.Distribution, accessToken string, wg *sync.WaitGroup, errCh chan error) {
+	defer wg.Done()
+
+	var filesAPIError error
+	err := filesAPIClient.MarkFilePublished(ctx, distribution.DownloadURL, filesAPISDK.Headers{Authorization: accessToken})
+	if err != nil {
+		log.Error(ctx, "failed to publish file", err, log.Data{
+			"filepath":            distribution.DownloadURL,
+			"distribution_title":  distribution.Title,
+			"distribution_format": distribution.Format,
+		})
+
+		if strings.Contains(err.Error(), "FileNotRegistered") ||
+			strings.Contains(err.Error(), "file not registered") ||
+			strings.Contains(err.Error(), "not found") {
+			filesAPIError = errs.ErrFileMetadataNotFound
+		}
+
+		if strings.Contains(err.Error(), "FileStateError") ||
+			strings.Contains(err.Error(), "file is not set as publishable") ||
+			strings.Contains(err.Error(), "file state is not in state uploaded") {
+			filesAPIError = errs.ErrFileNotInCorrectState
+		}
+		errCh <- filesAPIError
+		return
+	}
+
+	log.Info(ctx, "Successfully published file", log.Data{
+		"filepath":            distribution.DownloadURL,
+		"distribution_title":  distribution.Title,
+		"distribution_format": distribution.Format,
+	})
+}
+
 func checkDistributionFilesExist(ctx context.Context, filesAPIClient filesAPISDK.Clienter, version *models.Version, accessToken string) error {
 	if version.Distributions == nil || len(*version.Distributions) == 0 {
 		return nil
@@ -857,14 +1025,15 @@ func checkDistributionFilesExist(ctx context.Context, filesAPIClient filesAPISDK
 			continue
 		}
 
-		_, err := filesAPIClient.GetFile(ctx, distribution.DownloadURL, filesAPISDK.Headers{
-			Authorization: accessToken,
-		})
+		_, err := filesAPIClient.GetFile(ctx, distribution.DownloadURL, filesAPISDK.Headers{Authorization: accessToken})
 		if err != nil {
-			log.Error(ctx, "checkDistributionFilesExist: file not found in files API", err, log.Data{
-				"filepath": distribution.DownloadURL,
-			})
-			return errs.ErrFileMetadataNotFound
+			errData := log.Data{"filepath": distribution.DownloadURL}
+			if strings.Contains(err.Error(), "file not registered") || strings.Contains(err.Error(), "file metadata not found") {
+				log.Error(ctx, "checkDistributionFilesExist: file not found in files API", err, errData)
+				return errs.ErrFileMetadataNotFound
+			}
+			log.Error(ctx, "checkDistributionFilesExist: problem with files API", err, errData)
+			return errs.ErrInternalServer
 		}
 	}
 

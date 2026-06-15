@@ -105,7 +105,7 @@ func GetListStaticTransitions() []application.Transition {
 	associatedTransition := application.Transition{
 		Label:               "associated",
 		TargetState:         application.Associated,
-		AllowedSourceStates: []string{"created", "associated"},
+		AllowedSourceStates: []string{"created", "associated", "approved"},
 		Type:                "static",
 	}
 
@@ -220,11 +220,6 @@ func (svc *Service) SetGraphDBErrorConsumer(graphDBErrorConsumer Closer) {
 	svc.graphDBErrorConsumer = graphDBErrorConsumer
 }
 
-// SetFilesAPIClient sets the files API client for a service
-func (svc *Service) SetFilesAPIClient(filesAPIClient filesAPISDK.Clienter) {
-	svc.filesAPIClient = filesAPIClient
-}
-
 // Run the service
 //
 // TODO: refactor this function to reduce cyclomatic complexity.
@@ -240,21 +235,11 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		return err
 	}
 
-	if err := svc.initFilesAPIClient(ctx); err != nil {
-		return err
-	}
-
-	if err := svc.initCloudflareClient(ctx); err != nil {
-		return err
-	}
-
-	svc.initTopicAPIClient(ctx)
-
 	ds := store.DataStore{Backend: DatsetAPIStore{svc.mongoDB, svc.graphDB}}
 
-	// Get GenerateDownloads Kafka Producer
+	// Set clients only required in publishing mode
 	if !svc.config.EnablePrivateEndpoints {
-		log.Info(ctx, "skipping kafka producer creation, because it is not required by the enabled endpoints", log.Data{
+		log.Info(ctx, "skipping kafka producer, filesAPI, topicAPI, and cloudflare client creation, because they are not required by the enabled endpoints", log.Data{
 			"EnablePrivateEndpoints": svc.config.EnablePrivateEndpoints,
 		})
 	} else {
@@ -273,6 +258,16 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 			log.Fatal(ctx, "could not obtain search content updated producer", err)
 			return err
 		}
+
+		if err := svc.initFilesAPIClient(ctx); err != nil {
+			return err
+		}
+
+		if err := svc.initCloudflareClient(ctx); err != nil {
+			return err
+		}
+
+		svc.initTopicAPIClient(ctx)
 	}
 
 	downloadGeneratorCantabular := &download.CantabularGenerator{
@@ -285,7 +280,7 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 		Marshaller: schema.GenerateCMDDownloadsEvent,
 	}
 
-	searchContentUpdatedProducer := &api.SearchContentUpdatedProducer{
+	searchContentUpdatedProducer := &application.SearchContentUpdatedProducer{
 		Producer: adapter.NewProducerAdapter(svc.searchContentUpdatedKafkaProducer),
 	}
 
@@ -366,24 +361,11 @@ func (svc *Service) Run(ctx context.Context, buildTime, gitCommit, version strin
 	}
 
 	sm := GetStateMachine(ctx, ds)
-	svc.smDS = application.Setup(ds, smDownloadGenerators, sm)
+	svc.smDS = application.Setup(ds, smDownloadGenerators, sm, searchContentUpdatedProducer, svc.cloudflareClient, svc.config.CloudflareEnabled, urlBuilder, svc.filesAPIClient)
 
 	auditService := application.NewAuditService(ds)
 
-	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, authorisation, enableURLRewriting, svc.smDS, auditService, permissionChecker, svc.identityClient, searchContentUpdatedProducer, svc.cloudflareClient)
-
-	// Set the files API client on the DatasetAPI after initialisation
-	if svc.config.EnablePrivateEndpoints && svc.filesAPIClient != nil {
-		svc.api.SetFilesAPIClient(svc.filesAPIClient, svc.config.ServiceAuthToken)
-		svc.smDS.SetFilesAPIClient(svc.filesAPIClient)
-		log.Info(ctx, "files API client set on dataset API and state machine")
-	}
-
-	// Set the topic API client on the DatasetAPI after initialisation
-	if svc.config.EnablePrivateEndpoints && svc.topicAPIClient != nil {
-		svc.api.SetTopicAPIClient(svc.topicAPIClient)
-		log.Info(ctx, "topic API client set on dataset API")
-	}
+	svc.api = api.Setup(ctx, svc.config, r, ds, urlBuilder, downloadGenerators, authorisation, enableURLRewriting, svc.smDS, auditService, permissionChecker, svc.identityClient, svc.filesAPIClient, svc.topicAPIClient)
 
 	svc.healthCheck.Start(ctx)
 

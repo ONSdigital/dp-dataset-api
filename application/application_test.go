@@ -6,13 +6,17 @@ import (
 	"testing"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
+	cloudflareMocks "github.com/ONSdigital/dp-dataset-api/cloudflare/mocks"
 	"github.com/ONSdigital/dp-dataset-api/mocks"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/store"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
+	"github.com/ONSdigital/dp-dataset-api/url"
 	filesAPIModels "github.com/ONSdigital/dp-files-api/files"
 	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	filesAPISDKMocks "github.com/ONSdigital/dp-files-api/sdk/mocks"
+	kafka "github.com/ONSdigital/dp-kafka/v4"
+	permissionsAPISDK "github.com/ONSdigital/dp-permissions-api/sdk"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -68,6 +72,11 @@ var versionUpdateEditionConfirmed = &models.Version{
 	ReleaseDate:  "2024-12-31",
 	ID:           "789",
 	CollectionID: "3434",
+}
+
+var authEntityData = &permissionsAPISDK.EntityData{
+	UserID: "test-user-id",
+	Groups: []string{"group1", "group2"},
 }
 
 func setUpStatesTransitions() ([]State, []Transition) {
@@ -158,9 +167,9 @@ func TestAmendVersionInvalidState(t *testing.T) {
 		states, transitions := setUpStatesTransitions()
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
 
-		amendedVersion, err := smDS.AmendVersion(testContext, vars, publishVersionUpdate)
+		amendedVersion, err := smDS.AmendVersion(testContext, vars, publishVersionUpdate, authEntityData, "")
 		So(err, ShouldNotBeNil)
 		So(amendedVersion, ShouldBeNil)
 		So(err.Error(), ShouldContainSubstring, "state not allowed to transition")
@@ -199,9 +208,9 @@ func TestAmendVersionPopulateModelsFails(t *testing.T) {
 		states, transitions := setUpStatesTransitions()
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
 
-		amendedVersion, err := smDS.AmendVersion(testContext, vars, publishVersionUpdate)
+		amendedVersion, err := smDS.AmendVersion(testContext, vars, publishVersionUpdate, authEntityData, "")
 		So(err, ShouldNotBeNil)
 		So(amendedVersion, ShouldBeNil)
 		So(err.Error(), ShouldContainSubstring, "edition not found")
@@ -268,9 +277,9 @@ func TestAmendVersionPopulateVersionFails(t *testing.T) {
 		states, transitions := setUpStatesTransitions()
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
 
-		amendedVersion, err := smDS.AmendVersion(testContext, vars, versionUpdateInvalid)
+		amendedVersion, err := smDS.AmendVersion(testContext, vars, versionUpdateInvalid, authEntityData, "")
 		So(err, ShouldNotBeNil)
 		So(amendedVersion, ShouldBeNil)
 		So(err.Error(), ShouldContainSubstring, "missing mandatory fields: [release_date]")
@@ -332,23 +341,17 @@ func TestAmendVersionStaticSuccess(t *testing.T) {
 					Type:        "static",
 				}, nil
 			},
-			AcquireVersionsLockFunc: func(context.Context, string) (string, error) {
-				return "", nil
-			},
-			UnlockVersionsFunc: func(context.Context, string) {},
 		}
 
 		states, transitions := setUpStatesTransitions()
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
 
-		amendedVersion, err := smDS.AmendVersion(testContext, vars, versionUpdateAssociatedStatic)
+		amendedVersion, err := smDS.AmendVersion(testContext, vars, versionUpdateAssociatedStatic, authEntityData, "")
 		So(err, ShouldBeNil)
 		So(amendedVersion, ShouldNotBeNil)
 		So(amendedVersion.State, ShouldEqual, models.AssociatedState)
-		So(len(mockedDataStore.AcquireVersionsLockCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UnlockVersionsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsStaticCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionStaticCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.UpdateVersionStaticCalls()), ShouldEqual, 1)
@@ -415,9 +418,9 @@ func TestAmendVersionSuccess(t *testing.T) {
 		states, transitions := setUpStatesTransitions()
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
 
-		amendedVersion, err := smDS.AmendVersion(testContext, vars, versionUpdateAssociated)
+		amendedVersion, err := smDS.AmendVersion(testContext, vars, versionUpdateAssociated, authEntityData, "")
 		So(err, ShouldBeNil)
 		So(amendedVersion, ShouldNotBeNil)
 		So(amendedVersion.State, ShouldEqual, models.AssociatedState)
@@ -455,29 +458,9 @@ func TestAmendVersionErrorLockFails(t *testing.T) {
 		states, transitions := setUpStatesTransitions()
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
 
-		amendedVersion, err := smDS.AmendVersion(testContext, vars, publishVersionUpdate)
-
-		So(err, ShouldNotBeNil)
-		So(amendedVersion, ShouldBeNil)
-		So(err.Error(), ShouldContainSubstring, "Unable to acquire lock")
-	})
-
-	Convey("When a request is made to change state from associated to published but the versions collection lock fails", t, func() {
-		mockedDataStore := &storetest.StorerMock{
-			AcquireVersionsLockFunc: func(context.Context, string) (string, error) {
-				return "", errors.New("Unable to acquire lock")
-			},
-			UnlockVersionsFunc: func(context.Context, string) {},
-		}
-
-		states, transitions := setUpStatesTransitions()
-
-		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-
-		amendedVersion, err := smDS.AmendVersion(testContext, vars, publishVersionUpdateStatic)
+		amendedVersion, err := smDS.AmendVersion(testContext, vars, publishVersionUpdate, authEntityData, "")
 
 		So(err, ShouldNotBeNil)
 		So(amendedVersion, ShouldBeNil)
@@ -507,8 +490,8 @@ func TestAssociateVersionInvalidVersion(t *testing.T) {
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-		err := AssociateVersion(testContext, smDS, currentVersionEditionConfirmed, versionUpdateAssociated, invalidVersionDetails, "")
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
+		err := AssociateVersion(testContext, smDS, currentVersionEditionConfirmed, versionUpdateAssociated, invalidVersionDetails, "", authEntityData, "")
 
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldContainSubstring, "invalid version requested")
@@ -553,8 +536,8 @@ func TestAssociateVersionInvalidType(t *testing.T) {
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-		err := AssociateVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
+		err := AssociateVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "", authEntityData, "")
 
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldContainSubstring, "error getting type of version: invalid dataset type")
@@ -586,8 +569,8 @@ func TestAssociateVersionInvalidRequest(t *testing.T) {
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-		err := AssociateVersion(testContext, smDS, currentVersionEditionConfirmed, versionUpdate, versionDetails, "")
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
+		err := AssociateVersion(testContext, smDS, currentVersionEditionConfirmed, versionUpdate, versionDetails, "", authEntityData, "")
 
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldContainSubstring, "missing mandatory fields: [release_date]")
@@ -632,8 +615,8 @@ func TestAssociateStaticVersionNoErrors(t *testing.T) {
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-		err := AssociateVersion(testContext, smDS, currentStaticVersion, versionstaticUpdate, versionDetails, "")
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
+		err := AssociateVersion(testContext, smDS, currentStaticVersion, versionstaticUpdate, versionDetails, "", authEntityData, "")
 
 		So(err, ShouldBeNil)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
@@ -672,8 +655,8 @@ func TestAssociateVersionErrors(t *testing.T) {
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-		err := AssociateVersion(testContext, smDS, currentVersionEditionConfirmed, versionUpdate, versionDetails, "")
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
+		err := AssociateVersion(testContext, smDS, currentVersionEditionConfirmed, versionUpdate, versionDetails, "", authEntityData, "")
 
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldContainSubstring, "dataset not found")
@@ -765,8 +748,8 @@ func TestAssociateVersionFailedToGenerateDownloads(t *testing.T) {
 		states, transitions := setUpStatesTransitions()
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-		err := AssociateVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
+		err := AssociateVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "", authEntityData, "")
 
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldContainSubstring, "error while attempting to marshal generateDownloadsEvent")
@@ -799,8 +782,8 @@ func TestApproveVersionReturnsOK(t *testing.T) {
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-		err := EditionConfirmVersion(testContext, smDS, currentVersion, versionUpdateEditionConfirmed, versionDetails, "")
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
+		err := EditionConfirmVersion(testContext, smDS, currentVersion, versionUpdateEditionConfirmed, versionDetails, "", authEntityData, "")
 
 		So(err, ShouldEqual, nil)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
@@ -855,8 +838,8 @@ func TestApproveVersionFails(t *testing.T) {
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-		err := EditionConfirmVersion(testContext, smDS, currentVersion, versionUpdateEditionConfirmed, versionDetails, "")
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
+		err := EditionConfirmVersion(testContext, smDS, currentVersion, versionUpdateEditionConfirmed, versionDetails, "", authEntityData, "")
 
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldContainSubstring, "dataset not found")
@@ -891,8 +874,8 @@ func TestApproveVersionReturnsInvalidRequest(t *testing.T) {
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-		err := EditionConfirmVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
+		err := EditionConfirmVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "", authEntityData, "")
 
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldContainSubstring, "missing state")
@@ -923,8 +906,8 @@ func TestEditionConfirmVersionReturnsOK(t *testing.T) {
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-		err := EditionConfirmVersion(testContext, smDS, currentVersion, versionUpdateEditionConfirmed, versionDetails, "")
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
+		err := EditionConfirmVersion(testContext, smDS, currentVersion, versionUpdateEditionConfirmed, versionDetails, "", authEntityData, "")
 
 		So(err, ShouldEqual, nil)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
@@ -979,8 +962,8 @@ func TestEditionConfirmVersionUpdateVersionFails(t *testing.T) {
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-		err := EditionConfirmVersion(testContext, smDS, currentVersion, versionUpdateEditionConfirmed, versionDetails, "")
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
+		err := EditionConfirmVersion(testContext, smDS, currentVersion, versionUpdateEditionConfirmed, versionDetails, "", authEntityData, "")
 
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldContainSubstring, "dataset not found")
@@ -1015,8 +998,8 @@ func TestEditionConfirmVersionReturnsInvalidRequest(t *testing.T) {
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-		err := EditionConfirmVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
+		err := EditionConfirmVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "", authEntityData, "")
 
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldContainSubstring, "missing state")
@@ -1124,7 +1107,7 @@ func TestPopulateVersionInfoFailsVersion(t *testing.T) {
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
 
 		currentVersion, combinedVersionUpdate, err := smDS.PopulateVersionInfo(testContext, publishVersionUpdate, invalidVersionDetails)
 
@@ -1163,7 +1146,7 @@ func TestPopulateVersionInfoNilBody(t *testing.T) {
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
 
 		currentVersion, combinedVersionUpdate, err := smDS.PopulateVersionInfo(testContext, nil, versionDetails)
 
@@ -1197,7 +1180,7 @@ func TestPopulateVersionInfoVersionNotFound(t *testing.T) {
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
 
 		currentVersion, combinedVersionUpdate, err := smDS.PopulateVersionInfo(testContext, publishVersionUpdate, versionDetails)
 
@@ -1223,7 +1206,7 @@ func TestPopulateVersionInfoVersionNotFound(t *testing.T) {
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
 
 		currentVersion, combinedVersionUpdate, err := smDS.PopulateVersionInfo(testContext, publishVersionUpdateStatic, versionDetails)
 
@@ -1256,7 +1239,7 @@ func TestPopulateVersionInfoErrors(t *testing.T) {
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
 
 		currentVersion, combinedVersionUpdate, err := smDS.PopulateVersionInfo(testContext, publishVersionUpdate, versionDetails)
 
@@ -1278,7 +1261,7 @@ func TestPopulateVersionInfoErrors(t *testing.T) {
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
 
 		currentVersion, combinedVersionUpdate, err := smDS.PopulateVersionInfo(testContext, publishVersionUpdateStatic, versionDetails)
 
@@ -1619,8 +1602,8 @@ func TestPublishCMDVersionFailsToPublish(t *testing.T) {
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
+		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "", authEntityData, "")
 
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldContainSubstring, "failed to set is_published on the instance node")
@@ -1745,8 +1728,8 @@ func TestPublishVersionDatabaseFails(t *testing.T) {
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
+		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "", authEntityData, "")
 
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldContainSubstring, "dataset not found")
@@ -1865,8 +1848,8 @@ func TestPublishVersionDatasetNotFound(t *testing.T) {
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
+		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "", authEntityData, "")
 
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldContainSubstring, "dataset not found")
@@ -1997,8 +1980,8 @@ func TestPublishVersionInvalidType(t *testing.T) {
 		states, transitions := setUpStatesTransitions()
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
+		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "", authEntityData, "")
 
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldContainSubstring, "invalid dataset type")
@@ -2140,8 +2123,8 @@ func TestPublishVersionDatasetDownloadsOK(t *testing.T) {
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
+		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "", authEntityData, "")
 
 		So(err, ShouldBeNil)
 		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
@@ -2157,17 +2140,8 @@ func TestPublishVersionDatasetDownloadsOK(t *testing.T) {
 			State:        models.AssociatedState,
 			CollectionID: "3434",
 			Type:         models.Static.String(),
-			Downloads: &models.DownloadList{
-				CSV: &models.DownloadObject{
-					Private: "s3://csv-exported/myfile.csv",
-					HRef:    "http://localhost:23600/datasets/123/editions/2017/versions/1.csv",
-					Size:    "1234",
-				},
-				XLS: &models.DownloadObject{
-					Private: "s3://csv-exported/myfile.xls",
-					HRef:    "http://localhost:23600/datasets/123/editions/2017/versions/1.xls",
-					Size:    "1234",
-				},
+			Distributions: &[]models.Distribution{
+				{Format: "csv", DownloadURL: "datasets/123/editions/2017/versions/1.csv"},
 			},
 			Links: &models.VersionLinks{
 				Dataset: &models.LinkObject{
@@ -2197,6 +2171,9 @@ func TestPublishVersionDatasetDownloadsOK(t *testing.T) {
 			Version:     1,
 			ID:          "789",
 			Type:        models.Static.String(),
+			Distributions: &[]models.Distribution{
+				{Format: "csv", DownloadURL: "datasets/123/editions/2017/versions/1.csv"},
+			},
 			Links: &models.VersionLinks{
 				Dataset: &models.LinkObject{
 					HRef: "http://localhost:22000/datasets/123",
@@ -2226,9 +2203,6 @@ func TestPublishVersionDatasetDownloadsOK(t *testing.T) {
 		}
 
 		mockedDataStore := &storetest.StorerMock{
-			UpdateVersionStaticFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
-				return "", nil
-			},
 			GetDatasetFunc: func(_ context.Context, _ string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{
 					Next: &models.Dataset{Links: &models.DatasetLinks{LatestVersion: &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
@@ -2251,14 +2225,14 @@ func TestPublishVersionDatasetDownloadsOK(t *testing.T) {
 					},
 				}, nil
 			},
-			UpsertVersionStaticFunc: func(context.Context, *models.Version) error {
-				return nil
-			},
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
 				return nil
 			},
 			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
 				return models.Static.String(), nil
+			},
+			UpdateStateStaticFunc: func(ctx context.Context, currentVersion *models.Version, updatedState *models.StateUpdate, eTagSelector string) (*models.Version, error) {
+				return versionUpdate, nil
 			},
 		}
 
@@ -2266,16 +2240,37 @@ func TestPublishVersionDatasetDownloadsOK(t *testing.T) {
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
+		mockFilesAPIClient := &filesAPISDKMocks.ClienterMock{
+			MarkFilePublishedFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) error {
+				return nil
+			},
+		}
+
+		cloudflareMock := &cloudflareMocks.ClienterMock{
+			PurgeByPrefixesFunc: func(ctx context.Context, prefixes []string) error {
+				return nil
+			},
+		}
+
+		producerMock := &mocks.KafkaProducerMock{
+			OutputFunc: func() chan kafka.BytesMessage {
+				return make(chan kafka.BytesMessage, 1)
+			},
+		}
+		searchContentUpdated := SearchContentUpdatedProducer{Producer: producerMock}
+
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, &searchContentUpdated, cloudflareMock, false, nil, mockFilesAPIClient)
+
+		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "", authEntityData, "")
 
 		So(err, ShouldBeNil)
-		So(len(mockedDataStore.UpdateVersionStaticCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetVersionStaticCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateStateStaticCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.UpsertVersionStaticCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
+
+		Convey("The GetFile check is no longer called", func() {
+			So(len(mockFilesAPIClient.GetFileCalls()), ShouldEqual, 0)
+		})
 	})
 }
 
@@ -2352,22 +2347,18 @@ func TestPublishVersionFailedToUpdate(t *testing.T) {
 			UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
 				return "", errs.ErrDatasetNotFound
 			},
-			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
-				return nil, errs.ErrVersionNotFound
-			},
 		}
 
 		states, transitions := setUpStatesTransitions()
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
+		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "", authEntityData, "")
 
 		So(err, ShouldNotBeNil)
-		So(err.Error(), ShouldContainSubstring, "version not found")
-		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+		So(err.Error(), ShouldContainSubstring, "dataset not found")
+		So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 2)
 	})
 }
 
@@ -2473,8 +2464,8 @@ func TestPublishVersionPublishLinksFails(t *testing.T) {
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
+		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "", authEntityData, "")
 
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldContainSubstring, "invalid arguments to PublishLinks - versionLink empty")
@@ -2596,8 +2587,8 @@ func TestPublishVersionUpsertEditionFails(t *testing.T) {
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
+		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "", authEntityData, "")
 
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldContainSubstring, "edition not found")
@@ -2734,8 +2725,8 @@ func TestPublishVersionFailedToGenerateDownloads(t *testing.T) {
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
+		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "", authEntityData, "")
 
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldContainSubstring, "error while attempting to marshal generateDownloadsEvent")
@@ -2827,8 +2818,8 @@ func TestPublishVersionFailedToFindEdition(t *testing.T) {
 
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
+		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "", authEntityData, "")
 
 		So(err, ShouldNotBeNil)
 		So(err.Error(), ShouldContainSubstring, "edition not found")
@@ -2837,42 +2828,7 @@ func TestPublishVersionFailedToFindEdition(t *testing.T) {
 	})
 }
 
-func TestPublishMissingRequiredField(t *testing.T) {
-	t.Parallel()
-	Convey("When a version is set to published from associated and the release date is missing", t, func() {
-		currentVersion := &models.Version{
-			State:        models.AssociatedState,
-			CollectionID: "3434",
-			Type:         models.CantabularFlexibleTable.String(),
-		}
-
-		invalidVersionUpdate := &models.Version{
-			State:   models.PublishedState,
-			Version: 1,
-			Type:    models.CantabularFlexibleTable.String(),
-		}
-
-		generatorMock := &mocks.DownloadsGeneratorMock{
-			GenerateFunc: func(context.Context, string, string, string, string) error {
-				return nil
-			},
-		}
-
-		mockedDataStore := &storetest.StorerMock{}
-
-		states, transitions := setUpStatesTransitions()
-
-		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
-
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-		err := PublishVersion(testContext, smDS, currentVersion, invalidVersionUpdate, versionDetails, trueStringified)
-
-		So(err, ShouldNotBeNil)
-		So(err.Error(), ShouldContainSubstring, "missing mandatory fields: [release_date]")
-	})
-}
-
-func GetStateMachineAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads DownloadsGenerator, statemachine *StateMachine) *StateMachineDatasetAPI {
+func GetStateMachineAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads DownloadsGenerator, statemachine *StateMachine, searchContentUpdated *SearchContentUpdatedProducer, cloudflareMock *cloudflareMocks.ClienterMock, cloudflareEnabled bool, urlBuilder *url.Builder, filesAPIClient filesAPISDK.Clienter) *StateMachineDatasetAPI {
 	mockedMapSMGeneratedDownloads := map[models.DatasetType]DownloadsGenerator{
 		models.Filterable:              mockedGeneratedDownloads,
 		models.CantabularBlob:          mockedGeneratedDownloads,
@@ -2880,7 +2836,7 @@ func GetStateMachineAPIWithCMDMocks(mockedDataStore store.Storer, mockedGenerate
 		models.CantabularFlexibleTable: mockedGeneratedDownloads,
 	}
 
-	return Setup(store.DataStore{Backend: mockedDataStore}, mockedMapSMGeneratedDownloads, statemachine)
+	return Setup(store.DataStore{Backend: mockedDataStore}, mockedMapSMGeneratedDownloads, statemachine, searchContentUpdated, cloudflareMock, cloudflareEnabled, urlBuilder, filesAPIClient)
 }
 
 func TestPopulateNewVersionDocWithEditionChange(t *testing.T) {
@@ -3023,7 +2979,7 @@ func TestPopulateVersionInfoEditionValidationNonStatic(t *testing.T) {
 
 		states, transitions := setUpStatesTransitions()
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
 
 		currentVersion, combinedVersionUpdate, err := smDS.PopulateVersionInfo(testContext, versionUpdateWithEdition, versionDetails)
 
@@ -3077,7 +3033,7 @@ func TestPopulateVersionInfoEditionValidationStaticExists(t *testing.T) {
 
 		states, transitions := setUpStatesTransitions()
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
 
 		currentVersion, combinedVersionUpdate, err := smDS.PopulateVersionInfo(testContext, versionUpdateWithEdition, versionDetails)
 
@@ -3137,7 +3093,7 @@ func TestPopulateVersionInfoEditionValidationStaticSuccess(t *testing.T) {
 
 		states, transitions := setUpStatesTransitions()
 		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, nil)
 
 		currentVersion, combinedVersionUpdate, err := smDS.PopulateVersionInfo(testContext, versionUpdateWithEdition, versionDetails)
 
@@ -3184,7 +3140,7 @@ func TestDeleteStaticVersion_ReturnSuccess(t *testing.T) {
 		}
 
 		sm := &StateMachine{}
-		smDS := Setup(store.DataStore{Backend: mocked}, map[models.DatasetType]DownloadsGenerator{}, sm)
+		smDS := Setup(store.DataStore{Backend: mocked}, map[models.DatasetType]DownloadsGenerator{}, sm, nil, nil, false, nil, nil)
 
 		_, err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 1, mockFilesAPIClient, "test-token")
 		So(err, ShouldBeNil)
@@ -3228,7 +3184,7 @@ func TestDeleteStaticVersion_Errors(t *testing.T) {
 			},
 		}
 
-		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{})
+		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{}, nil, nil, false, nil, nil)
 
 		_, err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 1, mockFilesAPIClient, invalidToken)
 
@@ -3241,7 +3197,7 @@ func TestDeleteStaticVersion_Errors(t *testing.T) {
 		mocked := &storetest.StorerMock{
 			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error { return errs.ErrEditionNotFound },
 		}
-		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{})
+		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{}, nil, nil, false, nil, nil)
 		_, err := smDS.DeleteStaticVersion(context.Background(), "ds1", "missing", 1, nil, "test-token")
 		So(err, ShouldEqual, errs.ErrEditionNotFound)
 		So(len(mocked.CheckEditionExistsStaticCalls()), ShouldEqual, 1)
@@ -3254,7 +3210,7 @@ func TestDeleteStaticVersion_Errors(t *testing.T) {
 				return nil, errs.ErrVersionNotFound
 			},
 		}
-		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{})
+		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{}, nil, nil, false, nil, nil)
 		_, err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 10, nil, "test-token")
 		So(err, ShouldEqual, errs.ErrVersionNotFound)
 		So(len(mocked.CheckEditionExistsStaticCalls()), ShouldEqual, 1)
@@ -3268,7 +3224,7 @@ func TestDeleteStaticVersion_Errors(t *testing.T) {
 				return &models.Version{State: models.PublishedState}, nil
 			},
 		}
-		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{})
+		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{}, nil, nil, false, nil, nil)
 		_, err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 3, nil, "test-token")
 		So(err, ShouldEqual, errs.ErrDeletePublishedVersionForbidden)
 	})
@@ -3297,7 +3253,7 @@ func TestDeleteStaticVersion_Errors(t *testing.T) {
 			},
 		}
 
-		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{})
+		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{}, nil, nil, false, nil, mockFilesAPIClient)
 		_, err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 2, mockFilesAPIClient, "test-token")
 		So(err, ShouldEqual, expectedError)
 		So(len(mockFilesAPIClient.DeleteFileCalls()), ShouldEqual, 1)
@@ -3319,14 +3275,14 @@ func TestDeleteStaticVersion_Errors(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) { return nil, errs.ErrInternalServer },
 		}
 
-		mockFilesAPIClient := &filesAPISDKMocks.ClienterMock{
+		mockFilesAPIClient := filesAPISDKMocks.ClienterMock{
 			DeleteFileFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) error {
 				return nil
 			},
 		}
 
-		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{})
-		_, err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 4, mockFilesAPIClient, "test-token")
+		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{}, nil, nil, false, nil, &mockFilesAPIClient)
+		_, err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 4, &mockFilesAPIClient, "test-token")
 		So(err, ShouldEqual, errs.ErrInternalServer)
 		So(len(mockFilesAPIClient.DeleteFileCalls()), ShouldEqual, 1)
 	})
@@ -3356,7 +3312,7 @@ func TestDeleteStaticVersion_Errors(t *testing.T) {
 			},
 		}
 
-		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{})
+		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{}, nil, nil, false, nil, mockFilesAPIClient)
 		_, err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 5, mockFilesAPIClient, "test-token")
 		So(err, ShouldEqual, errs.ErrInternalServer)
 		So(len(mockFilesAPIClient.DeleteFileCalls()), ShouldEqual, 1)
@@ -3389,7 +3345,7 @@ func TestDeleteStaticVersion_Errors(t *testing.T) {
 			},
 		}
 
-		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{})
+		smDS := Setup(store.DataStore{Backend: mocked}, nil, &StateMachine{}, nil, nil, false, nil, mockFilesAPIClient)
 		_, err := smDS.DeleteStaticVersion(context.Background(), "ds1", "ed1", 6, mockFilesAPIClient, "test-token")
 		So(err, ShouldEqual, errs.ErrInternalServer)
 		So(len(mockFilesAPIClient.DeleteFileCalls()), ShouldEqual, 1)
@@ -3440,27 +3396,25 @@ func TestApproveVersionDistributionFilesCheck(t *testing.T) {
 	stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
 
 	Convey("When FilesAPIClient is nil, the file check is skipped and approve succeeds", t, func() {
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, &SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, false, &url.Builder{}, nil)
 		smDS.FilesAPIClient = nil
 
-		err := ApproveVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "")
+		err := ApproveVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "", authEntityData, "")
 
 		So(err, ShouldBeNil)
 		So(len(mockedDataStore.UpdateVersionStaticCalls()), ShouldEqual, 1)
 	})
 
 	Convey("When FilesAPIClient is set and all files exist, approve succeeds", t, func() {
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-
 		filesClient := &filesAPISDKMocks.ClienterMock{
 			GetFileFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) (*filesAPIModels.StoredRegisteredMetaData, error) {
 				return &filesAPIModels.StoredRegisteredMetaData{}, nil
 			},
 		}
-		smDS.SetFilesAPIClient(filesClient)
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, &SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, false, &url.Builder{}, filesClient)
 
 		ctxWithToken := context.WithValue(testContext, AccessTokenKey, "test-token")
-		err := ApproveVersion(ctxWithToken, smDS, currentVersion, versionUpdate, versionDetails, "")
+		err := ApproveVersion(ctxWithToken, smDS, currentVersion, versionUpdate, versionDetails, "", authEntityData, "")
 
 		So(err, ShouldBeNil)
 		So(filesClient.GetFileCalls(), ShouldHaveLength, 1)
@@ -3468,46 +3422,17 @@ func TestApproveVersionDistributionFilesCheck(t *testing.T) {
 	})
 
 	Convey("When FilesAPIClient is set and a file does not exist, approve returns ErrFileMetadataNotFound", t, func() {
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-
 		filesClient := &filesAPISDKMocks.ClienterMock{
 			GetFileFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) (*filesAPIModels.StoredRegisteredMetaData, error) {
 				return nil, errs.ErrFileMetadataNotFound
 			},
 		}
-		smDS.SetFilesAPIClient(filesClient)
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, &SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, false, &url.Builder{}, filesClient)
 
 		ctxWithToken := context.WithValue(testContext, AccessTokenKey, "test-token")
-		err := ApproveVersion(ctxWithToken, smDS, currentVersion, versionUpdate, versionDetails, "")
+		err := ApproveVersion(ctxWithToken, smDS, currentVersion, versionUpdate, versionDetails, "", authEntityData, "")
 
 		So(err, ShouldEqual, errs.ErrFileMetadataNotFound)
 		So(filesClient.GetFileCalls(), ShouldHaveLength, 1)
-	})
-
-	Convey("When the version has no distributions, the file check is skipped and approve succeeds", t, func() {
-		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine)
-
-		getFileCalled := false
-		filesClient := &filesAPISDKMocks.ClienterMock{
-			GetFileFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) (*filesAPIModels.StoredRegisteredMetaData, error) {
-				getFileCalled = true
-				return &filesAPIModels.StoredRegisteredMetaData{}, nil
-			},
-		}
-		smDS.SetFilesAPIClient(filesClient)
-
-		versionUpdateNoDistributions := &models.Version{
-			State:        models.ApprovedState,
-			ReleaseDate:  "2024-12-31",
-			ID:           "789",
-			CollectionID: "3434",
-			Type:         models.Static.String(),
-		}
-
-		ctxWithToken := context.WithValue(testContext, AccessTokenKey, "test-token")
-		err := ApproveVersion(ctxWithToken, smDS, currentVersion, versionUpdateNoDistributions, versionDetails, "")
-
-		So(err, ShouldBeNil)
-		So(getFileCalled, ShouldBeFalse)
 	})
 }

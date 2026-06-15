@@ -206,6 +206,7 @@ func TestRun(t *testing.T) {
 				DoGetMongoDBFunc:        funcDoGetMongoDBOk,
 				DoGetGraphDBFunc:        funcDoGetGraphDBOk,
 				DoGetFilesAPIClientFunc: funcDoGetFilesAPIClientErr,
+				DoGetKafkaProducerFunc:  funcDoGetKafkaProducerOk,
 			}
 			svcErrors := make(chan error, 1)
 			svcList := service.NewServiceList(initMock)
@@ -216,10 +217,10 @@ func TestRun(t *testing.T) {
 				So(err, ShouldResemble, errFilesAPIClient)
 				So(svcList.MongoDB, ShouldBeTrue)
 				So(svcList.Graph, ShouldBeTrue)
+				So(svcList.KafkaProducer, ShouldBeTrue)
 				So(svcList.CloudflareClient, ShouldBeFalse)
 				So(svcList.FilesAPIClient, ShouldBeFalse)
 				So(svcList.TopicAPIClient, ShouldBeFalse)
-				So(svcList.KafkaProducer, ShouldBeFalse)
 				So(svcList.HealthCheck, ShouldBeFalse)
 			})
 		})
@@ -228,6 +229,7 @@ func TestRun(t *testing.T) {
 			initMock := &serviceMock.InitialiserMock{
 				DoGetMongoDBFunc:          funcDoGetMongoDBOk,
 				DoGetGraphDBFunc:          funcDoGetGraphDBOk,
+				DoGetKafkaProducerFunc:    funcDoGetKafkaProducerOk,
 				DoGetFilesAPIClientFunc:   funcDoGetFilesAPIClientOk,
 				DoGetCloudflareClientFunc: funcDoGetCloudflareClientErr,
 			}
@@ -240,10 +242,10 @@ func TestRun(t *testing.T) {
 				So(err, ShouldResemble, errCloudflareClient)
 				So(svcList.MongoDB, ShouldBeTrue)
 				So(svcList.Graph, ShouldBeTrue)
+				So(svcList.KafkaProducer, ShouldBeTrue)
 				So(svcList.FilesAPIClient, ShouldBeTrue)
 				So(svcList.CloudflareClient, ShouldBeFalse)
 				So(svcList.TopicAPIClient, ShouldBeFalse)
-				So(svcList.KafkaProducer, ShouldBeFalse)
 				So(svcList.HealthCheck, ShouldBeFalse)
 			})
 		})
@@ -266,10 +268,10 @@ func TestRun(t *testing.T) {
 				So(err, ShouldResemble, errKafka)
 				So(svcList.MongoDB, ShouldBeTrue)
 				So(svcList.Graph, ShouldBeTrue)
-				So(svcList.FilesAPIClient, ShouldBeTrue)
-				So(svcList.CloudflareClient, ShouldBeTrue)
-				So(svcList.TopicAPIClient, ShouldBeTrue)
 				So(svcList.KafkaProducer, ShouldBeFalse)
+				So(svcList.FilesAPIClient, ShouldBeFalse)
+				So(svcList.CloudflareClient, ShouldBeFalse)
+				So(svcList.TopicAPIClient, ShouldBeFalse)
 				So(svcList.HealthCheck, ShouldBeFalse)
 			})
 		})
@@ -416,7 +418,7 @@ func TestRun(t *testing.T) {
 				So(svcList.MongoDB, ShouldBeTrue)
 				So(svcList.Graph, ShouldBeFalse)
 				So(svcList.FilesAPIClient, ShouldBeFalse)
-				So(svcList.CloudflareClient, ShouldBeTrue)
+				So(svcList.CloudflareClient, ShouldBeFalse)
 				So(svcList.TopicAPIClient, ShouldBeFalse)
 				So(svcList.KafkaProducer, ShouldBeFalse)
 				So(svcList.HealthCheck, ShouldBeTrue)

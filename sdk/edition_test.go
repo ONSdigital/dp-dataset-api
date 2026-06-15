@@ -12,33 +12,64 @@ import (
 
 // Tests for the `GetEdition` client method
 func TestGetEdition(t *testing.T) {
-	mockGetResponse := models.Edition{
+	testCurrentEdition := models.Edition{
 		DatasetID: datasetID,
-		Edition:   editionID,
+		Edition:   "current-edition",
 	}
 
-	Convey("If requested edition is valid and get request returns 200", t, func() {
-		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, mockGetResponse, map[string]string{}})
+	testNextEdition := models.Edition{
+		DatasetID: datasetID,
+		Edition:   "next-edition",
+	}
+
+	testEditionUpdate := models.EditionUpdate{
+		Current: &testCurrentEdition,
+		Next:    &testNextEdition,
+	}
+
+	Convey("When the edition response is of type Edition", t, func() {
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, testCurrentEdition, map[string]string{}})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
 		returnedEdition, err := datasetAPIClient.GetEdition(ctx, headers, datasetID, editionID)
-		Convey("Test that the request URI is constructed correctly and the correct method is used", func() {
+
+		Convey("Then request URI should be constructed correctly", func() {
 			expectedURI := fmt.Sprintf("/datasets/%s/editions/%s", datasetID, editionID)
 			So(httpClient.DoCalls()[0].Req.Method, ShouldEqual, http.MethodGet)
 			So(httpClient.DoCalls()[0].Req.URL.RequestURI(), ShouldResemble, expectedURI)
 		})
-		Convey("Test that the requested edition is returned without error", func() {
+
+		Convey("And the edition should be returned without error", func() {
 			So(err, ShouldBeNil)
-			So(returnedEdition, ShouldResemble, mockGetResponse)
+			So(returnedEdition, ShouldResemble, testCurrentEdition)
 		})
 	})
 
-	Convey("If requested edition is not valid and get request returns 404", t, func() {
+	Convey("When the edition response is of type EditionUpdate", t, func() {
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, testEditionUpdate, map[string]string{}})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+		returnedEdition, err := datasetAPIClient.GetEdition(ctx, headers, datasetID, editionID)
+
+		Convey("Then request URI should be constructed correctly", func() {
+			expectedURI := fmt.Sprintf("/datasets/%s/editions/%s", datasetID, editionID)
+			So(httpClient.DoCalls()[0].Req.Method, ShouldEqual, http.MethodGet)
+			So(httpClient.DoCalls()[0].Req.URL.RequestURI(), ShouldResemble, expectedURI)
+		})
+
+		Convey("And the next edition should be returned without error", func() {
+			So(err, ShouldBeNil)
+			So(returnedEdition, ShouldResemble, testNextEdition)
+		})
+	})
+
+	Convey("When the edition is not found", t, func() {
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusNotFound, apierrors.ErrEditionNotFound.Error(), map[string]string{}})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
 		_, err := datasetAPIClient.GetEdition(ctx, headers, datasetID, editionID)
-		Convey("Test that an error is raised and should contain status code", func() {
+
+		Convey("Then an error should be returned containing the status code and error message", func() {
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldEqual, apierrors.ErrEditionNotFound.Error())
+			So(err.Error(), ShouldContainSubstring, "status 404")
+			So(err.Error(), ShouldContainSubstring, apierrors.ErrEditionNotFound.Error())
 		})
 	})
 }
@@ -46,17 +77,16 @@ func TestGetEdition(t *testing.T) {
 // Tests for the `GetEditions` client method
 func TestGetEditions(t *testing.T) {
 	editions := []models.Edition{
-		{
-			DatasetID: datasetID,
-			Edition:   editionID,
-		},
-		{
-			DatasetID: datasetID,
-			Edition:   editionID,
-		},
+		{DatasetID: datasetID, Edition: editionID},
+		{DatasetID: datasetID, Edition: editionID},
 	}
-	mockGetResponse := MockGetListRequestResponse{
-		Items: editions,
+
+	currentEdition := models.Edition{DatasetID: datasetID, Edition: "current-edition"}
+	nextEdition := models.Edition{DatasetID: datasetID, Edition: "next-edition"}
+
+	editionUpdates := []models.EditionUpdate{
+		{Current: &currentEdition, Next: &nextEdition},
+		{Current: &currentEdition, Next: &nextEdition},
 	}
 
 	Convey("If input query params are nil", t, func() {
@@ -69,6 +99,7 @@ func TestGetEditions(t *testing.T) {
 			So(httpClient.DoCalls()[0].Req.URL.RequestURI(), ShouldResemble, expectedURI)
 		})
 	})
+
 	Convey("If input query params are empty", t, func() {
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, nil, map[string]string{}})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
@@ -81,6 +112,7 @@ func TestGetEditions(t *testing.T) {
 			So(httpClient.DoCalls()[0].Req.URL.RequestURI(), ShouldResemble, expectedURI)
 		})
 	})
+
 	Convey("If input query params are not empty but invalid", t, func() {
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, nil, map[string]string{}})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
@@ -97,6 +129,7 @@ func TestGetEditions(t *testing.T) {
 			So(err.Error(), ShouldEqual, "negative offsets or limits are not allowed")
 		})
 	})
+
 	Convey("If input query params are not empty and valid", t, func() {
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, nil, map[string]string{}})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
@@ -116,27 +149,46 @@ func TestGetEditions(t *testing.T) {
 			So(httpClient.DoCalls()[0].Req.URL.RequestURI(), ShouldResemble, expectedURI)
 		})
 	})
-	Convey("If requested dataset and edition is valid", t, func() {
-		requestedEditionList := EditionsList{
-			Items: editions,
-		}
-		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, mockGetResponse, map[string]string{}})
+
+	Convey("When the items in the response are of type Edition", t, func() {
+		mockBody := map[string]interface{}{"items": editions}
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, mockBody, map[string]string{}})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
 		queryParams := QueryParams{}
 		returnedEditionsList, err := datasetAPIClient.GetEditions(ctx, headers, datasetID, &queryParams)
-		Convey("Test that the requested edition is returned without error", func() {
+
+		Convey("Then the editions should be returned without error", func() {
 			So(err, ShouldBeNil)
-			So(returnedEditionsList, ShouldResemble, requestedEditionList)
+			So(returnedEditionsList.Items, ShouldHaveLength, 2)
+			So(returnedEditionsList.Items[0], ShouldResemble, editions[0])
+			So(returnedEditionsList.Items[1], ShouldResemble, editions[1])
 		})
 	})
+
+	Convey("When the items in the response are of type EditionUpdate", t, func() {
+		mockBody := map[string]interface{}{"items": editionUpdates}
+		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusOK, mockBody, map[string]string{}})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+		queryParams := QueryParams{}
+		returnedEditionsList, err := datasetAPIClient.GetEditions(ctx, Headers{}, datasetID, &queryParams)
+
+		Convey("Then the next edition from each EditionUpdate should be returned", func() {
+			So(err, ShouldBeNil)
+			So(returnedEditionsList.Items, ShouldHaveLength, 2)
+			So(returnedEditionsList.Items[0], ShouldResemble, nextEdition)
+			So(returnedEditionsList.Items[1], ShouldResemble, nextEdition)
+		})
+	})
+
 	Convey("If requested dataset and edition is not valid and get request returns 404", t, func() {
 		httpClient := createHTTPClientMock(MockedHTTPResponse{http.StatusNotFound, apierrors.ErrEditionNotFound.Error(), map[string]string{}})
 		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
 		queryParams := QueryParams{}
 		_, err := datasetAPIClient.GetEditions(ctx, headers, datasetID, &queryParams)
-		Convey("Test that an error is raised and should contain status code", func() {
+		Convey("Test that an error is raised and should contain status code and error message", func() {
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldEqual, apierrors.ErrEditionNotFound.Error())
+			So(err.Error(), ShouldContainSubstring, "status 404")
+			So(err.Error(), ShouldContainSubstring, apierrors.ErrEditionNotFound.Error())
 		})
 	})
 }

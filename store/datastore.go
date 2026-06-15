@@ -61,13 +61,13 @@ type dataMongoDB interface {
 	UpdateBuildSearchTaskState(ctx context.Context, currentInstance *models.Instance, dimension, state, eTagSelector string) (newETag string, err error)
 	UpdateETagForOptions(ctx context.Context, currentInstance *models.Instance, upserts []*models.CachedDimensionOption, updates []*models.DimensionOption, eTagSelector string) (newETag string, err error)
 	UpdateVersion(ctx context.Context, currentVersion *models.Version, version *models.Version, eTagSelector string) (newETag string, err error)
+	UpdateStateStatic(ctx context.Context, currentVersion *models.Version, updatedState *models.StateUpdate, eTagSelector string) (updatedVersion *models.Version, err error)
 	UpdateVersionStatic(ctx context.Context, currentVersion, versionUpdate *models.Version, eTagSelector string) (newETag string, err error)
 	UpdateMetadata(ctx context.Context, datasetID string, versionID string, versionEtag string, updatedDataset *models.Dataset, updatedVersion *models.Version) error
 	UpsertContact(ctx context.Context, ID string, update interface{}) error
 	UpsertDataset(ctx context.Context, ID string, datasetDoc *models.DatasetUpdate) error
 	UpsertEdition(ctx context.Context, datasetID, edition string, editionDoc *models.EditionUpdate) error
 	UpsertVersion(ctx context.Context, ID string, versionDoc *models.Version) error
-	UpsertVersionStatic(ctx context.Context, versionDoc *models.Version) error
 	DeleteDataset(ctx context.Context, ID string) error
 	DeleteEdition(ctx context.Context, ID string) error
 	AcquireInstanceLock(ctx context.Context, instanceID string) (lockID string, err error)

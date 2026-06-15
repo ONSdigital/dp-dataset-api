@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -31,9 +30,6 @@ import (
 	filesAPISDKMocks "github.com/ONSdigital/dp-files-api/sdk/mocks"
 	filesAPIErrors "github.com/ONSdigital/dp-files-api/store"
 	permissionsAPISDK "github.com/ONSdigital/dp-permissions-api/sdk"
-	topicAPIModels "github.com/ONSdigital/dp-topic-api/models"
-	topicAPISDK "github.com/ONSdigital/dp-topic-api/sdk"
-	topicAPISDKErrors "github.com/ONSdigital/dp-topic-api/sdk/errors"
 	topicAPISDKMocks "github.com/ONSdigital/dp-topic-api/sdk/mocks"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
@@ -49,14 +45,6 @@ const (
 	testETag                 = "testETag"
 	testAuthToken            = "test-auth-token"
 )
-
-type mockFilesClient struct {
-	MarkFilePublishedFunc func(ctx context.Context, path string) error
-}
-
-func (m *mockFilesClient) MarkFilePublished(ctx context.Context, path string) error {
-	return m.MarkFilePublishedFunc(ctx, path)
-}
 
 func TestGetVersionsReturnsForbidden(t *testing.T) {
 	t.Parallel()
@@ -78,7 +66,7 @@ func TestGetVersionsReturnsForbidden(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 		Convey("Then a 403 response is received and no database calls are made", func() {
 			So(w.Code, ShouldEqual, http.StatusForbidden)
@@ -111,7 +99,7 @@ func TestGetVersionsReturnsUnauthorised(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 		Convey("Then a 401 response is received and no database calls are made", func() {
 			So(w.Code, ShouldEqual, http.StatusUnauthorized)
@@ -142,7 +130,10 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
-			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+			CheckEditionExistsStaticFunc: func(_ context.Context, _ string, editionID string, _ string) error {
+				if editionID == "new-edition" {
+					return errs.ErrEditionNotFound
+				}
 				return nil
 			},
 			GetVersionsFunc: func(context.Context, string, string, string, int, int) ([]models.Version, int, error) {
@@ -162,7 +153,7 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 		list, totalCount, err := api.getVersions(w, r, 20, 0)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -209,7 +200,7 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 		list, totalCount, err := api.getVersions(w, r, 20, 0)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
@@ -249,7 +240,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 		_, _, err := api.getVersions(w, r, 20, 0)
 		So(err, ShouldNotBeNil)
 
@@ -280,7 +271,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 		_, _, err := api.getVersions(w, r, 20, 0)
 		So(err, ShouldNotBeNil)
 
@@ -316,7 +307,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 		_, _, err := api.getVersions(w, r, 20, 0)
 		So(err, ShouldNotBeNil)
 
@@ -356,7 +347,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 		_, _, err := api.getVersions(w, r, 20, 0)
 		So(err, ShouldNotBeNil)
 
@@ -395,7 +386,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 		_, _, err := api.getVersions(w, r, 20, 0)
 		So(err, ShouldNotBeNil)
 
@@ -437,7 +428,7 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -468,7 +459,7 @@ func TestGetVersionForbidden(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -505,7 +496,7 @@ func TestGetVersionUnauathorised(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -570,7 +561,7 @@ func TestGetVersionReturnsOK(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, nil, &filesAPISDKMocks.ClienterMock{})
 
 		Convey("With an etag", func() {
 			version.ETag = "version-etag"
@@ -631,7 +622,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
@@ -657,7 +648,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -695,7 +686,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -736,7 +727,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -776,7 +767,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -801,7 +792,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -827,7 +818,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -851,7 +842,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -900,7 +891,7 @@ func TestGetVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -934,7 +925,7 @@ func TestPutVersionForbidden(t *testing.T) {
 		}
 
 		Convey("Given a valid request is executed", func() {
-			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 			api.Router.ServeHTTP(w, r)
 
 			Convey("Then the request returns forbidden, with none of the expected calls made to the database", func() {
@@ -986,7 +977,7 @@ func TestPutVersionForbidden(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		Convey("Then it returns 400 and update is not attempted", func() {
@@ -1019,7 +1010,7 @@ func TestPutVersionUnauthorised(t *testing.T) {
 		}
 
 		Convey("Given a valid request is executed", func() {
-			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 			api.Router.ServeHTTP(w, r)
 
 			Convey("Then the request returns unauthorized, with none of the expected calls made to the database", func() {
@@ -1117,7 +1108,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 		}
 
 		Convey("Given a valid request is executed", func() {
-			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, nil, &filesAPISDKMocks.ClienterMock{})
 			api.Router.ServeHTTP(w, r)
 
 			Convey("Then the request is successful, with the expected calls", func() {
@@ -1153,7 +1144,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				return "", nil
 			}
 
-			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, nil, &filesAPISDKMocks.ClienterMock{})
 			api.Router.ServeHTTP(w, r)
 
 			Convey("Then the request is successful, with the expected calls including the update retry", func() {
@@ -1265,7 +1256,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -1334,7 +1325,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		Convey("Then it returns a 409 Conflict status", func() {
@@ -1416,7 +1407,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		Convey("Then it returns a 409 Conflict status", func() {
@@ -1499,7 +1490,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, nil, &filesAPISDKMocks.ClienterMock{})
 			api.Router.ServeHTTP(w, r)
 
 			So(w.Code, ShouldEqual, http.StatusOK)
@@ -1548,7 +1539,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				UnlockInstanceFunc: func(context.Context, string) {},
 			}
 
-			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, nil, &filesAPISDKMocks.ClienterMock{})
 			api.Router.ServeHTTP(w, r)
 
 			So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -1687,7 +1678,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		ctx := context.Background()
@@ -1842,7 +1833,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, nil, &filesAPISDKMocks.ClienterMock{})
 			api.Router.ServeHTTP(w, r)
 
 			So(w.Code, ShouldEqual, http.StatusOK)
@@ -2111,7 +2102,7 @@ func updateVersionDownloadTest(r *http.Request) {
 		},
 	}
 
-	api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+	api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, nil, &filesAPISDKMocks.ClienterMock{})
 	api.Router.ServeHTTP(w, r)
 
 	So(w.Code, ShouldEqual, http.StatusOK)
@@ -2202,7 +2193,7 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithCMDMocks(mockedDataStore, mockDownloadGenerator, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+			api := GetAPIWithCMDMocks(mockedDataStore, mockDownloadGenerator, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, nil, &filesAPISDKMocks.ClienterMock{})
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then an internal server error response is returned", func() {
@@ -2305,7 +2296,7 @@ func TestPutEmptyVersion(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+			api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, nil, &filesAPISDKMocks.ClienterMock{})
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a http status ok is returned", func() {
@@ -2379,7 +2370,7 @@ func TestPutEmptyVersion(t *testing.T) {
 					return nil
 				},
 			}
-			api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+			api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, nil, &filesAPISDKMocks.ClienterMock{})
 			api.Router.ServeHTTP(w, r)
 
 			Convey("then a http status ok is returned", func() {
@@ -2448,7 +2439,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -2493,7 +2484,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
@@ -2541,7 +2532,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -2580,7 +2571,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -2619,7 +2610,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -2685,7 +2676,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -2749,7 +2740,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -2817,7 +2808,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -2861,7 +2852,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusUnauthorized)
@@ -2900,7 +2891,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 		So(w.Code, ShouldEqual, http.StatusForbidden)
@@ -2975,7 +2966,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -3121,7 +3112,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -3192,7 +3183,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mocked, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api := GetAPIWithCMDMocks(mocked, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		Convey("Then the API returns 400 with missing-format error", func() {
@@ -3249,7 +3240,7 @@ func TestPutVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mocked, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api := GetAPIWithCMDMocks(mocked, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		Convey("Then API returns 400 with invalid-format error", func() {
@@ -3525,7 +3516,7 @@ func TestDetachVersionForbidden(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -3571,7 +3562,7 @@ func TestDetachVersionUnauthorised(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 		Convey("Then the response code is 401 and no expected database calls are made.", t, func() {
@@ -3648,7 +3639,7 @@ func TestDetachVersionReturnOK(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -3720,7 +3711,7 @@ func TestDetachVersionReturnOK(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -3774,7 +3765,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -3814,7 +3805,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -3857,7 +3848,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -3903,7 +3894,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -3949,7 +3940,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -4003,7 +3994,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -4060,7 +4051,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -4105,7 +4096,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -4137,7 +4128,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 				return testEntityData, nil
 			},
 		}
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -4170,7 +4161,7 @@ func TestDetachVersionReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -4233,7 +4224,7 @@ func TestDeleteVersionStaticDatasetReturnOK(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -4297,7 +4288,7 @@ func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -4326,7 +4317,7 @@ func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -4373,7 +4364,7 @@ func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
@@ -4420,7 +4411,7 @@ func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -4476,7 +4467,7 @@ func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -4518,7 +4509,7 @@ func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -4562,7 +4553,7 @@ func TestDeleteVersionStaticDatasetReturnError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -4606,7 +4597,7 @@ func TestPutStateForbidden(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		Convey("Then the response code is 403 and no expected database calls are made", func() {
@@ -4617,7 +4608,6 @@ func TestPutStateForbidden(t *testing.T) {
 			So(mockedDataStore.UpdateVersionStaticCalls(), ShouldHaveLength, 0)
 			So(mockedDataStore.GetDatasetTypeCalls(), ShouldHaveLength, 0)
 			So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 0)
-			So(mockedDataStore.UpsertVersionStaticCalls(), ShouldHaveLength, 0)
 			So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 0)
 			So(mockedDataStore.CheckEditionExistsStaticCalls(), ShouldHaveLength, 0)
 		})
@@ -4643,7 +4633,7 @@ func TestPutStateUnauthorised(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		Convey("Then the response code is 401 and no expected database calls are made", func() {
@@ -4654,7 +4644,6 @@ func TestPutStateUnauthorised(t *testing.T) {
 			So(mockedDataStore.UpdateVersionStaticCalls(), ShouldHaveLength, 0)
 			So(mockedDataStore.GetDatasetTypeCalls(), ShouldHaveLength, 0)
 			So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 0)
-			So(mockedDataStore.UpsertVersionStaticCalls(), ShouldHaveLength, 0)
 			So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 0)
 			So(mockedDataStore.CheckEditionExistsStaticCalls(), ShouldHaveLength, 0)
 		})
@@ -4666,9 +4655,7 @@ func TestPutStateReturnsOk(t *testing.T) {
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1/state", bytes.NewBufferString(`{"state":"published"}`))
 		w := httptest.NewRecorder()
 
-		mockedDataStore := &storetest.StorerMock{
-			GetVersionStaticFunc: func(ctx context.Context, datasetID string, editionID string, version int, state string) (*models.Version, error) {
-				jsonData := `{
+		jsonData := `{
 						"alerts": [
 						  {}
 						],
@@ -4680,25 +4667,26 @@ func TestPutStateReturnsOk(t *testing.T) {
 							"href": "http://dp-dataset-api:22000/datasets/test-static-dataset",
 							"id": "test-static-dataset"
 						  },
-						  "dimensions": {
-							"href": "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1/dimensions",
-							"id": "test-static-dataset"
-						  },
 						  "edition": {
 							"href": "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1",
 							"id": "test-edition-1"
 						  },
 						  "self": {
 							"href": "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1"
+						  },
+						 "web_page": {
+							"href": "economy/datasets/test-static-dataset/editions/test-edition-1/versions/1"
 						  }
 						},
 						"release_date": "2025-01-15",
 						"state": "associated",
-						"temporal": [
+						"distributions": [
 						  {
-							"end_date": "2025-01-31",
-							"frequency": "Monthly",
-							"start_date": "2025-01-01"
+							"title": "Full Dataset (CSV)",
+							"download_url": "test/test.csv",
+							"byte_size": 4300000,
+							"format": "csv",
+							"media_type": "text/csv"
 						  }
 						],
 						"usage_notes": [
@@ -4711,18 +4699,18 @@ func TestPutStateReturnsOk(t *testing.T) {
 						"type": "static"
 					  }`
 
-				var versionModel models.Version
+		var versionModel models.Version
 
-				err := json.Unmarshal([]byte(jsonData), &versionModel)
-				So(err, ShouldBeNil)
+		err := json.Unmarshal([]byte(jsonData), &versionModel)
+		So(err, ShouldBeNil)
 
-				versionModel.Links.Version = &models.LinkObject{
-					ID:   "1",
-					HRef: "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1",
-				}
+		versionModel.Links.Version = &models.LinkObject{
+			ID:   "1",
+			HRef: "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1",
+		}
 
-				versionModel.Distributions = nil
-
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionStaticFunc: func(ctx context.Context, datasetID string, editionID string, version int, state string) (*models.Version, error) {
 				return &versionModel, nil
 			},
 
@@ -4741,12 +4729,12 @@ func TestPutStateReturnsOk(t *testing.T) {
 				return "", nil
 			},
 
-			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
-				return models.Static.String(), nil
+			UpdateStateStaticFunc: func(ctx context.Context, currentVersion *models.Version, updatedState *models.StateUpdate, eTagSelector string) (*models.Version, error) {
+				return &versionModel, nil
 			},
 
-			UpsertVersionStaticFunc: func(ctx context.Context, versionDoc *models.Version) error {
-				return nil
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				return models.Static.String(), nil
 			},
 
 			GetDatasetFunc: func(ctx context.Context, ID string) (*models.DatasetUpdate, error) {
@@ -4816,7 +4804,7 @@ func TestPutStateReturnsOk(t *testing.T) {
 		}
 
 		scuProducerMock := getSearchContentUpdatedMock()
-		searchContentUpdated := SearchContentUpdatedProducer{Producer: scuProducerMock}
+		searchContentUpdated := application.SearchContentUpdatedProducer{Producer: scuProducerMock}
 
 		cloudflareMock := &cloudflareMocks.ClienterMock{
 			PurgeByPrefixesFunc: func(ctx context.Context, prefixes []string) error {
@@ -4824,33 +4812,23 @@ func TestPutStateReturnsOk(t *testing.T) {
 			},
 		}
 
-		topicAPIMock := &topicAPISDKMocks.ClienterMock{
-			GetTopicPrivateFunc: func(ctx context.Context, reqHeaders topicAPISDK.Headers, id string) (*topicAPIModels.TopicResponse, topicAPISDKErrors.Error) {
-				return &topicAPIModels.TopicResponse{
-					Next: &topicAPIModels.Topic{
-						ID:   id,
-						Slug: "economy",
-					},
-				}, nil
+		mockFilesAPIClient := filesAPISDKMocks.ClienterMock{
+			MarkFilePublishedFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) error {
+				return nil
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, searchContentUpdated, cloudflareMock, auditServiceMock)
-		api.topicAPIClient = topicAPIMock
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, searchContentUpdated, cloudflareMock, auditServiceMock, &topicAPISDKMocks.ClienterMock{}, &mockFilesAPIClient)
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(mockedDataStore.GetVersionStaticCalls(), ShouldHaveLength, 4)
-		So(mockedDataStore.AcquireVersionsLockCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.UnlockVersionsCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.UpdateVersionStaticCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.GetDatasetTypeCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 2)
-		So(mockedDataStore.UpsertVersionStaticCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetVersionStaticCalls(), ShouldHaveLength, 2)
+		So(mockedDataStore.UpdateStateStaticCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.CheckEditionExistsStaticCalls(), ShouldHaveLength, 1)
+		So(mockFilesAPIClient.MarkFilePublishedCalls(), ShouldHaveLength, 1)
 		So(len(scuProducerMock.OutputCalls()), ShouldEqual, 1)
-		So(topicAPIMock.GetTopicPrivateCalls(), ShouldHaveLength, 1)
 		So(cloudflareMock.PurgeByPrefixesCalls(), ShouldHaveLength, 1)
 		So(auditServiceMock.RecordVersionAuditEventCalls(), ShouldHaveLength, 1)
 		So(auditServiceMock.RecordVersionAuditEventCalls()[0].Resource, ShouldEqual, "/datasets/test-static-dataset/editions/test-edition-1/versions/1/state")
@@ -4888,7 +4866,7 @@ func TestPutStateReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.putState(w, r)
 
@@ -4911,7 +4889,7 @@ func TestPutStateReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -4934,7 +4912,7 @@ func TestPutStateReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 
@@ -4947,8 +4925,8 @@ func TestPutStateReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionStaticFunc: func(ctx context.Context, datasetID string, editionID string, version int, state string) (*models.Version, error) {
-				return nil, errs.ErrVersionNotFound
+			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID, editionID, state string) error {
+				return errs.ErrEditionNotFound
 			},
 		}
 
@@ -4961,12 +4939,12 @@ func TestPutStateReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
 	})
 
 	Convey("When an error occurs, return internal server error", t, func() {
@@ -4977,6 +4955,15 @@ func TestPutStateReturnsError(t *testing.T) {
 			GetVersionStaticFunc: func(ctx context.Context, datasetID string, editionID string, version int, state string) (*models.Version, error) {
 				return nil, errors.New("some error")
 			},
+			CheckEditionTitleExistsStaticFunc: func(ctx context.Context, datasetID, editionTitle string) error {
+				return nil
+			},
+			CheckVersionExistsStaticFunc: func(ctx context.Context, datasetID, editionID string, version int) (bool, error) {
+				return false, nil
+			},
+			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID, editionID, state string) error {
+				return nil
+			},
 		}
 
 		authorisationMock := &authMock.MiddlewareMock{
@@ -4988,262 +4975,13 @@ func TestPutStateReturnsError(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 	})
-}
-
-func TestPublishDistributionFiles(t *testing.T) {
-	ctx := context.Background()
-
-	Convey("Given a version with no distributions", t, func() {
-		version := &models.Version{}
-		logData := log.Data{}
-
-		Convey("When publishDistributionFiles is called on an API with no files client", func() {
-			api := &DatasetAPI{}
-			err := api.publishDistributionFiles(ctx, version, logData, "test-token")
-
-			Convey("Then an error should be returned", func() {
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "files API client not configured")
-			})
-		})
-	})
-
-	Convey("Given a version with distributions", t, func() {
-		distributions := []models.Distribution{
-			{
-				Title:       "Test Distribution 1",
-				Format:      "CSV",
-				DownloadURL: "test-file-1.csv",
-			},
-			{
-				Title:       "Test Distribution 2",
-				Format:      "XLSX",
-				DownloadURL: "test-file-2.xlsx",
-			},
-		}
-		version := &models.Version{
-			Distributions: &distributions,
-		}
-		logData := log.Data{}
-
-		Convey("When publishDistributionFiles is called with a mocked files client that succeeds", func() {
-			markPublishedCalls := 0
-
-			mockClient := &mockFilesClient{
-				MarkFilePublishedFunc: func(ctx context.Context, path string) error {
-					markPublishedCalls++
-					return nil
-				},
-			}
-
-			testFunc := func() error {
-				markPublishedFn := func(ctx context.Context, path string) error {
-					return mockClient.MarkFilePublished(ctx, path)
-				}
-				return publishDistributionFilesTest(ctx, version, logData, markPublishedFn)
-			}
-
-			err := testFunc()
-
-			Convey("Then no error should be returned", func() {
-				So(err, ShouldBeNil)
-				So(markPublishedCalls, ShouldEqual, 2)
-			})
-		})
-
-		Convey("When publishDistributionFiles is called with a mocked files client that fails on MarkFilePublished", func() {
-			markPublishedCalls := 0
-
-			mockClient := &mockFilesClient{
-				MarkFilePublishedFunc: func(ctx context.Context, path string) error {
-					markPublishedCalls++
-					return errors.New("mark published error")
-				},
-			}
-
-			testFunc := func() error {
-				markPublishedFn := func(ctx context.Context, path string) error {
-					return mockClient.MarkFilePublished(ctx, path)
-				}
-				return publishDistributionFilesTest(ctx, version, logData, markPublishedFn)
-			}
-
-			err := testFunc()
-
-			Convey("Then an error should be returned", func() {
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "mark published error")
-				So(markPublishedCalls, ShouldEqual, 2)
-			})
-		})
-	})
-}
-
-func TestPutStatePublishDistributionFilesCondition(t *testing.T) {
-	Convey("Given a version with distributions", t, func() {
-		distributions := []models.Distribution{
-			{
-				Title:       "Test Distribution",
-				Format:      "CSV",
-				DownloadURL: "test-file.csv",
-			},
-		}
-
-		version := &models.Version{
-			State:         models.AssociatedState,
-			Distributions: &distributions,
-		}
-
-		publishDistributionFilesCalled := false
-		publishDistributionFilesErr := error(nil)
-
-		testPublishDistributionFiles := func(ctx context.Context, v *models.Version, logData log.Data) error {
-			publishDistributionFilesCalled = true
-			So(v, ShouldEqual, version)
-			return publishDistributionFilesErr
-		}
-
-		Convey("When state is PublishedState", func() {
-			state := models.PublishedState
-
-			shouldCallPublishDistributionFiles := state == models.PublishedState &&
-				version.Distributions != nil &&
-				len(*version.Distributions) > 0
-
-			Convey("Then the condition should be true", func() {
-				So(shouldCallPublishDistributionFiles, ShouldBeTrue)
-
-				if shouldCallPublishDistributionFiles {
-					testPublishDistributionFiles(context.Background(), version, log.Data{})
-				}
-
-				So(publishDistributionFilesCalled, ShouldBeTrue)
-			})
-		})
-
-		Convey("When state is not PublishedState", func() {
-			state := models.AssociatedState
-
-			publishDistributionFilesCalled = false
-
-			shouldCallPublishDistributionFiles := state == models.PublishedState &&
-				version.Distributions != nil &&
-				len(*version.Distributions) > 0
-
-			Convey("Then the condition should be false", func() {
-				So(shouldCallPublishDistributionFiles, ShouldBeFalse)
-
-				if shouldCallPublishDistributionFiles {
-					testPublishDistributionFiles(context.Background(), version, log.Data{})
-				}
-
-				So(publishDistributionFilesCalled, ShouldBeFalse)
-			})
-		})
-
-		Convey("When version has no distributions", func() {
-			state := models.PublishedState
-			versionNoDistributions := &models.Version{
-				State: models.AssociatedState,
-			}
-
-			publishDistributionFilesCalled = false
-
-			shouldCallPublishDistributionFiles := state == models.PublishedState &&
-				versionNoDistributions.Distributions != nil &&
-				len(*versionNoDistributions.Distributions) > 0
-
-			Convey("Then the condition should be false", func() {
-				So(shouldCallPublishDistributionFiles, ShouldBeFalse)
-
-				if shouldCallPublishDistributionFiles {
-					testPublishDistributionFiles(context.Background(), versionNoDistributions, log.Data{})
-				}
-
-				So(publishDistributionFilesCalled, ShouldBeFalse)
-			})
-		})
-
-		Convey("When publishDistributionFiles returns an error", func() {
-			state := models.PublishedState
-
-			publishDistributionFilesCalled = false
-			publishDistributionFilesErr = errors.New("test error")
-
-			shouldCallPublishDistributionFiles := state == models.PublishedState &&
-				version.Distributions != nil &&
-				len(*version.Distributions) > 0
-
-			Convey("Then the condition should be true but error should be logged", func() {
-				So(shouldCallPublishDistributionFiles, ShouldBeTrue)
-
-				if shouldCallPublishDistributionFiles {
-					err := testPublishDistributionFiles(context.Background(), version, log.Data{})
-					if err != nil {
-						So(err.Error(), ShouldEqual, "test error")
-					}
-				}
-
-				So(publishDistributionFilesCalled, ShouldBeTrue)
-			})
-		})
-	})
-}
-
-func publishDistributionFilesTest(ctx context.Context, version *models.Version, logData log.Data,
-	markPublishedFn func(context.Context, string) error) error {
-	if version.Distributions == nil || len(*version.Distributions) == 0 {
-		return nil
-	}
-
-	var lastError error
-	totalFiles := len(*version.Distributions)
-	successCount := 0
-
-	for _, distribution := range *version.Distributions {
-		if distribution.DownloadURL == "" {
-			continue
-		}
-
-		filepath := distribution.DownloadURL
-
-		fileLogData := log.Data{
-			"filepath":            filepath,
-			"distribution_title":  distribution.Title,
-			"distribution_format": distribution.Format,
-		}
-		for k, v := range logData {
-			fileLogData[k] = v
-		}
-
-		err := markPublishedFn(ctx, filepath)
-		if err != nil {
-			log.Error(ctx, "failed to publish file", err, fileLogData)
-			lastError = err
-			continue
-		}
-
-		successCount++
-		log.Info(ctx, "successfully published file", fileLogData)
-	}
-
-	log.Info(ctx, "completed publishing distribution files", log.Data{
-		"total_files": totalFiles,
-		"successful":  successCount,
-		"failed":      totalFiles - successCount,
-	})
-
-	if lastError != nil {
-		return fmt.Errorf("one or more errors occurred while publishing files: %w", lastError)
-	}
-	return nil
 }
 
 func TestPutVersionEditionValidationNonStatic(t *testing.T) {
@@ -5301,7 +5039,7 @@ func TestPutVersionEditionValidationNonStatic(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
@@ -5421,7 +5159,7 @@ func TestGetVersionRecordsAuditEvent(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, nil, &filesAPISDKMocks.ClienterMock{})
 
 		Convey("When we call the GET version endpoint", func() {
 			api.Router.ServeHTTP(w, r)
@@ -5502,7 +5240,7 @@ func TestGetVersionDoesNotRecordAuditEventForUnauthorisedUser(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, nil, &filesAPISDKMocks.ClienterMock{})
 
 		Convey("When we call the GET version endpoint", func() {
 			api.Router.ServeHTTP(w, r)
@@ -5578,7 +5316,7 @@ func TestGetVersionAuditEventLogsErrorButContinues(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, nil, &filesAPISDKMocks.ClienterMock{})
 
 		Convey("When we call the GET version endpoint", func() {
 			api.Router.ServeHTTP(w, r)
@@ -5638,7 +5376,7 @@ func TestGetVersionReturnsIsMigration(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+			api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 			api.Router.ServeHTTP(w, r)
 
 			Convey("Then it returns a 200 OK", func() {
@@ -5676,7 +5414,7 @@ func TestGetVersionReturnsIsMigration(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+			api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, nil, &filesAPISDKMocks.ClienterMock{})
 			api.Router.ServeHTTP(w, r)
 
 			Convey("Then it returns a 200 OK", func() {
@@ -5732,7 +5470,7 @@ func TestGetVersionReturnsIsMigration(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{})
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 
 		Convey("When we call the GET version endpoint", func() {
 			api.Router.ServeHTTP(w, r)
@@ -5815,7 +5553,7 @@ func TestPutVersionIsMigration(t *testing.T) {
 			},
 		}
 
-		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock)
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, nil, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
 		Convey("Then it returns a 200 OK", func() {
@@ -5883,8 +5621,8 @@ func TestPutStateApproveDistributionFilesCheck(t *testing.T) {
 			DataStore:          store.DataStore{Backend: mockedDataStore},
 			DownloadGenerators: mockedMapSMGeneratedDownloads,
 			StateMachine:       application.NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore}),
+			FilesAPIClient:     filesClient,
 		}
-		smDS.SetFilesAPIClient(filesClient)
 
 		testIdentityClient := clientsidentity.New(cfg.ZebedeeURL)
 		permissionsChecker := &authMock.PermissionsCheckerMock{
@@ -5895,7 +5633,7 @@ func TestPutStateApproveDistributionFilesCheck(t *testing.T) {
 
 		mockedMapGeneratedDownloads := map[models.DatasetType]DownloadsGenerator{}
 
-		return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, authorisationMock, enableURLRewriting, smDS, auditServiceMock, permissionsChecker, testIdentityClient, nil, &cloudflareMocks.ClienterMock{})
+		return Setup(testContext, cfg, mux.NewRouter(), store.DataStore{Backend: mockedDataStore}, urlBuilder, mockedMapGeneratedDownloads, authorisationMock, enableURLRewriting, smDS, auditServiceMock, permissionsChecker, testIdentityClient, filesClient, &topicAPISDKMocks.ClienterMock{})
 	}
 
 	distributions := []models.Distribution{
@@ -6033,74 +5771,274 @@ func TestPutStateApproveDistributionFilesCheck(t *testing.T) {
 			So(filesClient.GetFileCalls(), ShouldHaveLength, 1)
 		})
 	})
+}
 
-	Convey("When publishing a version, GetFile is not called", t, func() {
+func TestPutVersionSavesPreviousEditionID(t *testing.T) {
+	t.Parallel()
+
+	Convey("When edition ID changes on a static version, previous_edition_id is populated with the old edition", t, func() {
+		var capturedVersionUpdate *models.Version
+
+		b := `{"edition":"new-edition","edition_title":"New Edition Title","release_date":"2017-04-04","state":"associated","type":"static"}`
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/old-edition/versions/1", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
 		mockedDataStore := &storetest.StorerMock{
-			GetVersionStaticFunc: func(ctx context.Context, datasetID, editionID string, version int, state string) (*models.Version, error) {
-				v := baseVersion()
-				v.State = models.ApprovedState
-				return v, nil
+			IsStaticDatasetFunc: func(context.Context, string) (bool, error) {
+				return true, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					Next: &models.Dataset{Type: models.Static.String()},
+				}, nil
+			},
+			CheckEditionExistsStaticFunc: func(_ context.Context, _ string, editionID string, _ string) error {
+				if editionID == "new-edition" {
+					return errs.ErrEditionNotFound
+				}
+				return nil
+			},
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					ID:           "version-id-1",
+					Edition:      "old-edition",
+					EditionTitle: "Old Edition Title",
+					State:        models.AssociatedState,
+					Type:         models.Static.String(),
+					ReleaseDate:  "2017-04-04",
+					Links: &models.VersionLinks{
+						Dataset: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123",
+							ID:   "123",
+						},
+						Self: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/old-edition/versions/1",
+						},
+						Version: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/old-edition/versions/1",
+							ID:   "1",
+						},
+						Edition: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/old-edition",
+							ID:   "old-edition",
+						},
+					},
+				}, nil
+			},
+			CheckEditionTitleExistsStaticFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{Type: models.Static.String()}, nil
+			},
+			UpdateVersionStaticFunc: func(ctx context.Context, currentVersion *models.Version, versionUpdate *models.Version, eTagSelector string) (string, error) {
+				capturedVersionUpdate = versionUpdate
+				return testETag, nil
 			},
 			AcquireVersionsLockFunc: func(context.Context, string) (string, error) {
 				return testLockID, nil
 			},
 			UnlockVersionsFunc: func(context.Context, string) {},
-			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, version *models.Version) error {
 				return nil
 			},
-			UpdateVersionStaticFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
-				return "", nil
-			},
-			GetDatasetTypeFunc: func(context.Context, string, bool) (string, error) {
-				return models.Static.String(), nil
-			},
-			UpsertVersionStaticFunc: func(context.Context, *models.Version) error {
-				return nil
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, &topicAPISDKMocks.ClienterMock{}, &filesAPISDKMocks.ClienterMock{})
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(capturedVersionUpdate, ShouldNotBeNil)
+		So(capturedVersionUpdate.PreviousEditionId, ShouldResemble, []string{"old-edition"})
+		So(len(mockedDataStore.UpdateVersionStaticCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsStaticCalls()), ShouldEqual, 3)
+	})
+
+	Convey("When edition ID does NOT change on a static version, previous_edition_id is not modified", t, func() {
+		var capturedVersionUpdate *models.Version
+
+		b := `{"edition":"same-edition","edition_title":"New Title","release_date":"2017-04-04","state":"associated","type":"static"}`
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/same-edition/versions/1", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			IsStaticDatasetFunc: func(context.Context, string) (bool, error) {
+				return true, nil
 			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{
-					ID: "test-dataset",
-					Next: &models.Dataset{
-						State: models.ApprovedState,
-						Type:  models.Static.String(),
-						Links: &models.DatasetLinks{},
+					Next: &models.Dataset{Type: models.Static.String()},
+				}, nil
+			},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					ID:           "version-id-1",
+					Edition:      "same-edition",
+					EditionTitle: "Old Title",
+					State:        models.AssociatedState,
+					Type:         models.Static.String(),
+					ReleaseDate:  "2017-04-04",
+					Links: &models.VersionLinks{
+						Dataset: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123",
+							ID:   "123",
+						},
+						Self: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/same-edition/versions/1",
+						},
+						Version: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/same-edition/versions/1",
+							ID:   "1",
+						},
+						Edition: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/same-edition",
+							ID:   "same-edition",
+						},
 					},
 				}, nil
 			},
-			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
+			CheckEditionTitleExistsStaticFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{Type: models.Static.String()}, nil
+			},
+			UpdateVersionStaticFunc: func(ctx context.Context, currentVersion *models.Version, versionUpdate *models.Version, eTagSelector string) (string, error) {
+				capturedVersionUpdate = versionUpdate
+				return testETag, nil
+			},
+			AcquireVersionsLockFunc: func(context.Context, string) (string, error) {
+				return testLockID, nil
+			},
+			UnlockVersionsFunc: func(context.Context, string) {},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, version *models.Version) error {
 				return nil
 			},
 		}
 
-		getFileCalled := false
-		filesClient := &filesAPISDKMocks.ClienterMock{
-			GetFileFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) (*filesAPIModels.StoredRegisteredMetaData, error) {
-				getFileCalled = true
-				return &filesAPIModels.StoredRegisteredMetaData{}, nil
-			},
-			MarkFilePublishedFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) error {
-				return nil
-			},
-		}
-
-		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/test-dataset/editions/test-edition/versions/1/state", bytes.NewBufferString(`{"state":"published"}`))
-		w := httptest.NewRecorder()
-
-		scuProducerMock := getSearchContentUpdatedMock()
-		searchContentUpdated := SearchContentUpdatedProducer{Producer: scuProducerMock}
-
-		api := buildAPIWithApproval(mockedDataStore, filesClient, authorisationMock, auditServiceMock)
-		api.SetFilesAPIClient(filesClient, "")
-		api.searchContentUpdatedProducer = &searchContentUpdated
-
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, &topicAPISDKMocks.ClienterMock{}, &filesAPISDKMocks.ClienterMock{})
 		api.Router.ServeHTTP(w, r)
 
-		Convey("Then GetFile is never called during publish", func() {
-			So(getFileCalled, ShouldBeFalse)
-		})
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(capturedVersionUpdate, ShouldNotBeNil)
+		So(capturedVersionUpdate.PreviousEditionId, ShouldBeNil)
+		So(len(mockedDataStore.UpdateVersionStaticCalls()), ShouldEqual, 1)
+	})
 
-		Convey("And MarkFilePublished is called instead", func() {
-			So(filesClient.MarkFilePublishedCalls(), ShouldHaveLength, 1)
-		})
+	Convey("When version already has a previous_edition_id, new old edition is appended", t, func() {
+		var capturedVersionUpdate *models.Version
+
+		b := `{"edition":"newer-edition","edition_title":"Newer Edition Title","release_date":"2017-04-04","state":"associated","type":"static"}`
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/current-edition/versions/1", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			IsStaticDatasetFunc: func(context.Context, string) (bool, error) {
+				return true, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					Next: &models.Dataset{Type: models.Static.String()},
+				}, nil
+			},
+			CheckEditionExistsStaticFunc: func(_ context.Context, _ string, editionID string, _ string) error {
+				if editionID == "newer-edition" {
+					return errs.ErrEditionNotFound
+				}
+				return nil
+			},
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{
+					ID:                "version-id-1",
+					Edition:           "current-edition",
+					EditionTitle:      "Current Edition Title",
+					PreviousEditionId: []string{"very-old-edition", "old-edition"},
+					State:             models.AssociatedState,
+					Type:              models.Static.String(),
+					ReleaseDate:       "2017-04-04",
+					Links: &models.VersionLinks{
+						Dataset: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123",
+							ID:   "123",
+						},
+						Self: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/current-edition/versions/1",
+						},
+						Version: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/current-edition/versions/1",
+							ID:   "1",
+						},
+						Edition: &models.LinkObject{
+							HRef: "http://localhost:22000/datasets/123/editions/current-edition",
+							ID:   "current-edition",
+						},
+					},
+				}, nil
+			},
+			CheckEditionTitleExistsStaticFunc: func(context.Context, string, string) error {
+				return nil
+			},
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return &models.Version{Type: models.Static.String()}, nil
+			},
+			UpdateVersionStaticFunc: func(ctx context.Context, currentVersion *models.Version, versionUpdate *models.Version, eTagSelector string) (string, error) {
+				capturedVersionUpdate = versionUpdate
+				return testETag, nil
+			},
+			AcquireVersionsLockFunc: func(context.Context, string) (string, error) {
+				return testLockID, nil
+			},
+			UnlockVersionsFunc: func(context.Context, string) {},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, version *models.Version) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, &topicAPISDKMocks.ClienterMock{}, &filesAPISDKMocks.ClienterMock{})
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(capturedVersionUpdate, ShouldNotBeNil)
+		So(capturedVersionUpdate.PreviousEditionId, ShouldResemble, []string{"very-old-edition", "old-edition", "current-edition"})
+		So(len(mockedDataStore.UpdateVersionStaticCalls()), ShouldEqual, 1)
 	})
 }

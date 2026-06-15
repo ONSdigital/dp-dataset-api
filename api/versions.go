@@ -6,22 +6,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"maps"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/ONSdigital/dp-api-clients-go/v2/headers"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
-	"github.com/ONSdigital/dp-dataset-api/application"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/utils"
-	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
-	kafka "github.com/ONSdigital/dp-kafka/v4"
 	dpresponse "github.com/ONSdigital/dp-net/v3/handlers/response"
 	dphttp "github.com/ONSdigital/dp-net/v3/http"
 	"github.com/ONSdigital/dp-net/v3/links"
-	topicAPISDK "github.com/ONSdigital/dp-topic-api/sdk"
+	"github.com/ONSdigital/dp-permissions-api/sdk"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/copier"
@@ -148,6 +144,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 
 			if !authorised {
 				item.IsMigration = nil
+				item.PreviousEditionId = nil
 			}
 		}
 
@@ -293,6 +290,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 
 		if !authorised {
 			version.IsMigration = nil
+			version.PreviousEditionId = nil
 		}
 
 		return version, nil
@@ -492,6 +490,10 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 					handleVersionAPIErr(ctx, checkErr, w, data)
 					return
 				}
+				if version.Edition != "" {
+					version.PreviousEditionId = append([]string{}, existingVersion.PreviousEditionId...)
+					version.PreviousEditionId = append(version.PreviousEditionId, existingVersion.Edition)
+				}
 			}
 
 			if titleChanged {
@@ -505,7 +507,13 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var amendedVersion *models.Version
-	amendedVersion, err = api.smDatasetAPI.AmendVersion(r.Context(), vars, version)
+
+	permissionEntity := sdk.EntityData{
+		UserID: authEntityData.EntityData.UserID,
+		Groups: authEntityData.EntityData.Groups,
+	}
+
+	amendedVersion, err = api.smDatasetAPI.AmendVersion(r.Context(), vars, version, &permissionEntity, fetchAccessTokenFromHeader(r))
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, data)
 		return
@@ -905,6 +913,8 @@ func getVersionAPIErrStatusCode(err error) int {
 		status = http.StatusBadRequest
 	case strings.HasPrefix(err.Error(), "state not allowed to transition"):
 		status = http.StatusBadRequest
+	case strings.HasPrefix(err.Error(), "incorrect state,"):
+		status = http.StatusBadRequest
 	case strings.HasPrefix(err.Error(), "a published version cannot be deleted"):
 		status = http.StatusForbidden
 	case strings.Contains(err.Error(), "format field is missing"):
@@ -1008,91 +1018,22 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentVersion, err := api.dataStore.Backend.GetVersionStatic(ctx, datasetID, edition, versionID, "")
-	if err != nil {
-		log.Error(ctx, "putState endpoint: failed to get version", err, logData)
-		handleVersionAPIErr(ctx, err, w, logData)
-		return
-	}
-
 	// Create a version update with the target state
 	versionUpdate := &models.Version{
-		ID:    currentVersion.ID,
+		ID:    strconv.Itoa(versionID),
 		State: stateUpdate.State,
 		Type:  models.Static.String(),
 	}
 
-	ctxWithToken := context.WithValue(ctx, application.AccessTokenKey, fetchAccessTokenFromHeader(r))
-	updatedVersion, err := api.smDatasetAPI.AmendVersion(ctxWithToken, vars, versionUpdate)
+	permissionEntity := sdk.EntityData{
+		UserID: authEntityData.EntityData.UserID,
+		Groups: authEntityData.EntityData.Groups,
+	}
+
+	updatedVersion, err := api.smDatasetAPI.AmendVersion(r.Context(), vars, versionUpdate, &permissionEntity, fetchAccessTokenFromHeader(r))
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, logData)
 		return
-	}
-
-	if stateUpdate.State == models.PublishedState && updatedVersion.Distributions != nil && len(*updatedVersion.Distributions) > 0 {
-		err = api.publishDistributionFiles(ctx, updatedVersion, logData, fetchAccessTokenFromHeader(r))
-		if err != nil {
-			log.Error(ctx, "putState endpoint: failed to publish distribution files", err, logData)
-			handleVersionAPIErr(ctx, err, w, logData)
-			return
-		}
-	}
-
-	if updatedVersion.State == models.PublishedState {
-		searchContentUpdatedEvent := map[string]interface{}{
-			"dataset_id":   datasetID,
-			"uri":          fmt.Sprintf("/datasets/%s", datasetID),
-			"title":        currentVersion.EditionTitle,
-			"edition":      currentVersion.Edition,
-			"content_type": "dataset_landing_page",
-			"release_date": currentVersion.ReleaseDate,
-		}
-
-		jsonBytes, err := json.Marshal(searchContentUpdatedEvent)
-		logData["search_content_updated_event"] = searchContentUpdatedEvent
-		if err != nil {
-			log.Error(ctx, "failed to marshal searchContentUpdatedEvent for kafka", err, logData)
-			handleVersionAPIErr(ctx, err, w, logData)
-			return
-		} else {
-			go func() {
-				api.searchContentUpdatedProducer.Producer.Output() <- kafka.BytesMessage{Value: jsonBytes, Context: ctx}
-			}()
-			log.Info(ctx, "putState endpoint: queued search content update for kafka", logData)
-		}
-	}
-
-	// Purge Cloudflare cache if enabled and version is being published
-	if api.cloudflareEnabled && stateUpdate.State == models.PublishedState {
-		// dataset needed in order to get canonical topic ID
-		dataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
-		if err != nil {
-			log.Error(ctx, "putState endpoint: failed to get dataset", err, logData)
-			handleVersionAPIErr(ctx, err, w, logData)
-			return
-		}
-
-		topicSDKHeaders := topicAPISDK.Headers{
-			ServiceAuthToken: fetchAccessTokenFromHeader(r),
-		}
-
-		// Retrieve canonical topic from Topic API in order to get topic slug
-		topic, err := api.topicAPIClient.GetTopicPrivate(ctx, topicSDKHeaders, dataset.Next.Topics[0])
-		if err != nil {
-			log.Error(ctx, "putState endpoint: failed to get topic from Topic API", err, logData)
-			handleVersionAPIErr(ctx, err, w, logData)
-			return
-		}
-
-		prefixes := utils.GeneratePurgePrefixes(api.urlBuilder.GetPublicWebsiteURL().String(), api.urlBuilder.GetAPIRouterPublicURL().String(), topic.Next.Slug, datasetID, edition, version)
-		logData["purge_prefixes"] = prefixes
-
-		err = api.cloudflareClient.PurgeByPrefixes(ctx, prefixes)
-		if err != nil {
-			log.Error(ctx, "putState endpoint: failed to purge cache by prefixes", err, logData)
-		} else {
-			log.Info(ctx, "putState endpoint: successfully purged cache by prefixes", logData)
-		}
 	}
 
 	// ID and Email are the same as auth middleware can only provide userID
@@ -1116,66 +1057,4 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusOK)
 	log.Info(ctx, "putState endpoint: request successful", logData)
-}
-
-func (api *DatasetAPI) publishDistributionFiles(ctx context.Context, version *models.Version, logData log.Data, accessToken string) error {
-	if api.filesAPIClient == nil {
-		return fmt.Errorf("files API client not configured")
-	}
-
-	if version.Distributions == nil || len(*version.Distributions) == 0 {
-		return nil
-	}
-
-	var lastError error
-	var filesAPIError error
-	totalFiles := len(*version.Distributions)
-	successCount := 0
-
-	for _, distribution := range *version.Distributions {
-		if distribution.DownloadURL == "" {
-			continue
-		}
-
-		filepath := distribution.DownloadURL
-
-		fileLogData := log.Data{
-			"filepath":            filepath,
-			"distribution_title":  distribution.Title,
-			"distribution_format": distribution.Format,
-		}
-		maps.Copy(fileLogData, logData)
-
-		err := api.filesAPIClient.MarkFilePublished(ctx, filepath, filesAPISDK.Headers{Authorization: accessToken})
-		if err != nil {
-			log.Error(ctx, "failed to publish file", err, fileLogData)
-
-			if strings.Contains(err.Error(), "FileStateError") ||
-				strings.Contains(err.Error(), "file is not set as publishable") ||
-				strings.Contains(err.Error(), "file state is not in state uploaded") {
-				filesAPIError = errs.ErrFileNotInCorrectState
-			}
-			lastError = err
-			continue
-		}
-
-		successCount++
-		log.Info(ctx, "successfully published file", fileLogData)
-	}
-
-	log.Info(ctx, "completed publishing distribution files", log.Data{
-		"total_files": totalFiles,
-		"successful":  successCount,
-		"failed":      totalFiles - successCount,
-	})
-
-	if filesAPIError != nil {
-		return filesAPIError
-	}
-
-	if lastError != nil {
-		return fmt.Errorf("one or more errors occurred while publishing files: %w", lastError)
-	}
-
-	return nil
 }
