@@ -18,7 +18,6 @@ var (
 	ErrAddDatasetAlreadyExists            = errors.New("dataset already exists")
 	ErrAddDatasetTitleAlreadyExists       = errors.New("dataset title already exists")
 	ErrDatasetTypeInvalid                 = errors.New("invalid dataset type")
-	ErrDatasetNotStatic                   = errors.New("dataset is not of type static")
 	ErrTypeMismatch                       = errors.New("type mismatch")
 	ErrAddUpdateDatasetBadRequest         = errors.New("failed to parse json body")
 	ErrConflictUpdatingInstance           = errors.New("conflict updating instance resource")
@@ -93,7 +92,6 @@ var (
 		ErrUnableToParseJSON:                  true,
 		ErrUnableToReadMessage:                true,
 		ErrTypeMismatch:                       true,
-		ErrDatasetNotStatic:                   true,
 		ErrDatasetTypeInvalid:                 true,
 		ErrInvalidVersion:                     true,
 		ErrInvalidDatasetTypeForEditionUpdate: true,
