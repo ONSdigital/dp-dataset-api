@@ -609,6 +609,62 @@ Feature: Dataset API
         """
     And the response header "ETag" should be "etag-test-item-2"
 
+  Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} for a non-existent dataset returns 404
+    When I GET "/datasets/non-existent-dataset/editions/hello/versions/1"
+    Then I should receive the following JSON response with status "404":
+        """
+        {
+            "errors": [
+                {
+                    "code": "dataset not found",
+                    "description": "dataset not found"
+                }
+            ]
+        }
+        """
+
+  Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} for a non-existent edition returns 404
+    When I GET "/datasets/population-estimates/editions/non-existent-edition/versions/1"
+    Then I should receive the following JSON response with status "404":
+        """
+        {
+            "errors": [
+                {
+                    "code": "edition not found",
+                    "description": "edition not found"
+                }
+            ]
+        }
+        """
+
+  Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} for an invalid version returns bad request
+    When I GET "/datasets/population-estimates/editions/hello/versions/invalid-version"
+    Then I should receive the following JSON response with status "400":
+        """
+        {
+            "errors": [
+                {
+                    "code": "invalid version requested",
+                    "description": "invalid version requested"
+                }
+            ]
+        }
+        """
+
+  Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} for a non-existent version returns 404
+    When I GET "/datasets/population-estimates/editions/hello/versions/1000"
+    Then I should receive the following JSON response with status "404":
+        """
+        {
+            "errors": [
+                {
+                    "code": "version not found",
+                    "description": "version not found"
+                }
+            ]
+        }
+        """
+
   Scenario: PUT versions for CMD dataset produces Kafka event and returns OK
     Given private endpoints are enabled
     And I am an admin user

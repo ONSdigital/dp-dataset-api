@@ -246,5 +246,27 @@ Feature: Dataset API
             }
             """
 
+    Scenario: GET /datasets/{id}/editions/{edition_id} for a non-existent dataset returns 404
+        When I GET "/datasets/non-existent-dataset/editions/january"
+        Then the HTTP status code should be "404"
+        And I should receive the following response:
+            """
+            dataset not found
+            """
 
-
+    Scenario: GET /datasets/{id}/editions/{edition_id} for a non-existent edition returns 404
+        Given I have these datasets:
+            """
+                [
+                    {
+                        "id": "population-estimates",
+                        "state": "published"
+                }
+            ]
+            """
+        When I GET "/datasets/population-estimates/editions/non-existent-edition"
+        Then the HTTP status code should be "404"
+        And I should receive the following response:
+            """
+            edition not found
+            """
