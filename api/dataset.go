@@ -160,7 +160,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 	b, err := func() ([]byte, error) {
 		attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
 		if attrsErr != nil {
-			handleDatasetAPIErr(ctx, attrsErr, w, logData)
+			return nil, attrsErr
 		}
 
 		dataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)

@@ -133,17 +133,13 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 	b, err := func() ([]byte, error) {
 		attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
 		if attrsErr != nil {
-			handleVersionAPIErr(ctx, attrsErr, w, logData)
+			return nil, attrsErr
 		}
 
 		var authorised bool
 		isStatic, err := api.dataStore.Backend.IsStaticDataset(ctx, datasetID)
 		if err != nil {
-			if err == errs.ErrDatasetNotFound {
-				handleVersionAPIErr(ctx, err, w, logData)
-			} else {
-				handleVersionAPIErr(ctx, errs.ErrInternalServer, w, logData)
-			}
+			return nil, err
 		}
 
 		if isStatic {
