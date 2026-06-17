@@ -995,6 +995,12 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if stateUpdate.State == models.PublishFailedState {
+		log.Error(ctx, "putState endpoint: publish_failed is not allowed for this endpoint", models.ErrVersionStateInvalid, log.Data{"state": stateUpdate.State})
+		handleVersionAPIErr(ctx, models.ErrVersionStateInvalid, w, logData)
+		return
+	}
+
 	// Create a version update with the target state
 	versionUpdate := &models.Version{
 		ID:    strconv.Itoa(versionID),

@@ -4786,7 +4786,7 @@ func TestPutStateReturnsOk(t *testing.T) {
 						  }
 						},
 						"release_date": "2025-01-15",
-						"state": "associated",
+						"state": "approved",
 						"distributions": [
 						  {
 							"title": "Full Dataset (CSV)",
@@ -5025,6 +5025,30 @@ func TestPutStateReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldContainSubstring, models.ErrVersionStateInvalid.Error())
+	})
+
+	Convey("When the request attempts to set state to publish_failed, return a bad request error", t, func() {
+		b := `{"state":"publish_failed"}`
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123-456/editions/678/versions/1/state", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{}
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, models.ErrVersionStateInvalid.Error())
+		So(len(mockedDataStore.UpdateStateStaticCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When the version is not found, return a not found error", t, func() {
@@ -5316,6 +5340,7 @@ func TestPutStateApproveDistributionFilesCheck(t *testing.T) {
 			application.Published,
 			application.Associated,
 			application.Approved,
+			application.PublishFailed,
 		}
 		transitions := []application.Transition{
 			{
@@ -5333,6 +5358,12 @@ func TestPutStateApproveDistributionFilesCheck(t *testing.T) {
 			{
 				Label:               "published",
 				TargetState:         application.Published,
+				AllowedSourceStates: []string{"approved", "publish_failed"},
+				Type:                "static",
+			},
+			{
+				Label:               "publish_failed",
+				TargetState:         application.PublishFailed,
 				AllowedSourceStates: []string{"approved"},
 				Type:                "static",
 			},
