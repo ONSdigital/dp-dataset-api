@@ -80,7 +80,7 @@ var authEntityData = &permissionsAPISDK.EntityData{
 }
 
 func setUpStatesTransitions() ([]State, []Transition) {
-	states := []State{Published, EditionConfirmed, Associated}
+	states := []State{Published, EditionConfirmed, Associated, Approved, PublishFailed}
 	transitions := []Transition{{
 		Label:               "published",
 		TargetState:         Published,
@@ -116,17 +116,22 @@ func setUpStatesTransitions() ([]State, []Transition) {
 		{
 			Label:               "published",
 			TargetState:         Published,
-			AllowedSourceStates: []string{"associated", "published", "edition-confirmed"},
+			AllowedSourceStates: []string{"approved", "publish_failed"},
 			Type:                "static",
 		}, {
 			Label:               "associated",
 			TargetState:         Associated,
-			AllowedSourceStates: []string{"edition-confirmed", "associated", "created"},
+			AllowedSourceStates: []string{"created", "associated", "approved"},
 			Type:                "static",
 		}, {
-			Label:               "edition-confirmed",
-			TargetState:         EditionConfirmed,
-			AllowedSourceStates: []string{"edition-confirmed", "completed", "published"},
+			Label:               "approved",
+			TargetState:         Approved,
+			AllowedSourceStates: []string{"associated"},
+			Type:                "static",
+		}, {
+			Label:               "publish_failed",
+			TargetState:         PublishFailed,
+			AllowedSourceStates: []string{"approved"},
 			Type:                "static",
 		},
 	}
@@ -336,7 +341,7 @@ func TestAmendVersionStaticSuccess(t *testing.T) {
 						},
 					},
 					ReleaseDate: "2017-12-12",
-					State:       models.EditionConfirmedState,
+					State:       models.AssociatedState,
 					ETag:        "12345",
 					Type:        "static",
 				}, nil
@@ -1738,6 +1743,142 @@ func TestPublishVersionDatabaseFails(t *testing.T) {
 		So(len(mockedDataStore.UpsertEditionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestPublishVersionFailedStatic(t *testing.T) {
+	t.Parallel()
+	Convey("When a static version publish fails while updating dataset, state transitions to publish_failed", t, func() {
+		currentVersion := &models.Version{
+			State:         models.ApprovedState,
+			Type:          models.Static.String(),
+			Distributions: &[]models.Distribution{{Format: "csv", DownloadURL: "uuid/1.csv"}},
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{HRef: "http://localhost:22000/datasets/123", ID: "123"},
+				Edition: &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2017", ID: "2017"},
+				Version: &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1", ID: "1"},
+				WebPage: &models.LinkObject{HRef: "/economy/datasets/123/editions/2017/versions/1"},
+			},
+		}
+
+		versionUpdate := &models.Version{
+			State:         models.PublishedState,
+			ReleaseDate:   "2024-12-31",
+			Version:       1,
+			ID:            "789",
+			Type:          models.Static.String(),
+			Distributions: &[]models.Distribution{{Format: "csv", DownloadURL: "uuid/1.csv"}},
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{HRef: "http://localhost:22000/datasets/123", ID: "123"},
+				Edition: &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2017", ID: "2017"},
+				Version: &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1", ID: "1"},
+				WebPage: &models.LinkObject{HRef: "/economy/datasets/123/editions/2017/versions/1"},
+			},
+		}
+
+		updatedStates := []string{}
+		generatorMock := &mocks.DownloadsGeneratorMock{GenerateFunc: func(context.Context, string, string, string, string) error { return nil }}
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(_ context.Context, _ string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{Next: &models.Dataset{Links: &models.DatasetLinks{LatestVersion: &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1", ID: "1"}}}, ID: "123"}, nil
+			},
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error { return errs.ErrDatasetNotFound },
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				return models.Static.String(), nil
+			},
+			UpdateStateStaticFunc: func(ctx context.Context, currentVersion *models.Version, updatedState *models.StateUpdate, eTagSelector string) (*models.Version, error) {
+				updatedStates = append(updatedStates, updatedState.State)
+				if updatedState.State == models.PublishedState {
+					return versionUpdate, nil
+				}
+				return &models.Version{State: models.PublishFailedState, Type: models.Static.String()}, nil
+			},
+		}
+
+		states, transitions := setUpStatesTransitions()
+		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
+		mockFilesAPIClient := &filesAPISDKMocks.ClienterMock{MarkFilePublishedFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) error { return nil }}
+		cloudflareMock := &cloudflareMocks.ClienterMock{PurgeByPrefixesFunc: func(ctx context.Context, prefixes []string) error { return nil }}
+		producerMock := &mocks.KafkaProducerMock{OutputFunc: func() chan kafka.BytesMessage { return make(chan kafka.BytesMessage, 1) }}
+		searchContentUpdated := SearchContentUpdatedProducer{Producer: producerMock}
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, &searchContentUpdated, cloudflareMock, false, nil, mockFilesAPIClient)
+
+		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "", authEntityData, "")
+
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "dataset not found")
+		So(updatedStates, ShouldResemble, []string{models.PublishedState, models.PublishFailedState})
+		So(len(mockedDataStore.UpdateStateStaticCalls()), ShouldEqual, 2)
+	})
+
+	Convey("When static publish fails while publishing distribution files, state is set to publish_failed", t, func() {
+		currentVersion := &models.Version{
+			State:        models.ApprovedState,
+			CollectionID: "3434",
+			Type:         models.Static.String(),
+			Distributions: &[]models.Distribution{
+				{Format: "csv", DownloadURL: "uuid/1.csv"},
+			},
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{HRef: "http://localhost:22000/datasets/123", ID: "123"},
+				Edition: &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2017", ID: "2017"},
+				Version: &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1", ID: "1"},
+				WebPage: &models.LinkObject{HRef: "/economy/datasets/123/editions/2017/versions/1"},
+			},
+		}
+
+		versionUpdate := &models.Version{
+			State:       models.PublishedState,
+			ReleaseDate: "2024-12-31",
+			Version:     1,
+			ID:          "789",
+			Type:        models.Static.String(),
+			Distributions: &[]models.Distribution{
+				{Format: "csv", DownloadURL: "uuid/1.csv"},
+			},
+			Links: &models.VersionLinks{
+				Dataset: &models.LinkObject{HRef: "http://localhost:22000/datasets/123", ID: "123"},
+				Edition: &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2017", ID: "2017"},
+				Version: &models.LinkObject{HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1", ID: "1"},
+				WebPage: &models.LinkObject{HRef: "/economy/datasets/123/editions/2017/versions/1"},
+			},
+		}
+
+		updatedStates := []string{}
+		generatorMock := &mocks.DownloadsGeneratorMock{
+			GenerateFunc: func(context.Context, string, string, string, string) error {
+				return nil
+			},
+		}
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				return models.Static.String(), nil
+			},
+			UpdateStateStaticFunc: func(ctx context.Context, currentVersion *models.Version, updatedState *models.StateUpdate, eTagSelector string) (*models.Version, error) {
+				updatedStates = append(updatedStates, updatedState.State)
+				return &models.Version{State: updatedState.State, Type: models.Static.String()}, nil
+			},
+		}
+
+		states, transitions := setUpStatesTransitions()
+		stateMachine := NewStateMachine(testContext, states, transitions, store.DataStore{Backend: mockedDataStore})
+
+		mockFilesAPIClient := &filesAPISDKMocks.ClienterMock{
+			MarkFilePublishedFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) error {
+				return errors.New("file not registered")
+			},
+		}
+
+		smDS := GetStateMachineAPIWithCMDMocks(mockedDataStore, generatorMock, stateMachine, nil, nil, false, nil, mockFilesAPIClient)
+
+		err := PublishVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "", authEntityData, "")
+
+		So(err, ShouldNotBeNil)
+		So(err.Error(), ShouldContainSubstring, "file metadata not found")
+		So(updatedStates, ShouldResemble, []string{models.PublishFailedState})
+		So(len(mockedDataStore.UpdateStateStaticCalls()), ShouldEqual, 1)
 	})
 }
 
