@@ -112,7 +112,7 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 		models.CantabularFlexibleTable: mockedGeneratedDownloads,
 	}
 
-	states := []application.State{application.Published, application.EditionConfirmed, application.Associated}
+	states := []application.State{application.Published, application.EditionConfirmed, application.Associated, application.Approved, application.PublishFailed}
 	transitions := []application.Transition{{
 		Label:               "published",
 		TargetState:         application.Published,
@@ -167,19 +167,25 @@ func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads D
 		{
 			Label:               "associated",
 			TargetState:         application.Associated,
-			AllowedSourceStates: []string{"created"},
+			AllowedSourceStates: []string{"created", "associated", "approved"},
 			Type:                "static",
 		},
 		{
 			Label:               "published",
 			TargetState:         application.Published,
-			AllowedSourceStates: []string{"created", "associated", "published"},
+			AllowedSourceStates: []string{"approved", "publish_failed"},
 			Type:                "static",
 		},
 		{
-			Label:               "associated",
-			TargetState:         application.Associated,
-			AllowedSourceStates: []string{"created", "associated"},
+			Label:               "approved",
+			TargetState:         application.Approved,
+			AllowedSourceStates: []string{"associated"},
+			Type:                "static",
+		},
+		{
+			Label:               "publish_failed",
+			TargetState:         application.PublishFailed,
+			AllowedSourceStates: []string{"approved"},
 			Type:                "static",
 		}}
 
