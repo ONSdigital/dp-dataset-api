@@ -19,3 +19,8 @@ var Approved = State{
 	Name:      "approved",
 	EnterFunc: ApproveVersion,
 }
+
+var PublishFailed = State{
+	Name:      "publish_failed",
+	EnterFunc: PublishFailedVersion,
+}

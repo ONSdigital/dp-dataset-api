@@ -32,12 +32,20 @@ func TestCastStateToState(t *testing.T) {
 		So(publishedOk, ShouldBeTrue)
 
 		associatedState, associatedOk := castStateToState("associated")
-		So(associatedState.Name, ShouldEqual, associatedState.Name)
+		So(associatedState.Name, ShouldEqual, Associated.Name)
 		So(associatedOk, ShouldBeTrue)
 
 		editionConfirmedState, editionConfirmedOk := castStateToState("edition-confirmed")
 		So(editionConfirmedState.Name, ShouldEqual, EditionConfirmed.Name)
 		So(editionConfirmedOk, ShouldBeTrue)
+
+		approvedState, approvedOk := castStateToState("approved")
+		So(approvedState.Name, ShouldEqual, Approved.Name)
+		So(approvedOk, ShouldBeTrue)
+
+		publishFailedState, publishFailedOk := castStateToState("publish_failed")
+		So(publishFailedState.Name, ShouldEqual, PublishFailed.Name)
+		So(publishFailedOk, ShouldBeTrue)
 
 		nilState, ok := castStateToState("")
 		So(nilState, ShouldBeNil)
