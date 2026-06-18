@@ -1183,6 +1183,15 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 					ETag:        testETag,
 				}, nil
 			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					ID: "123",
+					Next: &models.Dataset{
+						Links: &models.DatasetLinks{},
+						State: models.CreatedState,
+					},
+				}, nil
+			},
 			UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
 				So(isLocked, ShouldBeTrue)
 				return "", nil
@@ -1227,6 +1236,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 				So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 				So(auditServiceMock.RecordVersionAuditEventCalls(), ShouldHaveLength, 1)
 			})
@@ -1493,6 +1503,18 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 					EditionTitle: "Test Title",
 					State:        models.EditionConfirmedState,
 				}, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					ID: "123",
+					Next: &models.Dataset{
+						Links: &models.DatasetLinks{},
+						State: models.CreatedState,
+					},
+				}, nil
+			},
+			UpdateDatasetFunc: func(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error {
+				return nil
 			},
 		}
 
@@ -5556,6 +5578,9 @@ func TestPutVersionSavesPreviousEditionID(t *testing.T) {
 				capturedVersionUpdate = versionUpdate
 				return testETag, nil
 			},
+			UpdateDatasetFunc: func(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error {
+				return nil
+			},
 			AcquireVersionsLockFunc: func(context.Context, string) (string, error) {
 				return testLockID, nil
 			},
@@ -5728,6 +5753,9 @@ func TestPutVersionSavesPreviousEditionID(t *testing.T) {
 			},
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return &models.Version{Type: models.Static.String()}, nil
+			},
+			UpdateDatasetFunc: func(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error {
+				return nil
 			},
 			UpdateVersionStaticFunc: func(ctx context.Context, currentVersion *models.Version, versionUpdate *models.Version, eTagSelector string) (string, error) {
 				capturedVersionUpdate = versionUpdate

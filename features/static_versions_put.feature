@@ -948,7 +948,7 @@ Feature: Static Dataset Versions PUT API
             }
             """
 
-    Scenario: PUT updates static version edition ID and updates webpage link
+    Scenario: PUT updates static version edition ID and updates webpage link and dataset latest version link
       Given I have a static dataset with version:
           """
           {
@@ -1053,6 +1053,30 @@ Feature: Static Dataset Versions PUT API
               "type": "static"
           }
           """
+        And I GET "/datasets/edition-change-dataset"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "id": "edition-change-dataset",
+                "title": "Change topic in version link test",
+                "state": "associated",
+                "type": "static",
+                "topics": [
+                    "businessindustryandtrade-topic-id"
+                ],
+                "links": {
+                    "editions": {
+                        "href": "/datasets/edition-change-dataset/editions"
+                    },
+                    "latest_version": {
+                        "href": "/datasets/edition-change-dataset/editions/2026-update/versions/1"
+                    },
+                    "self": {
+                        "href": "/datasets/edition-change-dataset"
+                    }
+                }
+            }
+            """
 
     Scenario: PUT updates static dataset version edition and saves previous edition ID
         Given I have a static dataset with version:
