@@ -696,7 +696,7 @@ Feature: Static Dataset Versions PUT API
     Scenario: PUT succeeds when distributions contain valid formats
         Given private endpoints are enabled
         And I am an admin user
-        When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
+        When I PUT "/datasets/static-dataset-update/editions/2026/versions/1"
             """
             {
                 "distributions": [
@@ -1069,7 +1069,8 @@ Feature: Static Dataset Versions PUT API
                         "href": "/datasets/edition-change-dataset/editions"
                     },
                     "latest_version": {
-                        "href": "/datasets/edition-change-dataset/editions/2026-update/versions/1"
+                        "href": "/datasets/edition-change-dataset/editions/2026-update/versions/1",
+                        "id: "1"
                     },
                     "self": {
                         "href": "/datasets/edition-change-dataset"
