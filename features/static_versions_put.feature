@@ -862,8 +862,8 @@ Feature: Static Dataset Versions PUT API
                 "quality_designation": "accredited-official",
                 "release_date": "2025-03-06T14:49:23.354Z",
                 "type": "static",
-                "edition": "march",
-                "dataset_id": "test-static-dataset",
+                "edition": "2025",
+                "dataset_id": "static-dataset-update",
                 "usage_notes": [
                     {
                         "title": "This dataset",
