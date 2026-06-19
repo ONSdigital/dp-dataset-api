@@ -11,6 +11,8 @@ services:
       - -race
       - -coverpkg=github.com/ONSdigital/dp-dataset-api/...
       - -component
+      - -test.run=TestComponent/PUT_succeeds_when_distributions_contain_valid_formats
+      - features/static_versions_put.feature
     volumes:
       - ../../:/dp-dataset-api
       - /var/run/docker.sock:/var/run/docker.sock

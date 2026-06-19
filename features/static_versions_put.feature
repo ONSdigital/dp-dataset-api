@@ -696,7 +696,7 @@ Feature: Static Dataset Versions PUT API
     Scenario: PUT succeeds when distributions contain valid formats
         Given private endpoints are enabled
         And I am an admin user
-        When I PUT "/datasets/static-dataset-update/editions/2026/versions/1"
+        When I PUT "/datasets/static-dataset-update/editions/2025/versions/1"
             """
             {
                 "distributions": [
@@ -954,7 +954,7 @@ Feature: Static Dataset Versions PUT API
           {
               "dataset": {
                   "id": "edition-change-dataset",
-                  "title": "Change topic in version link test",
+                  "title": "Change edition in version link test",
                   "state": "associated",
                   "type": "static",
                   "topics": [
@@ -1055,27 +1055,35 @@ Feature: Static Dataset Versions PUT API
           """
         And I GET "/datasets/edition-change-dataset"
         Then I should receive the following JSON response with status "200":
-            """
+             """
             {
+              "id": "edition-change-dataset",
+              "current": {
                 "id": "edition-change-dataset",
-                "title": "Change topic in version link test",
+                "last_updated": "0001-01-01T00:00:00Z",
                 "state": "associated",
-                "type": "static",
+                "title": "Change edition in version link test",
                 "topics": [
-                    "businessindustryandtrade-topic-id"
+                  "businessindustryandtrade-topic-id"
                 ],
+                "type": "static"
+              },
+              "next": {
+                "id": "edition-change-dataset",
+                "last_updated": "0001-01-01T00:00:00Z",
                 "links": {
-                    "editions": {
-                        "href": "/datasets/edition-change-dataset/editions"
-                    },
-                    "latest_version": {
-                        "href": "/datasets/edition-change-dataset/editions/2026-update/versions/1",
-                        "id: "1"
-                    },
-                    "self": {
-                        "href": "/datasets/edition-change-dataset"
-                    }
-                }
+                  "latest_version": {
+                    "href": "/datasets/edition-change-dataset/editions/2026-update/versions/1",
+                    "id": "1"
+                  }
+                },
+                "state": "associated",
+                "title": "Change edition in version link test",
+                "topics": [
+                  "businessindustryandtrade-topic-id"
+                ],
+                "type": "static"
+              }
             }
             """
 
