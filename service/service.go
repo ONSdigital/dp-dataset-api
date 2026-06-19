@@ -98,7 +98,7 @@ func GetListStaticTransitions() []application.Transition {
 	publishedTransition := application.Transition{
 		Label:               "published",
 		TargetState:         application.Published,
-		AllowedSourceStates: []string{"approved"},
+		AllowedSourceStates: []string{"approved", "publish_failed"},
 		Type:                "static",
 	}
 
@@ -116,8 +116,15 @@ func GetListStaticTransitions() []application.Transition {
 		Type:                "static",
 	}
 
+	publishFailedTransition := application.Transition{
+		Label:               "publish_failed",
+		TargetState:         application.PublishFailed,
+		AllowedSourceStates: []string{"approved"},
+		Type:                "static",
+	}
+
 	return []application.Transition{publishedTransition,
-		associatedTransition, approvedTransition}
+		associatedTransition, approvedTransition, publishFailedTransition}
 }
 
 func GetListCantabularTransitions() []application.Transition {
@@ -174,7 +181,7 @@ func GetListMultivariateCantabularTransitions() []application.Transition {
 
 func GetStateMachine(ctx context.Context, dataStore store.DataStore) *application.StateMachine {
 	stateMachineInit.Do(func() {
-		states := []application.State{application.Published, application.EditionConfirmed, application.Associated}
+		states := []application.State{application.Published, application.EditionConfirmed, application.Associated, application.PublishFailed}
 		transitions := slices.Concat(GetListTransitions(), GetListCantabularTransitions(), GetListMultivariateCantabularTransitions(), GetListStaticTransitions())
 		stateMachine = application.NewStateMachine(ctx, states, transitions, dataStore)
 	})

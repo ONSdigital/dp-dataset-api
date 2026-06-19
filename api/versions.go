@@ -69,7 +69,7 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 		var state string
 		attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
 		if attrsErr != nil {
-			handleVersionAPIErr(ctx, attrsErr, w, logData)
+			return nil, 0, attrsErr
 		}
 
 		// Check if dataset exists
@@ -210,11 +210,6 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 
 		isStatic, err := api.dataStore.Backend.IsStaticDataset(ctx, datasetID)
 		if err != nil {
-			if err == errs.ErrDatasetNotFound {
-				http.Error(w, err.Error(), http.StatusNotFound)
-			} else {
-				http.Error(w, errs.ErrInternalServer.Error(), http.StatusInternalServerError)
-			}
 			return nil, err
 		}
 
@@ -278,7 +273,7 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 		return version, nil
 	}()
 	if getVersionErr != nil {
-		responseError := models.NewError(getVersionErr, getVersionErr.Error(), "internal error")
+		responseError := models.NewError(getVersionErr, getVersionErr.Error(), getVersionErr.Error())
 		return nil, models.NewErrorResponse(getVersionAPIErrStatusCode(getVersionErr), nil, responseError)
 	}
 
@@ -517,7 +512,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		Groups: authEntityData.EntityData.Groups,
 	}
 
-	amendedVersion, err = api.smDatasetAPI.AmendVersion(r.Context(), vars, version, &permissionEntity, fetchAccessTokenFromHeader(r))
+	amendedVersion, err = api.smDatasetAPI.AmendVersion(ctx, vars, version, &permissionEntity, fetchAccessTokenFromHeader(r))
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, data)
 		return
@@ -1018,6 +1013,12 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 
 	if err = models.CheckState("version", stateUpdate.State); err != nil {
 		log.Error(ctx, "putState endpoint: state is invalid", err, log.Data{"state": stateUpdate.State})
+		handleVersionAPIErr(ctx, models.ErrVersionStateInvalid, w, logData)
+		return
+	}
+
+	if stateUpdate.State == models.PublishFailedState {
+		log.Error(ctx, "putState endpoint: publish_failed is not allowed for this endpoint", models.ErrVersionStateInvalid, log.Data{"state": stateUpdate.State})
 		handleVersionAPIErr(ctx, models.ErrVersionStateInvalid, w, logData)
 		return
 	}

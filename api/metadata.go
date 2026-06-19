@@ -35,7 +35,7 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 		}
 		attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
 		if attrsErr != nil {
-			handleDatasetAPIErr(ctx, attrsErr, w, logData)
+			return nil, attrsErr
 		}
 
 		datasetDoc, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
@@ -137,35 +137,30 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 			err = utils.RewriteMetadataLinks(ctx, metaDataDoc.Links, datasetLinksBuilder)
 			if err != nil {
 				log.Error(ctx, "getMetadata endpoint: failed to rewrite metadata links", err, logData)
-				handleMetadataErr(w, err)
 				return nil, err
 			}
 
 			metaDataDoc.Dimensions, err = utils.RewriteDimensions(ctx, metaDataDoc.Dimensions, datasetLinksBuilder, codeListLinksBuilder)
 			if err != nil {
 				log.Error(ctx, "getMetadata endpoint: failed to rewrite metadata dimensions", err, logData)
-				handleMetadataErr(w, err)
 				return nil, err
 			}
 
 			err = utils.RewriteDatasetLinks(ctx, metaDataDoc.DatasetLinks, datasetLinksBuilder)
 			if err != nil {
 				log.Error(ctx, "getMetadata endpoint: failed to rewrite dataset links", err, logData)
-				handleMetadataErr(w, err)
 				return nil, err
 			}
 
 			err = utils.RewriteDownloadLinks(ctx, metaDataDoc.Downloads, api.urlBuilder.GetDownloadServiceURL())
 			if err != nil {
 				log.Error(ctx, "getMetadata endpoint: failed to rewrite download links", err, logData)
-				handleMetadataErr(w, err)
 				return nil, err
 			}
 
 			metaDataDoc.Distributions, err = utils.RewriteDistributions(ctx, metaDataDoc.Distributions, api.urlBuilder.GetDownloadServiceURL())
 			if err != nil {
 				log.Error(ctx, "getMetadata endpoint: failed to rewrite distributions DownloadURL", err, logData)
-				handleMetadataErr(w, err)
 				return nil, err
 			}
 		}

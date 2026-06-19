@@ -563,16 +563,22 @@ func PublishVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 	authEntityData *sdk.EntityData,
 	accessToken string) error {
 	data := versionDetails.baseLogData()
+	isStatic := currentVersion.Type == models.Static.String()
 	log.Info(ctx, "putVersion endpoint (publishVersion): beginning transition to published", data)
 
 	versionUpdate, err := PublishVersionInfo(ctx, smDS, currentVersion, versionUpdate, versionDetails, authEntityData, accessToken)
 	if err != nil {
 		log.Error(ctx, "State machine - Publish: UpdateVersionInfo : failed to update the version", err, data)
+		if isStatic {
+			if setStateErr := PublishFailedVersion(ctx, smDS, currentVersion, nil, versionDetails, hasDownloads, authEntityData, accessToken); setStateErr != nil {
+				log.Error(ctx, "State machine - Publish: PublishFailedVersion : failed to set version state to publish_failed", setStateErr, data)
+			}
+		}
 		return err
 	}
 
 	if hasDownloads != trueStringified {
-		if versionUpdate.Type != models.Static.String() {
+		if !isStatic {
 			log.Info(ctx, "attempting to publish edition", data)
 
 			err = PublishEdition(ctx, smDS, versionUpdate, versionDetails, data)
@@ -599,8 +605,33 @@ func PublishVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 		err = PublishDataset(ctx, smDS, currentVersion, versionUpdate, versionDetails, data)
 		if err != nil {
 			log.Error(ctx, "State machine - Publish: PublishDataset : failed to publish dataset", err, data)
+			if isStatic {
+				if setStateErr := PublishFailedVersion(ctx, smDS, versionUpdate, nil, versionDetails, hasDownloads, authEntityData, accessToken); setStateErr != nil {
+					log.Error(ctx, "State machine - Publish: PublishFailedVersion : failed to set version state to publish_failed", setStateErr, data)
+				}
+			}
 			return err
 		}
+	}
+
+	return nil
+}
+
+// PublishFailedVersion is the enter function for the publish-failed state.
+// It updates the version state to publish-failed.
+func PublishFailedVersion(ctx context.Context, smDS *StateMachineDatasetAPI, currentVersion *models.Version,
+	_ *models.Version,
+	_ VersionDetails,
+	_ string,
+	_ *sdk.EntityData,
+	_ string) error {
+	eTag := headers.IfMatchAnyETag
+	if currentVersion.ETag != "" {
+		eTag = currentVersion.ETag
+	}
+
+	if _, err := smDS.DataStore.Backend.UpdateStateStatic(ctx, currentVersion, &models.StateUpdate{State: models.PublishFailedState}, eTag); err != nil {
+		return err
 	}
 
 	return nil
@@ -629,12 +660,12 @@ func UpdateVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 		if versionUpdate != nil {
 			if versionUpdate.Type == models.Static.String() {
 				if _, errVersion := smDS.DataStore.Backend.UpdateVersionStatic(ctx, currentVersion, versionUpdate, eTag); errVersion != nil {
-					log.Error(ctx, "putVersion endpoint: UpdateVersionStatic returned an error", err)
+					log.Error(ctx, "putVersion endpoint: UpdateVersionStatic returned an error", errVersion)
 					return errVersion
 				}
 			} else {
 				if _, errVersion := smDS.DataStore.Backend.UpdateVersion(ctx, currentVersion, versionUpdate, eTag); errVersion != nil {
-					log.Error(ctx, "putVersion endpoint: UpdateVersion returned an error", err)
+					log.Error(ctx, "putVersion endpoint: UpdateVersion returned an error", errVersion)
 					return errVersion
 				}
 			}
@@ -706,7 +737,7 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 
 				updatedV, errVersion := smDS.DataStore.Backend.UpdateStateStatic(ctx, currentVersion, &models.StateUpdate{State: "published"}, eTag)
 				if errVersion != nil {
-					log.Error(ctx, "putVersion endpoint: UpdateVersionStatic returned an error", err)
+					log.Error(ctx, "putVersion endpoint: UpdateVersionStatic returned an error", errVersion)
 					return nil, errVersion
 				}
 
@@ -992,6 +1023,9 @@ func publishFile(ctx context.Context, filesAPIClient filesAPISDK.Clienter, distr
 			"distribution_title":  distribution.Title,
 			"distribution_format": distribution.Format,
 		})
+
+		// Default to internal server error if no specific error is matched
+		filesAPIError = errs.ErrInternalServer
 
 		if strings.Contains(err.Error(), "FileNotRegistered") ||
 			strings.Contains(err.Error(), "file not registered") ||
