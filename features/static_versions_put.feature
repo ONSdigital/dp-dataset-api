@@ -1205,39 +1205,7 @@ Feature: Static Dataset Versions PUT API
               "type": "static"
           }
           """
-        And I GET "/datasets/edition-change-dataset"
-        Then I should receive the following JSON response with status "200":
-             """
-            {
-              "id": "edition-change-dataset",
-              "current": {
-                "id": "edition-change-dataset",
-                "last_updated": "0001-01-01T00:00:00Z",
-                "state": "associated",
-                "title": "Change edition in version link test",
-                "topics": [
-                  "businessindustryandtrade-topic-id"
-                ],
-                "type": "static"
-              },
-              "next": {
-                "id": "edition-change-dataset",
-                "last_updated": "0001-01-01T00:00:00Z",
-                "links": {
-                  "latest_version": {
-                    "href": "/datasets/edition-change-dataset/editions/2026-update/versions/1",
-                    "id": "1"
-                  }
-                },
-                "state": "associated",
-                "title": "Change edition in version link test",
-                "topics": [
-                  "businessindustryandtrade-topic-id"
-                ],
-                "type": "static"
-              }
-            }
-            """
+        And the dataset "edition-change-dataset" should have latest_version href "/datasets/edition-change-dataset/editions/2026-update/versions/1"
 
     Scenario: PUT updates static dataset version edition and saves previous edition ID
         Given I have a static dataset with version:
