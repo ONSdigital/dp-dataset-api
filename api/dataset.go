@@ -44,9 +44,10 @@ var (
 
 	// errors that should return a 409 status
 	datasetsConflict = map[error]bool{
-		errs.ErrAddDatasetAlreadyExists:      true,
-		errs.ErrAddDatasetTitleAlreadyExists: true,
-		errs.ErrPublishedDatasetTopicChange:  true,
+		errs.ErrCannotChangeIDForPublishedDataset: true,
+		errs.ErrAddDatasetAlreadyExists:           true,
+		errs.ErrAddDatasetTitleAlreadyExists:      true,
+		errs.ErrPublishedDatasetTopicChange:       true,
 	}
 )
 
@@ -563,90 +564,139 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 
 		dataset.Type = currentDataset.Next.Type
 
-		if dataset.Type == models.Static.String() && dataset.ID != "" {
-			if err := utils.ValidateIDNoSpaces(dataset.ID); err != nil {
-				log.Error(ctx, "putDataset endpoint: dataset ID in request body contains spaces", err, data)
-				return nil, err
-			}
-		}
 		models.CleanDataset(dataset)
-
 		if err = models.ValidateDataset(dataset); err != nil {
 			log.Error(ctx, "putDataset endpoint: failed validation check to update dataset", err, data)
 			return nil, err
 		}
 
 		if dataset.Type == models.Static.String() {
-			datasetTitleExists, err := api.dataStore.Backend.CheckDatasetTitleExist(ctx, dataset.Title)
-			if err != nil {
-				log.Error(ctx, "putDataset endpoint: error checking if dataset title exists", err, data)
+			if err := utils.ValidateIDNoSpaces(dataset.ID); err != nil {
+				log.Error(ctx, "putDataset endpoint: dataset ID in request body contains spaces", err, data)
 				return nil, err
 			}
 
-			if datasetTitleExists && dataset.Title != currentDataset.Next.Title {
-				log.Error(ctx, "putDataset endpoint: unable to update a dataset with title that already exists", errs.ErrAddDatasetTitleAlreadyExists, data)
-				return nil, errs.ErrAddDatasetTitleAlreadyExists
+			if dataset.Title != currentDataset.Next.Title {
+				datasetTitleExists, err := api.dataStore.Backend.CheckDatasetTitleExist(ctx, dataset.Title)
+				if err != nil {
+					log.Error(ctx, "putDataset endpoint: error checking if dataset title exists", err, data)
+					return nil, err
+				}
+
+				if datasetTitleExists {
+					log.Error(ctx, "putDataset endpoint: dataset title already exists in another dataset", errs.ErrAddDatasetTitleAlreadyExists, data)
+					return nil, errs.ErrAddDatasetTitleAlreadyExists
+				}
 			}
 
-			if currentDataset.Current != nil && currentDataset.Current.State == models.PublishedState &&
-				len(currentDataset.Current.Topics) > 0 && len(dataset.Topics) > 0 &&
-				currentDataset.Current.Topics[0] != dataset.Topics[0] {
+			isPublished := currentDataset.Current != nil && currentDataset.Current.State == models.PublishedState
+
+			canonicalTopic := currentDataset.Next.Topics[0]
+			if isPublished {
+				canonicalTopic = currentDataset.Current.Topics[0]
+			}
+
+			isCanonicalTopicChanged := dataset.Topics[0] != canonicalTopic
+			isIDChanged := dataset.ID != currentDataset.ID
+
+			if isPublished && isCanonicalTopicChanged {
 				log.Error(ctx, "putDataset endpoint: unable to update canonical topic of a published dataset", errs.ErrPublishedDatasetTopicChange, data)
 				return nil, errs.ErrPublishedDatasetTopicChange
 			}
 
-			if currentDataset.Next != nil && currentDataset.Current == nil && currentDataset.Next.State != models.PublishedState {
-				if len(currentDataset.Next.Topics) > 0 && len(dataset.Topics) > 0 && currentDataset.Next.Topics[0] != dataset.Topics[0] {
-					state := ""
-					versions, _, err := api.dataStore.Backend.GetAllStaticVersions(ctx, datasetID, state, 0, 100)
-					if err != nil {
-						log.Error(ctx, "putDataset endpoint: error getting versions for dataset", err, data)
-						return nil, err
-					}
+			if isPublished && isIDChanged {
+				log.Error(ctx, "putDataset endpoint: unable to update ID of a published dataset", errs.ErrCannotChangeIDForPublishedDataset, data)
+				return nil, errs.ErrCannotChangeIDForPublishedDataset
+			}
 
-					if len(versions) != 0 {
+			if !isPublished && isIDChanged {
+				err := api.dataStore.Backend.CheckDatasetExists(ctx, dataset.ID, "")
+				if err == nil {
+					log.Error(ctx, "putDataset endpoint: dataset with this ID already exists", errs.ErrAddDatasetAlreadyExists, data)
+					return nil, errs.ErrAddDatasetAlreadyExists
+				}
+				if err != errs.ErrDatasetNotFound {
+					log.Error(ctx, "putDataset endpoint: error checking if dataset with this ID already exists", err, data)
+					return nil, err
+				}
+			}
+
+			if !isPublished && (isCanonicalTopicChanged || isIDChanged) {
+				versions, _, err := api.dataStore.Backend.GetVersionsStaticNoLimit(ctx, datasetID, "")
+				if err != nil && err != errs.ErrVersionsNotFound {
+					log.Error(ctx, "putDataset endpoint: error getting versions for dataset", err, data)
+					return nil, err
+				}
+
+				if len(versions) > 0 {
+					topicSlug := ""
+					if isCanonicalTopicChanged {
 						topicSDKHeaders := topicAPISDK.Headers{
 							ServiceAuthToken: fetchAccessTokenFromHeader(r),
 						}
 						topic, err := api.topicAPIClient.GetTopicPrivate(ctx, topicSDKHeaders, dataset.Topics[0])
 						if err != nil {
-							log.Error(ctx, "putVersion endpoint: failed to get topic from Topic API", err, data)
+							log.Error(ctx, "putDataset endpoint: failed to get topic from Topic API", err, data)
 							return nil, err
 						}
-						for vCount := range versions {
-							currentVersion := versions[vCount]
-							updatedVersion := new(models.Version)
-							*updatedVersion = *versions[vCount]
+						topicSlug = topic.Current.Slug
+					} else {
+						topicSlug = strings.Split(strings.TrimPrefix(versions[0].Links.WebPage.HRef, "/"), "/")[0]
+					}
 
-							if updatedVersion.Links == nil {
-								updatedVersion.Links = &models.VersionLinks{}
-							}
-							if updatedVersion.Links.WebPage == nil {
-								updatedVersion.Links.WebPage = &models.LinkObject{}
-							}
+					for i := range versions {
+						currentVersion := versions[i]
+						updatedVersion := *currentVersion
+						updatedVersion.Links = models.GenerateVersionLinksStatic(topicSlug, dataset.ID, updatedVersion.Edition, updatedVersion.Version)
 
-							updatedVersion.Links.WebPage.HRef = fmt.Sprintf(
-								"%s/datasets/%s/editions/%s/versions/%d",
-								topic.Current.Slug,
-								datasetID,
-								currentVersion.Edition,
-								currentVersion.Version,
-							)
-
-							_, err := api.dataStore.Backend.UpdateVersionStatic(ctx, currentVersion, updatedVersion, currentVersion.ETag)
-							if err != nil {
-								log.Error(ctx, "putDataset endpoint: failed to update version", err, data)
-								return nil, err
-							}
+						_, err := api.dataStore.Backend.UpdateVersionStatic(ctx, currentVersion, &updatedVersion, currentVersion.ETag)
+						if err != nil {
+							log.Error(ctx, "putDataset endpoint: failed to update version", err, data)
+							return nil, err
 						}
 					}
 				}
+			}
+
+			if isIDChanged {
+				updatedLinks := &models.DatasetLinks{
+					Editions: &models.LinkObject{
+						HRef: fmt.Sprintf("/datasets/%s/editions", dataset.ID),
+					},
+					Self: &models.LinkObject{
+						HRef: fmt.Sprintf("/datasets/%s", dataset.ID),
+					},
+				}
+
+				if dataset.Links != nil && dataset.Links.LatestVersion != nil {
+					updatedLinks.LatestVersion = &models.LinkObject{
+						ID:   dataset.Links.LatestVersion.ID,
+						HRef: strings.ReplaceAll(dataset.Links.LatestVersion.HRef, fmt.Sprintf("/datasets/%s/", datasetID), fmt.Sprintf("/datasets/%s/", dataset.ID)),
+					}
+				}
+
+				dataset.Links = updatedLinks
 			}
 		}
 
 		if dataset.State == models.PublishedState {
 			if err := api.publishDataset(ctx, currentDataset, nil); err != nil {
 				log.Error(ctx, "putDataset endpoint: failed to update dataset document to published", err, data)
+				return nil, err
+			}
+		} else if dataset.Type == models.Static.String() && dataset.ID != currentDataset.ID {
+			renamedDatasetUpdate := &models.DatasetUpdate{
+				ID:   dataset.ID,
+				Next: dataset,
+			}
+
+			if err := api.dataStore.Backend.UpsertDataset(ctx, dataset.ID, renamedDatasetUpdate); err != nil {
+				log.Error(ctx, "putDataset endpoint: failed to upsert renamed dataset", err, data)
+				return nil, err
+			}
+
+			if err := api.dataStore.Backend.DeleteDataset(ctx, datasetID); err != nil {
+				log.Error(ctx, "putDataset endpoint: failed to delete old dataset document after renaming", err, data)
 				return nil, err
 			}
 		} else {
