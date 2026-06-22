@@ -862,8 +862,8 @@ Feature: Static Dataset Versions PUT API
                 "quality_designation": "accredited-official",
                 "release_date": "2025-03-06T14:49:23.354Z",
                 "type": "static",
-                "edition": "march",
-                "dataset_id": "test-static-dataset",
+                "edition": "2025",
+                "dataset_id": "static-dataset-update",
                 "usage_notes": [
                     {
                         "title": "This dataset",
@@ -1100,13 +1100,13 @@ Feature: Static Dataset Versions PUT API
             }
             """
 
-    Scenario: PUT updates static version edition ID and updates webpage link
+    Scenario: PUT successfully updates edition ID and all associated links
       Given I have a static dataset with version:
           """
           {
               "dataset": {
                   "id": "edition-change-dataset",
-                  "title": "Change topic in version link test",
+                  "title": "Change edition in version link test",
                   "state": "associated",
                   "type": "static",
                   "topics": [
@@ -1205,6 +1205,7 @@ Feature: Static Dataset Versions PUT API
               "type": "static"
           }
           """
+        And the dataset "edition-change-dataset" should have latest_version href "/datasets/edition-change-dataset/editions/2026-update/versions/1"
 
     Scenario: PUT updates static dataset version edition and saves previous edition ID
         Given I have a static dataset with version:

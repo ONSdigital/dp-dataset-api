@@ -401,6 +401,15 @@ func createDatasetUpdateQuery(ctx context.Context, id string, dataset *models.Da
 				updates["next.links.taxonomy.href"] = dataset.Links.Taxonomy.HRef
 			}
 		}
+
+		if dataset.Links.LatestVersion != nil {
+			if dataset.Links.LatestVersion.HRef != "" {
+				updates["next.links.latest_version.href"] = dataset.Links.LatestVersion.HRef
+			}
+			if dataset.Links.LatestVersion.ID != "" {
+				updates["next.links.latest_version.id"] = dataset.Links.LatestVersion.ID
+			}
+		}
 	}
 
 	if dataset.Methodologies != nil {

@@ -470,6 +470,29 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 				if version.Edition != "" {
 					version.PreviousEditionId = append([]string{}, existingVersion.PreviousEditionId...)
 					version.PreviousEditionId = append(version.PreviousEditionId, existingVersion.Edition)
+
+					dataset, err := api.dataStore.Backend.GetDataset(ctx, version.DatasetID)
+					if err != nil {
+						handleVersionAPIErr(ctx, err, w, data)
+						return
+					}
+
+					latestVersionLink := &models.LinkObject{
+						HRef: fmt.Sprintf("/datasets/%s/editions/%s/versions/%s", dataset.ID, version.Edition, versionStr),
+						ID:   versionStr,
+					}
+
+					datasetUpdate := &models.Dataset{
+						Links: &models.DatasetLinks{
+							LatestVersion: latestVersionLink,
+						},
+					}
+
+					if err := api.dataStore.Backend.UpdateDataset(ctx, dataset.ID, datasetUpdate, dataset.Next.State); err != nil {
+						log.Error(ctx, "putVersion endpoint: failed to update dataset resource", err, data)
+						handleVersionAPIErr(ctx, err, w, data)
+						return
+					}
 				}
 			}
 
