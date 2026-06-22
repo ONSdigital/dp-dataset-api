@@ -155,8 +155,8 @@ func processInConcurrentBatchesWithQueryParams(getBatch GenericBatchGetter, proc
 	if reqLimit <= 0 {
 		return errors.New("reqLimit must be a positive value")
 	}
-	if reqOffset <= 0 {
-		return errors.New("reqOffset must be a positive value")
+	if reqOffset < 0 {
+		return errors.New("reqOffset must be greater than or equal to 0")
 	}
 	if batchSize <= 0 {
 		return errors.New("batchSize must be a positive value")

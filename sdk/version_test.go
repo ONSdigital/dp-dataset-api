@@ -679,14 +679,14 @@ func Test_GetVersionsInBatches(t *testing.T) {
 			return false, nil
 		}
 
-		Convey("then GetDatasetsInBatches succeeds and returns the accumulated items from all the batches", func() {
+		Convey("then getVersionsBatchProcess succeeds and returns the accumulated items from all the batches", func() {
 			datasets, err := datasetAPIClient.GetVersionsInBatches(ctx, headers, datasetID, edition, batchSize, maxWorkers)
 
 			So(err, ShouldBeNil)
 			So(datasets, ShouldResemble, expectedDatasets)
 		})
 
-		Convey("then GetDatasetsBatchProcess calls the batchProcessor function twice, with the expected batches", func() {
+		Convey("then getVersionsBatchProcess calls the batchProcessor function twice, with the expected batches", func() {
 			err := datasetAPIClient.getVersionsBatchProcess(ctx, headers, datasetID, edition, testProcess, batchSize, maxWorkers)
 			So(err, ShouldBeNil)
 			So(processedBatches, ShouldResemble, []VersionsList{versionsResponse1, versionsResponse2})
@@ -709,13 +709,13 @@ func Test_GetVersionsInBatches(t *testing.T) {
 			return false, nil
 		}
 
-		Convey("then GetOptionsInBatches fails with the expected error and the process is aborted", func() {
+		Convey("then GetVersionsInBatches fails with the expected error and the process is aborted", func() {
 			_, err := datasetAPIClient.GetVersionsInBatches(ctx, headers, datasetID, edition, batchSize, maxWorkers)
 			So(err.(*ErrInvalidDatasetAPIResponse).actualCode, ShouldEqual, http.StatusBadRequest)
 			So(err.(*ErrInvalidDatasetAPIResponse).uri, ShouldResemble, "http://localhost:22000/datasets/test-dataset/editions/test-edition/versions?limit=1&offset=0")
 		})
 
-		Convey("then GetDatasetsBatchProcess fails with the expected error and doesn't call the batchProcessor", func() {
+		Convey("then getVersionsBatchProcess fails with the expected error and doesn't call the batchProcessor", func() {
 			err := datasetAPIClient.getVersionsBatchProcess(ctx, headers, datasetID, edition, testProcess, batchSize, maxWorkers)
 			So(err.(*ErrInvalidDatasetAPIResponse).actualCode, ShouldEqual, http.StatusBadRequest)
 			So(err.(*ErrInvalidDatasetAPIResponse).uri, ShouldResemble, "http://localhost:22000/datasets/test-dataset/editions/test-edition/versions?limit=1&offset=0")
@@ -736,17 +736,234 @@ func Test_GetVersionsInBatches(t *testing.T) {
 			return false, nil
 		}
 
-		Convey("then GetDatasetsInBatches fails with the expected error, corresponding to the second batch, and the process is aborted", func() {
+		Convey("then GetVersionsInBatches fails with the expected error, corresponding to the second batch, and the process is aborted", func() {
 			_, err := datasetAPIClient.GetVersionsInBatches(ctx, headers, datasetID, edition, batchSize, maxWorkers)
 			So(err.(*ErrInvalidDatasetAPIResponse).actualCode, ShouldEqual, http.StatusBadRequest)
 			So(err.(*ErrInvalidDatasetAPIResponse).uri, ShouldResemble, "http://localhost:22000/datasets/test-dataset/editions/test-edition/versions?limit=1&offset=1")
 		})
 
-		Convey("then GetDatasetsBatchProcess fails with the expected error and calls the batchProcessor for the first batch only", func() {
+		Convey("then getVersionsBatchProcess fails with the expected error and calls the batchProcessor for the first batch only", func() {
 			err := datasetAPIClient.getVersionsBatchProcess(ctx, headers, datasetID, edition, testProcess, batchSize, maxWorkers)
 			So(err.(*ErrInvalidDatasetAPIResponse).actualCode, ShouldEqual, http.StatusBadRequest)
 			So(err.(*ErrInvalidDatasetAPIResponse).uri, ShouldResemble, "http://localhost:22000/datasets/test-dataset/editions/test-edition/versions?limit=1&offset=1")
 			So(processedBatches, ShouldResemble, []VersionsList{versionsResponse1})
+		})
+	})
+}
+
+func Test_GetVersionsInBatchesWithQueryParams(t *testing.T) {
+	datasetID := "test-dataset"
+	edition := "test-edition"
+
+	Convey("When a 200 OK status is returned in 2 consecutive calls for a request with limit 6, offset 0 and batchSize 3", t, func() {
+		versionsResponse1 := VersionsList{
+			Items: []models.Version{
+				{ID: "test-version-1"},
+				{ID: "test-version-2"},
+				{ID: "test-version-3"}},
+			Count:      3,
+			Offset:     0,
+			Limit:      3,
+			TotalCount: 6,
+		}
+
+		versionsResponse2 := VersionsList{
+			Items: []models.Version{
+				{ID: "test-version-4"},
+				{ID: "test-version-5"},
+				{ID: "test-version-6"}},
+			Count:      3,
+			Offset:     3,
+			Limit:      3,
+			TotalCount: 6,
+		}
+
+		expectedDatasets := VersionsList{
+			Items: []models.Version{
+				versionsResponse1.Items[0],
+				versionsResponse1.Items[1],
+				versionsResponse1.Items[2],
+				versionsResponse2.Items[0],
+				versionsResponse2.Items[1],
+				versionsResponse2.Items[2],
+			},
+			Count:      6,
+			Offset:     0,
+			Limit:      6,
+			TotalCount: 6,
+		}
+
+		httpClient := createHTTPClientMock(
+			MockedHTTPResponse{http.StatusOK, versionsResponse1, nil},
+			MockedHTTPResponse{http.StatusOK, versionsResponse2, nil})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+
+		processedBatches := []VersionsList{}
+		var testProcess VersionsBatchProcessor = func(batch VersionsList) (abort bool, err error) {
+			processedBatches = append(processedBatches, batch)
+			return false, nil
+		}
+		limit := 6
+		offset := 0
+		batchSize := 3
+		maxWorkers := 1
+
+		Convey("then GetVersionsInBatchesWithQueryParams succeeds and returns the accumulated items from all the batches", func() {
+			datasets, err := datasetAPIClient.GetVersionsInBatchesWithQueryParams(ctx, headers, datasetID, edition, limit, offset, batchSize, maxWorkers)
+
+			So(err, ShouldBeNil)
+			So(datasets, ShouldResemble, expectedDatasets)
+		})
+
+		Convey("then getVersionsBatchProcessWithQueryParams calls the batchProcessor function twice, with the expected batches", func() {
+			err := datasetAPIClient.getVersionsBatchProcessWithQueryParams(ctx, headers, datasetID, edition, testProcess, limit, offset, batchSize, maxWorkers)
+			So(err, ShouldBeNil)
+			So(processedBatches, ShouldResemble, []VersionsList{versionsResponse1, versionsResponse2})
+			So(httpClient.DoCalls(), ShouldHaveLength, 2)
+			So(httpClient.DoCalls()[0].Req.URL.String(), ShouldResemble,
+				"http://localhost:22000/datasets/test-dataset/editions/test-edition/versions?limit=3&offset=0")
+			So(httpClient.DoCalls()[1].Req.URL.String(), ShouldResemble,
+				"http://localhost:22000/datasets/test-dataset/editions/test-edition/versions?limit=3&offset=3")
+		})
+	})
+
+	Convey("When a 200 OK status is returned in 2 consecutive calls for a request with limit 4, offset 1 and batchSize 2", t, func() {
+		versionsResponse1 := VersionsList{
+			Items: []models.Version{
+				{ID: "test-version-2"},
+				{ID: "test-version-3"}},
+			Count:      2,
+			Offset:     1,
+			Limit:      2,
+			TotalCount: 6,
+		}
+
+		versionsResponse2 := VersionsList{
+			Items: []models.Version{
+				{ID: "test-version-4"},
+				{ID: "test-version-5"}},
+			Count:      2,
+			Offset:     3,
+			Limit:      2,
+			TotalCount: 6,
+		}
+		httpClient := createHTTPClientMock(
+			MockedHTTPResponse{http.StatusOK, versionsResponse1, nil},
+			MockedHTTPResponse{http.StatusOK, versionsResponse2, nil})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+
+		processedBatches := []VersionsList{}
+		var testProcess VersionsBatchProcessor = func(batch VersionsList) (abort bool, err error) {
+			processedBatches = append(processedBatches, batch)
+			return false, nil
+		}
+
+		expectedDatasets := VersionsList{
+			Items: []models.Version{
+				versionsResponse1.Items[0],
+				versionsResponse1.Items[1],
+				versionsResponse2.Items[0],
+				versionsResponse2.Items[1],
+			},
+			Count:      4,
+			Offset:     1,
+			Limit:      4,
+			TotalCount: 6,
+		}
+		reqLimit := 4
+		reqOffset := 1
+		batchSize := 2
+		maxWorkers := 1
+
+		Convey("then GetVersionsInBatchesWithQueryParams succeeds and returns the accumulated items from all the batches", func() {
+			datasets, err := datasetAPIClient.GetVersionsInBatchesWithQueryParams(ctx, headers, datasetID, edition, reqLimit, reqOffset, batchSize, maxWorkers)
+
+			So(err, ShouldBeNil)
+			So(datasets, ShouldResemble, expectedDatasets)
+		})
+
+		Convey("then getVersionsBatchProcessWithQueryParams calls the batchProcessor function twice, with the expected batches", func() {
+			err := datasetAPIClient.getVersionsBatchProcessWithQueryParams(ctx, headers, datasetID, edition, testProcess, reqLimit, reqOffset, batchSize, maxWorkers)
+			So(err, ShouldBeNil)
+			So(processedBatches, ShouldResemble, []VersionsList{versionsResponse1, versionsResponse2})
+			So(httpClient.DoCalls(), ShouldHaveLength, 2)
+			So(httpClient.DoCalls()[0].Req.URL.String(), ShouldResemble,
+				"http://localhost:22000/datasets/test-dataset/editions/test-edition/versions?limit=2&offset=1")
+			So(httpClient.DoCalls()[1].Req.URL.String(), ShouldResemble,
+				"http://localhost:22000/datasets/test-dataset/editions/test-edition/versions?limit=2&offset=3")
+		})
+	})
+
+	Convey("When a 400 error status is returned in the first call", t, func() {
+		httpClient := createHTTPClientMock(
+			MockedHTTPResponse{http.StatusBadRequest, "", nil})
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+
+		processedBatches := []VersionsList{}
+		var testProcess VersionsBatchProcessor = func(batch VersionsList) (abort bool, err error) {
+			processedBatches = append(processedBatches, batch)
+			return false, nil
+		}
+		limit := 6
+		offset := 0
+		batchSize := 3
+		maxWorkers := 1
+
+		Convey("then GetVersionsInBatchesWithQueryParams fails with the expected error and the process is aborted", func() {
+			_, err := datasetAPIClient.GetVersionsInBatchesWithQueryParams(ctx, headers, datasetID, edition, limit, offset, batchSize, maxWorkers)
+			So(err.(*ErrInvalidDatasetAPIResponse).actualCode, ShouldEqual, http.StatusBadRequest)
+			So(err.(*ErrInvalidDatasetAPIResponse).uri, ShouldResemble, "http://localhost:22000/datasets/test-dataset/editions/test-edition/versions?limit=3&offset=0")
+		})
+
+		Convey("then getVersionsBatchProcessWithQueryParams fails with the expected error and doesn't call the batchProcessor", func() {
+			err := datasetAPIClient.getVersionsBatchProcessWithQueryParams(ctx, headers, datasetID, edition, testProcess, limit, offset, batchSize, maxWorkers)
+			So(err.(*ErrInvalidDatasetAPIResponse).actualCode, ShouldEqual, http.StatusBadRequest)
+			So(err.(*ErrInvalidDatasetAPIResponse).uri, ShouldResemble, "http://localhost:22000/datasets/test-dataset/editions/test-edition/versions?limit=3&offset=0")
+			So(processedBatches, ShouldResemble, []VersionsList{})
+		})
+	})
+
+	Convey("When a 200 OK status is returned in the first call but the offset parameter is equal to the versions total count", t, func() {
+		versionsResponse1 := VersionsList{
+			Items:      []models.Version{},
+			Count:      0,
+			Offset:     6,
+			Limit:      3,
+			TotalCount: 6,
+		}
+		versionsResponse2 := VersionsList{
+			Items:      []models.Version{},
+			Count:      0,
+			Offset:     9,
+			Limit:      3,
+			TotalCount: 6,
+		}
+
+		httpClient := createHTTPClientMock(
+			MockedHTTPResponse{http.StatusOK, versionsResponse1, nil},
+			MockedHTTPResponse{http.StatusOK, versionsResponse2, nil},
+		)
+		datasetAPIClient := newDatasetAPIHealthcheckClient(t, httpClient)
+
+		// testProcess is a generic batch processor for testing
+		processedBatches := []VersionsList{}
+		var testProcess VersionsBatchProcessor = func(batch VersionsList) (abort bool, err error) {
+			processedBatches = append(processedBatches, batch)
+			return false, nil
+		}
+		limit := 6
+		offset := 6
+		batchSize := 3
+		maxWorkers := 1
+
+		Convey("then GetVersionsInBatchesWithQueryParams fails with the expected error, corresponding to the first batch", func() {
+			_, err := datasetAPIClient.GetVersionsInBatchesWithQueryParams(ctx, headers, datasetID, edition, limit, offset, batchSize, maxWorkers)
+			So(err.Error(), ShouldEqual, "request offset value greater than or equal to versions total count. versions total count: 6, request offset value: 6")
+		})
+
+		Convey("then getVersionsBatchProcessWithQueryParams returns a VersionsList array which contains no version Items", func() {
+			_ = datasetAPIClient.getVersionsBatchProcessWithQueryParams(ctx, headers, datasetID, edition, testProcess, limit, offset, batchSize, maxWorkers)
+			So(processedBatches, ShouldResemble, []VersionsList{versionsResponse1, versionsResponse2})
 		})
 	})
 }
