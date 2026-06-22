@@ -300,6 +300,9 @@ func (c *DatasetComponent) DoGetFilesAPIClientOk(ctx context.Context, cfg *confi
 			return &filesAPIModels.StoredRegisteredMetaData{}, nil
 		},
 		MarkFilePublishedFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) error {
+			if filePath == "/fail/to/mark/published.csv" {
+				return fmt.Errorf("failed to mark file as published at path: %s", filePath)
+			}
 			return nil
 		},
 	}, nil

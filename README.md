@@ -44,6 +44,9 @@ where a PST user has attached the *version* to the wrong collection and so not o
 updated with the new one (or removed altogether)
 but the state will need to revert back to `edition-confirmed`.
 
+For static versions, if publication fails then the state is set to `publish_failed` and can be retried by transitioning from
+`publish_failed` to `published`.
+
 Lastly, **skipping a state**: it is possibly to jump from `edition-confirmed` to `published`
 as long as all the mandatory fields are there. There also might be a scenario whereby the state can change
 from `created` to `completed`, missing out the step to `submitted`

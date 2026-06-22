@@ -79,6 +79,113 @@ Feature: Static Dataset Versions PUT API
             ]
             """
 
+        And I have a static dataset with version:
+            """
+            {
+                "dataset": {
+                    "id": "static-dataset-retry-publish",
+                    "title": "Static Dataset for retry publish",
+                    "state": "associated",
+                    "type": "static",
+                    "links": {
+                        "editions": {
+                            "href": "/datasets/static-dataset-retry-publish/editions"
+                        },
+                        "self": {
+                            "href": "/datasets/static-dataset-retry-publish"
+                        }
+                    },
+                    "topics": ["economy-topic-id"]
+                },
+                "version": {
+                    "id": "static-version-publish-failed",
+                    "edition": "2026",
+                    "edition_title": "2026 Edition",
+                    "links": {
+                        "dataset": {
+                            "id": "static-dataset-retry-publish"
+                        },
+                        "edition": {
+                            "href": "/datasets/static-dataset-retry-publish/editions/2026",
+                            "id": "2026"
+                        },
+                        "self": {
+                            "href": "/datasets/static-dataset-retry-publish/editions/2026/versions/1"
+                        },
+                        "version": {
+                            "href": "/datasets/static-dataset-retry-publish/editions/2026/versions/1",
+                            "id": "1"
+                        },
+                        "web_page": {
+                            "href": "/economy/static-dataset-retry-publish/editions/2026/versions/1"
+                        }
+                    },
+                    "distributions": [
+                        {
+                            "title": "Full Dataset (CSV)",
+                            "byte_size": 4300000,
+                            "download_url": "testing/test-retry.csv",
+                            "format": "csv",
+                            "media_type": "text/csv"
+                        }
+                    ],
+                    "version": 1,
+                    "release_date": "2026-02-01T09:00:00.000Z",
+                    "state": "publish_failed",
+                    "type": "static"
+                }
+            }
+            """
+
+        And I have a static dataset with version:
+            """
+            {
+                "dataset": {
+                    "id": "static-dataset-publish-mark-fail",
+                    "title": "Static Dataset for publish mark failure",
+                    "state": "associated",
+                    "type": "static"
+                },
+                "version": {
+                    "id": "static-version-publish-mark-fail",
+                    "edition": "2027",
+                    "edition_title": "2027 Edition",
+                    "links": {
+                        "dataset": {
+                            "id": "static-dataset-publish-mark-fail"
+                        },
+                        "edition": {
+                            "href": "/datasets/static-dataset-publish-mark-fail/editions/2027",
+                            "id": "2027"
+                        },
+                        "self": {
+                            "href": "/datasets/static-dataset-publish-mark-fail/editions/2027/versions/1"
+                        },
+                        "version": {
+                            "href": "/datasets/static-dataset-publish-mark-fail/editions/2027/versions/1",
+                            "id": "1"
+                        },
+                        "web_page": {
+                            "href": "/economy/static-dataset-publish-mark-fail/editions/2027/versions/1"
+                        }
+                    },
+                    "distributions": [
+                        {
+                            "title": "Full Dataset (CSV)",
+                            "byte_size": 4300000,
+                            "download_url": "/fail/to/mark/published.csv",
+                            "format": "csv",
+                            "media_type": "text/csv"
+                        }
+                    ],
+                    "version": 1,
+                    "release_date": "2027-02-01T09:00:00.000Z",
+                    "state": "approved",
+                    "type": "static"
+                }
+            }
+            """
+
     Scenario: PUT updates static dataset version successfully for an admin user
         Given private endpoints are enabled
         And I am an admin user
@@ -334,6 +441,51 @@ Feature: Static Dataset Versions PUT API
         And the total number of audit events should be 1
         And the number of events with action "UPDATE" and resource "/datasets/static-dataset-update/editions/2025/versions/1/state" should be 1
         And there are no cloudflare purge calls
+
+    Scenario: PUT state rejects publish_failed in request body
+        Given private endpoints are enabled
+        And I am an admin user
+        When I PUT "/datasets/static-dataset-update/editions/2025/versions/1/state"
+            """
+            {
+                "state": "publish_failed"
+            }
+            """
+        Then the HTTP status code should be "400"
+        And I should receive the following response:
+            """
+            incorrect state, can be one of the following: edition-confirmed, associated, approved or published
+            """
+
+    Scenario: PUT state transitions from publish_failed to published
+        Given private endpoints are enabled
+        And cloudflare is enabled
+        And I am an admin user
+        When I PUT "/datasets/static-dataset-retry-publish/editions/2026/versions/1/state"
+            """
+            {
+                "state": "published"
+            }
+            """
+        Then the HTTP status code should be "200"
+        And the total number of audit events should be 1
+        And the number of events with action "UPDATE" and resource "/datasets/static-dataset-retry-publish/editions/2026/versions/1/state" should be 1
+
+    Scenario: PUT state publish fails when a distribution file cannot be marked published and sets state to publish_failed
+        Given private endpoints are enabled
+        And I am an admin user
+        When I PUT "/datasets/static-dataset-publish-mark-fail/editions/2027/versions/1/state"
+            """
+            {
+                "state": "published"
+            }
+            """
+        Then the HTTP status code should be "500"
+        And I should receive the following response:
+            """
+            internal error: internal error
+            """
+        And the static version "static-version-publish-mark-fail" should have state "publish_failed"
 
     Scenario: PUT state transitions from approved to published and purges URL's
         Given I have a static dataset with version:
@@ -710,8 +862,8 @@ Feature: Static Dataset Versions PUT API
                 "quality_designation": "accredited-official",
                 "release_date": "2025-03-06T14:49:23.354Z",
                 "type": "static",
-                "edition": "march",
-                "dataset_id": "test-static-dataset",
+                "edition": "2025",
+                "dataset_id": "static-dataset-update",
                 "usage_notes": [
                     {
                         "title": "This dataset",
@@ -948,13 +1100,13 @@ Feature: Static Dataset Versions PUT API
             }
             """
 
-    Scenario: PUT updates static version edition ID and updates webpage link
+    Scenario: PUT successfully updates edition ID and all associated links
       Given I have a static dataset with version:
           """
           {
               "dataset": {
                   "id": "edition-change-dataset",
-                  "title": "Change topic in version link test",
+                  "title": "Change edition in version link test",
                   "state": "associated",
                   "type": "static",
                   "topics": [
@@ -1053,6 +1205,7 @@ Feature: Static Dataset Versions PUT API
               "type": "static"
           }
           """
+        And the dataset "edition-change-dataset" should have latest_version href "/datasets/edition-change-dataset/editions/2026-update/versions/1"
 
     Scenario: PUT updates static dataset version edition and saves previous edition ID
         Given I have a static dataset with version:

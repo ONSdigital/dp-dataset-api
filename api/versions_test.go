@@ -1183,6 +1183,15 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 					ETag:        testETag,
 				}, nil
 			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					ID: "123",
+					Next: &models.Dataset{
+						Links: &models.DatasetLinks{},
+						State: models.CreatedState,
+					},
+				}, nil
+			},
 			UpdateVersionFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
 				So(isLocked, ShouldBeTrue)
 				return "", nil
@@ -1227,6 +1236,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				So(len(mockedDataStore.SetInstanceIsPublishedCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpsertDatasetCalls()), ShouldEqual, 0)
 				So(len(mockedDataStore.UpdateDatasetWithAssociationCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 0)
 				So(len(generatorMock.GenerateCalls()), ShouldEqual, 0)
 				So(auditServiceMock.RecordVersionAuditEventCalls(), ShouldHaveLength, 1)
 			})
@@ -1493,6 +1503,18 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 					EditionTitle: "Test Title",
 					State:        models.EditionConfirmedState,
 				}, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					ID: "123",
+					Next: &models.Dataset{
+						Links: &models.DatasetLinks{},
+						State: models.CreatedState,
+					},
+				}, nil
+			},
+			UpdateDatasetFunc: func(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error {
+				return nil
 			},
 		}
 
@@ -4786,7 +4808,7 @@ func TestPutStateReturnsOk(t *testing.T) {
 						  }
 						},
 						"release_date": "2025-01-15",
-						"state": "associated",
+						"state": "approved",
 						"distributions": [
 						  {
 							"title": "Full Dataset (CSV)",
@@ -5025,6 +5047,30 @@ func TestPutStateReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 		So(w.Body.String(), ShouldContainSubstring, models.ErrVersionStateInvalid.Error())
+	})
+
+	Convey("When the request attempts to set state to publish_failed, return a bad request error", t, func() {
+		b := `{"state":"publish_failed"}`
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123-456/editions/678/versions/1/state", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{}
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusBadRequest)
+		So(w.Body.String(), ShouldContainSubstring, models.ErrVersionStateInvalid.Error())
+		So(len(mockedDataStore.UpdateStateStaticCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When the version is not found, return a not found error", t, func() {
@@ -5316,6 +5362,7 @@ func TestPutStateApproveDistributionFilesCheck(t *testing.T) {
 			application.Published,
 			application.Associated,
 			application.Approved,
+			application.PublishFailed,
 		}
 		transitions := []application.Transition{
 			{
@@ -5333,6 +5380,12 @@ func TestPutStateApproveDistributionFilesCheck(t *testing.T) {
 			{
 				Label:               "published",
 				TargetState:         application.Published,
+				AllowedSourceStates: []string{"approved", "publish_failed"},
+				Type:                "static",
+			},
+			{
+				Label:               "publish_failed",
+				TargetState:         application.PublishFailed,
 				AllowedSourceStates: []string{"approved"},
 				Type:                "static",
 			},
@@ -5556,6 +5609,9 @@ func TestPutVersionSavesPreviousEditionID(t *testing.T) {
 				capturedVersionUpdate = versionUpdate
 				return testETag, nil
 			},
+			UpdateDatasetFunc: func(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error {
+				return nil
+			},
 			AcquireVersionsLockFunc: func(context.Context, string) (string, error) {
 				return testLockID, nil
 			},
@@ -5728,6 +5784,9 @@ func TestPutVersionSavesPreviousEditionID(t *testing.T) {
 			},
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return &models.Version{Type: models.Static.String()}, nil
+			},
+			UpdateDatasetFunc: func(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error {
+				return nil
 			},
 			UpdateVersionStaticFunc: func(ctx context.Context, currentVersion *models.Version, versionUpdate *models.Version, eTagSelector string) (string, error) {
 				capturedVersionUpdate = versionUpdate

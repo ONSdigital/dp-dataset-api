@@ -55,6 +55,7 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the dataset "([^"]*)" should not exist$`, c.datasetShouldNotExist)
 	ctx.Step(`^the static version "([^"]*)" should exist$`, c.staticVersionShouldExist)
 	ctx.Step(`^the static version "([^"]*)" should not exist$`, c.staticVersionShouldNotExist)
+	ctx.Step(`^the static version "([^"]*)" should have state "([^"]*)"$`, c.staticVersionShouldHaveState)
 	ctx.Step(`^the response header "([^"]*)" should not be empty$`, c.theResponseHeaderShouldNotBeEmpty)
 	ctx.Step(`^the dataset "([^"]*)" should have next equal to current$`, c.theDatasetShouldHaveNextEqualToCurrent)
 	ctx.Step(`^the "([^"]*)" feature flag is "([^"]*)"$`, c.theFeatureFlagIs)
@@ -665,6 +666,22 @@ func (c *DatasetComponent) staticVersionShouldExist(versionID string) error {
 // staticVersionShouldNotExist checks the version document does not exist in the versions collection
 func (c *DatasetComponent) staticVersionShouldNotExist(versionID string) error {
 	return c.checkDocumentExistence(config.VersionsCollection, versionID, false)
+}
+
+// staticVersionShouldHaveState checks the state field for a version document in the versions collection
+func (c *DatasetComponent) staticVersionShouldHaveState(versionID, expectedState string) error {
+	collection := c.MongoClient.ActualCollectionName(config.VersionsCollection)
+	var got models.Version
+
+	if err := c.MongoClient.Connection.Collection(collection).FindOne(context.Background(), bson.M{"_id": versionID}, &got); err != nil {
+		return fmt.Errorf("failed to get static version from collection: %w", err)
+	}
+
+	if got.State != expectedState {
+		return fmt.Errorf("expected static version %q to have state %q but got %q", versionID, expectedState, got.State)
+	}
+
+	return nil
 }
 
 func (c *DatasetComponent) theDatasetShouldHaveNextEqualToCurrent(datasetID string) error {

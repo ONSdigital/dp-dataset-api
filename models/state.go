@@ -15,6 +15,7 @@ const (
 	AssociatedState       = "associated"
 	ApprovedState         = "approved"
 	PublishedState        = "published"
+	PublishFailedState    = "publish_failed"
 	DetachedState         = "detached"
 	FailedState           = "failed"
 )
@@ -24,6 +25,7 @@ var validVersionStates = map[string]int{
 	AssociatedState:       1,
 	ApprovedState:         1,
 	PublishedState:        1,
+	PublishFailedState:    1,
 }
 
 var validStates = map[string]int{
@@ -34,6 +36,7 @@ var validStates = map[string]int{
 	ApprovedState:         1,
 	AssociatedState:       1,
 	PublishedState:        1,
+	PublishFailedState:    1,
 	FailedState:           1,
 }
 

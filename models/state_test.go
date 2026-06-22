@@ -24,6 +24,11 @@ func TestCheckState(t *testing.T) {
 			So(err, ShouldBeNil)
 		})
 
+		Convey("when the version has state of publish_failed", func() {
+			err := CheckState("version", PublishFailedState)
+			So(err, ShouldBeNil)
+		})
+
 		Convey("when a resource has state of created", func() {
 			err := CheckState("resource", CreatedState)
 			So(err, ShouldBeNil)
@@ -46,6 +51,11 @@ func TestCheckState(t *testing.T) {
 
 		Convey("when a resource has state of published", func() {
 			err := CheckState("resource", PublishedState)
+			So(err, ShouldBeNil)
+		})
+
+		Convey("when a resource has state of publish_failed", func() {
+			err := CheckState("resource", PublishFailedState)
 			So(err, ShouldBeNil)
 		})
 	})

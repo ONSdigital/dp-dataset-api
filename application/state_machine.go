@@ -54,6 +54,8 @@ func castStateToState(state string) (*State, bool) {
 		return &Approved, true
 	case "edition-confirmed":
 		return &EditionConfirmed, true
+	case "publish_failed":
+		return &PublishFailed, true
 	default:
 		return nil, false
 	}

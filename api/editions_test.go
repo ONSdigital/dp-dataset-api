@@ -752,7 +752,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetLatestVersionStaticCalls()), ShouldEqual, 0)
 	})
@@ -784,7 +784,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
-		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetLatestVersionStaticCalls()), ShouldEqual, 0)
 	})
