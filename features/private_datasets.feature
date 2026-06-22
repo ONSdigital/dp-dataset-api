@@ -805,7 +805,13 @@ Feature: Private Dataset API
             """
             {
                 "id": "test dataset id with spaces",
-                "type": "static"
+                "title": "Valid Dataset",
+                "description": "Dataset description",
+                "license": "Open Government Licence v3.0",
+                "next_release": "2026-01-01",
+                "keywords": ["keyword"],
+                "topics": ["topic-0"],
+                "contacts": [{"name": "Test", "email": "test@test.com"}]
             }
             """
         Then the HTTP status code should be "400"

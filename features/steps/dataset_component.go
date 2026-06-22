@@ -324,12 +324,18 @@ func (c *DatasetComponent) DoGetTopicAPIClientOk(ctx context.Context, cfg *confi
 			switch id {
 			case "economy-topic-id":
 				return &topicAPIModels.TopicResponse{
+					Current: &topicAPIModels.Topic{
+						Slug: "economy",
+					},
 					Next: &topicAPIModels.Topic{
 						Slug: "economy",
 					},
 				}, nil
 			case "businessindustryandtrade-topic-id":
 				return &topicAPIModels.TopicResponse{
+					Current: &topicAPIModels.Topic{
+						Slug: "businessindustryandtrade",
+					},
 					Next: &topicAPIModels.Topic{
 						Slug: "businessindustryandtrade",
 					},
