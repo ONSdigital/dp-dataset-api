@@ -338,6 +338,43 @@ func TestCreateDownloadList(t *testing.T) {
 	})
 }
 
+func TestGenerateVersionLinksStatic(t *testing.T) {
+	Convey("Given valid inputs for GenerateVersionLinksStatic", t, func() {
+		topicSlug := "topicSlug"
+		datasetID := "datasetID"
+		editionID := "editionID"
+		versionNumber := 1
+
+		Convey("When GenerateVersionLinksStatic is called", func() {
+			links := GenerateVersionLinksStatic(topicSlug, datasetID, editionID, versionNumber)
+
+			Convey("Then the returned VersionLinks should be correctly populated", func() {
+				expectedLinks := &VersionLinks{
+					Dataset: &LinkObject{
+						ID:   datasetID,
+						HRef: fmt.Sprintf("/datasets/%s", datasetID),
+					},
+					Edition: &LinkObject{
+						ID:   editionID,
+						HRef: fmt.Sprintf("/datasets/%s/editions/%s", datasetID, editionID),
+					},
+					Self: &LinkObject{
+						HRef: fmt.Sprintf("/datasets/%s/editions/%s/versions/%d", datasetID, editionID, versionNumber),
+					},
+					Version: &LinkObject{
+						ID:   strconv.Itoa(versionNumber),
+						HRef: fmt.Sprintf("/datasets/%s/editions/%s/versions/%d", datasetID, editionID, versionNumber),
+					},
+					WebPage: &LinkObject{
+						HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%d", topicSlug, datasetID, editionID, versionNumber),
+					},
+				}
+				So(links, ShouldResemble, expectedLinks)
+			})
+		})
+	})
+}
+
 func TestValidateVersionNumberSuccess(t *testing.T) {
 	Convey("Given valid version number above 0 in string format", t, func() {
 		versionStr := "5"

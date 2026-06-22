@@ -547,6 +547,31 @@ func ValidateVersion(version *Version) error {
 	return nil
 }
 
+// GenerateVersionLinksStatic generates the version links for a static dataset.
+// This will populate the fields, Dataset, Edition, Self, Version and WebPage.
+func GenerateVersionLinksStatic(topicSlug, datasetID, editionID string, versionNumber int) *VersionLinks {
+	return &VersionLinks{
+		Dataset: &LinkObject{
+			ID:   datasetID,
+			HRef: fmt.Sprintf("/datasets/%s", datasetID),
+		},
+		Edition: &LinkObject{
+			ID:   editionID,
+			HRef: fmt.Sprintf("/datasets/%s/editions/%s", datasetID, editionID),
+		},
+		Self: &LinkObject{
+			HRef: fmt.Sprintf("/datasets/%s/editions/%s/versions/%d", datasetID, editionID, versionNumber),
+		},
+		Version: &LinkObject{
+			ID:   strconv.Itoa(versionNumber),
+			HRef: fmt.Sprintf("/datasets/%s/editions/%s/versions/%d", datasetID, editionID, versionNumber),
+		},
+		WebPage: &LinkObject{
+			HRef: fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%d", topicSlug, datasetID, editionID, versionNumber),
+		},
+	}
+}
+
 // ParseAndValidateVersionNumber checks the version is a positive integer above 0
 func ParseAndValidateVersionNumber(ctx context.Context, version string) (int, error) {
 	versionNumber, err := strconv.Atoi(version)
