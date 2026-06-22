@@ -490,6 +490,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 
 					if err := api.dataStore.Backend.UpdateDataset(ctx, dataset.ID, datasetUpdate, dataset.Next.State); err != nil {
 						log.Error(ctx, "putVersion endpoint: failed to update dataset resource", err, data)
+						handleVersionAPIErr(ctx, err, w, data)
 						return
 					}
 				}

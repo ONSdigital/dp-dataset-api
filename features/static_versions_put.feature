@@ -1100,7 +1100,7 @@ Feature: Static Dataset Versions PUT API
             }
             """
 
-    Scenario: PUT updates static version edition ID and updates webpage link and dataset latest version link
+    Scenario: PUT successfully updates edition ID and all associated links
       Given I have a static dataset with version:
           """
           {
