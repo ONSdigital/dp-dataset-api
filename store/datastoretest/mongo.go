@@ -142,6 +142,9 @@ var _ store.MongoDB = &MongoDBMock{}
 //			GetVersionsStaticFunc: func(ctx context.Context, datasetID string, edition string, state string, offset int, limit int) ([]models.Version, int, error) {
 //				panic("mock out the GetVersionsStatic method")
 //			},
+//			GetVersionsStaticNoLimitFunc: func(ctx context.Context, datasetID string, state string) ([]*models.Version, int, error) {
+//				panic("mock out the GetVersionsStaticNoLimit method")
+//			},
 //			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
 //				panic("mock out the IsStaticDataset method")
 //			},
@@ -334,6 +337,9 @@ type MongoDBMock struct {
 
 	// GetVersionsStaticFunc mocks the GetVersionsStatic method.
 	GetVersionsStaticFunc func(ctx context.Context, datasetID string, edition string, state string, offset int, limit int) ([]models.Version, int, error)
+
+	// GetVersionsStaticNoLimitFunc mocks the GetVersionsStaticNoLimit method.
+	GetVersionsStaticNoLimitFunc func(ctx context.Context, datasetID string, state string) ([]*models.Version, int, error)
 
 	// IsStaticDatasetFunc mocks the IsStaticDataset method.
 	IsStaticDatasetFunc func(ctx context.Context, datasetID string) (bool, error)
@@ -815,6 +821,15 @@ type MongoDBMock struct {
 			// Limit is the limit argument value.
 			Limit int
 		}
+		// GetVersionsStaticNoLimit holds details about calls to the GetVersionsStaticNoLimit method.
+		GetVersionsStaticNoLimit []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// State is the state argument value.
+			State string
+		}
 		// IsStaticDataset holds details about calls to the IsStaticDataset method.
 		IsStaticDataset []struct {
 			// Ctx is the ctx argument value.
@@ -1078,6 +1093,7 @@ type MongoDBMock struct {
 	lockGetVersionStaticByPreviousEditionID sync.RWMutex
 	lockGetVersions                         sync.RWMutex
 	lockGetVersionsStatic                   sync.RWMutex
+	lockGetVersionsStaticNoLimit            sync.RWMutex
 	lockIsStaticDataset                     sync.RWMutex
 	lockRemoveDatasetVersionAndEditionLinks sync.RWMutex
 	lockUnlockInstance                      sync.RWMutex
@@ -2803,6 +2819,46 @@ func (mock *MongoDBMock) GetVersionsStaticCalls() []struct {
 	mock.lockGetVersionsStatic.RLock()
 	calls = mock.calls.GetVersionsStatic
 	mock.lockGetVersionsStatic.RUnlock()
+	return calls
+}
+
+// GetVersionsStaticNoLimit calls GetVersionsStaticNoLimitFunc.
+func (mock *MongoDBMock) GetVersionsStaticNoLimit(ctx context.Context, datasetID string, state string) ([]*models.Version, int, error) {
+	if mock.GetVersionsStaticNoLimitFunc == nil {
+		panic("MongoDBMock.GetVersionsStaticNoLimitFunc: method is nil but MongoDB.GetVersionsStaticNoLimit was just called")
+	}
+	callInfo := struct {
+		Ctx       context.Context
+		DatasetID string
+		State     string
+	}{
+		Ctx:       ctx,
+		DatasetID: datasetID,
+		State:     state,
+	}
+	mock.lockGetVersionsStaticNoLimit.Lock()
+	mock.calls.GetVersionsStaticNoLimit = append(mock.calls.GetVersionsStaticNoLimit, callInfo)
+	mock.lockGetVersionsStaticNoLimit.Unlock()
+	return mock.GetVersionsStaticNoLimitFunc(ctx, datasetID, state)
+}
+
+// GetVersionsStaticNoLimitCalls gets all the calls that were made to GetVersionsStaticNoLimit.
+// Check the length with:
+//
+//	len(mockedMongoDB.GetVersionsStaticNoLimitCalls())
+func (mock *MongoDBMock) GetVersionsStaticNoLimitCalls() []struct {
+	Ctx       context.Context
+	DatasetID string
+	State     string
+} {
+	var calls []struct {
+		Ctx       context.Context
+		DatasetID string
+		State     string
+	}
+	mock.lockGetVersionsStaticNoLimit.RLock()
+	calls = mock.calls.GetVersionsStaticNoLimit
+	mock.lockGetVersionsStaticNoLimit.RUnlock()
 	return calls
 }
 
