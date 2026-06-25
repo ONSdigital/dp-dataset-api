@@ -57,6 +57,7 @@ var (
 	ErrEditionTitleAlreadyExists          = errors.New("the edition-title already exists")
 	ErrInvalidDatasetTypeForEditionUpdate = errors.New("unable to update edition-id, invalid dataset type")
 	ErrSpacesNotAllowedInID               = errors.New("spaces are not allowed in the ID field")
+	ErrCannotChangeIDForPublishedDataset  = errors.New("cannot change the dataset ID for a published dataset")
 	ErrFileMetadataNotFound               = errors.New("file metadata not found")
 	ErrFileNotInCorrectState              = errors.New("file not in correct state")
 	ErrInvalidParamCombination            = errors.New("cannot request state and published parameters at the same time")
@@ -100,11 +101,13 @@ var (
 	}
 
 	ConflictRequestMap = map[error]bool{
-		ErrConflictUpdatingInstance:  true,
-		ErrInstanceConflict:          true,
-		ErrEditionAlreadyExists:      true,
-		ErrEditionTitleAlreadyExists: true,
-		ErrFileNotInCorrectState:     true,
+		ErrAddDatasetAlreadyExists:           true,
+		ErrCannotChangeIDForPublishedDataset: true,
+		ErrConflictUpdatingInstance:          true,
+		ErrInstanceConflict:                  true,
+		ErrEditionAlreadyExists:              true,
+		ErrEditionTitleAlreadyExists:         true,
+		ErrFileNotInCorrectState:             true,
 	}
 
 	ForbiddenMap = map[error]bool{

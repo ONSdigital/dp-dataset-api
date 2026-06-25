@@ -634,16 +634,31 @@ func updateLinksFields(version *models.Version, setUpdates bson.M) {
 		return
 	}
 
+	if version.Links.Dataset != nil {
+		if version.Links.Dataset.HRef != "" {
+			setUpdates["links.dataset.href"] = version.Links.Dataset.HRef
+		}
+		if version.Links.Dataset.ID != "" {
+			setUpdates["links.dataset.id"] = version.Links.Dataset.ID
+		}
+	}
+
 	if version.Links.Spatial != nil && version.Links.Spatial.HRef != "" {
 		setUpdates["links.spatial.href"] = version.Links.Spatial.HRef
 	}
 
 	if version.Links.Edition != nil && version.Links.Edition.HRef != "" {
 		setUpdates["links.edition.href"] = version.Links.Edition.HRef
+		if version.Links.Edition.ID != "" {
+			setUpdates["links.edition.id"] = version.Links.Edition.ID
+		}
 	}
 
 	if version.Links.Version != nil && version.Links.Version.HRef != "" {
 		setUpdates["links.version.href"] = version.Links.Version.HRef
+		if version.Links.Version.ID != "" {
+			setUpdates["links.version.id"] = version.Links.Version.ID
+		}
 	}
 
 	if version.Links.Self != nil && version.Links.Self.HRef != "" {
@@ -652,6 +667,9 @@ func updateLinksFields(version *models.Version, setUpdates bson.M) {
 
 	if version.Links.WebPage != nil && version.Links.WebPage.HRef != "" {
 		setUpdates["links.web_page.href"] = version.Links.WebPage.HRef
+		if version.Links.WebPage.ID != "" {
+			setUpdates["links.web_page.id"] = version.Links.WebPage.ID
+		}
 	}
 }
 

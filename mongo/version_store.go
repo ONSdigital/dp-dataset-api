@@ -144,6 +144,27 @@ func (m *Mongo) GetVersionsStatic(ctx context.Context, datasetID, edition, state
 	return results, totalCount, nil
 }
 
+// GetVersionsStaticNoLimit retrieves all versions for a given dataset without pagination.
+func (m *Mongo) GetVersionsStaticNoLimit(ctx context.Context, datasetID, state string) ([]*models.Version, int, error) {
+	selector := bson.M{"links.dataset.id": datasetID}
+	if state != "" {
+		selector["state"] = state
+	}
+
+	results := []*models.Version{}
+	count, err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Find(ctx, selector, &results,
+		mongodriver.Sort(bson.M{"release_date": -1}))
+	if err != nil {
+		return nil, 0, err
+	}
+
+	if count < 1 {
+		return nil, 0, errs.ErrVersionsNotFound
+	}
+
+	return results, count, nil
+}
+
 // GetVersion retrieves a version document for a dataset edition
 func (m *Mongo) GetVersionStatic(ctx context.Context, id, editionID string, versionID int, state string) (*models.Version, error) {
 	selector := buildVersionQuery(id, editionID, state, versionID)

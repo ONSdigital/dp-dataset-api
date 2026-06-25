@@ -38,6 +38,7 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the document in the database for id "([^"]*)" should be:$`, c.theDocumentInTheDatabaseForIDShouldBe)
 	ctx.Step(`^the instance in the database for id "([^"]*)" should be:$`, c.theInstanceInTheDatabaseForIDShouldBe)
 	ctx.Step(`^the version in the database for id "([^"]*)" should be:$`, c.theVersionInTheDatabaseForIDShouldBe)
+	ctx.Step(`^the static version in the database for id "([^"]*)" should be:$`, c.theStaticVersionInTheDatabaseForIDShouldBe)
 	ctx.Step(`^there are no datasets$`, c.thereAreNoDatasets)
 	ctx.Step(`^I have these datasets:$`, c.iHaveTheseDatasets)
 	ctx.Step(`^I have these "([^"]*)" datasets:$`, c.iHaveTheseConditionalDatasets)
@@ -184,6 +185,37 @@ func (c *DatasetComponent) theVersionInTheDatabaseForIDShouldBe(id string, body 
 		// Ignore generated etag if we are not concerned about it
 		expected.ETag = got.ETag
 	}
+
+	assert.Equal(&c.ErrorFeature, expected, got)
+
+	return c.ErrorFeature.StepError()
+}
+
+func (c *DatasetComponent) theStaticVersionInTheDatabaseForIDShouldBe(id string, body *godog.DocString) error {
+	var expected models.Version
+
+	if err := json.Unmarshal([]byte(body.Content), &expected); err != nil {
+		return fmt.Errorf("failed to unmarshal body: %w", err)
+	}
+
+	collectionName := c.MongoClient.ActualCollectionName(config.VersionsCollection)
+
+	var got models.Version
+
+	if err := c.MongoClient.Connection.Collection(collectionName).FindOne(context.Background(), bson.M{"_id": id}, &got); err != nil {
+		return fmt.Errorf("failed to get static version from collection: %w", err)
+	}
+
+	// LastUpdated is set to "now" so cannot be known in advance.
+	got.LastUpdated = time.Time{}
+
+	// VersionLinks.Version is ommitted in the JSON.
+	if got.Links != nil {
+		got.Links.Version = nil
+	}
+
+	// ETag is generated and ommitted in the JSON so cannot be known in advance.
+	got.ETag = ""
 
 	assert.Equal(&c.ErrorFeature, expected, got)
 

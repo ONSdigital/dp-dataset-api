@@ -106,6 +106,61 @@ func TestVersionsStatic(t *testing.T) {
 	})
 }
 
+func TestGetVersionsStaticNoLimit(t *testing.T) {
+	Convey("Given MongoDB is running and populated with static versions", t, func() {
+		ctx := context.Background()
+		mongoDB, err := getTestMongoDB(ctx, t)
+		So(err, ShouldBeNil)
+
+		_, err = setupVersionsTestData(ctx, mongoDB)
+		So(err, ShouldBeNil)
+
+		Convey("When GetVersionsStaticNoLimit is called with no state", func() {
+			retrievedVersions, count, err := mongoDB.GetVersionsStaticNoLimit(ctx, staticDatasetID, "")
+
+			Convey("Then all versions are returned", func() {
+				So(err, ShouldBeNil)
+				So(count, ShouldEqual, 3)
+				So(retrievedVersions, ShouldHaveLength, 3)
+			})
+		})
+
+		Convey("When GetVersionsStaticNoLimit is called with a state filter", func() {
+			retrievedVersions, count, err := mongoDB.GetVersionsStaticNoLimit(ctx, staticDatasetID, models.PublishedState)
+
+			Convey("Then only versions matching the state are returned", func() {
+				So(err, ShouldBeNil)
+				So(count, ShouldEqual, 1)
+				So(retrievedVersions, ShouldHaveLength, 1)
+				So(retrievedVersions[0].State, ShouldEqual, models.PublishedState)
+			})
+		})
+
+		Convey("When GetVersionsStaticNoLimit and there no matching versions", func() {
+			retrievedVersions, count, err := mongoDB.GetVersionsStaticNoLimit(ctx, nonExistentDatasetID, "")
+
+			Convey("Then ErrVersionsNotFound is returned", func() {
+				So(err, ShouldEqual, errs.ErrVersionsNotFound)
+				So(count, ShouldEqual, 0)
+				So(retrievedVersions, ShouldBeNil)
+			})
+		})
+
+		Convey("When GetVersionsStaticNoLimit is called and the mongo connection fails", func() {
+			err = mongoDB.Connection.Close(ctx)
+			So(err, ShouldBeNil)
+
+			retrievedVersions, count, err := mongoDB.GetVersionsStaticNoLimit(ctx, staticDatasetID, "")
+
+			Convey("Then an error is returned", func() {
+				So(err, ShouldNotBeNil)
+				So(count, ShouldEqual, 0)
+				So(retrievedVersions, ShouldBeNil)
+			})
+		})
+	})
+}
+
 func TestGetVersionStaticByPreviousEditionID(t *testing.T) {
 	Convey("Given MongoDB is running with a version that has a previous edition ID", t, func() {
 		ctx := context.Background()
