@@ -509,9 +509,24 @@ func (api DatasetAPI) getPermissionAttributesFromRequest(req *http.Request) (map
 		}, nil
 	}
 
-	return map[string]string{
-		"dataset_edition": datasetID + "/" + edition,
-	}, nil
+	versions, _, err := api.dataStore.Backend.GetVersionsStatic(req.Context(), datasetID, edition, "", 0, 100)
+	if err != nil {
+		log.Error(req.Context(), "failed to get versions for dataset edition", err, log.Data{"dataset_id": datasetID, "edition": edition})
+		return nil, apierrors.ErrNotFound
+	}
+
+	editionMap := make(map[string]string)
+	editionMap[edition] = datasetID + "/" + edition
+	for i := range versions {
+		version := versions[i]
+		if version.PreviousEditionId != nil {
+			for _, prevEdition := range version.PreviousEditionId {
+				editionMap[prevEdition] = datasetID + "/" + prevEdition
+			}
+		}
+	}
+
+	return editionMap, nil
 }
 
 func fetchAccessTokenFromHeader(req *http.Request) string {
