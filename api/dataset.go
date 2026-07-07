@@ -668,10 +668,10 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 					},
 				}
 
-				if dataset.Links != nil && dataset.Links.LatestVersion != nil {
+				if currentDataset.Next.Links != nil && currentDataset.Next.Links.LatestVersion != nil {
 					updatedLinks.LatestVersion = &models.LinkObject{
-						ID:   dataset.Links.LatestVersion.ID,
-						HRef: strings.ReplaceAll(dataset.Links.LatestVersion.HRef, fmt.Sprintf("/datasets/%s/", datasetID), fmt.Sprintf("/datasets/%s/", dataset.ID)),
+						ID:   currentDataset.Next.Links.LatestVersion.ID,
+						HRef: strings.ReplaceAll(currentDataset.Next.Links.LatestVersion.HRef, fmt.Sprintf("/datasets/%s/", datasetID), fmt.Sprintf("/datasets/%s/", dataset.ID)),
 					}
 				}
 

@@ -16,7 +16,19 @@ Feature: PUT /datasets/{id} for static datasets
                         "topics": [
                             "old-topic",
                             "topic-1"
-                        ]
+                        ],
+                        "links": {
+                            "self": {
+                                "href": "/datasets/old-dataset-id"
+                            },
+                            "editions": {
+                                "href": "/datasets/old-dataset-id/editions"
+                            },
+                            "latest_version": {
+                                "href": "/datasets/old-dataset-id/editions/2025/versions/1",
+                                "id": "1"
+                            }
+                        }
                     }
                 },
                 {
@@ -143,6 +155,10 @@ Feature: PUT /datasets/{id} for static datasets
                     },
                     "editions": {
                         "href": "/datasets/new-dataset-id/editions"
+                    },
+                    "latest_version": {
+                        "href": "/datasets/new-dataset-id/editions/2025/versions/1",
+                        "id": "1"
                     }
                 }
             }
