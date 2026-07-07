@@ -513,7 +513,6 @@ func (api DatasetAPI) getPermissionAttributesFromRequest(req *http.Request) (map
 	logData := log.Data{"dataset_id": datasetID, "edition": edition}
 	if err != nil {
 		log.Error(req.Context(), "failed to get versions for dataset edition", err, logData)
-		return nil, apierrors.ErrInternalServer
 	}
 
 	for _, version := range versions {

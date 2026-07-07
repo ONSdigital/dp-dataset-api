@@ -139,6 +139,9 @@ func TestGetVersionsReturnsOK(t *testing.T) {
 			GetVersionsFunc: func(context.Context, string, string, string, int, int) ([]models.Version, int, error) {
 				return results, 2, nil
 			},
+			GetVersionsStaticNoLimitFunc: func(ctx context.Context, datasetID string, state string) ([]*models.Version, int, error) {
+				return nil, 0, nil
+			},
 		}
 
 		authorisationMock := &authMock.MiddlewareMock{
@@ -228,6 +231,9 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			},
 			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
 				return errs.ErrInternalServer
+			},
+			GetVersionsStaticNoLimitFunc: func(ctx context.Context, datasetID string, state string) ([]*models.Version, int, error) {
+				return nil, 0, nil
 			},
 		}
 
@@ -417,6 +423,9 @@ func TestGetVersionsReturnsError(t *testing.T) {
 			GetVersionsFunc: func(context.Context, string, string, string, int, int) ([]models.Version, int, error) {
 				return items, len(items), nil
 			},
+			GetVersionsStaticNoLimitFunc: func(ctx context.Context, datasetID string, state string) ([]*models.Version, int, error) {
+				return nil, 0, nil
+			},
 		}
 
 		authorisationMock := &authMock.MiddlewareMock{
@@ -509,6 +518,9 @@ func TestGetVersionReturnsError(t *testing.T) {
 			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
 				return false, errs.ErrInternalServer
 			},
+			GetVersionsStaticNoLimitFunc: func(ctx context.Context, datasetID string, state string) ([]*models.Version, int, error) {
+				return nil, 0, errs.ErrVersionsNotFound
+			},
 		}
 
 		authorisationMock := &authMock.MiddlewareMock{
@@ -534,6 +546,9 @@ func TestGetVersionReturnsError(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{
 			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
 				return false, errs.ErrDatasetNotFound
+			},
+			GetVersionsStaticNoLimitFunc: func(ctx context.Context, datasetID string, state string) ([]*models.Version, int, error) {
+				return nil, 0, errs.ErrVersionsNotFound
 			},
 		}
 
@@ -572,6 +587,9 @@ func TestGetVersionReturnsError(t *testing.T) {
 			},
 			CheckEditionExistsFunc: func(context.Context, string, string, string) error {
 				return errs.ErrEditionNotFound
+			},
+			GetVersionsStaticNoLimitFunc: func(ctx context.Context, datasetID string, state string) ([]*models.Version, int, error) {
+				return nil, 0, errs.ErrVersionsNotFound
 			},
 		}
 
@@ -614,6 +632,9 @@ func TestGetVersionReturnsError(t *testing.T) {
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return nil, errs.ErrVersionNotFound
 			},
+			GetVersionsStaticNoLimitFunc: func(ctx context.Context, datasetID string, state string) ([]*models.Version, int, error) {
+				return nil, 0, errs.ErrVersionsNotFound
+			},
 		}
 
 		authorisationMock := &authMock.MiddlewareMock{
@@ -653,6 +674,9 @@ func TestGetVersionReturnsError(t *testing.T) {
 			},
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return nil, errs.ErrVersionNotFound
+			},
+			GetVersionsStaticNoLimitFunc: func(ctx context.Context, datasetID string, state string) ([]*models.Version, int, error) {
+				return nil, 0, errs.ErrVersionsNotFound
 			},
 		}
 
@@ -778,6 +802,9 @@ func TestGetVersionReturnsError(t *testing.T) {
 					},
 				}, nil
 			},
+			GetVersionsStaticNoLimitFunc: func(ctx context.Context, datasetID string, state string) ([]*models.Version, int, error) {
+				return nil, 0, nil
+			},
 		}
 
 		authorisationMock := &authMock.MiddlewareMock{
@@ -823,6 +850,9 @@ func TestGetVersionRecordsAuditEvent(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{
 			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
 				return true, nil
+			},
+			GetVersionsStaticNoLimitFunc: func(ctx context.Context, datasetID string, state string) ([]*models.Version, int, error) {
+				return nil, 0, nil
 			},
 		}
 
@@ -898,6 +928,9 @@ func TestGetVersionDoesNotRecordAuditEventForUnauthorisedUser(t *testing.T) {
 			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
 				return true, nil
 			},
+			GetVersionsStaticNoLimitFunc: func(ctx context.Context, datasetID string, state string) ([]*models.Version, int, error) {
+				return nil, 0, nil
+			},
 		}
 
 		auditServiceMock := &applicationMocks.AuditServiceMock{
@@ -966,6 +999,9 @@ func TestGetVersionAuditEventLogsErrorButContinues(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{
 			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
 				return true, nil
+			},
+			GetVersionsStaticNoLimitFunc: func(ctx context.Context, datasetID string, state string) ([]*models.Version, int, error) {
+				return nil, 0, nil
 			},
 		}
 
