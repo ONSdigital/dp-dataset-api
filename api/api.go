@@ -510,16 +510,21 @@ func (api DatasetAPI) getPermissionAttributesFromRequest(req *http.Request) (map
 	}
 
 	versions, _, err := api.dataStore.Backend.GetVersionsStaticNoLimit(req.Context(), datasetID, "")
+	logData := log.Data{"dataset_id": datasetID, "edition": edition}
 	if err != nil {
-		log.Error(req.Context(), "failed to get versions for dataset edition", err, log.Data{"dataset_id": datasetID, "edition": edition})
+		log.Error(req.Context(), "failed to get versions for dataset edition", err, logData)
 		return nil, apierrors.ErrInternalServer
 	}
 
-	version := versions[0]
-	if version.PreviousEditionId != nil {
-		return map[string]string{
-			"dataset_edition": datasetID + "/" + version.PreviousEditionId[0],
-		}, nil
+	for _, version := range versions {
+		for _, prevEdition := range version.PreviousEditionId {
+			previousAttributes := map[string]string{
+				"dataset_edition": datasetID + "/" + prevEdition,
+			}
+			if api.checkUserPermission(req, logData, datasetEditionVersionReadPermission, previousAttributes) {
+				return previousAttributes, nil
+			}
+		}
 	}
 
 	return map[string]string{
