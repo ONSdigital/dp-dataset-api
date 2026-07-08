@@ -515,8 +515,8 @@ func (api DatasetAPI) getPermissionAttributesFromRequest(req *http.Request) (map
 		log.Error(req.Context(), "failed to get versions for dataset edition", err, logData)
 	}
 
-	for _, version := range versions {
-		for _, prevEdition := range version.PreviousEditionId {
+	for i := range versions {
+		for _, prevEdition := range versions[i].PreviousEditionId {
 			previousAttributes := map[string]string{
 				"dataset_edition": datasetID + "/" + prevEdition,
 			}
