@@ -769,12 +769,20 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 					prefixes := utils.GeneratePurgePrefixes(smDS.UrlBuilder.GetPublicWebsiteURL().String(), smDS.UrlBuilder.GetAPIRouterPublicURL().String(), topic[0], versionDetails.datasetID, versionDetails.edition, versionDetails.version)
 					logData["purge_prefixes"] = prefixes
 
-					errPurge := smDS.CloudflareClient.PurgeByPrefixes(ctx, prefixes)
-					if errPurge != nil {
-						log.Error(ctx, "putState endpoint: failed to purge cache by prefixes", errPurge, logData)
-					} else {
-						log.Info(ctx, "putState endpoint: successfully purged cache by prefixes", logData)
-					}
+					// Call Cloudflare purge asynchronously to prevent delaying the endpoint response.
+					go func() {
+						cloudflareCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), smDS.CloudflareClient.GetTimeout())
+						defer cancel()
+
+						errPurge := smDS.CloudflareClient.PurgeByPrefixes(cloudflareCtx, prefixes)
+						if errPurge != nil {
+							log.Error(cloudflareCtx, "putState endpoint: failed to purge cache by prefixes", errPurge, logData)
+						} else {
+							log.Info(cloudflareCtx, "putState endpoint: successfully purged cache by prefixes", logData)
+						}
+					}()
+				} else {
+					log.Info(ctx, "putState endpoint: Cloudflare client disabled, skipping cache purge", logData)
 				}
 
 				return updatedV, nil
