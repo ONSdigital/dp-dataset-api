@@ -11,7 +11,6 @@ services:
       - -race
       - -coverpkg=github.com/ONSdigital/dp-dataset-api/...
       - -component
-      - features/editions_static_with_permissions.feature
     volumes:
       - ../../:/dp-dataset-api
       - /var/run/docker.sock:/var/run/docker.sock
