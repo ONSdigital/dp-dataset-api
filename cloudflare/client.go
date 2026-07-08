@@ -1,34 +1,23 @@
 package cloudflare
 
 import (
-	"errors"
+	"time"
 
 	"github.com/cloudflare/cloudflare-go/v6"
 	"github.com/cloudflare/cloudflare-go/v6/option"
 )
 
-// Client is a werapper around the Cloudflare Go SDK client
+// Client is a wrapper around the Cloudflare Go SDK client
 type Client struct {
 	CacheService CacheService
 	ZoneID       string
+	timeout      time.Duration
 }
 
-// New creates a new Cloudflare client with the provided configuration
+// New creates a new Cloudflare client with the provided configuration.
 func New(cfg *Config) (Clienter, error) {
-	if cfg == nil {
-		return nil, errors.New("configuration cannot be nil")
-	}
-
-	if cfg.BaseURL == "" {
-		return nil, errors.New("base URL is required")
-	}
-
-	if cfg.APIToken == "" {
-		return nil, errors.New("API token is required")
-	}
-
-	if cfg.ZoneID == "" {
-		return nil, errors.New("zone ID is required")
+	if err := cfg.Validate(); err != nil {
+		return nil, err
 	}
 
 	client := cloudflare.NewClient(
@@ -39,5 +28,11 @@ func New(cfg *Config) (Clienter, error) {
 	return &Client{
 		CacheService: client.Cache,
 		ZoneID:       cfg.ZoneID,
+		timeout:      cfg.Timeout,
 	}, nil
+}
+
+// GetTimeout returns the timeout duration for Cloudflare API requests.
+func (c *Client) GetTimeout() time.Duration {
+	return c.timeout
 }

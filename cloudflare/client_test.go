@@ -29,7 +29,7 @@ func TestNew(t *testing.T) {
 
 			Convey("Then an error is returned", func() {
 				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldEqual, "configuration cannot be nil")
+				So(err, ShouldEqual, errNilConfig)
 			})
 
 			Convey("And the client is nil", func() {
@@ -47,7 +47,7 @@ func TestNew(t *testing.T) {
 
 			Convey("Then an error is returned", func() {
 				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldEqual, "base URL is required")
+				So(err, ShouldEqual, errMissingBaseURL)
 			})
 
 			Convey("And the client is nil", func() {
@@ -65,7 +65,7 @@ func TestNew(t *testing.T) {
 
 			Convey("Then an error is returned", func() {
 				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldEqual, "API token is required")
+				So(err, ShouldEqual, errMissingAPIToken)
 			})
 
 			Convey("And the client is nil", func() {
@@ -83,11 +83,45 @@ func TestNew(t *testing.T) {
 
 			Convey("Then an error is returned", func() {
 				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldEqual, "zone ID is required")
+				So(err, ShouldEqual, errMissingZoneID)
 			})
 
 			Convey("And the client is nil", func() {
 				So(client, ShouldBeNil)
+			})
+		})
+	})
+
+	Convey("Given an invalid Cloudflare config with an invalid Timeout", t, func() {
+		cfg := NewDefaultConfig()
+		cfg.Timeout = 0
+
+		Convey("When New is called", func() {
+			client, err := New(cfg)
+
+			Convey("Then an error is returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err, ShouldEqual, errInvalidTimeout)
+			})
+
+			Convey("And the client is nil", func() {
+				So(client, ShouldBeNil)
+			})
+		})
+	})
+}
+
+func TestGetTimeout(t *testing.T) {
+	Convey("Given a Cloudflare client with a specific timeout", t, func() {
+		cfg := NewDefaultConfig()
+		client, err := New(cfg)
+		So(err, ShouldBeNil)
+
+		Convey("When GetTimeout is called", func() {
+			timeout := client.GetTimeout()
+
+			Convey("Then the returned timeout matches the configured timeout", func() {
+				So(timeout, ShouldEqual, cfg.Timeout)
 			})
 		})
 	})
