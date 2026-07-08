@@ -27,6 +27,12 @@ Feature: GET editions static
                         "edition": {
                             "href": "/datasets/static-dataset/editions/2024",
                             "id": "2024"
+                        },
+                        "self": {
+                            "href": "/datasets/static-dataset/editions/2024/versions/1"
+                        },
+                        "version": {
+                            "href": "/datasets/static-dataset/editions/2024/versions/1"
                         }
                     },
                     "type": "static",
@@ -54,6 +60,12 @@ Feature: GET editions static
                         "edition": {
                             "href": "/datasets/static-dataset/editions/2024",
                             "id": "2024"
+                        },
+                        "self": {
+                            "href": "/datasets/static-dataset/editions/2024/versions/2"
+                        },
+                        "version": {
+                            "href": "/datasets/static-dataset/editions/2024/versions/2"
                         }
                     },
                     "type": "static",
@@ -81,6 +93,12 @@ Feature: GET editions static
                         "edition": {
                             "href": "/datasets/static-dataset/editions/2025",
                             "id": "2025"
+                        },
+                        "self": {
+                            "href": "/datasets/static-dataset/editions/2025/versions/1"
+                        },
+                        "version": {
+                            "href": "/datasets/static-dataset/editions/2025/versions/1"
                         }
                     },
                     "type": "static",
