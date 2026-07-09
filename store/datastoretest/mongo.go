@@ -142,6 +142,9 @@ var _ store.MongoDB = &MongoDBMock{}
 //			GetVersionsStaticFunc: func(ctx context.Context, datasetID string, edition string, state string, offset int, limit int) ([]models.Version, int, error) {
 //				panic("mock out the GetVersionsStatic method")
 //			},
+//			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
+//				panic("mock out the GetVersionsStaticByEditionNoLimit method")
+//			},
 //			GetVersionsStaticNoLimitFunc: func(ctx context.Context, datasetID string, state string) ([]*models.Version, int, error) {
 //				panic("mock out the GetVersionsStaticNoLimit method")
 //			},
@@ -337,6 +340,9 @@ type MongoDBMock struct {
 
 	// GetVersionsStaticFunc mocks the GetVersionsStatic method.
 	GetVersionsStaticFunc func(ctx context.Context, datasetID string, edition string, state string, offset int, limit int) ([]models.Version, int, error)
+
+	// GetVersionsStaticByEditionNoLimitFunc mocks the GetVersionsStaticByEditionNoLimit method.
+	GetVersionsStaticByEditionNoLimitFunc func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error)
 
 	// GetVersionsStaticNoLimitFunc mocks the GetVersionsStaticNoLimit method.
 	GetVersionsStaticNoLimitFunc func(ctx context.Context, datasetID string, state string) ([]*models.Version, int, error)
@@ -821,6 +827,17 @@ type MongoDBMock struct {
 			// Limit is the limit argument value.
 			Limit int
 		}
+		// GetVersionsStaticByEditionNoLimit holds details about calls to the GetVersionsStaticByEditionNoLimit method.
+		GetVersionsStaticByEditionNoLimit []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// Edition is the edition argument value.
+			Edition string
+			// State is the state argument value.
+			State string
+		}
 		// GetVersionsStaticNoLimit holds details about calls to the GetVersionsStaticNoLimit method.
 		GetVersionsStaticNoLimit []struct {
 			// Ctx is the ctx argument value.
@@ -1093,6 +1110,7 @@ type MongoDBMock struct {
 	lockGetVersionStaticByPreviousEditionID sync.RWMutex
 	lockGetVersions                         sync.RWMutex
 	lockGetVersionsStatic                   sync.RWMutex
+	lockGetVersionsStaticByEditionNoLimit   sync.RWMutex
 	lockGetVersionsStaticNoLimit            sync.RWMutex
 	lockIsStaticDataset                     sync.RWMutex
 	lockRemoveDatasetVersionAndEditionLinks sync.RWMutex
@@ -2819,6 +2837,50 @@ func (mock *MongoDBMock) GetVersionsStaticCalls() []struct {
 	mock.lockGetVersionsStatic.RLock()
 	calls = mock.calls.GetVersionsStatic
 	mock.lockGetVersionsStatic.RUnlock()
+	return calls
+}
+
+// GetVersionsStaticByEditionNoLimit calls GetVersionsStaticByEditionNoLimitFunc.
+func (mock *MongoDBMock) GetVersionsStaticByEditionNoLimit(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
+	if mock.GetVersionsStaticByEditionNoLimitFunc == nil {
+		panic("MongoDBMock.GetVersionsStaticByEditionNoLimitFunc: method is nil but MongoDB.GetVersionsStaticByEditionNoLimit was just called")
+	}
+	callInfo := struct {
+		Ctx       context.Context
+		DatasetID string
+		Edition   string
+		State     string
+	}{
+		Ctx:       ctx,
+		DatasetID: datasetID,
+		Edition:   edition,
+		State:     state,
+	}
+	mock.lockGetVersionsStaticByEditionNoLimit.Lock()
+	mock.calls.GetVersionsStaticByEditionNoLimit = append(mock.calls.GetVersionsStaticByEditionNoLimit, callInfo)
+	mock.lockGetVersionsStaticByEditionNoLimit.Unlock()
+	return mock.GetVersionsStaticByEditionNoLimitFunc(ctx, datasetID, edition, state)
+}
+
+// GetVersionsStaticByEditionNoLimitCalls gets all the calls that were made to GetVersionsStaticByEditionNoLimit.
+// Check the length with:
+//
+//	len(mockedMongoDB.GetVersionsStaticByEditionNoLimitCalls())
+func (mock *MongoDBMock) GetVersionsStaticByEditionNoLimitCalls() []struct {
+	Ctx       context.Context
+	DatasetID string
+	Edition   string
+	State     string
+} {
+	var calls []struct {
+		Ctx       context.Context
+		DatasetID string
+		Edition   string
+		State     string
+	}
+	mock.lockGetVersionsStaticByEditionNoLimit.RLock()
+	calls = mock.calls.GetVersionsStaticByEditionNoLimit
+	mock.lockGetVersionsStaticByEditionNoLimit.RUnlock()
 	return calls
 }
 

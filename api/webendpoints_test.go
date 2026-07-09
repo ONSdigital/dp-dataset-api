@@ -176,7 +176,7 @@ func TestWebSubnetEditionEndpoint(t *testing.T) {
 			GetVersionsFunc: func(context.Context, string, string, string, int, int) ([]models.Version, int, error) {
 				return []models.Version{{Version: 1}}, 1, nil
 			},
-			GetVersionsStaticFunc: func(ctx context.Context, datasetID string, edition string, state string, offset int, limit int) ([]models.Version, int, error) {
+			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
 				return nil, 0, nil
 			},
 		}
@@ -210,7 +210,7 @@ func TestWebSubnetVersionsEndpoint(t *testing.T) {
 				versionSearchState = state
 				return []models.Version{{ID: "124", State: models.PublishedState}}, 1, nil
 			},
-			GetVersionsStaticFunc: func(ctx context.Context, datasetID string, edition string, state string, offset int, limit int) ([]models.Version, int, error) {
+			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
 				return nil, 0, nil
 			},
 		}
@@ -250,7 +250,7 @@ func TestWebSubnetVersionEndpoint(t *testing.T) {
 			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
 				return false, nil
 			},
-			GetVersionsStaticFunc: func(ctx context.Context, datasetID string, edition string, state string, offset int, limit int) ([]models.Version, int, error) {
+			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
 				return nil, 0, nil
 			},
 		}

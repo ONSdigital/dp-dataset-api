@@ -509,7 +509,7 @@ func (api DatasetAPI) getPermissionAttributesFromRequest(req *http.Request) (map
 		}, nil
 	}
 
-	versions, _, err := api.dataStore.Backend.GetVersionsStatic(req.Context(), datasetID, edition, "", 0, 100)
+	versions, _, err := api.dataStore.Backend.GetVersionsStaticByEditionNoLimit(req.Context(), datasetID, edition, "")
 	logData := log.Data{"dataset_id": datasetID, "edition": edition}
 	if err != nil {
 		log.Error(req.Context(), "failed to get versions for dataset edition", err, logData)

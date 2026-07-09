@@ -488,7 +488,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return versionDoc, nil
 			},
-			GetVersionsStaticFunc: func(ctx context.Context, datasetID string, edition string, state string, offset int, limit int) ([]models.Version, int, error) {
+			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
 				return nil, 0, nil
 			},
 		}
@@ -516,7 +516,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetVersionsStaticCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
 
 		responseBytes, err := io.ReadAll(w.Body)
 		if err != nil {
@@ -563,7 +563,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return versionDoc, nil
 			},
-			GetVersionsStaticFunc: func(ctx context.Context, datasetID string, edition string, state string, offset int, limit int) ([]models.Version, int, error) {
+			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
 				return nil, 0, nil
 			},
 		}
@@ -591,7 +591,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetVersionsStaticCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
 
 		responseBytes, err := io.ReadAll(w.Body)
 		if err != nil {
@@ -640,7 +640,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return versionDoc, nil
 			},
-			GetVersionsStaticFunc: func(ctx context.Context, datasetID string, edition string, state string, offset int, limit int) ([]models.Version, int, error) {
+			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
 				return nil, 0, nil
 			},
 		}
@@ -671,7 +671,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.GetVersionsStaticCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
 
 		responseBytes, err := io.ReadAll(w.Body)
 		if err != nil {
@@ -713,7 +713,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return createDatasetDoc(), nil
 			},
-			GetVersionsStaticFunc: func(ctx context.Context, datasetID string, edition string, state string, offset int, limit int) ([]models.Version, int, error) {
+			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
 				return nil, 0, nil
 			},
 		}
@@ -750,7 +750,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return nil, nil
 			},
-			GetVersionsStaticFunc: func(ctx context.Context, datasetID string, edition string, state string, offset int, limit int) ([]models.Version, int, error) {
+			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
 				return nil, 0, nil
 			},
 		}
@@ -793,7 +793,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return versionDoc, nil
 			},
-			GetVersionsStaticFunc: func(ctx context.Context, datasetID string, edition string, state string, offset int, limit int) ([]models.Version, int, error) {
+			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
 				return nil, 0, nil
 			},
 		}
@@ -835,7 +835,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return versionDoc, nil
 			},
-			GetVersionsStaticFunc: func(ctx context.Context, datasetID string, edition string, state string, offset int, limit int) ([]models.Version, int, error) {
+			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
 				return nil, 0, nil
 			},
 		}
@@ -877,7 +877,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return versionDoc, nil
 			},
-			GetVersionsStaticFunc: func(ctx context.Context, datasetID string, edition string, state string, offset int, limit int) ([]models.Version, int, error) {
+			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
 				return nil, 0, nil
 			},
 		}
@@ -900,7 +900,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetVersionsStaticCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
 	})
 
 	Convey("When the version document cannot be found return status not found", t, func() {
@@ -914,7 +914,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return nil, errs.ErrVersionNotFound
 			},
-			GetVersionsStaticFunc: func(ctx context.Context, datasetID string, edition string, state string, offset int, limit int) ([]models.Version, int, error) {
+			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
 				return nil, 0, nil
 			},
 		}
@@ -937,7 +937,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.GetVersionsStaticCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
 	})
 
 	Convey("When the version document state is invalid return an internal server error", t, func() {
@@ -957,7 +957,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return &models.Version{State: "gobbly-gook"}, nil
 			},
-			GetVersionsStaticFunc: func(ctx context.Context, datasetID string, edition string, state string, offset int, limit int) ([]models.Version, int, error) {
+			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
 				return nil, 0, nil
 			},
 		}
@@ -979,7 +979,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetVersionsStaticCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
 	})
 
 	Convey("When an edition document for an invalid version is requested returns invalid version error", t, func() {
@@ -1083,7 +1083,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return nil, errs.ErrVersionNotFound
 			},
-			GetVersionsStaticFunc: func(ctx context.Context, datasetID string, edition string, state string, offset int, limit int) ([]models.Version, int, error) {
+			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
 				return nil, 0, nil
 			},
 		}
@@ -1108,7 +1108,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		So(len(mockedDataStore.CheckEditionExistsStaticCalls()), ShouldEqual, 0)
 
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.GetVersionsStaticCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
 	})
 
 	Convey("When the edition document for a static dataset cannot be found return status not found", t, func() {
@@ -1132,7 +1132,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return versionDoc, nil
 			},
-			GetVersionsStaticFunc: func(ctx context.Context, datasetID string, edition string, state string, offset int, limit int) ([]models.Version, int, error) {
+			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
 				return nil, 0, nil
 			},
 		}
@@ -1158,7 +1158,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 0)
-		So(len(mockedDataStore.GetVersionsStaticCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
 	})
 }
 
@@ -1242,7 +1242,7 @@ func TestGetMetadataRecordsAuditEvent(t *testing.T) {
 			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return versionDoc, nil
 			},
-			GetVersionsStaticFunc: func(ctx context.Context, datasetID string, edition string, state string, offset int, limit int) ([]models.Version, int, error) {
+			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
 				return nil, 0, nil
 			},
 		}
@@ -1288,7 +1288,7 @@ func TestGetMetadataRecordsAuditEvent(t *testing.T) {
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsStaticCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetVersionStaticCalls()), ShouldEqual, 1)
-				So(len(mockedDataStore.GetVersionsStaticCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
 			})
 		})
 	})
@@ -1319,7 +1319,7 @@ func TestGetMetadataDoesNotRecordAuditEventForUnauthorisedUser(t *testing.T) {
 			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return versionDoc, nil
 			},
-			GetVersionsStaticFunc: func(ctx context.Context, datasetID string, edition string, state string, offset int, limit int) ([]models.Version, int, error) {
+			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
 				return nil, 0, nil
 			},
 		}
@@ -1359,7 +1359,7 @@ func TestGetMetadataDoesNotRecordAuditEventForUnauthorisedUser(t *testing.T) {
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.CheckEditionExistsStaticCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetVersionStaticCalls()), ShouldEqual, 1)
-				So(len(mockedDataStore.GetVersionsStaticCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
 			})
 		})
 	})
@@ -1390,7 +1390,7 @@ func TestGetMetadataAuditEventLogsErrorButContinues(t *testing.T) {
 			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
 				return versionDoc, nil
 			},
-			GetVersionsStaticFunc: func(ctx context.Context, datasetID string, edition string, state string, offset int, limit int) ([]models.Version, int, error) {
+			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
 				return nil, 0, nil
 			},
 		}

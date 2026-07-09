@@ -212,6 +212,75 @@ func TestGetVersionStaticByPreviousEditionID(t *testing.T) {
 	})
 }
 
+func TestGetVersionsStaticByEditionNoLimit(t *testing.T) {
+	Convey("Given MongoDB is running and populated with static versions", t, func() {
+		ctx := context.Background()
+		mongoDB, err := getTestMongoDB(ctx, t)
+		So(err, ShouldBeNil)
+
+		_, err = setupVersionsTestData(ctx, mongoDB)
+		So(err, ShouldBeNil)
+
+		Convey("When GetVersionsStaticByEditionNoLimit is called with no state filter", func() {
+			retrievedVersions, count, err := mongoDB.GetVersionsStaticByEditionNoLimit(ctx, staticDatasetID, "edition2", "")
+
+			Convey("Then all versions for that edition are returned", func() {
+				So(err, ShouldBeNil)
+				So(count, ShouldEqual, 2)
+				So(retrievedVersions, ShouldHaveLength, 2)
+				for _, v := range retrievedVersions {
+					So(v.Edition, ShouldEqual, "edition2")
+				}
+			})
+		})
+
+		Convey("When GetVersionsStaticByEditionNoLimit is called with a state filter", func() {
+			retrievedVersions, count, err := mongoDB.GetVersionsStaticByEditionNoLimit(ctx, staticDatasetID, "edition2", models.AssociatedState)
+
+			Convey("Then only versions matching that state are returned", func() {
+				So(err, ShouldBeNil)
+				So(count, ShouldEqual, 1)
+				So(retrievedVersions, ShouldHaveLength, 1)
+				So(retrievedVersions[0].State, ShouldEqual, models.AssociatedState)
+				So(retrievedVersions[0].Edition, ShouldEqual, "edition2")
+			})
+		})
+
+		Convey("When GetVersionsStaticByEditionNoLimit is called with a non-existent edition", func() {
+			retrievedVersions, count, err := mongoDB.GetVersionsStaticByEditionNoLimit(ctx, staticDatasetID, "non-existent-edition", "")
+
+			Convey("Then ErrVersionsNotFound is returned", func() {
+				So(err, ShouldEqual, errs.ErrVersionsNotFound)
+				So(count, ShouldEqual, 0)
+				So(retrievedVersions, ShouldBeNil)
+			})
+		})
+
+		Convey("When GetVersionsStaticByEditionNoLimit is called with a non-existent dataset", func() {
+			retrievedVersions, count, err := mongoDB.GetVersionsStaticByEditionNoLimit(ctx, nonExistentDatasetID, "edition1", "")
+
+			Convey("Then ErrVersionsNotFound is returned", func() {
+				So(err, ShouldEqual, errs.ErrVersionsNotFound)
+				So(count, ShouldEqual, 0)
+				So(retrievedVersions, ShouldBeNil)
+			})
+		})
+
+		Convey("When GetVersionsStaticByEditionNoLimit is called and the mongo connection fails", func() {
+			err = mongoDB.Connection.Close(ctx)
+			So(err, ShouldBeNil)
+
+			retrievedVersions, count, err := mongoDB.GetVersionsStaticByEditionNoLimit(ctx, staticDatasetID, "edition2", "")
+
+			Convey("Then an error is returned", func() {
+				So(err, ShouldNotBeNil)
+				So(count, ShouldEqual, 0)
+				So(retrievedVersions, ShouldBeNil)
+			})
+		})
+	})
+}
+
 func TestGetAllStaticVersions(t *testing.T) {
 	Convey("Given MongoDB is running and populated with static versions", t, func() {
 		ctx := context.Background()

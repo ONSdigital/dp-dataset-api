@@ -217,8 +217,8 @@ func TestGetPermissionAttributesFromRequest(t *testing.T) {
 			datasetID := "test-dataset"
 			edition := "2024"
 			mockedDataStore := &storetest.StorerMock{
-				GetVersionsStaticFunc: func(ctx context.Context, datasetID string, edition string, state string, offset int, limit int) ([]models.Version, int, error) {
-					return []models.Version{}, 0, nil
+				GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
+					return []*models.Version{}, 0, nil
 				},
 			}
 			api := DatasetAPI{dataStore: store.DataStore{Backend: mockedDataStore}}
@@ -231,7 +231,7 @@ func TestGetPermissionAttributesFromRequest(t *testing.T) {
 			Convey("Then it should return the dataset edition from the request", func() {
 				So(err, ShouldBeNil)
 				So(attributes, ShouldResemble, map[string]string{"dataset_edition": datasetID + "/" + edition})
-				So(len(mockedDataStore.GetVersionsStaticCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
 			})
 		})
 
@@ -240,8 +240,8 @@ func TestGetPermissionAttributesFromRequest(t *testing.T) {
 			edition := "2024"
 			previousEdition := "2023"
 			mockedDataStore := &storetest.StorerMock{
-				GetVersionsStaticFunc: func(ctx context.Context, datasetID string, edition string, state string, offset int, limit int) ([]models.Version, int, error) {
-					return []models.Version{{PreviousEditionId: []string{previousEdition}}}, 0, nil
+				GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
+					return []*models.Version{{PreviousEditionId: []string{previousEdition}}}, 0, nil
 				},
 			}
 			permissionsChecker := &authMock.PermissionsCheckerMock{
@@ -270,7 +270,7 @@ func TestGetPermissionAttributesFromRequest(t *testing.T) {
 			Convey("Then it should return the permitted previous edition", func() {
 				So(err, ShouldBeNil)
 				So(attributes, ShouldResemble, map[string]string{"dataset_edition": datasetID + "/" + previousEdition})
-				So(len(mockedDataStore.GetVersionsStaticCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
 				So(len(permissionsChecker.HasPermissionCalls()), ShouldEqual, 1)
 				So(permissionsChecker.HasPermissionCalls()[0].Attributes, ShouldResemble, map[string]string{"dataset_edition": datasetID + "/" + previousEdition})
 			})
