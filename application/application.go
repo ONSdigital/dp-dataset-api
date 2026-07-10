@@ -774,9 +774,12 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 						cloudflareCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), smDS.CloudflareClient.GetTimeout())
 						defer cancel()
 
+						log.Info(cloudflareCtx, "putState endpoint: cloudflare purge by prefixes started", logData)
+
 						errPurge := smDS.CloudflareClient.PurgeByPrefixes(cloudflareCtx, prefixes)
 						if errPurge != nil {
 							log.Error(cloudflareCtx, "putState endpoint: failed to purge cache by prefixes", errPurge, logData)
+							// TODO: Consider implementing Slack alert for failed Cloudflare purge.
 						} else {
 							log.Info(cloudflareCtx, "putState endpoint: successfully purged cache by prefixes", logData)
 						}
