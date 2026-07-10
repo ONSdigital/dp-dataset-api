@@ -53,6 +53,7 @@ type dataMongoDB interface {
 	GetVersions(ctx context.Context, datasetID, editionID, state string, offset, limit int) ([]models.Version, int, error)
 	GetVersionsStatic(ctx context.Context, datasetID, edition, state string, offset, limit int) ([]models.Version, int, error)
 	GetVersionsStaticNoLimit(ctx context.Context, datasetID, state string) ([]*models.Version, int, error)
+	GetVersionsStaticByEditionNoLimit(ctx context.Context, datasetID, edition, state string) ([]*models.Version, int, error)
 	UpdateDataset(ctx context.Context, ID string, dataset *models.Dataset, currentState string) error
 	UpdateDatasetWithAssociation(ctx context.Context, ID, state string, version *models.Version) error
 	UpdateDimensionsNodeIDAndOrder(ctx context.Context, updates []*models.DimensionOption) error
