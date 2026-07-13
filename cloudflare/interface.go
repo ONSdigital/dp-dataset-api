@@ -2,6 +2,7 @@ package cloudflare
 
 import (
 	"context"
+	"time"
 
 	"github.com/cloudflare/cloudflare-go/v6/cache"
 	"github.com/cloudflare/cloudflare-go/v6/option"
@@ -13,6 +14,7 @@ import (
 // Clienter defines the interface for Cloudflare client operations
 type Clienter interface {
 	PurgeByPrefixes(ctx context.Context, prefixes []string) error
+	GetTimeout() time.Duration
 }
 
 // CacheService defines the interface for Cloudflare cache service operations

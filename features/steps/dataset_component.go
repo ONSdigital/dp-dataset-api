@@ -313,6 +313,9 @@ func (c *DatasetComponent) DoGetCloudflareClientOk(ctx context.Context, cloudfla
 		PurgeByPrefixesFunc: func(ctx context.Context, prefixes []string) error {
 			return nil
 		},
+		GetTimeoutFunc: func() time.Duration {
+			return time.Second * 10
+		},
 	}
 	c.cloudflareClient = cloudflareClient
 	return cloudflareClient, nil

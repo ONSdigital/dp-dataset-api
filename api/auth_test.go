@@ -7,13 +7,18 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	healthcheck "github.com/ONSdigital/dp-api-clients-go/v2/health"
 	authMock "github.com/ONSdigital/dp-authorisation/v2/authorisation/mock"
+	"github.com/ONSdigital/dp-dataset-api/models"
+	"github.com/ONSdigital/dp-dataset-api/store"
+	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	dphttp "github.com/ONSdigital/dp-net/v3/http"
 	dprequest "github.com/ONSdigital/dp-net/v3/request"
 	permissionsAPISDK "github.com/ONSdigital/dp-permissions-api/sdk"
+	"github.com/gorilla/mux"
 	. "github.com/smartystreets/goconvey/convey"
 
 	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
@@ -187,4 +192,88 @@ func TestGetAccessTokenFromRequest(t *testing.T) {
 			})
 		})
 	}
+}
+
+func TestGetPermissionAttributesFromRequest(t *testing.T) {
+	Convey("Given a request for permission attributes", t, func() {
+		Convey("When only a dataset id is provided", func() {
+			datasetID := "test-dataset"
+			mockedDataStore := &storetest.StorerMock{}
+			api := DatasetAPI{dataStore: store.DataStore{Backend: mockedDataStore}}
+
+			req := httptest.NewRequest(http.MethodGet, "/datasets/"+datasetID, http.NoBody)
+			req = mux.SetURLVars(req, map[string]string{"dataset_id": datasetID})
+
+			attributes, err := api.getPermissionAttributesFromRequest(req)
+
+			Convey("Then it should return the dataset id without checking versions", func() {
+				So(err, ShouldBeNil)
+				So(attributes, ShouldResemble, map[string]string{"dataset_edition": datasetID})
+				So(len(mockedDataStore.GetVersionsStaticNoLimitCalls()), ShouldEqual, 0)
+			})
+		})
+
+		Convey("When a dataset id and edition are provided", func() {
+			datasetID := "test-dataset"
+			edition := "2024"
+			mockedDataStore := &storetest.StorerMock{
+				GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
+					return []*models.Version{}, 0, nil
+				},
+			}
+			api := DatasetAPI{dataStore: store.DataStore{Backend: mockedDataStore}}
+
+			req := httptest.NewRequest(http.MethodGet, "/datasets/"+datasetID+"/editions/"+edition, http.NoBody)
+			req = mux.SetURLVars(req, map[string]string{"dataset_id": datasetID, "edition": edition})
+
+			attributes, err := api.getPermissionAttributesFromRequest(req)
+
+			Convey("Then it should return the dataset edition from the request", func() {
+				So(err, ShouldBeNil)
+				So(attributes, ShouldResemble, map[string]string{"dataset_edition": datasetID + "/" + edition})
+				So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
+			})
+		})
+
+		Convey("When a dataset id and edition are provided and the user has access to a previous edition", func() {
+			datasetID := "test-dataset"
+			edition := "2024"
+			previousEdition := "2023"
+			mockedDataStore := &storetest.StorerMock{
+				GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
+					return []*models.Version{{PreviousEditionId: []string{previousEdition}}}, 0, nil
+				},
+			}
+			permissionsChecker := &authMock.PermissionsCheckerMock{
+				HasPermissionFunc: func(ctx context.Context, entityData permissionsAPISDK.EntityData, permission string, attributes map[string]string) (bool, error) {
+					return attributes["dataset_edition"] == datasetID+"/"+previousEdition, nil
+				},
+			}
+			api := DatasetAPI{
+				dataStore:            store.DataStore{Backend: mockedDataStore},
+				EnablePrePublishView: true,
+				authMiddleware: &authMock.MiddlewareMock{
+					ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+						So(token, ShouldEqual, "valid-token")
+						return testEntityData, nil
+					},
+				},
+				permissionsChecker: permissionsChecker,
+			}
+
+			req := httptest.NewRequest(http.MethodGet, "/datasets/"+datasetID+"/editions/"+edition, http.NoBody)
+			req.Header.Set(dprequest.AuthHeaderKey, dprequest.BearerPrefix+"valid-token")
+			req = mux.SetURLVars(req, map[string]string{"dataset_id": datasetID, "edition": edition})
+
+			attributes, err := api.getPermissionAttributesFromRequest(req)
+
+			Convey("Then it should return the permitted previous edition", func() {
+				So(err, ShouldBeNil)
+				So(attributes, ShouldResemble, map[string]string{"dataset_edition": datasetID + "/" + previousEdition})
+				So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
+				So(len(permissionsChecker.HasPermissionCalls()), ShouldEqual, 1)
+				So(permissionsChecker.HasPermissionCalls()[0].Attributes, ShouldResemble, map[string]string{"dataset_edition": datasetID + "/" + previousEdition})
+			})
+		})
+	})
 }

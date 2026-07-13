@@ -176,6 +176,9 @@ func TestWebSubnetEditionEndpoint(t *testing.T) {
 			GetVersionsFunc: func(context.Context, string, string, string, int, int) ([]models.Version, int, error) {
 				return []models.Version{{Version: 1}}, 1, nil
 			},
+			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
+				return nil, 0, nil
+			},
 		}
 
 		Convey("Calling the edition endpoint should allow only published items", func() {
@@ -206,6 +209,9 @@ func TestWebSubnetVersionsEndpoint(t *testing.T) {
 			GetVersionsFunc: func(_ context.Context, _ string, _ string, state string, _, _ int) ([]models.Version, int, error) {
 				versionSearchState = state
 				return []models.Version{{ID: "124", State: models.PublishedState}}, 1, nil
+			},
+			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
+				return nil, 0, nil
 			},
 		}
 
@@ -243,6 +249,9 @@ func TestWebSubnetVersionEndpoint(t *testing.T) {
 			},
 			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
 				return false, nil
+			},
+			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
+				return nil, 0, nil
 			},
 		}
 

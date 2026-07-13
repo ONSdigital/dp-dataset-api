@@ -492,3 +492,46 @@ Feature: Static versions GET /versions
                 ]
             }
             """
+
+    Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} returns version when edition matches previous_edition_id and viewer user is authorised
+       Given private endpoints are enabled
+       And I am a JWT user with email "viewer1@ons.gov.uk" and group "role-viewer-allowed"
+       And I have viewer access to the dataset edition "test-static/approved-old-edition-2"
+       When I GET "/datasets/test-static/editions/test-edition-static-approved/versions/1"
+       Then I should receive the following JSON response with status "200":
+            """
+            {
+                "id": "test-static-version-approved",
+                "last_updated": "2021-01-01T00:00:01Z",
+                "version": 1,
+                "edition": "test-edition-static-approved",
+                "edition_title": "Test Edition Static Approved Title",
+                "links": {
+                    "dataset": {
+                        "id": "test-static"
+                    },
+                    "edition": {
+                        "href": "/datasets/test-static/editions/test-edition-static-approved",
+                        "id": "test-edition-static-approved"
+                    },
+                    "self": {
+                        "href": "/datasets/test-static/editions/test-edition-static-approved/versions/1"
+                    },
+                    "web_page": {
+                        "href": "/economy/datasets/test-static/editions/test-edition-static-approved/versions/1"
+                    }
+                },
+                "state": "approved",
+                "type": "static",
+                "previous_edition_id": ["approved-old-edition-1", "approved-old-edition-2"],
+                "distributions": [
+                    {
+                        "title": "Distribution 1",
+                        "format": "csv",
+                        "media_type": "text/csv",
+                        "download_url": "/uuid/filename.csv",
+                        "byte_size": 100000
+                    }
+                ]
+            }
+            """

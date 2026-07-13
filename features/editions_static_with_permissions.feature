@@ -36,6 +36,12 @@ Feature: Dataset API - Static Editions Permissions
                         "edition": {
                             "href": "/datasets/population-estimates/editions/January",
                             "id": "January"
+                        },
+                        "self": {
+                            "href": "/datasets/population-estimates/editions/January/versions/1"
+                        },
+                        "version": {
+                            "href": "/datasets/population-estimates/editions/January/versions/1"
                         }
                     },
                     "version": 1,
@@ -54,6 +60,12 @@ Feature: Dataset API - Static Editions Permissions
                         "edition": {
                             "href": "/datasets/population-estimates/editions/January",
                             "id": "January"
+                        },
+                        "self": {
+                            "href": "/datasets/population-estimates/editions/January/versions/2"
+                        },
+                        "version": {
+                            "href": "/datasets/population-estimates/editions/January/versions/2"
                         }
                     },
                     "version": 2,
@@ -72,6 +84,12 @@ Feature: Dataset API - Static Editions Permissions
                         "edition": {
                             "href": "/datasets/population-estimates/editions/February",
                             "id": "February"
+                        },
+                        "self": {
+                            "href": "/datasets/population-estimates/editions/February/versions/1"
+                        },
+                        "version": {
+                            "href": "/datasets/population-estimates/editions/February/versions/1"
                         }
                     },
                     "version": 1,

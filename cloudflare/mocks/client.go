@@ -7,6 +7,7 @@ import (
 	"context"
 	"github.com/ONSdigital/dp-dataset-api/cloudflare"
 	"sync"
+	"time"
 )
 
 // Ensure, that ClienterMock does implement cloudflare.Clienter.
@@ -19,6 +20,9 @@ var _ cloudflare.Clienter = &ClienterMock{}
 //
 //		// make and configure a mocked cloudflare.Clienter
 //		mockedClienter := &ClienterMock{
+//			GetTimeoutFunc: func() time.Duration {
+//				panic("mock out the GetTimeout method")
+//			},
 //			PurgeByPrefixesFunc: func(ctx context.Context, prefixes []string) error {
 //				panic("mock out the PurgeByPrefixes method")
 //			},
@@ -29,11 +33,17 @@ var _ cloudflare.Clienter = &ClienterMock{}
 //
 //	}
 type ClienterMock struct {
+	// GetTimeoutFunc mocks the GetTimeout method.
+	GetTimeoutFunc func() time.Duration
+
 	// PurgeByPrefixesFunc mocks the PurgeByPrefixes method.
 	PurgeByPrefixesFunc func(ctx context.Context, prefixes []string) error
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// GetTimeout holds details about calls to the GetTimeout method.
+		GetTimeout []struct {
+		}
 		// PurgeByPrefixes holds details about calls to the PurgeByPrefixes method.
 		PurgeByPrefixes []struct {
 			// Ctx is the ctx argument value.
@@ -42,7 +52,35 @@ type ClienterMock struct {
 			Prefixes []string
 		}
 	}
+	lockGetTimeout      sync.RWMutex
 	lockPurgeByPrefixes sync.RWMutex
+}
+
+// GetTimeout calls GetTimeoutFunc.
+func (mock *ClienterMock) GetTimeout() time.Duration {
+	if mock.GetTimeoutFunc == nil {
+		panic("ClienterMock.GetTimeoutFunc: method is nil but Clienter.GetTimeout was just called")
+	}
+	callInfo := struct {
+	}{}
+	mock.lockGetTimeout.Lock()
+	mock.calls.GetTimeout = append(mock.calls.GetTimeout, callInfo)
+	mock.lockGetTimeout.Unlock()
+	return mock.GetTimeoutFunc()
+}
+
+// GetTimeoutCalls gets all the calls that were made to GetTimeout.
+// Check the length with:
+//
+//	len(mockedClienter.GetTimeoutCalls())
+func (mock *ClienterMock) GetTimeoutCalls() []struct {
+} {
+	var calls []struct {
+	}
+	mock.lockGetTimeout.RLock()
+	calls = mock.calls.GetTimeout
+	mock.lockGetTimeout.RUnlock()
+	return calls
 }
 
 // PurgeByPrefixes calls PurgeByPrefixesFunc.
