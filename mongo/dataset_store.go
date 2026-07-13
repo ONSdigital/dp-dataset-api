@@ -620,6 +620,10 @@ func createVersionUpdateQuery(version *models.Version, newETag string) bson.M {
 		setUpdates["previous_edition_id"] = version.PreviousEditionId
 	}
 
+	if version.RelatedContent != nil {
+		setUpdates["related_content"] = version.RelatedContent
+	}
+
 	if newETag != "" {
 		setUpdates["e_tag"] = newETag
 	}

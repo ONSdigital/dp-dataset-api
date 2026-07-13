@@ -230,32 +230,39 @@ func populateNewVersionDoc(currentVersion, originalVersion *models.Version) (*mo
 		return nil, err
 	}
 
-	var alerts []models.Alert
+	var related_content []models.GeneralDetails
+	if currentVersion.RelatedContent != nil {
+		related_content = append(related_content, *currentVersion.RelatedContent...)
+	}
+	if version.RelatedContent != nil {
+		related_content = append(related_content, *version.RelatedContent...)
+	}
+	if related_content != nil {
+		version.RelatedContent = &related_content
+	}
 
+	var alerts []models.Alert
 	if version.Alerts != nil {
 		alerts = append(alerts, *version.Alerts...)
 	}
-
 	if alerts != nil {
 		version.Alerts = &alerts
-	}
-
-	if version.CollectionID == "" {
-		// will be checked later if state:published
-		version.CollectionID = currentVersion.CollectionID
 	}
 
 	var latestChanges []models.LatestChange
 	if currentVersion.LatestChanges != nil {
 		latestChanges = append(latestChanges, *currentVersion.LatestChanges...)
 	}
-
 	if version.LatestChanges != nil {
 		latestChanges = append(latestChanges, *version.LatestChanges...)
 	}
-
 	if latestChanges != nil {
 		version.LatestChanges = &latestChanges
+	}
+
+	if version.CollectionID == "" {
+		// will be checked later if state:published
+		version.CollectionID = currentVersion.CollectionID
 	}
 
 	if version.ReleaseDate == "" {
