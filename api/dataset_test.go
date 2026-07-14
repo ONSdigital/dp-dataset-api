@@ -1957,13 +1957,13 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 	})
 
 	Convey("A successful request to rename an unpublished static dataset returns 200 OK response", t, func() {
-		b := `{"id":"456","contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","href":"https://www.ons.gov.uk/"},"type":"static","keywords":["keyword","keyword 2"],"topics":["topic-0","topic-1"],"license":"Open Government Licence v3.0"}`
+		b := `{"id":"456","contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","href":"https://www.ons.gov.uk/"},"type":"static","keywords":["keyword","keyword 2"],"topics":["topic-0","topic-1"],"license":"Open Government Licence v3.0","previous_series_id":["789"]}`
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{ID: "123", Next: &models.Dataset{Type: models.Static.String(), Title: "CensusEthnicity", State: models.CreatedState, Topics: []string{"topic-0", "topic-1"}}}, nil
+				return &models.DatasetUpdate{ID: "123", Next: &models.Dataset{Type: models.Static.String(), Title: "CensusEthnicity", State: models.CreatedState, Topics: []string{"topic-0", "topic-1"}, PreviousSeriesId: []string{"789"}}}, nil
 			},
 			CheckDatasetExistsFunc: func(ctx context.Context, id, state string) error {
 				return errs.ErrDatasetNotFound
@@ -2002,6 +2002,8 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		So(mockedDataStore.CheckDatasetExistsCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.GetVersionsStaticNoLimitCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpsertDatasetCalls()[0].ID, ShouldEqual, "456")
+		So(mockedDataStore.UpsertDatasetCalls()[0].DatasetDoc.Next.PreviousSeriesId, ShouldResemble, []string{"789", "123"})
 		So(mockedDataStore.DeleteDatasetCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 0)
 	})

@@ -160,7 +160,10 @@ Feature: PUT /datasets/{id} for static datasets
                         "href": "/datasets/new-dataset-id/editions/2025/versions/1",
                         "id": "1"
                     }
-                }
+                },
+                "previous_series_id": [
+                    "old-dataset-id"
+                ]
             }
             """
         And the static version in the database for id "version-1" should be:

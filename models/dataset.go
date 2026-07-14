@@ -120,6 +120,7 @@ type Dataset struct {
 	Survey            string           `bson:"survey,omitempty"                 json:"survey,omitempty"`
 	RelatedContent    []GeneralDetails `bson:"related_content,omitempty"        json:"related_content,omitempty"`
 	Topics            []string         `bson:"topics,omitempty"                 json:"topics,omitempty"`
+	PreviousSeriesId  []string         `bson:"previous_series_id,omitempty"     json:"previous_series_id,omitempty"`
 }
 
 // DatasetLinks represents a list of specific links related to the dataset resource
