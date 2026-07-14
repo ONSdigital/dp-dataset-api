@@ -246,6 +246,8 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 					dataset.Current.Topics = nil
 				}
 
+				dataset.Current.PreviousSeriesId = nil
+
 				datasetResponse = dataset.Current
 			} else {
 				// User has valid authentication to get raw dataset document
@@ -685,6 +687,8 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 				return nil, err
 			}
 		} else if dataset.Type == models.Static.String() && dataset.ID != currentDataset.ID {
+			dataset.PreviousSeriesId = append([]string{}, currentDataset.Next.PreviousSeriesId...)
+			dataset.PreviousSeriesId = append(dataset.PreviousSeriesId, currentDataset.ID)
 			renamedDatasetUpdate := &models.DatasetUpdate{
 				ID:   dataset.ID,
 				Next: dataset,

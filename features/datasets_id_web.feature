@@ -8,6 +8,12 @@ Feature: GET /datasets/{id} in web mode
                     "id": "published-dataset",
                     "state": "published",
                     "title": "Published Dataset"
+                },
+                {
+                    "id": "published-dataset-with-previous-series",
+                    "state": "published",
+                    "title": "Published Dataset with previous series ID",
+                    "previous_series_id": ["old-dataset-id"]
                 }
             ]
             """
@@ -21,6 +27,18 @@ Feature: GET /datasets/{id} in web mode
                 "last_updated": "{{DYNAMIC_TIMESTAMP}}",
                 "state": "published",
                 "title": "Published Dataset"
+            }
+            """
+
+    Scenario: Retrieving a published dataset with previous series returns 200 with the fields redacted
+        When I GET "/datasets/published-dataset-with-previous-series"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "id": "published-dataset-with-previous-series",
+                "last_updated": "{{DYNAMIC_TIMESTAMP}}",
+                "state": "published",
+                "title": "Published Dataset with previous series ID"
             }
             """
     
