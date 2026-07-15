@@ -224,6 +224,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 				}
 				log.Info(ctx, "getDataset endpoint: get dataset with auth", logData)
 			} else {
+				dataset.Current.PreviousSeriesId = nil
 				datasetResponse, err = utils.RewriteDatasetWithoutAuth(ctx, dataset, datasetLinksBuilder)
 				if err != nil {
 					log.Error(ctx, "getDataset endpoint: failed to rewrite dataset without authorisation", err, logData)
