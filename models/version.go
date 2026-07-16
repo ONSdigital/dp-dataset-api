@@ -52,6 +52,7 @@ type Version struct {
 	Distributions      *[]Distribution      `bson:"distributions,omitempty"         json:"distributions,omitempty"`
 	IsMigration        *bool                `bson:"is_migration,omitempty"          json:"is_migration,omitempty"`
 	PreviousEditionId  []string             `bson:"previous_edition_id,omitempty"    json:"previous_edition_id,omitempty"`
+	RelatedContent     *[]GeneralDetails    `bson:"related_content,omitempty"        json:"related_content,omitempty"`
 }
 
 // Alert represents an object containing information on an alert
