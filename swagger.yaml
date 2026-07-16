@@ -1564,7 +1564,6 @@ definitions:
         type: string
         default: "Open Government Licence v3.0"
       links:
-        readOnly: true
         $ref: "#/definitions/DatasetLinks"
       methodologies:
         description: "A list of methodologies for the dataset."
@@ -1587,7 +1586,7 @@ definitions:
       publishers:
         description: A list of the publishers for the dataset.
         type: array
-        minLength: 1
+        minItems: 1
         items:
           $ref: "#/definitions/Publisher"
         default:
@@ -2230,7 +2229,6 @@ definitions:
           - readOnly: true
           - $ref: "#/definitions/DatasetID"
       dataset_links:
-        readOnly: true
         $ref: "#/definitions/DatasetLinks"
       description:
         description: "A description for a dataset"
@@ -2709,6 +2707,11 @@ definitions:
           - official
           - official-in-development
           - no-accreditation
+      related_content:
+        description: "A list of website content related to this version."
+        type: array
+        items:
+          $ref: "#/definitions/RelatedLink"
       release_date:
         description: "The release date of this version of the dataset"
         type: string
