@@ -44,16 +44,18 @@ func RewriteDatasetsWithoutAuth(ctx context.Context, results []*models.DatasetUp
 
 	items := []*models.Dataset{}
 	for _, item := range results {
-		if item.Current != nil {
-			err := RewriteDatasetLinks(ctx, item.Current.Links, datasetLinksBuilder)
-			if err != nil {
-				log.Error(ctx, "failed to rewrite 'current' links", err)
-				return nil, err
-			}
-			item.Current.ID = item.ID
-			item.Current.PreviousSeriesId = nil
-			items = append(items, item.Current)
+		if item.Current == nil {
+			continue
 		}
+
+		err := RewriteDatasetLinks(ctx, item.Current.Links, datasetLinksBuilder)
+		if err != nil {
+			log.Error(ctx, "failed to rewrite 'current' links", err)
+			return nil, err
+		}
+		item.Current.ID = item.ID
+		item.Current.PreviousSeriesId = nil
+		items = append(items, item.Current)
 	}
 	return items, nil
 }
