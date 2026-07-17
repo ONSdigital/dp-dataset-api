@@ -86,4 +86,30 @@ Feature: Dataset API
             }
             """
         Then the HTTP status code should be "405"
-        
+
+    Scenario: Get /datasets does not return redacted fields
+        Given I have these datasets:
+            """
+            [
+                {
+                    "id": "population-estimates",
+                    "previous_series_id": ["old-dataset-id"]
+                }
+            ]
+            """
+        When I GET "/datasets"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "count":1,
+                "items": [
+                    {
+                        "id": "population-estimates",
+                        "last_updated":"0001-01-01T00:00:00Z"
+                    }
+                ],
+                "limit":20,
+                "offset":0,
+                "total_count":1
+            }
+            """

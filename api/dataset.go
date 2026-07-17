@@ -914,6 +914,7 @@ func mapResults(results []*models.DatasetUpdate) []*models.Dataset {
 			continue
 		}
 		item.Current.ID = item.ID
+		item.Current.PreviousSeriesId = nil
 		items = append(items, item.Current)
 	}
 	return items
