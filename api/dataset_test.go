@@ -376,6 +376,90 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 		So(mockedDataStore.GetDatasetsCalls()[0].Offset, ShouldEqual, 12)
 	})
 
+	Convey("A successful web-mode request to get datasets does not expose previous_series_id", t, func() {
+		r := &http.Request{}
+		w := httptest.NewRecorder()
+		address, err := neturl.Parse("localhost:20000/datasets")
+		So(err, ShouldBeNil)
+		r.URL = address
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetsFunc: func(context.Context, int, int, bool) ([]*models.DatasetUpdate, int, error) {
+				return []*models.DatasetUpdate{{
+					ID: "123-456",
+					Current: &models.Dataset{
+						ID:               "123-456",
+						Type:             models.Static.String(),
+						PreviousSeriesId: []string{"old-series-id"},
+					},
+				}}, 1, nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return nil, permissionsAPISDK.ErrFailedToParsePermissionsResponse
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
+		api.enableURLRewriting = true
+
+		actualResponse, actualTotalCount, err := api.getDatasets(w, r, 11, 12)
+		So(err, ShouldBeNil)
+		So(actualTotalCount, ShouldEqual, 1)
+
+		datasets, ok := actualResponse.([]*models.Dataset)
+		So(ok, ShouldBeTrue)
+		So(datasets, ShouldHaveLength, 1)
+		So(datasets[0].PreviousSeriesId, ShouldBeNil)
+	})
+
+	Convey("A successful web-mode request to get datasets does not expose previous_series_id when URL rewriting is disabled", t, func() {
+		r := &http.Request{}
+		w := httptest.NewRecorder()
+		address, err := neturl.Parse("localhost:20000/datasets")
+		So(err, ShouldBeNil)
+		r.URL = address
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetsFunc: func(context.Context, int, int, bool) ([]*models.DatasetUpdate, int, error) {
+				return []*models.DatasetUpdate{{
+					ID: "123-456",
+					Current: &models.Dataset{
+						ID:               "123-456",
+						Type:             models.Static.String(),
+						PreviousSeriesId: []string{"old-series-id"},
+					},
+				}}, 1, nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return nil, permissionsAPISDK.ErrFailedToParsePermissionsResponse
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
+		api.enableURLRewriting = false
+
+		actualResponse, actualTotalCount, err := api.getDatasets(w, r, 11, 12)
+		So(err, ShouldBeNil)
+		So(actualTotalCount, ShouldEqual, 1)
+
+		datasets, ok := actualResponse.([]*models.Dataset)
+		So(ok, ShouldBeTrue)
+		So(datasets, ShouldHaveLength, 1)
+		So(datasets[0].PreviousSeriesId, ShouldBeNil)
+	})
+
 	Convey("A successful request to get datasetwith type query parameter returns 200 OK response, and limit and offset are delegated to the datastore", t, func() {
 		r := &http.Request{}
 		w := httptest.NewRecorder()
