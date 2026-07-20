@@ -384,6 +384,8 @@ func GetWebAPIWithMocks(ctx context.Context, mockedDataStore store.Storer, mocke
 		DownloadGenerators: mockedMapSMGeneratedDownloads,
 	}
 
+	mu.Lock()
+	defer mu.Unlock()
 	cfg, err := config.Get()
 	So(err, ShouldBeNil)
 	cfg.ServiceAuthToken = authToken

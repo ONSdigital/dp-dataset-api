@@ -2339,9 +2339,11 @@ func TestPutVersionGenerateDownloadsError(t *testing.T) {
 			r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(versionAssociatedPayload))
 
 			w := httptest.NewRecorder()
+			mu.Lock()
 			cfg, err := config.Get()
 			So(err, ShouldBeNil)
 			cfg.EnablePrivateEndpoints = true
+			mu.Unlock()
 
 			authorisationMock := &authMock.MiddlewareMock{
 				RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
