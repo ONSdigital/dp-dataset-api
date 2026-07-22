@@ -22,6 +22,7 @@ import (
 	kafka "github.com/ONSdigital/dp-kafka/v4"
 	dprequest "github.com/ONSdigital/dp-net/v3/request"
 	"github.com/ONSdigital/dp-permissions-api/sdk"
+	topicAPISDK "github.com/ONSdigital/dp-topic-api/sdk"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/jinzhu/copier"
 	"github.com/pkg/errors"
@@ -71,9 +72,10 @@ type StateMachineDatasetAPI struct {
 	CloudflareClient             cloudflare.Clienter
 	CloudflareEnabled            bool
 	UrlBuilder                   *url.Builder
+	TopicAPIClient               topicAPISDK.Clienter
 }
 
-func Setup(dataStoreVal store.DataStore, downloadGenerators map[models.DatasetType]DownloadsGenerator, stateMachine *StateMachine, searchContentUpdatedProducer *SearchContentUpdatedProducer, cloudflareClient cloudflare.Clienter, cloudflareEnabled bool, urlBuilder *url.Builder, filesAPIClient filesAPISDK.Clienter) *StateMachineDatasetAPI {
+func Setup(dataStoreVal store.DataStore, downloadGenerators map[models.DatasetType]DownloadsGenerator, stateMachine *StateMachine, searchContentUpdatedProducer *SearchContentUpdatedProducer, cloudflareClient cloudflare.Clienter, cloudflareEnabled bool, urlBuilder *url.Builder, filesAPIClient filesAPISDK.Clienter, topicAPIClient topicAPISDK.Clienter) *StateMachineDatasetAPI {
 	newDS := &StateMachineDatasetAPI{
 		DataStore:                    dataStoreVal,
 		DownloadGenerators:           downloadGenerators,
@@ -83,6 +85,7 @@ func Setup(dataStoreVal store.DataStore, downloadGenerators map[models.DatasetTy
 		CloudflareEnabled:            cloudflareEnabled,
 		UrlBuilder:                   urlBuilder,
 		FilesAPIClient:               filesAPIClient,
+		TopicAPIClient:               topicAPIClient,
 	}
 
 	return newDS
@@ -736,16 +739,32 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 	var doUpdate = func() (*models.Version, error) {
 		if versionUpdate != nil {
 			if versionUpdate.Type == models.Static.String() {
-				err = smDS.publishDistributionFiles(ctx, currentVersion, accessToken)
+				err := smDS.publishDistributionFiles(ctx, currentVersion, accessToken)
 				if err != nil {
-					log.Error(ctx, "putState endpoint: failed to publish distribution files", err, log.Data{})
+					log.Error(ctx, "putState endpoint: failed to publish distribution files", err, logData)
 					return versionUpdate, err
 				}
 
-				updatedV, errVersion := smDS.DataStore.Backend.UpdateStateStatic(ctx, currentVersion, &models.StateUpdate{State: "published"}, eTag)
-				if errVersion != nil {
-					log.Error(ctx, "putVersion endpoint: UpdateVersionStatic returned an error", errVersion)
-					return nil, errVersion
+				// TODO: Remove log as this is only for debugging purposes.
+				log.Info(ctx, "start of web page link code block")
+
+				currentVersion, hasWebPageLinkUpdated, err := smDS.EnsureVersionWebPageLink(ctx, versionDetails.datasetID, currentVersion, accessToken)
+				if err != nil {
+					log.Error(ctx, "putState endpoint: failed to check or update version web page link", err, logData)
+					return versionUpdate, err
+				}
+
+				if hasWebPageLinkUpdated {
+					log.Info(ctx, "putState endpoint: web page link updated for version as topic slug has changed", logData)
+				}
+
+				// TODO: Remove log as this is only for debugging purposes.
+				log.Info(ctx, "end of web page link code block", logData)
+
+				updatedV, err := smDS.DataStore.Backend.UpdateStateStatic(ctx, currentVersion, &models.StateUpdate{State: "published"}, eTag)
+				if err != nil {
+					log.Error(ctx, "putVersion endpoint: UpdateVersionStatic returned an error", err)
+					return nil, err
 				}
 
 				searchContentUpdatedEvent := map[string]interface{}{
