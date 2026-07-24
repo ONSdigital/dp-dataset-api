@@ -3091,40 +3091,38 @@ func TestPopulateNewVersionDocWithRelatedContent(t *testing.T) {
 			Version:     1,
 			ID:          "789",
 		}
-
-		originalVersion := &models.Version{
+		versionUpdate := &models.Version{
 			Type: models.Static.String(),
 		}
-
 		Convey("When only the current version includes related content", func() {
 			currentVersion.RelatedContent = &[]models.GeneralDetails{
 				{Title: "Related content title", HRef: "https://www.ons.gov.uk/my-related-page", Description: "Related content description"},
 			}
-			version, err := populateNewVersionDoc(currentVersion, originalVersion)
+			version, err := populateNewVersionDoc(currentVersion, versionUpdate)
 			So(err, ShouldBeNil)
 			So(version, ShouldNotBeNil)
-			So(*version.RelatedContent, ShouldEqual, *currentVersion.RelatedContent)
+			So(version.RelatedContent, ShouldBeNil)
 		})
 		Convey("When only the original version includes related content", func() {
-			originalVersion.RelatedContent = &[]models.GeneralDetails{
+			versionUpdate.RelatedContent = &[]models.GeneralDetails{
 				{Title: "Related content title", HRef: "https://www.ons.gov.uk/my-related-page", Description: "Related content description"},
 			}
-			version, err := populateNewVersionDoc(currentVersion, originalVersion)
+			version, err := populateNewVersionDoc(currentVersion, versionUpdate)
 			So(err, ShouldBeNil)
 			So(version, ShouldNotBeNil)
-			So(*version.RelatedContent, ShouldEqual, *originalVersion.RelatedContent)
+			So(*version.RelatedContent, ShouldEqual, *versionUpdate.RelatedContent)
 		})
 		Convey("When both the current version and the original version include related content", func() {
-			originalVersion.RelatedContent = &[]models.GeneralDetails{
+			versionUpdate.RelatedContent = &[]models.GeneralDetails{
 				{Title: "Related content title", HRef: "https://www.ons.gov.uk/my-related-page", Description: "Related content description"},
 			}
 			currentVersion.RelatedContent = &[]models.GeneralDetails{
 				{Title: "More Related content title", HRef: "https://www.ons.gov.uk/my-other-related-page", Description: "Additional Related content description"},
 			}
-			version, err := populateNewVersionDoc(currentVersion, originalVersion)
+			version, err := populateNewVersionDoc(currentVersion, versionUpdate)
 			So(err, ShouldBeNil)
 			So(version, ShouldNotBeNil)
-			So(len(*version.RelatedContent), ShouldEqual, len(*currentVersion.RelatedContent)+len(*originalVersion.RelatedContent))
+			So(*version.RelatedContent, ShouldEqual, *versionUpdate.RelatedContent)
 		})
 	})
 }

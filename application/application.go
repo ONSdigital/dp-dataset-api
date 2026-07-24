@@ -223,17 +223,14 @@ func (smDS *StateMachineDatasetAPI) PopulateVersionInfo(ctx context.Context, ver
 }
 
 //nolint:gocyclo // cyclomatic complexity 21 of func `populateNewVersionDoc` is high (> 20)
-func populateNewVersionDoc(currentVersion, originalVersion *models.Version) (*models.Version, error) {
+func populateNewVersionDoc(currentVersion, versionUpdate *models.Version) (*models.Version, error) {
 	var version models.Version
-	err := copier.Copy(&version, originalVersion) // create local copy that escapes to the HEAP at the end of this function
+	err := copier.Copy(&version, versionUpdate) // create local copy that escapes to the HEAP at the end of this function
 	if err != nil {
 		return nil, err
 	}
 
 	var related_content []models.GeneralDetails
-	if currentVersion.RelatedContent != nil {
-		related_content = append(related_content, *currentVersion.RelatedContent...)
-	}
 	if version.RelatedContent != nil {
 		related_content = append(related_content, *version.RelatedContent...)
 	}
