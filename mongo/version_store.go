@@ -339,7 +339,7 @@ func (m *Mongo) GetAllStaticVersions(ctx context.Context, datasetID, state strin
 }
 
 // GetEditionsStatic retrieves a paginated list of editions for a given dataset.
-// Response is ordered by the release date of the oldest version for each edition.
+// Editions are ordered by the release date of the oldest version for each edition.
 // Each Version record is mapped to an EditionUpdate with Current and Next set depending on the state.
 func (m *Mongo) GetEditionsStatic(ctx context.Context, datasetID, state string, offset, limit int) ([]*models.EditionUpdate, int, error) {
 	selector := bson.M{"links.dataset.id": datasetID}
@@ -355,9 +355,9 @@ func (m *Mongo) GetEditionsStatic(ctx context.Context, datasetID, state string, 
 				"$min": "$release_date",
 			},
 		}},
-		{"$sort": bson.M{
-			"oldest_version_release_date": -1,
-			"_id":                         1,
+		{"$sort": bson.D{
+			{Key: "oldest_version_release_date", Value: -1},
+			{Key: "_id", Value: 1},
 		}},
 	}
 
