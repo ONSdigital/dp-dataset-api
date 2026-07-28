@@ -3322,7 +3322,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 					},
 				}, nil
 			},
-			GetAllStaticVersionsFunc: func(context.Context, string, string, int, int) ([]*models.Version, int, error) {
+			GetVersionsStaticNoLimitFunc: func(context.Context, string, string) ([]*models.Version, int, error) {
 				versions := []*models.Version{
 					{
 						ID: "V1",
@@ -3388,7 +3388,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusNoContent)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetAllStaticVersionsCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionsStaticNoLimitCalls()), ShouldEqual, 1)
 		So(len(mockFilesAPIClient.DeleteFileCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.DeleteStaticDatasetVersionCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
@@ -3411,7 +3411,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 					},
 				}, nil
 			},
-			GetAllStaticVersionsFunc: func(context.Context, string, string, int, int) ([]*models.Version, int, error) {
+			GetVersionsStaticNoLimitFunc: func(context.Context, string, string) ([]*models.Version, int, error) {
 				version := []*models.Version{}
 				return version, 0, errs.ErrVersionsNotFound
 			},
@@ -3440,6 +3440,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusNoContent)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionsStaticNoLimitCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteDatasetCalls()), ShouldEqual, 1)
 		So(auditServiceMock.RecordDatasetAuditEventCalls(), ShouldHaveLength, 1)
 		So(auditServiceMock.RecordDatasetAuditEventCalls()[0].Action, ShouldEqual, models.ActionDelete)
@@ -3695,7 +3696,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 					},
 				}, nil
 			},
-			GetAllStaticVersionsFunc: func(context.Context, string, string, int, int) ([]*models.Version, int, error) {
+			GetVersionsStaticNoLimitFunc: func(context.Context, string, string) ([]*models.Version, int, error) {
 				versions := []*models.Version{
 					{
 						ID: "V1",
@@ -3714,7 +3715,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 						},
 					},
 				}
-				return versions, 1, nil
+				return versions, len(versions), nil
 			},
 			DeleteStaticDatasetVersionFunc: func(ctx context.Context, datasetID, editionID string, version int) error {
 				return errs.ErrInternalServer
@@ -3735,6 +3736,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 
 		assertInternalServerErr(w)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionsStaticNoLimitCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.DeleteStaticDatasetVersionCalls()), ShouldEqual, 1)
 	})
 
@@ -3752,7 +3754,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 					},
 				}, nil
 			},
-			GetAllStaticVersionsFunc: func(context.Context, string, string, int, int) ([]*models.Version, int, error) {
+			GetVersionsStaticNoLimitFunc: func(context.Context, string, string) ([]*models.Version, int, error) {
 				versions := []*models.Version{
 					{
 						ID: "1",
@@ -3769,7 +3771,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 						},
 					},
 				}
-				return versions, 1, nil
+				return versions, len(versions), nil
 			},
 		}
 
@@ -3794,6 +3796,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 
 		assertInternalServerErr(w)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetVersionsStaticNoLimitCalls()), ShouldEqual, 1)
 		So(len(mockFilesAPIClient.DeleteFileCalls()), ShouldEqual, 1)
 	})
 }
