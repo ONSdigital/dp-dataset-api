@@ -820,10 +820,7 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 
 		// Find any editions/versions associated with the dataset based on the type
 		if currentDataset.Next.Type == models.Static.String() {
-			// Limit is set to DEFAULT_LIMIT (20) to prevent unbounded queries.
-			// If a dataset has more than DEFAULT_LIMIT unpublished editions/versions, only the first DEFAULT_LIMIT will be deleted.
-			// Refactoring is required if more than DEFAULT_LIMIT editions/versions per dataset is a possibility.
-			versionDocs, _, err := api.dataStore.Backend.GetAllStaticVersions(ctx, currentDataset.ID, "", 0, api.defaultLimit)
+			versions, _, err := api.dataStore.Backend.GetVersionsStaticNoLimit(ctx, currentDataset.ID, "")
 			if err != nil {
 				if err == errs.ErrVersionsNotFound {
 					log.Info(ctx, "deleteDataset endpoint: dataset didn't contain any versions, continuing to delete dataset", logData)
@@ -833,9 +830,9 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			for i := range versionDocs {
-				if versionDocs[i].Distributions != nil {
-					for _, distribution := range *versionDocs[i].Distributions {
+			for i := range versions {
+				if versions[i].Distributions != nil {
+					for _, distribution := range *versions[i].Distributions {
 						logData["distribution_title"] = distribution.Title
 						logData["distribution_download_url"] = distribution.DownloadURL
 
@@ -848,7 +845,7 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 
-				err := api.dataStore.Backend.DeleteStaticDatasetVersion(ctx, currentDataset.ID, versionDocs[i].Edition, versionDocs[i].Version)
+				err := api.dataStore.Backend.DeleteStaticDatasetVersion(ctx, currentDataset.ID, versions[i].Edition, versions[i].Version)
 				if err != nil {
 					log.Error(ctx, "deleteDataset endpoint: failed to delete version", err, logData)
 					return err
