@@ -48,6 +48,8 @@ const (
 	authToken = "dataset"
 )
 
+func boolPtr(b bool) *bool { return &b }
+
 var (
 	datasetPayload                             = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","href":"https://www.ons.gov.uk/"},"type":"filterable"}`
 	datasetPayloadWithID                       = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","keywords":["keyword"],"links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","id": "ageing-population-estimates", "next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","href":"https://www.ons.gov.uk/"},"type":"filterable"}`
@@ -61,6 +63,7 @@ var (
 	datasetPayloadWithTypeStatic               = `{"id":"123","contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","href":"https://www.ons.gov.uk/"},"type":"static","keywords":["keyword","keyword 2"],"topics":["topic-0","topic-1"],"license":"Open Government Licence v3.0"}`
 	datasetPayloadWithStatePublished           = `{"id":"123","contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"static-published","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"StaticPublished","theme":"population","state":"published","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","href":"https://www.ons.gov.uk/"},"type":"static","keywords":["keyword","keyword 2"],"topics":["topic-0","topic-1"],"license":"Open Government Licence v3.0"}`
 	datasetPayloadWithStateAssociated          = `{"id":"123","contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"static-associated","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"StaticAssociated","theme":"population","state":"associated","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","href":"https://www.ons.gov.uk/"},"type":"static","keywords":["keyword","keyword 2"],"topics":["topic-0","topic-1"],"license":"Open Government Licence v3.0"}`
+	datasetPayloadWithIDAndIsMigration         = `{"contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","keywords":["keyword"],"links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","id": "ageing-population-estimates", "next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","href":"https://www.ons.gov.uk/"},"type":"filterable","is_migration":false}`
 
 	editionPayload = `"{\"edition\":\"2017\",\"state\":\"created\",\"license\":\"ONS\",\"release_date\":\"2017-04-04\",\"version\":\"1\"}"`
 
@@ -391,6 +394,7 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 						ID:               "123-456",
 						Type:             models.Static.String(),
 						PreviousSeriesId: []string{"old-series-id"},
+						IsMigration:      boolPtr(true),
 					},
 				}}, 1, nil
 			},
@@ -416,6 +420,7 @@ func TestGetDatasetsReturnsOK(t *testing.T) {
 		So(ok, ShouldBeTrue)
 		So(datasets, ShouldHaveLength, 1)
 		So(datasets[0].PreviousSeriesId, ShouldBeNil)
+		So(datasets[0].IsMigration, ShouldBeNil)
 	})
 
 	Convey("A successful web-mode request to get datasets does not expose previous_series_id when URL rewriting is disabled", t, func() {
@@ -834,6 +839,48 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+	})
+
+	Convey("When a web mode request gets a dataset, is_migration is not returned", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456", http.NoBody)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					ID:      "123",
+					Current: &models.Dataset{ID: "123", IsMigration: boolPtr(true)},
+					Next:    &models.Dataset{ID: "123", IsMigration: boolPtr(true)},
+				}, nil
+			},
+		}
+
+		api := GetWebAPIWithMocks(context.Background(), mockedDataStore, &mocks.DownloadsGeneratorMock{}, &authMock.MiddlewareMock{}, &authMock.PermissionsCheckerMock{}, &clientsidentity.Client{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
+		api.enableURLRewriting = false
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(w.Body.String(), ShouldNotContainSubstring, "is_migration")
+	})
+
+	Convey("When a web mode request gets a dataset with URL rewriting enabled, is_migration is not returned", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456", http.NoBody)
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					ID:      "123",
+					Current: &models.Dataset{ID: "123", IsMigration: boolPtr(true)},
+					Next:    &models.Dataset{ID: "123", IsMigration: boolPtr(true)},
+				}, nil
+			},
+		}
+
+		api := GetWebAPIWithMocks(context.Background(), mockedDataStore, &mocks.DownloadsGeneratorMock{}, &authMock.MiddlewareMock{}, &authMock.PermissionsCheckerMock{}, &clientsidentity.Client{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
+		api.enableURLRewriting = true
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(w.Body.String(), ShouldNotContainSubstring, "is_migration")
 	})
 }
 
@@ -1802,6 +1849,47 @@ func TestAddDatasetNew(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
 	})
+
+	Convey("A request to post a dataset with is_migration false stores the value", t, func() {
+		b := datasetPayloadWithIDAndIsMigration
+		r := createRequestWithAuth("POST", "http://localhost:22000/datasets", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return nil, errs.ErrDatasetNotFound
+			},
+			CheckDatasetTitleExistFunc: func(ctx context.Context, title string) (bool, error) {
+				return false, nil
+			},
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
+				return nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordDatasetAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, dataset *models.Dataset) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, &applicationMocks.StaticDatasetServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusCreated)
+		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpsertDatasetCalls()[0].DatasetDoc.Next.IsMigration, ShouldNotBeNil)
+		So(*mockedDataStore.UpsertDatasetCalls()[0].DatasetDoc.Next.IsMigration, ShouldBeFalse)
+	})
 }
 
 func TestPutDatasetReturnsSuccessfully(t *testing.T) {
@@ -2047,7 +2135,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{ID: "123", Next: &models.Dataset{Type: models.Static.String(), Title: "CensusEthnicity", State: models.CreatedState, Topics: []string{"topic-0", "topic-1"}, PreviousSeriesId: []string{"789"}}}, nil
+				return &models.DatasetUpdate{ID: "123", Next: &models.Dataset{Type: models.Static.String(), Title: "CensusEthnicity", State: models.CreatedState, Topics: []string{"topic-0", "topic-1"}, PreviousSeriesId: []string{"789"}, IsMigration: boolPtr(true)}}, nil
 			},
 			CheckDatasetExistsFunc: func(ctx context.Context, id, state string) error {
 				return errs.ErrDatasetNotFound
@@ -2088,6 +2176,8 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.UpsertDatasetCalls()[0].ID, ShouldEqual, "456")
 		So(mockedDataStore.UpsertDatasetCalls()[0].DatasetDoc.Next.PreviousSeriesId, ShouldResemble, []string{"789", "123"})
+		So(mockedDataStore.UpsertDatasetCalls()[0].DatasetDoc.Next.IsMigration, ShouldNotBeNil)
+		So(*mockedDataStore.UpsertDatasetCalls()[0].DatasetDoc.Next.IsMigration, ShouldBeTrue)
 		So(mockedDataStore.DeleteDatasetCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 0)
 	})

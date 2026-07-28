@@ -121,6 +121,7 @@ type Dataset struct {
 	RelatedContent    []GeneralDetails `bson:"related_content,omitempty"        json:"related_content,omitempty"`
 	Topics            []string         `bson:"topics,omitempty"                 json:"topics,omitempty"`
 	PreviousSeriesId  []string         `bson:"previous_series_id,omitempty"     json:"previous_series_id,omitempty"`
+	IsMigration       *bool            `bson:"is_migration,omitempty"           json:"is_migration,omitempty"`
 }
 
 // DatasetLinks represents a list of specific links related to the dataset resource
