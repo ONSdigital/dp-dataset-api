@@ -80,7 +80,6 @@ type DatasetAPI struct {
 	instancePublishedChecker  *instance.PublishCheck
 	versionPublishedChecker   *PublishCheck
 	MaxRequestOptions         int
-	defaultLimit              int
 	smDatasetAPI              *application.StateMachineDatasetAPI
 	auditService              application.AuditService
 	staticDatasetService      application.StaticDatasetService
@@ -108,7 +107,6 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 		versionPublishedChecker:   nil,
 		instancePublishedChecker:  nil,
 		MaxRequestOptions:         cfg.MaxRequestOptions,
-		defaultLimit:              cfg.DefaultLimit,
 		smDatasetAPI:              smDatasetAPI,
 		permissionsChecker:        permissionsChecker,
 		auditService:              auditService,
