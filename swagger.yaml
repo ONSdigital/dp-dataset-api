@@ -1550,7 +1550,7 @@ definitions:
         minLength: 50
         maxLength: 5000
       is_based_on:
-              $ref: "#/definitions/IsBasedOn"
+        $ref: "#/definitions/IsBasedOn"
       is_migration:
         description: "Indicates whether this dataset series was created as part of a dataset migration"
         type: boolean
