@@ -428,7 +428,7 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 
 		if version.DatasetID != "" {
 			if err := utils.ValidateIDNoSpaces(version.DatasetID); err != nil {
-				log.Error(ctx, "putVersion endpoint: edition ID in request body contains spaces", err, data)
+				log.Error(ctx, "putVersion endpoint: dataset ID in request body contains spaces", err, data)
 				handleVersionAPIErr(ctx, err, w, data)
 				return
 			}
@@ -457,6 +457,12 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 
 			// Only validate uniqueness IF edition or title is changing
 			if editionChanged {
+				if existingVersion.IsMigration != nil && *existingVersion.IsMigration {
+					log.Error(ctx, "cannot change edition ID for migrated edition", errs.ErrCannotChangeEditionIDForMigratedEdition, data)
+					handleVersionAPIErr(ctx, errs.ErrCannotChangeEditionIDForMigratedEdition, w, data)
+					return
+				}
+
 				checkErr := api.dataStore.Backend.CheckEditionExistsStatic(ctx, version.DatasetID, version.Edition, "")
 				if checkErr == nil {
 					log.Error(ctx, "edition ID already exists for this dataset", errs.ErrEditionAlreadyExists, data)

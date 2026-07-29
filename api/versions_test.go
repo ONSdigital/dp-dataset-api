@@ -5303,7 +5303,7 @@ func TestPutVersionIsMigration(t *testing.T) {
 	Convey("When is_migration is included in a PUT version request body", t, func() {
 		trueVal := true
 
-		b := `{"edition_title":"Updated Edition Title","release_date":"2017-04-04","is_migration":true,"type":"static"}`
+		b := `{"edition":"2017","edition_title":"Original Title","release_date":"2017-04-04","is_migration":true,"type":"static"}`
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 		w := httptest.NewRecorder()
 
@@ -5373,6 +5373,47 @@ func TestPutVersionIsMigration(t *testing.T) {
 			So(capturedVersionUpdate, ShouldNotBeNil)
 			So(capturedVersionUpdate.IsMigration, ShouldNotBeNil)
 			So(*capturedVersionUpdate.IsMigration, ShouldBeTrue)
+		})
+	})
+}
+
+func TestPutVersion_EditionIDCannotBeChangedForMigratedEdition(t *testing.T) {
+	t.Parallel()
+
+	Convey("When a request is made to the change the edition ID of a migrated edition", t, func() {
+		b := `{"edition":"changed-id","edition_title":"Original Title","release_date":"2017-04-04","type":"static"}`
+		r := createRequestWithAuth(http.MethodPut, "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return nil, errs.ErrVersionNotFound
+			},
+			GetVersionStaticFunc: func(ctx context.Context, datasetID, editionID string, version int, state string) (*models.Version, error) {
+				return &models.Version{
+					Edition:     "2017",
+					IsMigration: new(true),
+				}, nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
+		api.Router.ServeHTTP(w, r)
+
+		Convey("Then it returns a 409 Conflict", func() {
+			So(w.Code, ShouldEqual, http.StatusConflict)
+			So(w.Body.String(), ShouldContainSubstring, errs.ErrCannotChangeEditionIDForMigratedEdition.Error())
+
+			So(len(mockedDataStore.GetVersionStaticCalls()), ShouldEqual, 1)
 		})
 	})
 }
