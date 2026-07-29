@@ -15,55 +15,57 @@ func (e ErrInvalidPatch) Error() string {
 
 // A list of error messages for Dataset API
 var (
-	ErrAddDatasetAlreadyExists            = errors.New("dataset already exists")
-	ErrAddDatasetTitleAlreadyExists       = errors.New("dataset title already exists")
-	ErrDatasetTypeInvalid                 = errors.New("invalid dataset type")
-	ErrTypeMismatch                       = errors.New("type mismatch")
-	ErrAddUpdateDatasetBadRequest         = errors.New("failed to parse json body")
-	ErrConflictUpdatingInstance           = errors.New("conflict updating instance resource")
-	ErrDatasetNotFound                    = errors.New("dataset not found")
-	ErrDeletePublishedDatasetForbidden    = errors.New("a published dataset cannot be deleted")
-	ErrDeletePublishedVersionForbidden    = errors.New("a published version cannot be deleted")
-	ErrDimensionNodeNotFound              = errors.New("dimension node not found")
-	ErrDimensionNotFound                  = errors.New("dimension not found")
-	ErrDimensionOptionNotFound            = errors.New("dimension option not found")
-	ErrDimensionsNotFound                 = errors.New("dimensions not found")
-	ErrEditionNotFound                    = errors.New("edition not found")
-	ErrEditionsNotFound                   = errors.New("no editions were found")
-	ErrIncorrectStateToDetach             = errors.New("only versions with a state of edition-confirmed or associated can be detached")
-	ErrInstanceNotFound                   = errors.New("instance not found")
-	ErrInstanceConflict                   = errors.New("instance does not match the expected eTag")
-	ErrInternalServer                     = errors.New("internal error")
-	ErrInsertedObservationsInvalidSyntax  = errors.New("inserted observation request parameter not an integer")
-	ErrInvalidQueryParameter              = errors.New("invalid query parameter")
-	ErrInvalidBody                        = errors.New("invalid request body")
-	ErrTooManyQueryParameters             = errors.New("too many query parameters have been provided")
-	ErrMetadataVersionNotFound            = errors.New("version not found")
-	ErrMissingJobProperties               = errors.New("missing job properties")
-	ErrMissingParameters                  = errors.New("missing properties in JSON")
-	ErrResourcePublished                  = errors.New("unable to update resource as it has been published")
-	ErrResourceState                      = errors.New("incorrect resource state")
-	ErrUnableToParseJSON                  = errors.New("failed to parse json body")
-	ErrUnableToReadMessage                = errors.New("failed to read message body")
-	ErrUnauthorised                       = errors.New("unauthorised access to API")
-	ErrVersionMissingState                = errors.New("missing state from version")
-	ErrVersionNotFound                    = errors.New("version not found")
-	ErrVersionsNotFound                   = errors.New("no versions were found")
-	ErrInvalidVersion                     = errors.New("invalid version requested")
-	ErrVersionAlreadyExists               = errors.New("an unpublished version of this dataset already exists")
-	ErrNotFound                           = errors.New("not found")
-	ErrMissingDatasetID                   = errors.New("invalid fields: missing dataset id in request body")
-	ErrEditionAlreadyExists               = errors.New("the edition already exists")
-	ErrEditionTitleAlreadyExists          = errors.New("the edition-title already exists")
-	ErrInvalidDatasetTypeForEditionUpdate = errors.New("unable to update edition-id, invalid dataset type")
-	ErrSpacesNotAllowedInID               = errors.New("spaces are not allowed in the ID field")
-	ErrCannotChangeIDForPublishedDataset  = errors.New("cannot change the dataset ID for a published dataset")
-	ErrFileMetadataNotFound               = errors.New("file metadata not found")
-	ErrFileNotInCorrectState              = errors.New("file not in correct state")
-	ErrInvalidParamCombination            = errors.New("cannot request state and published parameters at the same time")
-	ErrMethodNotAllowed                   = errors.New("method not allowed")
-	ErrPublishedDatasetTopicChange        = errors.New("canonical topic can't be changed once a series is published")
-	ErrStateNotFound                      = errors.New("incorrect state, can be one of the following: edition-confirmed, associated, approved or published")
+	ErrAddDatasetAlreadyExists                 = errors.New("dataset already exists")
+	ErrAddDatasetTitleAlreadyExists            = errors.New("dataset title already exists")
+	ErrDatasetTypeInvalid                      = errors.New("invalid dataset type")
+	ErrTypeMismatch                            = errors.New("type mismatch")
+	ErrAddUpdateDatasetBadRequest              = errors.New("failed to parse json body")
+	ErrConflictUpdatingInstance                = errors.New("conflict updating instance resource")
+	ErrDatasetNotFound                         = errors.New("dataset not found")
+	ErrDeletePublishedDatasetForbidden         = errors.New("a published dataset cannot be deleted")
+	ErrDeletePublishedVersionForbidden         = errors.New("a published version cannot be deleted")
+	ErrDimensionNodeNotFound                   = errors.New("dimension node not found")
+	ErrDimensionNotFound                       = errors.New("dimension not found")
+	ErrDimensionOptionNotFound                 = errors.New("dimension option not found")
+	ErrDimensionsNotFound                      = errors.New("dimensions not found")
+	ErrEditionNotFound                         = errors.New("edition not found")
+	ErrEditionsNotFound                        = errors.New("no editions were found")
+	ErrIncorrectStateToDetach                  = errors.New("only versions with a state of edition-confirmed or associated can be detached")
+	ErrInstanceNotFound                        = errors.New("instance not found")
+	ErrInstanceConflict                        = errors.New("instance does not match the expected eTag")
+	ErrInternalServer                          = errors.New("internal error")
+	ErrInsertedObservationsInvalidSyntax       = errors.New("inserted observation request parameter not an integer")
+	ErrInvalidQueryParameter                   = errors.New("invalid query parameter")
+	ErrInvalidBody                             = errors.New("invalid request body")
+	ErrTooManyQueryParameters                  = errors.New("too many query parameters have been provided")
+	ErrMetadataVersionNotFound                 = errors.New("version not found")
+	ErrMissingJobProperties                    = errors.New("missing job properties")
+	ErrMissingParameters                       = errors.New("missing properties in JSON")
+	ErrResourcePublished                       = errors.New("unable to update resource as it has been published")
+	ErrResourceState                           = errors.New("incorrect resource state")
+	ErrUnableToParseJSON                       = errors.New("failed to parse json body")
+	ErrUnableToReadMessage                     = errors.New("failed to read message body")
+	ErrUnauthorised                            = errors.New("unauthorised access to API")
+	ErrVersionMissingState                     = errors.New("missing state from version")
+	ErrVersionNotFound                         = errors.New("version not found")
+	ErrVersionsNotFound                        = errors.New("no versions were found")
+	ErrInvalidVersion                          = errors.New("invalid version requested")
+	ErrVersionAlreadyExists                    = errors.New("an unpublished version of this dataset already exists")
+	ErrNotFound                                = errors.New("not found")
+	ErrMissingDatasetID                        = errors.New("invalid fields: missing dataset id in request body")
+	ErrEditionAlreadyExists                    = errors.New("the edition already exists")
+	ErrEditionTitleAlreadyExists               = errors.New("the edition-title already exists")
+	ErrInvalidDatasetTypeForEditionUpdate      = errors.New("unable to update edition-id, invalid dataset type")
+	ErrSpacesNotAllowedInID                    = errors.New("spaces are not allowed in the ID field")
+	ErrCannotChangeIDForPublishedDataset       = errors.New("cannot change the dataset ID for a published dataset")
+	ErrCannotChangeDatasetIDForMigratedDataset = errors.New("cannot change the dataset ID for a migrated dataset")
+	ErrCannotChangeEditionIDForMigratedEdition = errors.New("cannot change the edition ID for a migrated edition")
+	ErrFileMetadataNotFound                    = errors.New("file metadata not found")
+	ErrFileNotInCorrectState                   = errors.New("file not in correct state")
+	ErrInvalidParamCombination                 = errors.New("cannot request state and published parameters at the same time")
+	ErrMethodNotAllowed                        = errors.New("method not allowed")
+	ErrPublishedDatasetTopicChange             = errors.New("canonical topic can't be changed once a series is published")
+	ErrStateNotFound                           = errors.New("incorrect state, can be one of the following: edition-confirmed, associated, approved or published")
 
 	ErrExpectedResourceStateOfCreated          = errors.New("unable to update resource, expected resource to have a state of created")
 	ErrExpectedResourceStateOfSubmitted        = errors.New("unable to update resource, expected resource to have a state of submitted")
@@ -101,13 +103,15 @@ var (
 	}
 
 	ConflictRequestMap = map[error]bool{
-		ErrAddDatasetAlreadyExists:           true,
-		ErrCannotChangeIDForPublishedDataset: true,
-		ErrConflictUpdatingInstance:          true,
-		ErrInstanceConflict:                  true,
-		ErrEditionAlreadyExists:              true,
-		ErrEditionTitleAlreadyExists:         true,
-		ErrFileNotInCorrectState:             true,
+		ErrAddDatasetAlreadyExists:                 true,
+		ErrCannotChangeIDForPublishedDataset:       true,
+		ErrCannotChangeDatasetIDForMigratedDataset: true,
+		ErrCannotChangeEditionIDForMigratedEdition: true,
+		ErrConflictUpdatingInstance:                true,
+		ErrInstanceConflict:                        true,
+		ErrEditionAlreadyExists:                    true,
+		ErrEditionTitleAlreadyExists:               true,
+		ErrFileNotInCorrectState:                   true,
 	}
 
 	ForbiddenMap = map[error]bool{
