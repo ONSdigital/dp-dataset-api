@@ -44,10 +44,11 @@ var (
 
 	// errors that should return a 409 status
 	datasetsConflict = map[error]bool{
-		errs.ErrCannotChangeIDForPublishedDataset: true,
-		errs.ErrAddDatasetAlreadyExists:           true,
-		errs.ErrAddDatasetTitleAlreadyExists:      true,
-		errs.ErrPublishedDatasetTopicChange:       true,
+		errs.ErrCannotChangeIDForPublishedDataset:       true,
+		errs.ErrCannotChangeDatasetIDForMigratedDataset: true,
+		errs.ErrAddDatasetAlreadyExists:                 true,
+		errs.ErrAddDatasetTitleAlreadyExists:            true,
+		errs.ErrPublishedDatasetTopicChange:             true,
 	}
 )
 
@@ -612,6 +613,11 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 			if isPublished && isIDChanged {
 				log.Error(ctx, "putDataset endpoint: unable to update ID of a published dataset", errs.ErrCannotChangeIDForPublishedDataset, data)
 				return nil, errs.ErrCannotChangeIDForPublishedDataset
+			}
+
+			if isIDChanged && currentDataset.Next.IsMigration != nil && *currentDataset.Next.IsMigration {
+				log.Error(ctx, "putDataset endpoint: cannot change dataset ID for migrated dataset", errs.ErrCannotChangeDatasetIDForMigratedDataset, data)
+				return nil, errs.ErrCannotChangeDatasetIDForMigratedDataset
 			}
 
 			if !isPublished && isIDChanged {

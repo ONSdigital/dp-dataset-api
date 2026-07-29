@@ -2135,7 +2135,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{ID: "123", Next: &models.Dataset{Type: models.Static.String(), Title: "CensusEthnicity", State: models.CreatedState, Topics: []string{"topic-0", "topic-1"}, PreviousSeriesId: []string{"789"}, IsMigration: boolPtr(true)}}, nil
+				return &models.DatasetUpdate{ID: "123", Next: &models.Dataset{Type: models.Static.String(), Title: "CensusEthnicity", State: models.CreatedState, Topics: []string{"topic-0", "topic-1"}, PreviousSeriesId: []string{"789"}}}, nil
 			},
 			CheckDatasetExistsFunc: func(ctx context.Context, id, state string) error {
 				return errs.ErrDatasetNotFound
@@ -2176,8 +2176,6 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.UpsertDatasetCalls()[0].ID, ShouldEqual, "456")
 		So(mockedDataStore.UpsertDatasetCalls()[0].DatasetDoc.Next.PreviousSeriesId, ShouldResemble, []string{"789", "123"})
-		So(mockedDataStore.UpsertDatasetCalls()[0].DatasetDoc.Next.IsMigration, ShouldNotBeNil)
-		So(*mockedDataStore.UpsertDatasetCalls()[0].DatasetDoc.Next.IsMigration, ShouldBeTrue)
 		So(mockedDataStore.DeleteDatasetCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 0)
 	})
@@ -3270,6 +3268,41 @@ func TestPutDatasetReturnsError(t *testing.T) {
 		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 0)
 		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 0)
 		So(mockedDataStore.DeleteDatasetCalls(), ShouldHaveLength, 0)
+	})
+
+	Convey("When a request is made to change the dataset id of a migrated dataset", t, func() {
+		b := `{"id":"456","contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"static-published","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"StaticPublished","theme":"population","state":"published","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","href":"https://www.ons.gov.uk/"},"type":"static","keywords":["keyword","keyword 2"],"topics":["topic-0","topic-1"],"license":"Open Government Licence v3.0"}`
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{
+					ID:      "123",
+					Current: &models.Dataset{Type: models.Static.String(), State: models.PublishedState, Topics: []string{"topic-0", "topic-1"}, IsMigration: new(true)},
+					Next:    &models.Dataset{Type: models.Static.String(), Title: "StaticPublished", Topics: []string{"topic-0", "topic-1"}, IsMigration: new(true)},
+				}, nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
+		api.Router.ServeHTTP(w, r)
+
+		Convey("Then it should return a 409 conflict response", func() {
+			So(w.Code, ShouldEqual, http.StatusConflict)
+			So(w.Body.String(), ShouldContainSubstring, errs.ErrCannotChangeDatasetIDForMigratedDataset.Error())
+
+			So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
+		})
 	})
 
 	Convey("When PUT static unpublished dataset calls trying to change id to an existing one returns 409 response", t, func() {
