@@ -194,6 +194,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			Title:       "Related content 2",
 		}}
 		nationalStatistic := true
+		isMigration := true
 
 		expectedUpdate := bson.M{
 			"next.collection_id":            "12345678",
@@ -222,6 +223,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			"next.subtopics":                subtopics,
 			"next.survey":                   survey,
 			"next.related_content":          relatedContent,
+			"next.is_migration":             &isMigration,
 		}
 
 		dataset := &models.Dataset{
@@ -255,6 +257,7 @@ func TestDatasetUpdateQuery(t *testing.T) {
 			Subtopics:        subtopics,
 			Survey:           survey,
 			RelatedContent:   relatedContent,
+			IsMigration:      &isMigration,
 		}
 
 		selector := createDatasetUpdateQuery(testContext, "123", dataset, models.CreatedState)
@@ -270,6 +273,21 @@ func TestDatasetUpdateQuery(t *testing.T) {
 
 		expectedUpdate := bson.M{
 			"next.national_statistic": &nationalStatistic,
+		}
+
+		selector := createDatasetUpdateQuery(testContext, "123", dataset, models.CreatedState)
+		So(selector, ShouldNotBeNil)
+		So(selector, ShouldResemble, expectedUpdate)
+	})
+
+	Convey("When is_migration is set to false", t, func() {
+		isMigration := false
+		dataset := &models.Dataset{
+			IsMigration: &isMigration,
+		}
+
+		expectedUpdate := bson.M{
+			"next.is_migration": &isMigration,
 		}
 
 		selector := createDatasetUpdateQuery(testContext, "123", dataset, models.CreatedState)

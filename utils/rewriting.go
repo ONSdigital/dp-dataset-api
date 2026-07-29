@@ -55,6 +55,7 @@ func RewriteDatasetsWithoutAuth(ctx context.Context, results []*models.DatasetUp
 		}
 		item.Current.ID = item.ID
 		item.Current.PreviousSeriesId = nil
+		item.Current.IsMigration = nil
 		items = append(items, item.Current)
 	}
 	return items, nil

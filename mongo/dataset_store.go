@@ -502,6 +502,10 @@ func createDatasetUpdateQuery(ctx context.Context, id string, dataset *models.Da
 		updates["next.topics"] = dataset.Topics
 	}
 
+	if dataset.IsMigration != nil {
+		updates["next.is_migration"] = dataset.IsMigration
+	}
+
 	log.Info(ctx, "built update query for dataset resource", log.Data{"datasetID": id, "dataset": dataset, "updates": updates})
 	return updates
 }

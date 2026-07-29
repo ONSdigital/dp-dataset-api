@@ -225,6 +225,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 				log.Info(ctx, "getDataset endpoint: get dataset with auth", logData)
 			} else {
 				dataset.Current.PreviousSeriesId = nil
+				dataset.Current.IsMigration = nil
 				datasetResponse, err = utils.RewriteDatasetWithoutAuth(ctx, dataset, datasetLinksBuilder)
 				if err != nil {
 					log.Error(ctx, "getDataset endpoint: failed to rewrite dataset without authorisation", err, logData)
@@ -248,6 +249,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 				}
 
 				dataset.Current.PreviousSeriesId = nil
+				dataset.Current.IsMigration = nil
 
 				datasetResponse = dataset.Current
 			} else {
@@ -690,6 +692,11 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 		} else if dataset.Type == models.Static.String() && dataset.ID != currentDataset.ID {
 			dataset.PreviousSeriesId = append([]string{}, currentDataset.Next.PreviousSeriesId...)
 			dataset.PreviousSeriesId = append(dataset.PreviousSeriesId, currentDataset.ID)
+
+			if dataset.IsMigration == nil {
+				dataset.IsMigration = currentDataset.Next.IsMigration
+			}
+
 			renamedDatasetUpdate := &models.DatasetUpdate{
 				ID:   dataset.ID,
 				Next: dataset,
@@ -912,6 +919,7 @@ func mapResults(results []*models.DatasetUpdate) []*models.Dataset {
 		}
 		item.Current.ID = item.ID
 		item.Current.PreviousSeriesId = nil
+		item.Current.IsMigration = nil
 		items = append(items, item.Current)
 	}
 	return items

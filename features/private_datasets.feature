@@ -819,3 +819,124 @@ Feature: Private Dataset API
             """
             spaces are not allowed in the ID field
             """
+
+    Scenario: Adding is_migration to a dataset
+        Given I have these datasets:
+            """
+            [
+                {
+                    "id": "population-estimates"
+                }
+            ]
+            """
+        When I PUT "/datasets/population-estimates"
+            """
+            {
+                "is_migration": false
+            }
+            """
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "is_migration": false,
+                "last_updated": "0001-01-01T00:00:00Z"
+            }
+            """
+        And the document in the database for id "population-estimates" should be:
+            """
+            {
+                "id": "population-estimates",
+                "is_migration": false
+            }
+            """
+
+    Scenario: GET /datasets returns is_migration when authorised
+        Given I have these datasets:
+            """
+            [
+                {
+                    "id": "population-estimates",
+                    "is_migration": true
+                }
+            ]
+            """
+        When I GET "/datasets"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "count": 1,
+                "items": [
+                    {
+                        "id": "population-estimates",
+                        "next": {
+                            "id": "population-estimates",
+                            "is_migration": true,
+                            "last_updated": "0001-01-01T00:00:00Z"
+                        },
+                        "current": {
+                            "id": "population-estimates",
+                            "is_migration": true,
+                            "last_updated": "0001-01-01T00:00:00Z"
+                        }
+                    }
+                ],
+                "limit": 20,
+                "offset": 0,
+                "total_count": 1
+            }
+            """
+
+    Scenario: Creating a new dataset with is_migration
+        When I POST "/datasets"
+            """
+            {
+                "id": "ageing-population-estimates",
+                "state": "anything",
+                "title": "CID",
+                "type": "filterable",
+                "description": "census",
+                "keywords": [
+                    "keyword"
+                ],
+                "next_release": "2016-04-04",
+                "contacts": [
+                    {
+                        "email": "testing@hotmail.com",
+                        "name": "John Cox",
+                        "telephone": "01623 456789"
+                    }
+                ],
+                "is_migration": true
+            }
+            """
+        Then the HTTP status code should be "201"
+        And the document in the database for id "ageing-population-estimates" should be:
+            """
+            {
+                "id": "ageing-population-estimates",
+                "state": "created",
+                "title": "CID",
+                "type": "filterable",
+                "links": {
+                    "editions": {
+                        "href": "http://localhost:22000/datasets/ageing-population-estimates/editions"
+                    },
+                    "self": {
+                        "href": "http://localhost:22000/datasets/ageing-population-estimates"
+                    }
+                },
+                "description": "census",
+                "keywords": [
+                    "keyword"
+                ],
+                "next_release": "2016-04-04",
+                "contacts": [
+                    {
+                        "email": "testing@hotmail.com",
+                        "name": "John Cox",
+                        "telephone": "01623 456789"
+                    }
+                ],
+                "is_migration": true
+            }
+            """

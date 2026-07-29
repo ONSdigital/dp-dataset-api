@@ -13,6 +13,7 @@ Feature: PUT /datasets/{id} for static datasets
                         "title": "Original Title",
                         "description": "A static dataset",
                         "state": "created",
+                        "is_migration": true,
                         "topics": [
                             "old-topic",
                             "topic-1"
@@ -145,6 +146,7 @@ Feature: PUT /datasets/{id} for static datasets
                     "prices"
                 ],
                 "type": "static",
+                "is_migration": true,
                 "topics": [
                     "economy-topic-id",
                     "topic-1"

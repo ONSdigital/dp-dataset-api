@@ -13,7 +13,8 @@ Feature: GET /datasets/{id} in web mode
                     "id": "published-dataset-with-previous-series",
                     "state": "published",
                     "title": "Published Dataset with previous series ID",
-                    "previous_series_id": ["old-dataset-id"]
+                    "previous_series_id": ["old-dataset-id"],
+                    "is_migration": true
                 }
             ]
             """
@@ -48,4 +49,17 @@ Feature: GET /datasets/{id} in web mode
         And I should receive the following response:
             """
             dataset not found
+            """
+    
+    Scenario: Retrieving a published dataset with URL rewriting enabled returns 200 with the fields redacted
+        Given URL rewriting is enabled
+        When I GET "/datasets/published-dataset-with-previous-series"
+        Then I should receive the following JSON response with status "200":
+            """
+            {
+                "id": "published-dataset-with-previous-series",
+                "last_updated": "{{DYNAMIC_TIMESTAMP}}",
+                "state": "published",
+                "title": "Published Dataset with previous series ID"
+            }
             """
