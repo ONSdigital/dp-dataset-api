@@ -1100,6 +1100,65 @@ Feature: Static Dataset Versions PUT API
             }
             """
 
+    Scenario: PUT fails when attempting to change edition ID for a migrated version
+        Given I have a static dataset with version:
+            """
+            {
+                "dataset": {
+                    "id": "migrated-dataset",
+                    "title": "Migrated Dataset",
+                    "state": "associated",
+                    "type": "static"
+                },
+                "version": {
+                    "id": "migrated-version",
+                    "edition": "original-edition",
+                    "edition_title": "Original Edition",
+                    "links": {
+                        "dataset": {
+                            "id": "migrated-dataset"
+                        },
+                        "edition": {
+                            "href": "/datasets/migrated-dataset/editions/original-edition",
+                            "id": "original-edition"
+                        },
+                        "self": {
+                            "href": "/datasets/migrated-dataset/editions/original-edition/versions/1"
+                        }
+                    },
+                    "version": 1,
+                    "release_date": "2025-01-01T09:00:00.000Z",
+                    "state": "associated",
+                    "type": "static",
+                    "is_migration": true,
+                    "distributions": [
+                        {
+                            "title": "csv",
+                            "format": "csv",
+                            "media_type": "text/csv",
+                            "download_url": "/uuid/filename.csv",
+                            "byte_size": 125000
+                        }
+                    ]
+                }
+            }
+            """
+        And private endpoints are enabled
+        And I am an admin user
+        When I PUT "/datasets/migrated-dataset/editions/original-edition/versions/1"
+            """
+            {
+                "edition": "changed-edition",
+                "edition_title": "Changed Edition",
+                "type": "static"
+            }
+            """
+        Then the HTTP status code should be "409"
+        And I should receive the following response:
+            """
+            cannot change the edition ID for a migrated edition
+            """
+
     Scenario: PUT successfully updates edition ID and all associated links
       Given I have a static dataset with version:
           """

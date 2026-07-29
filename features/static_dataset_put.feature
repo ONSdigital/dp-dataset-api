@@ -13,7 +13,6 @@ Feature: PUT /datasets/{id} for static datasets
                         "title": "Original Title",
                         "description": "A static dataset",
                         "state": "created",
-                        "is_migration": true,
                         "topics": [
                             "old-topic",
                             "topic-1"
@@ -65,6 +64,19 @@ Feature: PUT /datasets/{id} for static datasets
                             "old-topic",
                             "topic-1"
                         ]
+                    }
+                },
+                {
+                    "next": {
+                        "id": "migrated-dataset-id",
+                        "state": "created",
+                        "type": "static",
+                        "title": "Migrated Dataset",
+                        "topics": [
+                            "old-topic",
+                            "topic-1"
+                        ],
+                        "is_migration": true
                     }
                 }
             ]
@@ -146,7 +158,6 @@ Feature: PUT /datasets/{id} for static datasets
                     "prices"
                 ],
                 "type": "static",
-                "is_migration": true,
                 "topics": [
                     "economy-topic-id",
                     "topic-1"
@@ -263,6 +274,38 @@ Feature: PUT /datasets/{id} for static datasets
         And I should receive the following response:
             """
             cannot change the dataset ID for a published dataset
+            """
+
+    Scenario: Cannot change id of a migrated dataset
+        When I PUT "/datasets/migrated-dataset-id"
+            """
+            {
+                "id": "new-dataset-id",
+                "type": "static",
+                "title": "Migrated Dataset",
+                "description": "Migrated static dataset",
+                "next_release": "2026-01-01T00:00:00Z",
+                "contacts": [
+                    {
+                        "name": "John Doe",
+                        "email": "john@example.com"
+                    }
+                ],
+                "license": "Open Government Licence v3.0",
+                "keywords": [
+                    "economy",
+                    "prices"
+                ],
+                "topics": [
+                    "old-topic",
+                    "topic-1"
+                ]
+            }
+            """
+        Then the HTTP status code should be "409"
+        And I should receive the following response:
+            """
+            cannot change the dataset ID for a migrated dataset
             """
 
     Scenario: Cannot change canonical topic of published static dataset

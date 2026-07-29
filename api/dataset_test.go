@@ -3271,16 +3271,15 @@ func TestPutDatasetReturnsError(t *testing.T) {
 	})
 
 	Convey("When a request is made to change the dataset id of a migrated dataset", t, func() {
-		b := `{"id":"456","contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"static-published","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"StaticPublished","theme":"population","state":"published","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","href":"https://www.ons.gov.uk/"},"type":"static","keywords":["keyword","keyword 2"],"topics":["topic-0","topic-1"],"license":"Open Government Licence v3.0"}`
+		b := `{"id":"456","contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"migrated-dataset","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"Migrated Dataset","theme":"population","state":"created","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","href":"https://www.ons.gov.uk/"},"type":"static","keywords":["keyword","keyword 2"],"topics":["topic-0","topic-1"],"license":"Open Government Licence v3.0"}`
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{
-					ID:      "123",
-					Current: &models.Dataset{Type: models.Static.String(), State: models.PublishedState, Topics: []string{"topic-0", "topic-1"}, IsMigration: new(true)},
-					Next:    &models.Dataset{Type: models.Static.String(), Title: "StaticPublished", Topics: []string{"topic-0", "topic-1"}, IsMigration: new(true)},
+					ID:   "123",
+					Next: &models.Dataset{Type: models.Static.String(), Title: "Migrated Dataset", Topics: []string{"topic-0", "topic-1"}, IsMigration: new(true)},
 				}, nil
 			},
 		}
