@@ -626,6 +626,8 @@ func createVersionUpdateQuery(version *models.Version, newETag string) bson.M {
 
 	if version.RelatedContent != nil {
 		setUpdates["related_content"] = version.RelatedContent
+	} else {
+		setUpdates["related_content"] = nil
 	}
 
 	if newETag != "" {
