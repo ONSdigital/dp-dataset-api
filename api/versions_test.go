@@ -29,6 +29,7 @@ import (
 	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	filesAPISDKMocks "github.com/ONSdigital/dp-files-api/sdk/mocks"
 	filesAPIErrors "github.com/ONSdigital/dp-files-api/store"
+	kafka "github.com/ONSdigital/dp-kafka/v4"
 	permissionsAPISDK "github.com/ONSdigital/dp-permissions-api/sdk"
 	topicAPISDKMocks "github.com/ONSdigital/dp-topic-api/sdk/mocks"
 	"github.com/ONSdigital/log.go/v2/log"
@@ -4970,11 +4971,19 @@ func TestPutStateReturnsOk(t *testing.T) {
 			},
 		}
 
-		scuProducerMock := getSearchContentUpdatedMock()
+		outputCalled := make(chan bool, 1)
+		scuProducerMock := &mocks.KafkaProducerMock{
+			OutputFunc: func() chan kafka.BytesMessage {
+				outputCalled <- true
+				return make(chan kafka.BytesMessage, 1)
+			},
+		}
 		searchContentUpdated := application.SearchContentUpdatedProducer{Producer: scuProducerMock}
 
+		purgeByPrefixesCalled := make(chan bool, 1)
 		cloudflareMock := &cloudflareMocks.ClienterMock{
 			PurgeByPrefixesFunc: func(ctx context.Context, prefixes []string) error {
+				purgeByPrefixesCalled <- true
 				return nil
 			},
 			GetTimeoutFunc: func() time.Duration {
@@ -4990,6 +4999,17 @@ func TestPutStateReturnsOk(t *testing.T) {
 
 		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, searchContentUpdated, cloudflareMock, auditServiceMock, &applicationMocks.StaticDatasetServiceMock{}, &topicAPISDKMocks.ClienterMock{}, &mockFilesAPIClient)
 		api.Router.ServeHTTP(w, r)
+
+		select {
+		case <-outputCalled:
+		case <-time.After(5 * time.Second):
+			t.Fatal("timed out waiting for kafka message to be sent")
+		}
+		select {
+		case <-purgeByPrefixesCalled:
+		case <-time.After(5 * time.Second):
+			t.Fatal("timed out waiting for Cloudflare purge")
+		}
 
 		So(w.Code, ShouldEqual, http.StatusOK)
 		So(mockedDataStore.GetVersionStaticCalls(), ShouldHaveLength, 2)

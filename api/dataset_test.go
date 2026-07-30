@@ -33,7 +33,6 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/url"
 	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	filesAPISDKMocks "github.com/ONSdigital/dp-files-api/sdk/mocks"
-	kafka "github.com/ONSdigital/dp-kafka/v4"
 	dprequest "github.com/ONSdigital/dp-net/v3/request"
 	"github.com/gorilla/mux"
 
@@ -78,16 +77,6 @@ var (
 	enableURLRewriting = false
 	mu                 sync.Mutex
 )
-
-func getSearchContentUpdatedMock() *mocks.KafkaProducerMock {
-	producerMock := &mocks.KafkaProducerMock{
-		OutputFunc: func() chan kafka.BytesMessage {
-			return make(chan kafka.BytesMessage, 1)
-		},
-	}
-
-	return producerMock
-}
 
 // GetAPIWithCMDMocks also used in other tests, so exported
 func GetAPIWithCMDMocks(mockedDataStore store.Storer, mockedGeneratedDownloads DownloadsGenerator, authorisationMock *authMock.MiddlewareMock, searchContentUpdated application.SearchContentUpdatedProducer, cloudflareMock *cloudflareMocks.ClienterMock, auditServiceMock *applicationMocks.AuditServiceMock, staticDatasetServiceMock *applicationMocks.StaticDatasetServiceMock, topicAPISDKMock *topicAPISDKMocks.ClienterMock, filesAPISDKMock *filesAPISDKMocks.ClienterMock) *DatasetAPI {
