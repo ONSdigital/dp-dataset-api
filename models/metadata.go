@@ -43,6 +43,7 @@ type EditableMetadata struct {
 	Description        string             `json:"description,omitempty"`
 	Dimensions         []Dimension        `json:"dimensions,omitempty"`
 	Distributions      *[]Distribution    `json:"distributions,omitempty"`
+	IsMigration        *bool              `json:"is_migration,omitempty"`
 	Keywords           []string           `json:"keywords,omitempty"`
 	LastUpdated        time.Time          `json:"last_updated,omitempty"`
 	LatestChanges      *[]LatestChange    `json:"latest_changes,omitempty"`
@@ -89,6 +90,7 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 			Description:        datasetDoc.Description,
 			Dimensions:         versionDoc.Dimensions,
 			Distributions:      versionDoc.Distributions,
+			IsMigration:        versionDoc.IsMigration,
 			Keywords:           datasetDoc.Keywords,
 			LatestChanges:      versionDoc.LatestChanges,
 			License:            datasetDoc.License,
@@ -138,12 +140,17 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 		metaDataDoc.Links.Spatial = versionDoc.Links.Spatial
 		metaDataDoc.Links.Version = versionDoc.Links.Version
 
-		websiteVersionURL := fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%d",
-			urlBuilder.GetPublicWebsiteURL(),
-			datasetDoc.ID,
-			versionDoc.Links.Edition.ID,
-			versionDoc.Version,
-		)
+		var websiteVersionURL string
+		if metaDataDoc.Type == Static.String() {
+			websiteVersionURL = versionDoc.Links.WebPage.HRef
+		} else {
+			websiteVersionURL = fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%d",
+				urlBuilder.GetPublicWebsiteURL(),
+				datasetDoc.ID,
+				versionDoc.Links.Edition.ID,
+				versionDoc.Version,
+			)
+		}
 
 		metaDataDoc.Links.WebsiteVersion = &LinkObject{
 			HRef: websiteVersionURL,

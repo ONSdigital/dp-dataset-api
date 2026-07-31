@@ -2283,6 +2283,9 @@ definitions:
           - cantabular_table
           - ltla
           - ethnic_group_tb_8a
+      is_migration:
+        description: "Indicates whether this version was created as part of a dataset migration"
+        type: boolean
       keywords:
         description: "A list of keywords for a dataset"
         type: array
