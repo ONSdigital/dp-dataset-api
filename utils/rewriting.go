@@ -455,7 +455,7 @@ func RewriteEditionLinks(ctx context.Context, oldLinks *models.EditionUpdateLink
 	return nil
 }
 
-func RewriteMetadataLinks(ctx context.Context, oldLinks *models.MetadataLinks, datasetLinksBuilder *links.Builder) error {
+func RewriteMetadataLinks(ctx context.Context, oldLinks *models.MetadataLinks, datasetLinksBuilder, websiteLinksBuilder *links.Builder) error {
 	if oldLinks == nil {
 		return nil
 	}
@@ -474,6 +474,14 @@ func RewriteMetadataLinks(ctx context.Context, oldLinks *models.MetadataLinks, d
 		oldLinks.Version.HRef, err = datasetLinksBuilder.BuildLink(oldLinks.Version.HRef)
 		if err != nil {
 			log.Error(ctx, "failed to rewrite version link", err, log.Data{"link": oldLinks.Version.HRef})
+			return err
+		}
+	}
+
+	if oldLinks.WebsiteVersion != nil && oldLinks.WebsiteVersion.HRef != "" {
+		oldLinks.WebsiteVersion.HRef, err = websiteLinksBuilder.BuildLink(oldLinks.WebsiteVersion.HRef)
+		if err != nil {
+			log.Error(ctx, "failed to rewrite website version link", err, log.Data{"link": oldLinks.WebsiteVersion.HRef})
 			return err
 		}
 	}
