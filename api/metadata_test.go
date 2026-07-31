@@ -697,6 +697,109 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		So(metaData.UnitOfMeasure, ShouldEqual, "Pounds Sterling")
 		So(metaData.State, ShouldEqual, versionDoc.State)
 	})
+
+	Convey("Authenticated user sees is_migration in metadata response for a static dataset", t, func() {
+		datasetDoc := createDatasetDoc()
+		datasetDoc.Current.Type = staticType
+		if datasetDoc.Next != nil {
+			datasetDoc.Next.Type = staticType
+		}
+
+		versionDoc := createPublishedVersionDoc()
+		versionDoc.IsMigration = boolPtr(true)
+
+		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", nil)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return datasetDoc, nil
+			},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return versionDoc, nil
+			},
+			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
+				return nil, 0, nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "test-user-id"}, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordMetadataAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, metadata *models.Metadata) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, &applicationMocks.StaticDatasetServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+
+		var metaData models.Metadata
+		err := json.Unmarshal(w.Body.Bytes(), &metaData)
+		So(err, ShouldBeNil)
+		So(metaData.IsMigration, ShouldNotBeNil)
+		So(*metaData.IsMigration, ShouldBeTrue)
+	})
+
+	Convey("Unauthenticated user does not see is_migration in metadata response for a static dataset", t, func() {
+		datasetDoc := createDatasetDoc()
+		datasetDoc.Current.Type = staticType
+		if datasetDoc.Next != nil {
+			datasetDoc.Next.Type = staticType
+		}
+
+		versionDoc := createPublishedVersionDoc()
+		versionDoc.IsMigration = boolPtr(true)
+
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123/editions/2017/versions/1/metadata", http.NoBody)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return datasetDoc, nil
+			},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
+			GetVersionStaticFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return versionDoc, nil
+			},
+			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
+				return nil, 0, nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return nil, permissionsAPISDK.ErrFailedToParsePermissionsResponse
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+
+		var metaData models.Metadata
+		err := json.Unmarshal(w.Body.Bytes(), &metaData)
+		So(err, ShouldBeNil)
+		So(metaData.IsMigration, ShouldBeNil)
+	})
 }
 
 func TestGetMetadataReturnsError(t *testing.T) {

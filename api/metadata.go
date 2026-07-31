@@ -133,8 +133,15 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 		if api.enableURLRewriting {
 			datasetLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetDatasetAPIURL())
 			codeListLinksBuilder := links.FromHeadersOrDefault(&r.Header, api.urlBuilder.GetCodeListAPIURL())
+			websiteLinksBuilder := &links.Builder{}
 
-			err = utils.RewriteMetadataLinks(ctx, metaDataDoc.Links, datasetLinksBuilder)
+			if authorised {
+				websiteLinksBuilder.URL = api.urlBuilder.GetPrivateWebsiteURL()
+			} else {
+				websiteLinksBuilder.URL = api.urlBuilder.GetPublicWebsiteURL()
+			}
+
+			err = utils.RewriteMetadataLinks(ctx, metaDataDoc.Links, datasetLinksBuilder, websiteLinksBuilder)
 			if err != nil {
 				log.Error(ctx, "getMetadata endpoint: failed to rewrite metadata links", err, logData)
 				return nil, err
@@ -163,12 +170,6 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 				log.Error(ctx, "getMetadata endpoint: failed to rewrite distributions DownloadURL", err, logData)
 				return nil, err
 			}
-		}
-
-		b, err := json.Marshal(metaDataDoc)
-		if err != nil {
-			log.Error(ctx, "getMetadata endpoint: failed to marshal metadata resource into bytes", err, logData)
-			return nil, err
 		}
 
 		if authorised {
@@ -200,6 +201,14 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 				"endpoint": "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + version + "/metadata",
 				"outcome":  "success",
 			})
+		} else {
+			metaDataDoc.IsMigration = nil
+		}
+
+		b, err := json.Marshal(metaDataDoc)
+		if err != nil {
+			log.Error(ctx, "getMetadata endpoint: failed to marshal metadata resource into bytes", err, logData)
+			return nil, err
 		}
 
 		return b, err
