@@ -211,6 +211,16 @@ func TestCreateMetadata(t *testing.T) {
 			Convey("And the state is set from the version", func() {
 				So(metaDataDoc.State, ShouldEqual, version.State)
 			})
+
+			Convey("And the website version URL is built using the urlBuilder and IDs", func() {
+				expectedURL := fmt.Sprintf("%s/datasets/%s/editions/%s/versions/%d",
+					publicWebsiteURL.String(),
+					dataset.ID,
+					version.Links.Edition.ID,
+					version.Version,
+				)
+				So(metaDataDoc.Links.WebsiteVersion.HRef, ShouldEqual, expectedURL)
+			})
 		})
 
 		Convey("When we call CreateMetaDataDoc with a static dataset", func() {
@@ -218,6 +228,11 @@ func TestCreateMetadata(t *testing.T) {
 			staticDataset := dataset
 			staticDataset.Type = "static"
 			staticDataset.Topics = []string{"topic1", "topic2", "topic3"}
+
+			staticVersion := version
+			staticVersion.Links.WebPage = &LinkObject{
+				HRef: "economy/datasets/123/editions/2017/versions/1",
+			}
 
 			codeListAPIURL := &neturl.URL{Scheme: "http", Host: "localhost:22400"}
 			datasetAPIURL := &neturl.URL{Scheme: "http", Host: "localhost:22000"}
@@ -235,6 +250,10 @@ func TestCreateMetadata(t *testing.T) {
 
 			Convey("And the state is set from the version", func() {
 				So(metaDataDoc.State, ShouldEqual, version.State)
+			})
+
+			Convey("And the website version URL is set to the web page link from the version", func() {
+				So(metaDataDoc.Links.WebsiteVersion.HRef, ShouldEqual, staticVersion.Links.WebPage.HRef)
 			})
 		})
 	})
