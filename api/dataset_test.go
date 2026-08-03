@@ -2165,8 +2165,6 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.UpsertDatasetCalls()[0].ID, ShouldEqual, "456")
 		So(mockedDataStore.UpsertDatasetCalls()[0].DatasetDoc.Next.PreviousSeriesId, ShouldResemble, []string{"789", "123"})
-		So(mockedDataStore.UpsertDatasetCalls()[0].ID, ShouldEqual, "456")
-		So(mockedDataStore.UpsertDatasetCalls()[0].DatasetDoc.Next.PreviousSeriesId, ShouldResemble, []string{"789", "123"})
 		So(mockedDataStore.DeleteDatasetCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 0)
 	})
