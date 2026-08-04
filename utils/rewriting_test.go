@@ -3782,6 +3782,7 @@ func TestRewriteMetadataLinks_Success(t *testing.T) {
 	ctx := context.Background()
 	Convey("Given a set of metadata links", t, func() {
 		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
+		websiteLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, publicWebsiteURL)
 		Convey("When the metadata links need rewriting", func() {
 			metadataLinks := &models.MetadataLinks{
 				AccessRights: &models.LinkObject{
@@ -3799,7 +3800,7 @@ func TestRewriteMetadataLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteMetadataLinks(ctx, metadataLinks, datasetLinksBuilder)
+			err := RewriteMetadataLinks(ctx, metadataLinks, datasetLinksBuilder, websiteLinksBuilder)
 
 			Convey("Then the links should be rewritten correctly", func() {
 				So(err, ShouldBeNil)
@@ -3807,7 +3808,7 @@ func TestRewriteMetadataLinks_Success(t *testing.T) {
 				So(metadataLinks.Self.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/metadata")
 				So(metadataLinks.Version.HRef, ShouldEqual, "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1")
 				So(metadataLinks.Version.ID, ShouldEqual, "1")
-				So(metadataLinks.WebsiteVersion.HRef, ShouldEqual, "https://oldhost:1000/datasets/cpih01/editions/time-series/versions/1")
+				So(metadataLinks.WebsiteVersion.HRef, ShouldEqual, "http://localhost:20000/datasets/cpih01/editions/time-series/versions/1")
 			})
 		})
 
@@ -3828,7 +3829,7 @@ func TestRewriteMetadataLinks_Success(t *testing.T) {
 				},
 			}
 
-			err := RewriteMetadataLinks(ctx, metadataLinks, datasetLinksBuilder)
+			err := RewriteMetadataLinks(ctx, metadataLinks, datasetLinksBuilder, websiteLinksBuilder)
 
 			Convey("Then the links should remain the same", func() {
 				So(err, ShouldBeNil)
@@ -3843,7 +3844,7 @@ func TestRewriteMetadataLinks_Success(t *testing.T) {
 		Convey("When the metadata links are empty", func() {
 			metadataLinks := &models.MetadataLinks{}
 
-			err := RewriteMetadataLinks(ctx, metadataLinks, datasetLinksBuilder)
+			err := RewriteMetadataLinks(ctx, metadataLinks, datasetLinksBuilder, websiteLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -3852,7 +3853,7 @@ func TestRewriteMetadataLinks_Success(t *testing.T) {
 		})
 
 		Convey("When the metadata links are nil", func() {
-			err := RewriteMetadataLinks(ctx, nil, datasetLinksBuilder)
+			err := RewriteMetadataLinks(ctx, nil, datasetLinksBuilder, websiteLinksBuilder)
 
 			Convey("Then the links should remain nil", func() {
 				So(err, ShouldBeNil)
@@ -3860,7 +3861,7 @@ func TestRewriteMetadataLinks_Success(t *testing.T) {
 		})
 
 		Convey("When the metadata links are missing", func() {
-			err := RewriteMetadataLinks(ctx, &models.MetadataLinks{}, datasetLinksBuilder)
+			err := RewriteMetadataLinks(ctx, &models.MetadataLinks{}, datasetLinksBuilder, websiteLinksBuilder)
 
 			Convey("Then the links should remain empty", func() {
 				So(err, ShouldBeNil)
@@ -3873,6 +3874,7 @@ func TestRewriteMetadataLinks_Error(t *testing.T) {
 	ctx := context.Background()
 	Convey("Given a set of metadata links", t, func() {
 		datasetLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, datasetAPIURL)
+		websiteLinksBuilder := links.FromHeadersOrDefault(&http.Header{}, publicWebsiteURL)
 		Convey("When the Self link is unable to be parsed", func() {
 			metadataLinks := &models.MetadataLinks{
 				Self: &models.LinkObject{
@@ -3887,7 +3889,7 @@ func TestRewriteMetadataLinks_Error(t *testing.T) {
 				},
 			}
 
-			err := RewriteMetadataLinks(ctx, metadataLinks, datasetLinksBuilder)
+			err := RewriteMetadataLinks(ctx, metadataLinks, datasetLinksBuilder, websiteLinksBuilder)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)
@@ -3909,7 +3911,29 @@ func TestRewriteMetadataLinks_Error(t *testing.T) {
 				},
 			}
 
-			err := RewriteMetadataLinks(ctx, metadataLinks, datasetLinksBuilder)
+			err := RewriteMetadataLinks(ctx, metadataLinks, datasetLinksBuilder, websiteLinksBuilder)
+
+			Convey("Then a parsing error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "unable to parse link to URL")
+			})
+		})
+
+		Convey("When the WebsiteVersion link is unable to be parsed", func() {
+			metadataLinks := &models.MetadataLinks{
+				Self: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1/metadata",
+				},
+				Version: &models.LinkObject{
+					HRef: "http://localhost:22000/datasets/cpih01/editions/time-series/versions/1",
+					ID:   "1",
+				},
+				WebsiteVersion: &models.LinkObject{
+					HRef: "://oldhost:1000/datasets/cpih01/editions/time-series/versions/1",
+				},
+			}
+
+			err := RewriteMetadataLinks(ctx, metadataLinks, datasetLinksBuilder, websiteLinksBuilder)
 
 			Convey("Then a parsing error should be returned", func() {
 				So(err, ShouldNotBeNil)

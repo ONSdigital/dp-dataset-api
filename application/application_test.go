@@ -2289,9 +2289,6 @@ func TestPublishVersionDatasetDownloadsOK(t *testing.T) {
 					HRef: "http://localhost:22000/datasets/123",
 					ID:   "123",
 				},
-				Dimensions: &models.LinkObject{
-					HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions",
-				},
 				Edition: &models.LinkObject{
 					HRef: "http://localhost:22000/datasets/123/editions/2017",
 					ID:   "2017",
@@ -2302,6 +2299,9 @@ func TestPublishVersionDatasetDownloadsOK(t *testing.T) {
 				Version: &models.LinkObject{
 					HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
 					ID:   "1",
+				},
+				WebPage: &models.LinkObject{
+					HRef: "http://localhost:22000/economy/datasets/123/editions/2017/versions/1",
 				},
 			},
 		}
@@ -2320,9 +2320,6 @@ func TestPublishVersionDatasetDownloadsOK(t *testing.T) {
 					HRef: "http://localhost:22000/datasets/123",
 					ID:   "123",
 				},
-				Dimensions: &models.LinkObject{
-					HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1/dimensions",
-				},
 				Edition: &models.LinkObject{
 					HRef: "http://localhost:22000/datasets/123/editions/2017",
 					ID:   "2017",
@@ -2333,6 +2330,9 @@ func TestPublishVersionDatasetDownloadsOK(t *testing.T) {
 				Version: &models.LinkObject{
 					HRef: "http://localhost:22000/datasets/123/editions/2017/versions/1",
 					ID:   "1",
+				},
+				WebPage: &models.LinkObject{
+					HRef: "http://localhost:22000/economy/datasets/123/editions/2017/versions/1",
 				},
 			},
 		}

@@ -747,7 +747,7 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 
 				searchContentUpdatedEvent := map[string]interface{}{
 					"dataset_id":   versionDetails.datasetID,
-					"uri":          fmt.Sprintf("/datasets/%s", versionDetails.datasetID),
+					"uri":          fmt.Sprintf("/%s", strings.TrimLeft(updatedV.Links.WebPage.HRef, "/")),
 					"title":        updatedV.EditionTitle,
 					"edition":      updatedV.Edition,
 					"content_type": "dataset_landing_page",

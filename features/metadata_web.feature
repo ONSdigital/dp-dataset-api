@@ -35,9 +35,11 @@ Scenario: GET metadata for a published static dataset
                 ],
                 "links": {
                     "dataset": {
+                        "href": "/datasets/static-dataset",
                         "id": "static-dataset"
                     },
                     "edition": {
+                        "href": "/datasets/static-dataset/editions/time-series",
                         "id": "time-series"
                     },
                     "self": {
@@ -46,6 +48,9 @@ Scenario: GET metadata for a published static dataset
                     "version": {
                         "href": "/datasets/static-dataset/editions/time-series/versions/1",
                         "id": "1"
+                    },
+                    "web_page": {
+                        "href": "economy/datasets/static-dataset/editions/time-series/versions/1"
                     }
                 },
                 "edition": "time-series",
@@ -89,7 +94,7 @@ Scenario: GET metadata for a published static dataset
                     "id": "1"
                 },
                 "website_version": {
-                    "href": "http://localhost:20000/datasets/static-dataset/editions/time-series/versions/1"
+                    "href": "economy/datasets/static-dataset/editions/time-series/versions/1"
                 }
             },
             "edition": "time-series",
@@ -151,9 +156,11 @@ Scenario: GET metadata for an unpublished static dataset
                 ],
                 "links": {
                     "dataset": {
+                        "href": "/datasets/static-dataset",
                         "id": "static-dataset"
                     },
                     "edition": {
+                        "href": "/datasets/static-dataset/editions/time-series",
                         "id": "time-series"
                     },
                     "self": {
@@ -162,6 +169,9 @@ Scenario: GET metadata for an unpublished static dataset
                     "version": {
                         "href": "/datasets/static-dataset/editions/time-series/versions/1",
                         "id": "1"
+                    },
+                    "web_page": {
+                        "href": "economy/datasets/static-dataset/editions/time-series/versions/1"
                     }
                 },
                 "edition": "time-series",
