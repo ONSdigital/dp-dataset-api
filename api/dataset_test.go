@@ -31,8 +31,11 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/store"
 	storetest "github.com/ONSdigital/dp-dataset-api/store/datastoretest"
 	"github.com/ONSdigital/dp-dataset-api/url"
+	filesAPI "github.com/ONSdigital/dp-files-api/api"
+	filesAPIModels "github.com/ONSdigital/dp-files-api/files"
 	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	filesAPISDKMocks "github.com/ONSdigital/dp-files-api/sdk/mocks"
+
 	dprequest "github.com/ONSdigital/dp-net/v3/request"
 	"github.com/gorilla/mux"
 
@@ -2117,7 +2120,7 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		})
 	})
 
-	Convey("A successful request to rename an unpublished static dataset returns 200 OK response", t, func() {
+	Convey("A successful request to change the dataset ID of an unpublished static dataset returns 200 OK response", t, func() {
 		b := `{"id":"456","contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","href":"https://www.ons.gov.uk/"},"type":"static","keywords":["keyword","keyword 2"],"topics":["topic-0","topic-1"],"license":"Open Government Licence v3.0","previous_series_id":["789"]}`
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
 
@@ -2169,6 +2172,87 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 0)
 	})
 
+	Convey("A successful request to change the dataset ID of an unpublished static dataset with associated versions returns 200 OK response", t, func() {
+		b := `{"id":"456","contacts":[{"email":"testing@hotmail.com","name":"John Cox","telephone":"01623 456789"}],"description":"census","links":{"access_rights":{"href":"http://ons.gov.uk/accessrights"}},"title":"CensusEthnicity","theme":"population","state":"completed","next_release":"2016-04-04","publisher":{"name":"The office of national statistics","type":"government department","href":"https://www.ons.gov.uk/"},"type":"static","keywords":["keyword","keyword 2"],"topics":["topic-0","topic-1"],"license":"Open Government Licence v3.0","previous_series_id":["789"]}`
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
+
+		w := httptest.NewRecorder()
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{ID: "123", Next: &models.Dataset{Type: models.Static.String(), Title: "CensusEthnicity", State: models.CreatedState, Topics: []string{"topic-0", "topic-1"}, PreviousSeriesId: []string{"789"}}}, nil
+			},
+			CheckDatasetExistsFunc: func(ctx context.Context, id, state string) error {
+				return errs.ErrDatasetNotFound
+			},
+			GetVersionsStaticNoLimitFunc: func(context.Context, string, string) ([]*models.Version, int, error) {
+				versions := []*models.Version{
+					{
+						ID:      "V1",
+						Version: 1,
+						Edition: "edition-id",
+						Type:    "static",
+						Links:   &models.VersionLinks{WebPage: &models.LinkObject{HRef: "/topic-0/web/page"}},
+						Distributions: &[]models.Distribution{
+							{
+								Title:       "Distribution1",
+								DownloadURL: "path/to/distribution1.txt",
+							},
+							{
+								Title:       "Distribution2",
+								DownloadURL: "path/to/distribution2.txt",
+							},
+						},
+					},
+				}
+				return versions, 1, nil
+			},
+			UpdateVersionStaticFunc: func(ctx context.Context, currentVersion *models.Version, versionUpdate *models.Version, eTagSelector string) (string, error) {
+				// updatedWebPageHref = versionUpdate.Links.WebPage.HRef
+				return "new-etag", nil
+			},
+			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
+				return nil
+			},
+			DeleteDatasetFunc: func(context.Context, string) error {
+				return nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordDatasetAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, dataset *models.Dataset) error {
+				return nil
+			},
+		}
+		mockFilesAPIClient := filesAPISDKMocks.ClienterMock{
+			UpdateContentItemFunc: func(ctx context.Context, filePath string, item filesAPI.ContentItem, headers filesAPISDK.Headers) (*filesAPIModels.StoredRegisteredMetaData, error) {
+				return &filesAPIModels.StoredRegisteredMetaData{}, nil
+			},
+		}
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, &applicationMocks.StaticDatasetServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
+		api.filesAPIClient = &mockFilesAPIClient
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.CheckDatasetExistsCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetVersionsStaticNoLimitCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpsertDatasetCalls()[0].ID, ShouldEqual, "456")
+		So(mockedDataStore.UpsertDatasetCalls()[0].DatasetDoc.Next.PreviousSeriesId, ShouldResemble, []string{"789", "123"})
+		So(mockedDataStore.DeleteDatasetCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 0)
+		So(mockFilesAPIClient.UpdateContentItemCalls(), ShouldHaveLength, 2)
+	})
+	// Convey("A successful request to put static dataset with dataset ID change updates ")
 	Convey("A successful request to put static dataset with canonical topic change updates version web_page links", t, func() {
 		b := datasetPayloadWithTypeStatic
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
