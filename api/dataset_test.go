@@ -2207,7 +2207,6 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 				return versions, 1, nil
 			},
 			UpdateVersionStaticFunc: func(ctx context.Context, currentVersion *models.Version, versionUpdate *models.Version, eTagSelector string) (string, error) {
-				// updatedWebPageHref = versionUpdate.Links.WebPage.HRef
 				return "new-etag", nil
 			},
 			UpsertDatasetFunc: func(context.Context, string, *models.DatasetUpdate) error {
@@ -2252,7 +2251,6 @@ func TestPutDatasetReturnsSuccessfully(t *testing.T) {
 		So(mockedDataStore.UpdateDatasetCalls(), ShouldHaveLength, 0)
 		So(mockFilesAPIClient.UpdateContentItemCalls(), ShouldHaveLength, 2)
 	})
-	// Convey("A successful request to put static dataset with dataset ID change updates ")
 	Convey("A successful request to put static dataset with canonical topic change updates version web_page links", t, func() {
 		b := datasetPayloadWithTypeStatic
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123", bytes.NewBufferString(b))
