@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/ONSdigital/dp-dataset-api/models"
 	"github.com/ONSdigital/dp-dataset-api/mongo"
 	"github.com/ONSdigital/dp-dataset-api/utils"
+	filesAPI "github.com/ONSdigital/dp-files-api/api"
 	filesAPISDK "github.com/ONSdigital/dp-files-api/sdk"
 	dphttp "github.com/ONSdigital/dp-net/v3/http"
 	"github.com/ONSdigital/dp-net/v3/links"
@@ -655,15 +657,31 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 						topicSlug = strings.Split(strings.TrimPrefix(versions[0].Links.WebPage.HRef, "/"), "/")[0]
 					}
 
+					headers := filesAPISDK.Headers{Authorization: fetchAccessTokenFromHeader(r)}
 					for i := range versions {
 						currentVersion := versions[i]
 						updatedVersion := *currentVersion
 						updatedVersion.Links = models.GenerateVersionLinksStatic(topicSlug, dataset.ID, updatedVersion.Edition, updatedVersion.Version)
-
 						_, err := api.dataStore.Backend.UpdateVersionStatic(ctx, currentVersion, &updatedVersion, currentVersion.ETag)
 						if err != nil {
 							log.Error(ctx, "putDataset endpoint: failed to update version", err, data)
 							return nil, err
+						}
+						if versions[i].Distributions != nil && isIDChanged {
+							for _, distribution := range *versions[i].Distributions {
+								filepath := distribution.DownloadURL
+								data["distribution_filepath"] = filepath
+								updatedContentItem := filesAPI.ContentItem{
+									DatasetID: dataset.ID,
+									Edition:   versions[i].Edition,
+									Version:   strconv.Itoa(versions[i].Version),
+								}
+								_, err := api.filesAPIClient.UpdateContentItem(ctx, filepath, updatedContentItem, headers)
+								if err != nil {
+									log.Error(ctx, "putDataset endpoint: failed to update dataset_id in content item", err, data)
+									return nil, err
+								}
+							}
 						}
 					}
 				}
