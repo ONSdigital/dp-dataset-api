@@ -40,6 +40,18 @@ acceptance-web: build
 lint:
 	golangci-lint run ./...
 
+.PHONY: lint-python
+lint-python:
+	$(MAKE) -C sdk/python lint
+
+.PHONY: lint-python-types
+lint-python-types:
+	$(MAKE) -C sdk/python typecheck
+
+.PHONY: format-python
+format-python:
+	$(MAKE) -C sdk/python format
+
 .PHONY: lint-api-spec
 lint-api-spec:
 	redocly lint swagger.yaml
