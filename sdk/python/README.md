@@ -4,7 +4,7 @@ Python SDK for interacting with `dp-dataset-api`.
 
 ## Requirements
 
-- Python `>=3.13`
+- Python `>=3.14`
 - `requests`
 - `pydantic`
 
@@ -17,9 +17,9 @@ make install
 ```
 
 ### Install as a local library in another service
-
+Get the latest release tag from the [dp-dataset-api releases](https://github.com/ONSdigital/dp-dataset-api/releases) page and replace `<release-tag>` with the release tag in the command below.
 ```bash
-pip install "git+https://github.com/ONSdigital/dp-dataset-api.git@vTBA#subdirectory=sdk/python"
+pip install "git+https://github.com/ONSdigital/dp-dataset-api.git@<release-tag>#subdirectory=sdk/python"
 ```
 
 ## Public API
