@@ -1,6 +1,6 @@
 #!/bin/bash -eux
 
 pushd dp-dataset-api
-  make lint
+  make lint-go
   ruff check ./sdk/python
 popd

@@ -36,13 +36,16 @@ acceptance-publishing: build
 acceptance-web: build
 	ENABLE_PRIVATE_ENDPOINTS=false MONGODB_DATABASE=test HUMAN_LOG=1 go run -race $(LDFLAGS) main.go
 
-.PHONY: lint
-lint:
+.PHONY: lint-go
+lint-go:
 	golangci-lint run ./...
 
 .PHONY: lint-python
 lint-python:
 	$(MAKE) -C sdk/python lint
+
+.PHONY: lint
+lint: lint-go lint-python
 
 .PHONY: lint-python-types
 lint-python-types:
