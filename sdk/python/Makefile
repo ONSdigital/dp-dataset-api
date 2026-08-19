@@ -1,5 +1,4 @@
-
-.PHONY: install test lint format typecheck
+.PHONY: install test lint format typecheck audit
 
 install:
 	poetry install
@@ -16,3 +15,5 @@ format:
 typecheck:
 	poetry run mypy dis_dataset_api_sdk_python
 
+audit:
+	poetry run pip-audit

@@ -15,9 +15,16 @@ export ENABLE_PRIVATE_ENDPOINTS?=true
 .PHONY: all
 all: audit test build
 
-.PHONY: audit
-audit:
+.PHONY: audit-go
+audit-go:
 	dis-vulncheck
+
+.PHONY: audit-python
+audit-python:
+	$(MAKE) -C sdk/python audit
+
+.PHONY: audit
+audit: audit-go audit-python
 
 .PHONY: build
 build:
