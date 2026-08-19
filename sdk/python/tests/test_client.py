@@ -1,5 +1,6 @@
 import unittest
 
+from dis_dataset_api_sdk_python import DatasetApiClientProtocol, create_client
 from dis_dataset_api_sdk_python.client import DatasetApiClient
 
 
@@ -32,6 +33,12 @@ class DatasetApiClientTests(unittest.TestCase):
         result = client.health()
 
         self.assertEqual(result["status"], "ok")
+
+    def test_create_client_returns_protocol_conforming_client(self) -> None:
+        client = create_client("https://dp-dataset-api")
+
+        self.assertIsInstance(client, DatasetApiClientProtocol)
+        self.assertIsInstance(client, DatasetApiClient)
 
 
 if __name__ == "__main__":

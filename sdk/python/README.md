@@ -16,8 +16,9 @@ Python SDK for interacting with `dp-dataset-api`.
 make install
 ```
 
-### Install as a local library in another service
-Get the latest release tag from the [dp-dataset-api releases](https://github.com/ONSdigital/dp-dataset-api/releases) page and replace `<release-tag>` with the release tag in the command below.
+### Install from Git in another service
+Replace `<release-tag>` with a tag from the [dp-dataset-api releases](https://github.com/ONSdigital/dp-dataset-api/releases) page.
+
 ```bash
 pip install "git+https://github.com/ONSdigital/dp-dataset-api.git@<release-tag>#subdirectory=sdk/python"
 ```
@@ -25,80 +26,102 @@ pip install "git+https://github.com/ONSdigital/dp-dataset-api.git@<release-tag>#
 ## Public API
 
 ```python
-from dis_dataset_api_sdk_python import DatasetApiClient, Dataset, Headers
 from dis_dataset_api_sdk_python import (
     ApiError,
     AuthenticationError,
+    Dataset,
+    DatasetApiClientProtocol,
+    HttpHeaders,
+    Headers,
     NotFoundError,
+    RequestingClient,
     ValidationError,
+    create_client,
 )
 ```
 
 ## Quick Start
 
 ```python
-from dis_dataset_api_sdk_python import DatasetApiClient
+from dis_dataset_api_sdk_python import create_client
 
-client = DatasetApiClient(base_url="https://api.example.com")
+client = create_client(base_url="https://api.example.com")
 health = client.health()
+
 print(health)
 ```
 
 ## Get Dataset
 
-`get_dataset` returns a validated Pydantic `Dataset` model.
+client = create_client(base_url="https://api.example.com", timeout=5.0)
+```
+
+## Get dataset
+
+The `datasets` resource provides access to dataset operations. Use `client.datasets.get_dataset()` to retrieve a validated Pydantic `Dataset` model.
 
 ```python
-from dis_dataset_api_sdk_python import DatasetApiClient
+from dis_dataset_api_sdk_python import create_client
 
-client = DatasetApiClient(base_url="https://api.example.com")
-dataset = client.get_dataset("my-dataset-id")
+client = create_client(base_url="https://api.example.com")
+dataset = client.datasets.get_dataset("my-dataset-id")
 
 print(dataset.id)
+print(dataset.title)
 print(dataset.model_dump())
 ```
 
-## Authentication and Headers
+## Headers and authentication
 
-You can pass per-request headers using `Headers`.
+You can pass per-request headers using `HttpHeaders`.
 
 ```python
-from dis_dataset_api_sdk_python import DatasetApiClient, Headers
+from dis_dataset_api_sdk_python import HttpHeaders, create_client
 
-client = DatasetApiClient(base_url="https://api.example.com")
-dataset = client.get_dataset(
+client = create_client(base_url="https://api.example.com")
+
+dataset = client.datasets.get_dataset(
     "my-dataset-id",
-    headers=Headers(
+    headers=HttpHeaders(
         Authorization="Bearer YOUR_TOKEN",
         CollectionID="my-collection-id",
     ),
 )
 ```
 
+`HttpHeaders` omits `None` values automatically before sending the request.
+
 You can also set default headers on a shared `requests.Session`.
 
 ```python
 import requests
+
 from dis_dataset_api_sdk_python import DatasetApiClient
 
 session = requests.Session()
 session.headers.update({"Authorization": "Bearer YOUR_TOKEN"})
 
-client = DatasetApiClient(
+client = create_client(
     base_url="https://api.example.com",
     session=session,
 )
 ```
 
-## Error Handling
+
+## Error handling
 
 The client raises typed exceptions for common HTTP failures.
 
 ```python
-from dis_dataset_api_sdk_python import DatasetApiClient
-from dis_dataset_api_sdk_python import ApiError, AuthenticationError, NotFoundError
+from dis_dataset_api_sdk_python import (
+    ApiError,
+    AuthenticationError,
+    NotFoundError,
+    ValidationError,
+    create_client,
+)
 
-client = DatasetApiClient(base_url="https://api.example.com")
+client = create_client(base_url="https://api.example.com")
 
 try:
     dataset = client.get_dataset("my-dataset-id")
@@ -106,20 +129,18 @@ except NotFoundError:
     print("Dataset does not exist")
 except AuthenticationError:
     print("Authentication failed")
+except ValidationError as exc:
+    print(f"Validation failed: {exc}")
 except ApiError as exc:
     print(f"API failed: status={exc.status_code} message={exc}")
 ```
 
-## Run Unit Tests
+## Development commands
 
 ```bash
 make test
-```
-
-## Lint and Format
-
-```bash
+make typecheck
 make lint
 make format
+make audit
 ```
-

@@ -5,23 +5,28 @@ from typing import Any
 
 import requests
 
-from .datasets import get_dataset
+from .datasets import DatasetsAPI
 from .exceptions import ApiError, AuthenticationError, NotFoundError, ValidationError
+from .protocols import (
+    DatasetApiClientProtocol,
+    DatasetsClientProtocol,
+    RequestSession,
+)
 
 
 class DatasetApiClient:
-    # Endpoint methods are defined in dedicated files and attached here.
-    get_dataset = get_dataset
+    datasets: DatasetsClientProtocol
 
     def __init__(
         self,
         base_url: str,
         timeout: float = 10.0,
-        session: requests.Session | None = None,
+        session: RequestSession | None = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.session = session or requests.Session()
+        self.datasets = DatasetsAPI(self)
 
     def health(self) -> dict[str, Any]:
         """GET /health"""
@@ -70,3 +75,11 @@ class DatasetApiClient:
         if not response.content:
             return {}
         return response.json()
+
+
+def create_client(
+    base_url: str,
+    timeout: float = 10.0,
+    session: RequestSession | None = None,
+) -> DatasetApiClientProtocol:
+    return DatasetApiClient(base_url=base_url, timeout=timeout, session=session)

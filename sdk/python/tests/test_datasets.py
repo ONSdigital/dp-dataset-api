@@ -1,8 +1,13 @@
 import unittest
 
+from dis_dataset_api_sdk_python import (
+    DatasetApiClientProtocol,
+    DatasetsClientProtocol,
+    Headers,
+)
 from dis_dataset_api_sdk_python.client import DatasetApiClient
 from dis_dataset_api_sdk_python.exceptions import ApiError, NotFoundError
-from dis_dataset_api_sdk_python.models import Dataset, Headers
+from dis_dataset_api_sdk_python.models import Dataset
 
 
 class FakeResponse:
@@ -26,12 +31,29 @@ class FakeSession:
         return self.response
 
 
+class FakeHeaders:
+    def __init__(
+        self,
+        authorization: str | None = None,
+        collection_id: str | None = None,
+        download_service_token: str | None = None,
+        if_match: str | None = None,
+    ) -> None:
+        self.Authorization = authorization
+        self.CollectionID = collection_id
+        self.DownloadServiceToken = download_service_token
+        self.IfMatch = if_match
+
+    def to_http_headers(self) -> dict[str, str]:
+        return {"CollectionID": "collection-123", "IfMatch": "etag-1"}
+
+
 class DatasetEndpointTests(unittest.TestCase):
     def test_get_dataset_returns_pydantic_model(self) -> None:
         session = FakeSession(FakeResponse(200, {"id": "abc", "title": "A dataset"}))
         client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
 
-        result = client.get_dataset("abc")
+        result = client.datasets.get_dataset("abc")
 
         self.assertIsInstance(result, Dataset)
         self.assertEqual(result.id, "abc")
@@ -40,8 +62,8 @@ class DatasetEndpointTests(unittest.TestCase):
         session = FakeSession(FakeResponse(200, {"id": "abc"}))
         client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
 
-        headers = Headers(CollectionID="collection-123", IfMatch="etag-1")
-        client.get_dataset("abc", headers=headers)
+        headers = FakeHeaders()
+        client.datasets.get_dataset("abc", headers=headers)
 
         self.assertEqual(
             session.last_kwargs["headers"],
@@ -53,16 +75,31 @@ class DatasetEndpointTests(unittest.TestCase):
         client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
 
         with self.assertRaises(NotFoundError):
-            client.get_dataset("missing")
+            client.datasets.get_dataset("missing")
 
     def test_get_dataset_500_raises_api_error_with_status(self) -> None:
         session = FakeSession(FakeResponse(500, {"error": "server error"}))
         client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
 
         with self.assertRaises(ApiError) as exc:
-            client.get_dataset("abc")
+            client.datasets.get_dataset("abc")
 
         self.assertEqual(exc.exception.status_code, 500)
+
+    def test_fake_headers_conform_to_headers_protocol(self) -> None:
+        self.assertIsInstance(FakeHeaders(), Headers)
+
+    def test_datasets_conforms_to_protocol(self) -> None:
+        session = FakeSession(FakeResponse(200, {"id": "abc"}))
+        client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
+
+        self.assertIsInstance(client.datasets, DatasetsClientProtocol)
+
+    def test_client_conforms_to_dataset_api_client_protocol(self) -> None:
+        session = FakeSession(FakeResponse(200, {"id": "abc"}))
+        client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
+
+        self.assertIsInstance(client, DatasetApiClientProtocol)
 
 
 if __name__ == "__main__":

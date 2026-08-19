@@ -3,7 +3,7 @@ from __future__ import annotations
 from pydantic import BaseModel
 
 
-class Headers(BaseModel):
+class HttpHeaders(BaseModel):
     CollectionID: str | None = None
     DownloadServiceToken: str | None = None
     IfMatch: str | None = None

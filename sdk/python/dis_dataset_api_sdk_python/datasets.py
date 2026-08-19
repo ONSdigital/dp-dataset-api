@@ -1,16 +1,25 @@
 from __future__ import annotations
 
-from .models import Dataset, Headers
+from .models import Dataset
+from .protocols import DatasetsClientProtocol, Headers, RequestingClient
 
 
-def get_dataset(self, dataset_id: str, headers: Headers | None = None) -> Dataset:
-    payload = self._request(
-        "GET",
-        f"/datasets/{dataset_id}",
-        headers=headers.to_http_headers() if headers else None,
-    )
+class DatasetsAPI(DatasetsClientProtocol):
+    def __init__(self, client: RequestingClient) -> None:
+        self._client = client
 
-    if headers and headers.Authorization and isinstance(payload.get("next"), dict):
-        payload = payload["next"]
+    def get_dataset(
+        self,
+        dataset_id: str,
+        headers: Headers | None = None,
+    ) -> Dataset:
+        payload = self._client._request(
+            "GET",
+            f"/datasets/{dataset_id}",
+            headers=headers.to_http_headers() if headers else None,
+        )
 
-    return Dataset.model_validate(payload)
+        if headers and headers.Authorization and isinstance(payload.get("next"), dict):
+            payload = payload["next"]
+
+        return Dataset.model_validate(payload)

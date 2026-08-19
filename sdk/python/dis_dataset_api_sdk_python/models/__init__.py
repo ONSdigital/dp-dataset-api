@@ -7,14 +7,14 @@ from .dataset import (
     LinkObject,
     Publisher,
 )
-from .headers import Headers
+from .headers import HttpHeaders
 
 __all__ = [
     "ContactDetails",
     "Dataset",
     "DatasetLinks",
     "GeneralDetails",
-    "Headers",
+    "HttpHeaders",
     "IsBasedOn",
     "LinkObject",
     "Publisher",
