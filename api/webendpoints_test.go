@@ -95,7 +95,7 @@ func TestWebSubnetDatasetEndpoint(t *testing.T) {
 			api.Router.ServeHTTP(w, r)
 			a, _ := io.ReadAll(w.Body)
 			So(w.Code, ShouldEqual, http.StatusOK)
-			So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 			var result models.Dataset
 			err := json.Unmarshal(a, &result)
 			So(err, ShouldBeNil)
@@ -131,6 +131,9 @@ func TestWebSubnetEditionsEndpoint(t *testing.T) {
 			},
 			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
 				return false, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{ID: "1234", Next: &models.Dataset{ID: "1234"}}, nil
 			},
 		}
 
