@@ -154,6 +154,9 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			GetEditionsFunc: func(context.Context, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
 				return results, 2, nil
 			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{ID: "123-456", Next: &models.Dataset{ID: "123-456"}}, nil
+			},
 		}
 
 		authorisationMock := &authMock.MiddlewareMock{
@@ -270,6 +273,9 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			},
 			GetEditionsStaticFunc: func(context.Context, string, string, int, int) ([]*models.EditionUpdate, int, error) {
 				return editionsList, 1, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{ID: "123-456", Next: &models.Dataset{ID: "123-456"}}, nil
 			},
 		}
 
@@ -388,6 +394,9 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			GetEditionsStaticFunc: func(context.Context, string, string, int, int) ([]*models.EditionUpdate, int, error) {
 				return editionsList, 1, nil
 			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{ID: "123-456", Next: &models.Dataset{ID: "123-456"}}, nil
+			},
 		}
 
 		authorisationMock := &authMock.MiddlewareMock{
@@ -422,6 +431,9 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
 				return "", nil
 			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{ID: "123-456", Next: &models.Dataset{ID: "123-456"}}, nil
+			},
 		}
 
 		authorisationMock := &authMock.MiddlewareMock{
@@ -451,6 +463,9 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			},
 			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
 				return "", nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{ID: "123-456", Next: &models.Dataset{ID: "123-456"}}, nil
 			},
 		}
 
@@ -488,6 +503,9 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
 				return "", nil
 			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{ID: "123-456", Next: &models.Dataset{ID: "123-456"}}, nil
+			},
 		}
 
 		authorisationMock := &authMock.MiddlewareMock{
@@ -523,6 +541,9 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
 				return "", nil
 			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{ID: "123-456", Next: &models.Dataset{ID: "123-456"}}, nil
+			},
 		}
 
 		authorisationMock := &authMock.MiddlewareMock{
@@ -557,6 +578,9 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			},
 			GetEditionsStaticFunc: func(context.Context, string, string, int, int) ([]*models.EditionUpdate, int, error) {
 				return nil, 0, errs.ErrEditionsNotFound
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{ID: "123-456", Next: &models.Dataset{ID: "123-456"}}, nil
 			},
 		}
 

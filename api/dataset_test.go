@@ -780,7 +780,7 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 		So(len(auditServiceMock.RecordDatasetAuditEventCalls()), ShouldEqual, 1)
 	})
 
@@ -813,7 +813,7 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 		So(len(auditServiceMock.RecordDatasetAuditEventCalls()), ShouldEqual, 1)
 	})
 
@@ -830,7 +830,7 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 	})
 
 	Convey("When a web mode request gets a dataset, is_migration is not returned", t, func() {
@@ -897,7 +897,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 	})
 
 	Convey("When dataset document has only a next sub document return status 404 (web mode)", t, func() {
@@ -913,7 +913,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 	})
 
 	Convey("When there is no dataset document return status 404", t, func() {
@@ -939,7 +939,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 	})
 
 	Convey("When the AuditService returns an error when logging the audit event, return 500", t, func() {
@@ -971,7 +971,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		assertInternalServerErr(w)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 		So(len(auditServiceMock.RecordDatasetAuditEventCalls()), ShouldEqual, 1)
 	})
 }

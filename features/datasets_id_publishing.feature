@@ -76,3 +76,46 @@ Feature: GET /datasets/{id} in publishing mode
             """
             dataset not found
             """
+    
+    Scenario: Viewer with permission on the previous series id can access the renamed dataset
+        Given I am a JWT user with email "viewer3@ons.gov.uk" and group "role-viewer-allowed"
+        And I have realistic datasets:
+            """
+            [
+                {
+                    "next": {
+                        "id": "static-series-b",
+                        "state": "created",
+                        "title": "Static Series B",
+                        "type": "static",
+                        "previous_series_id": ["static-series-a"]
+                    }
+                }
+            ]
+            """
+        And I have viewer access to the dataset "static-series-a"
+        When I GET "/datasets/static-series-b"
+        Then the HTTP status code should be "200"
+        And the total number of audit events should be 1
+        And the number of events with action "READ" and resource "/datasets/static-series-b" should be 1
+
+    Scenario: Viewer with no permission on any previous series id cannot access the renamed dataset
+        Given I am a JWT user with email "viewer4@ons.gov.uk" and group "role-viewer-allowed"
+        And I have realistic datasets:
+            """
+            [
+                {
+                    "next": {
+                        "id": "static-series-d",
+                        "state": "created",
+                        "title": "Static Series D",
+                        "type": "static",
+                        "previous_series_id": ["static-series-c"]
+                    }
+                }
+            ]
+            """
+        And I have viewer access to the dataset "some-unrelated-dataset"
+        When I GET "/datasets/static-series-d"
+        Then the HTTP status code should be "403"
+        And the total number of audit events should be 0
