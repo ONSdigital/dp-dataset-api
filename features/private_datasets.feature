@@ -603,7 +603,7 @@ Feature: Private Dataset API
             invalid fields: [Description]
             """
 
-    Scenario: Missing dataset keywords in body when creating a new dataset
+    Scenario: Successfully creating a new static dataset without keywords
         When I POST "/datasets"
             """
             {
@@ -626,12 +626,8 @@ Feature: Private Dataset API
                 "license": "license"
             }
             """
-        Then the HTTP status code should be "400"
-        And I should receive the following response:
-            """
-            invalid fields: [Keywords]
-            """
-
+        Then the HTTP status code should be "201"
+    
     Scenario: Missing dataset next release in body when creating a new dataset
         When I POST "/datasets"
             """

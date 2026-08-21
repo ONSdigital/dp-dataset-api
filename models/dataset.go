@@ -411,10 +411,6 @@ func ValidateDataset(dataset *Dataset) error {
 			}
 		}
 
-		if len(dataset.Keywords) == 0 {
-			invalidFields = append(invalidFields, "Keywords")
-		}
-
 		if len(dataset.Contacts) == 0 {
 			invalidFields = append(invalidFields, "Contacts")
 		}
