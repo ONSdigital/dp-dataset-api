@@ -1,0 +1,22 @@
+[project]
+name = "dis-dataset-api-sdk-python"
+version = "0.1.0"
+description = "A python sdk for dp-dataset-api"
+authors = [
+    {name = "Your Name",email = "you@example.com"}
+]
+readme = "README.md"
+requires-python = ">=3.14,<3.15"
+dependencies = [
+    "requests (>=2.34.2,<3.0.0)",
+    "pydantic (>=2.13.4,<3.0.0)",
+]
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.16.2"
+mypy = "^2.3.0"
+pip-audit = "^2.10.1"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

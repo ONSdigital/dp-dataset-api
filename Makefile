@@ -15,9 +15,16 @@ export ENABLE_PRIVATE_ENDPOINTS?=true
 .PHONY: all
 all: audit test build
 
-.PHONY: audit
-audit:
+.PHONY: audit-go
+audit-go:
 	dis-vulncheck
+
+.PHONY: audit-python
+audit-python:
+	$(MAKE) -C sdk/python audit
+
+.PHONY: audit
+audit: audit-go audit-python
 
 .PHONY: build
 build:
@@ -36,18 +43,39 @@ acceptance-publishing: build
 acceptance-web: build
 	ENABLE_PRIVATE_ENDPOINTS=false MONGODB_DATABASE=test HUMAN_LOG=1 go run -race $(LDFLAGS) main.go
 
-.PHONY: lint
-lint:
+.PHONY: lint-go
+lint-go:
 	golangci-lint run ./...
+
+.PHONY: lint-python
+lint-python:
+	$(MAKE) -C sdk/python lint
+
+.PHONY: lint
+lint: lint-go lint-python
+
+.PHONY: lint-python-types
+lint-python-types:
+	$(MAKE) -C sdk/python typecheck
+
+.PHONY: format-python
+format-python:
+	$(MAKE) -C sdk/python format
 
 .PHONY: lint-api-spec
 lint-api-spec:
 	redocly lint swagger.yaml
 
-.PHONY: test
-test:
+.PHONY: test-go
+test-go:
 	go test -race -cover ./...
 
+.PHONY: test-python
+test-python:
+	$(MAKE) -C sdk/python test
+
+.PHONY: test
+test: test-go test-python
 
 .PHONY: test-component
 test-component:

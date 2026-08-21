@@ -511,7 +511,7 @@ createdVersion, err := client.PostVersion(ctx, headers, "dataset-id", "edition-i
 
 ### Errors
 
-The dataset-api has multiple formats of which errors can be returned such as a plaintext string or a more informative [`ErrorResponse`](../models/responses.go). The SDK will return an `error` object which will contain the string of the error returned from the API. This could be used to string search for a specific status code or message for handling within an external service.
+The dataset-api has multiple formats of which errors can be returned such as a plaintext string or a more informative [`ErrorResponse`](../../models/responses.go). The SDK will return an `error` object which will contain the string of the error returned from the API. This could be used to string search for a specific status code or message for handling within an external service.
 
 ### Headers
 

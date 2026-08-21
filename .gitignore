@@ -7,3 +7,7 @@ build
 def.sdmx.json
 vendor/
 .go/
+__pycache__/
+*.pyc
+*.pyo
+.python-version
