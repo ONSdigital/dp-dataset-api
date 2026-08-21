@@ -74,6 +74,9 @@ test-go:
 test-python:
 	$(MAKE) -C sdk/python test
 
+.PHONY: test
+test: test-go test-python
+
 .PHONY: test-component
 test-component:
 	ENABLE_PRIVATE_ENDPOINTS=true cd features/compose; docker-compose up --abort-on-container-exit
