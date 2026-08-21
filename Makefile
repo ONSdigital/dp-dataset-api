@@ -66,10 +66,13 @@ format-python:
 lint-api-spec:
 	redocly lint swagger.yaml
 
-.PHONY: test
-test:
+.PHONY: test-go
+test-go:
 	go test -race -cover ./...
 
+.PHONY: test-python
+test-python:
+	$(MAKE) -C sdk/python test
 
 .PHONY: test-component
 test-component:
