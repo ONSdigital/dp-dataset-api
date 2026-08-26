@@ -745,32 +745,10 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 					return nil, errVersion
 				}
 
-				searchContentUpdatedEvent := map[string]interface{}{
-					"dataset_id":   versionDetails.datasetID,
-					"uri":          fmt.Sprintf("/%s", strings.TrimLeft(updatedV.Links.WebPage.HRef, "/")),
-					"title":        updatedV.EditionTitle,
-					"edition":      updatedV.Edition,
-					"content_type": "dataset_landing_page",
-					"release_date": updatedV.ReleaseDate,
-				}
-
-				logData["search_content_updated_event"] = searchContentUpdatedEvent
-				jsonBytes, err := json.Marshal(searchContentUpdatedEvent)
-				if err != nil {
-					log.Error(ctx, "failed to marshal searchContentUpdatedEvent for kafka", err, logData)
-					return updatedV, err
-				} else {
-					go func() {
-						smDS.SearchContentUpdatedProducer.Producer.Output() <- kafka.BytesMessage{Value: jsonBytes, Context: ctx}
-					}()
-					log.Info(ctx, "putState endpoint: queued search content update for kafka", logData)
-				}
-
 				// Purge Cloudflare cache if enabled and version is being published
 				if smDS.CloudflareEnabled {
-					webLink := strings.TrimLeft(updatedV.Links.WebPage.HRef, "/")
-					topic := strings.Split(webLink, "/")
-					prefixes := utils.GeneratePurgePrefixes(smDS.UrlBuilder.GetPublicWebsiteURL().String(), smDS.UrlBuilder.GetAPIRouterPublicURL().String(), topic[0], versionDetails.datasetID, versionDetails.edition, versionDetails.version)
+					topicSlug := utils.GetFirstPathSegment(updatedV.Links.WebPage.HRef)
+					prefixes := utils.GeneratePurgePrefixes(smDS.UrlBuilder.GetPublicWebsiteURL().String(), smDS.UrlBuilder.GetAPIRouterPublicURL().String(), topicSlug, versionDetails.datasetID, versionDetails.edition, versionDetails.version)
 					logData["purge_prefixes"] = prefixes
 
 					// Call Cloudflare purge asynchronously to prevent delaying the endpoint response.
@@ -898,33 +876,54 @@ func PublishDataset(ctx context.Context, smDS *StateMachineDatasetAPI,
 		log.Error(ctx, "State Machine: Publish: PublishDataset: failed to update dataset document once version state changes to publish", err, data)
 		return err
 	}
-	data["type"] = currentVersion.Type
-	data["version_update"] = versionUpdate
-	log.Info(ctx, "State Machine: Publish: PublishDataset: published version", data)
 
-	if currentVersion.Type != models.Static.String() {
-		// Only want to generate downloads again if there is no public link available
-		if currentVersion.Downloads != nil && currentVersion.Downloads.CSV != nil && currentVersion.Downloads.CSV.Public == "" {
-			// Lookup the download generator using the version document type
-			t, err := models.GetDatasetType(currentVersion.Type)
-			if err != nil {
-				return fmt.Errorf("error getting type of version: %w", err)
-			}
-			generator, ok := smDS.DownloadGenerators[t]
-			if !ok {
-				return fmt.Errorf("no downloader available for type %s", t)
-			}
-			// Send Kafka message.  The generator which is used depends on the type defined in VersionDoc.
-			if err := generator.Generate(ctx, versionDetails.datasetID, versionUpdate.ID, versionDetails.edition, versionDetails.version); err != nil {
-				data["instance_id"] = versionUpdate.ID
-				data["state"] = versionUpdate.State
-				data["type"] = t.String()
-				log.Error(ctx, "State Machine: Publish: PublishDataset: error while attempting to generate full dataset version downloads on version publish", err, data)
-				return err
-				// TODO - TECH DEBT - need to add an error event for this.  Kafka message perhaps.
-			}
-			log.Info(ctx, "State Machine: Publish: PublishDataset: generated full dataset version downloads:", data)
+	log.Info(ctx, "State Machine: Publish: PublishDataset: published dataset", data)
+
+	if currentVersion.Type == models.Static.String() {
+		searchContentUpdatedEvent := map[string]interface{}{
+			"content_type":     "dataset_landing_page",
+			"dataset_id":       versionDetails.datasetID,
+			"edition":          versionUpdate.Edition,
+			"meta_description": currentDataset.Next.Description,
+			"release_date":     versionUpdate.ReleaseDate,
+			"summary":          currentDataset.Next.Description,
+			"title":            versionUpdate.EditionTitle,
+			"topics":           currentDataset.Next.Topics,
+			"uri":              fmt.Sprintf("/%s/datasets/%s", utils.GetFirstPathSegment(versionUpdate.Links.WebPage.HRef), versionDetails.datasetID),
 		}
+
+		data["search_content_updated_event"] = searchContentUpdatedEvent
+		jsonBytes, err := json.Marshal(searchContentUpdatedEvent)
+		if err != nil {
+			log.Error(ctx, "failed to marshal searchContentUpdatedEvent for kafka", err, data)
+			return err
+		}
+
+		go func() {
+			smDS.SearchContentUpdatedProducer.Producer.Output() <- kafka.BytesMessage{Value: jsonBytes, Context: ctx}
+		}()
+		log.Info(ctx, "State Machine: Publish: PublishDataset: queued search content update for kafka", data)
+	} else if currentVersion.Downloads != nil && currentVersion.Downloads.CSV != nil && currentVersion.Downloads.CSV.Public == "" {
+		// Only want to generate downloads again if there is no public link available.
+		// Lookup the download generator using the version document type.
+		t, err := models.GetDatasetType(currentVersion.Type)
+		if err != nil {
+			return fmt.Errorf("error getting type of version: %w", err)
+		}
+		generator, ok := smDS.DownloadGenerators[t]
+		if !ok {
+			return fmt.Errorf("no downloader available for type %s", t)
+		}
+		// Send Kafka message.  The generator which is used depends on the type defined in VersionDoc.
+		if err := generator.Generate(ctx, versionDetails.datasetID, versionUpdate.ID, versionDetails.edition, versionDetails.version); err != nil {
+			data["instance_id"] = versionUpdate.ID
+			data["state"] = versionUpdate.State
+			data["type"] = t.String()
+			log.Error(ctx, "State Machine: Publish: PublishDataset: error while attempting to generate full dataset version downloads on version publish", err, data)
+			return err
+			// TODO - TECH DEBT - need to add an error event for this.  Kafka message perhaps.
+		}
+		log.Info(ctx, "State Machine: Publish: PublishDataset: generated full dataset version downloads:", data)
 	}
 
 	return nil
