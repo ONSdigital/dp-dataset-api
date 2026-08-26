@@ -161,3 +161,11 @@ func ValidateDistributionsFromRequestBody(bodyBytes []byte) error {
 
 	return nil
 }
+
+// GetFirstPathSegment returns the first segment from a URL path string.
+// Leading slashes are ignored.
+func GetFirstPathSegment(path string) string {
+	path = strings.TrimLeft(path, "/")
+	segment, _, _ := strings.Cut(path, "/")
+	return segment
+}

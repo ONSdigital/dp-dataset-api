@@ -320,3 +320,34 @@ func TestValidateIDNoSpaces(t *testing.T) {
 		})
 	})
 }
+
+func TestGetFirstPathSegment(t *testing.T) {
+	testCases := []struct {
+		name     string
+		path     string
+		expected string
+	}{
+		{
+			name:     "returns first segment when path has multiple segments",
+			path:     "/economy/datasets/cpih01",
+			expected: "economy",
+		},
+		{
+			name:     "returns first segment when path has no leading slash",
+			path:     "economy/datasets/cpih01",
+			expected: "economy",
+		},
+		{
+			name:     "returns empty string for empty input",
+			path:     "",
+			expected: "",
+		},
+	}
+
+	for _, tc := range testCases {
+		Convey(tc.name, t, func() {
+			got := GetFirstPathSegment(tc.path)
+			So(got, ShouldEqual, tc.expected)
+		})
+	}
+}
