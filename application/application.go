@@ -887,7 +887,7 @@ func PublishDataset(ctx context.Context, smDS *StateMachineDatasetAPI,
 			"meta_description": currentDataset.Next.Description,
 			"release_date":     versionUpdate.ReleaseDate,
 			"summary":          currentDataset.Next.Description,
-			"title":            versionUpdate.EditionTitle,
+			"title":            currentDataset.Next.Title,
 			"topics":           currentDataset.Next.Topics,
 			"uri":              fmt.Sprintf("/%s/datasets/%s", utils.GetFirstPathSegment(versionUpdate.Links.WebPage.HRef), versionDetails.datasetID),
 		}
