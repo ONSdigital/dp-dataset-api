@@ -33,44 +33,64 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 			log.Error(ctx, "failed due to invalid version request", err, logData)
 			return nil, err
 		}
+
 		attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
 		if attrsErr != nil {
 			return nil, attrsErr
 		}
 
-		datasetDoc, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
+		datasetUpdate, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 		if err != nil {
 			log.Error(ctx, "getMetadata endpoint: get datastore.getDataset returned an error", err, logData)
 			return nil, err
 		}
 
-		var versionDoc *models.Version
-
-		doc := datasetDoc.Current
-		if doc == nil {
-			if datasetDoc.Next == nil {
-				return nil, errors.New("invalid dataset doc: no 'current' or 'next' found")
-			}
-			doc = datasetDoc.Next
+		// Restrict access to unpublished datasets when private endpoints are disabled (web mode)
+		if !api.enablePrivateEndpoints && (datasetUpdate.Current == nil || datasetUpdate.Current.State != models.PublishedState) {
+			return nil, errs.ErrDatasetNotFound
 		}
 
-		datasetType, err := models.GetDatasetType(doc.Type)
+		dataset := datasetUpdate.Next
+		if !api.enablePrivateEndpoints {
+			dataset = datasetUpdate.Current
+		}
+
+		datasetType, err := models.GetDatasetType(dataset.Type)
 		if err != nil {
 			log.Error(ctx, "invalid dataset type", err, logData)
 			return nil, err
 		}
 
-		isStaticDataset := (datasetType == models.Static)
+		isStatic := datasetType == models.Static
 
 		var authorised bool
-		if isStaticDataset {
+		if isStatic {
 			authorised = api.checkUserPermission(r, logData, datasetEditionVersionReadPermission, attrs)
-			versionDoc, err = api.dataStore.Backend.GetVersionStatic(ctx, datasetID, edition, versionID, "")
 		} else {
 			authorised = api.checkUserPermission(r, logData, datasetEditionVersionReadPermission, nil)
-			versionDoc, err = api.dataStore.Backend.GetVersion(ctx, datasetID, edition, versionID, "")
 		}
 
+		var stateQuery string
+		if !authorised {
+			stateQuery = models.PublishedState
+		}
+
+		if isStatic {
+			err = api.dataStore.Backend.CheckEditionExistsStatic(ctx, datasetID, edition, stateQuery)
+		} else {
+			err = api.dataStore.Backend.CheckEditionExists(ctx, datasetID, edition, stateQuery)
+		}
+		if err != nil {
+			log.Error(ctx, "getMetadata endpoint: failed to find edition for dataset", err, logData)
+			return nil, err
+		}
+
+		var versionDoc *models.Version
+		if isStatic {
+			versionDoc, err = api.dataStore.Backend.GetVersionStatic(ctx, datasetID, edition, versionID, stateQuery)
+		} else {
+			versionDoc, err = api.dataStore.Backend.GetVersion(ctx, datasetID, edition, versionID, stateQuery)
+		}
 		if err != nil {
 			if err == errs.ErrVersionNotFound {
 				log.Error(ctx, "getMetadata endpoint: failed to find version for dataset edition", err, logData)
@@ -80,54 +100,19 @@ func (api *DatasetAPI) getMetadata(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
-		state := versionDoc.State
-
-		// if the requested version is not yet published and the user is unauthorised, return a 404
-		if !authorised && versionDoc.State != models.PublishedState {
-			log.Error(ctx, "getMetadata endpoint: unauthorised user requested unpublished version, returning 404", errs.ErrUnauthorised, logData)
-			return nil, errs.ErrUnauthorised
-		}
-
-		// if request is not authenticated but the version is published, restrict dataset access to only published resources
-		if !authorised {
-			// Check for current sub document
-			if datasetDoc.Current == nil || datasetDoc.Current.State != models.PublishedState {
-				logData["dataset"] = datasetDoc.Current
-				log.Error(ctx, "getMetadata endpoint: caller not is authorised and dataset but currently unpublished", errors.New("document is not currently published"), logData)
-				return nil, errs.ErrDatasetNotFound
-			}
-
-			state = datasetDoc.Current.State
-		}
-
-		if isStaticDataset {
-			err = api.dataStore.Backend.CheckEditionExistsStatic(ctx, datasetID, edition, "")
-		} else {
-			err = api.dataStore.Backend.CheckEditionExists(ctx, datasetID, edition, "")
-		}
-
-		if err != nil {
-			log.Error(ctx, "getMetadata endpoint: failed to find edition for dataset", err, logData)
-			return nil, err
-		}
-
 		if err = models.CheckState("version", versionDoc.State); err != nil {
 			logData["state"] = versionDoc.State
-			log.Error(ctx, "getMetadata endpoint: unpublished version has an invalid state", err, logData)
+			log.Error(ctx, "getMetadata endpoint: version has an invalid state", err, logData)
 			return nil, err
 		}
 
 		var metaDataDoc *models.Metadata
 
+		// Combine dataset and version metadata into a single metadata document.
 		if datasetType == models.CantabularFlexibleTable || datasetType == models.CantabularMultivariateTable {
-			metaDataDoc = models.CreateCantabularMetaDataDoc(doc, versionDoc)
+			metaDataDoc = models.CreateCantabularMetaDataDoc(dataset, versionDoc)
 		} else {
-			// combine version and dataset metadata
-			if state != models.PublishedState {
-				metaDataDoc = models.CreateMetaDataDoc(datasetDoc.Next, versionDoc, api.urlBuilder)
-			} else {
-				metaDataDoc = models.CreateMetaDataDoc(datasetDoc.Current, versionDoc, api.urlBuilder)
-			}
+			metaDataDoc = models.CreateMetaDataDoc(dataset, versionDoc, api.urlBuilder)
 		}
 
 		if api.enableURLRewriting {
