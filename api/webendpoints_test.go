@@ -76,8 +76,8 @@ func TestWebSubnetDatasetEndpoint(t *testing.T) {
 	Convey("When the API is started with private endpoints disabled", t, func() {
 		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/1234", nil)
 
-		current := &models.Dataset{ID: "1234", Title: "current"}
-		next := &models.Dataset{ID: "1234", Title: "next"}
+		current := &models.Dataset{ID: "1234", Title: "current", State: models.PublishedState}
+		next := &models.Dataset{ID: "1234", Title: "next", State: models.CreatedState}
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
@@ -95,7 +95,7 @@ func TestWebSubnetDatasetEndpoint(t *testing.T) {
 			api.Router.ServeHTTP(w, r)
 			a, _ := io.ReadAll(w.Body)
 			So(w.Code, ShouldEqual, http.StatusOK)
-			So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
+			So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 			var result models.Dataset
 			err := json.Unmarshal(a, &result)
 			So(err, ShouldBeNil)
@@ -202,8 +202,8 @@ func TestWebSubnetVersionsEndpoint(t *testing.T) {
 		var versionSearchState, editionSearchState string
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{ID: "123", Next: &models.Dataset{ID: "1234"}}, nil
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				return models.Filterable.String(), nil
 			},
 			CheckEditionExistsFunc: func(_ context.Context, _, _, state string) error {
 				editionSearchState = state
@@ -212,9 +212,6 @@ func TestWebSubnetVersionsEndpoint(t *testing.T) {
 			GetVersionsFunc: func(_ context.Context, _ string, _ string, state string, _, _ int) ([]models.Version, int, error) {
 				versionSearchState = state
 				return []models.Version{{ID: "124", State: models.PublishedState}}, 1, nil
-			},
-			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
-				return nil, 0, nil
 			},
 		}
 
@@ -225,6 +222,10 @@ func TestWebSubnetVersionsEndpoint(t *testing.T) {
 			So(w.Code, ShouldEqual, http.StatusOK)
 			So(editionSearchState, ShouldEqual, models.PublishedState)
 			So(versionSearchState, ShouldEqual, models.PublishedState)
+
+			So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.GetVersionsCalls()), ShouldEqual, 1)
 		})
 	})
 }
@@ -236,8 +237,8 @@ func TestWebSubnetVersionEndpoint(t *testing.T) {
 		var versionSearchState, editionSearchState string
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
-			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{ID: "123-456", Next: &models.Dataset{ID: "123-456"}}, nil
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				return models.Filterable.String(), nil
 			},
 			CheckEditionExistsFunc: func(_ context.Context, _, _, state string) error {
 				editionSearchState = state
@@ -250,12 +251,6 @@ func TestWebSubnetVersionEndpoint(t *testing.T) {
 						Version: &models.LinkObject{},
 						Self:    &models.LinkObject{}}}, nil
 			},
-			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
-				return false, nil
-			},
-			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
-				return nil, 0, nil
-			},
 		}
 
 		Convey("Calling the version endpoint should allow only published items", func() {
@@ -266,6 +261,10 @@ func TestWebSubnetVersionEndpoint(t *testing.T) {
 			So(w.Code, ShouldEqual, http.StatusOK)
 			So(editionSearchState, ShouldEqual, models.PublishedState)
 			So(versionSearchState, ShouldEqual, models.PublishedState)
+
+			So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
+			So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		})
 	})
 }
