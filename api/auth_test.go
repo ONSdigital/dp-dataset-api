@@ -196,7 +196,7 @@ func TestGetAccessTokenFromRequest(t *testing.T) {
 }
 
 func TestGetPermissionAttributesFromRequest(t *testing.T) {
-	Convey("Given a request for permission attributes", t, func() {
+	Convey("Given a request for permission attributes in publishing mode", t, func() {
 		Convey("When only a dataset id is provided and the dataset has no previous series id", func() {
 			datasetID := "test-dataset"
 			mockedDataStore := &storetest.StorerMock{
@@ -204,7 +204,10 @@ func TestGetPermissionAttributesFromRequest(t *testing.T) {
 					return &models.DatasetUpdate{ID: datasetID, Next: &models.Dataset{ID: datasetID}}, nil
 				},
 			}
-			api := DatasetAPI{dataStore: store.DataStore{Backend: mockedDataStore}}
+			api := DatasetAPI{
+				dataStore:              store.DataStore{Backend: mockedDataStore},
+				enablePrivateEndpoints: true,
+			}
 
 			req := httptest.NewRequest(http.MethodGet, "/datasets/"+datasetID, http.NoBody)
 			req = mux.SetURLVars(req, map[string]string{"dataset_id": datasetID})
@@ -226,7 +229,10 @@ func TestGetPermissionAttributesFromRequest(t *testing.T) {
 					return &models.DatasetUpdate{ID: datasetID}, nil
 				},
 			}
-			api := DatasetAPI{dataStore: store.DataStore{Backend: mockedDataStore}}
+			api := DatasetAPI{
+				dataStore:              store.DataStore{Backend: mockedDataStore},
+				enablePrivateEndpoints: true,
+			}
 
 			req := httptest.NewRequest(http.MethodGet, "/datasets/"+datasetID, http.NoBody)
 			req = mux.SetURLVars(req, map[string]string{"dataset_id": datasetID})
@@ -246,7 +252,10 @@ func TestGetPermissionAttributesFromRequest(t *testing.T) {
 					return nil, errs.ErrDatasetNotFound
 				},
 			}
-			api := DatasetAPI{dataStore: store.DataStore{Backend: mockedDataStore}}
+			api := DatasetAPI{
+				dataStore:              store.DataStore{Backend: mockedDataStore},
+				enablePrivateEndpoints: true,
+			}
 
 			req := httptest.NewRequest(http.MethodGet, "/datasets/"+datasetID, http.NoBody)
 			req = mux.SetURLVars(req, map[string]string{"dataset_id": datasetID})
@@ -276,8 +285,9 @@ func TestGetPermissionAttributesFromRequest(t *testing.T) {
 				},
 			}
 			api := DatasetAPI{
-				dataStore:            store.DataStore{Backend: mockedDataStore},
-				EnablePrePublishView: true,
+				dataStore:              store.DataStore{Backend: mockedDataStore},
+				enablePrivateEndpoints: true,
+				EnablePrePublishView:   true,
 				authMiddleware: &authMock.MiddlewareMock{
 					ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
 						So(token, ShouldEqual, "valid-token")
@@ -319,8 +329,9 @@ func TestGetPermissionAttributesFromRequest(t *testing.T) {
 				},
 			}
 			api := DatasetAPI{
-				dataStore:            store.DataStore{Backend: mockedDataStore},
-				EnablePrePublishView: true,
+				dataStore:              store.DataStore{Backend: mockedDataStore},
+				enablePrivateEndpoints: true,
+				EnablePrePublishView:   true,
 				authMiddleware: &authMock.MiddlewareMock{
 					ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
 						return testEntityData, nil
@@ -350,7 +361,10 @@ func TestGetPermissionAttributesFromRequest(t *testing.T) {
 					return []*models.Version{}, 0, nil
 				},
 			}
-			api := DatasetAPI{dataStore: store.DataStore{Backend: mockedDataStore}}
+			api := DatasetAPI{
+				dataStore:              store.DataStore{Backend: mockedDataStore},
+				enablePrivateEndpoints: true,
+			}
 
 			req := httptest.NewRequest(http.MethodGet, "/datasets/"+datasetID+"/editions/"+edition, http.NoBody)
 			req = mux.SetURLVars(req, map[string]string{"dataset_id": datasetID, "edition": edition})
@@ -379,8 +393,9 @@ func TestGetPermissionAttributesFromRequest(t *testing.T) {
 				},
 			}
 			api := DatasetAPI{
-				dataStore:            store.DataStore{Backend: mockedDataStore},
-				EnablePrePublishView: true,
+				dataStore:              store.DataStore{Backend: mockedDataStore},
+				enablePrivateEndpoints: true,
+				EnablePrePublishView:   true,
 				authMiddleware: &authMock.MiddlewareMock{
 					ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
 						So(token, ShouldEqual, "valid-token")
@@ -402,6 +417,23 @@ func TestGetPermissionAttributesFromRequest(t *testing.T) {
 				So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
 				So(len(permissionsChecker.HasPermissionCalls()), ShouldEqual, 1)
 				So(permissionsChecker.HasPermissionCalls()[0].Attributes, ShouldResemble, map[string]string{"dataset_edition": datasetID + "/" + previousEdition})
+			})
+		})
+	})
+
+	Convey("Given a request for permission attributes in web mode", t, func() {
+		api := DatasetAPI{
+			enablePrivateEndpoints: false,
+		}
+
+		req := httptest.NewRequest(http.MethodGet, "/datasets/test-dataset", http.NoBody)
+
+		Convey("When GetPermissionAttributesFromRequest is called", func() {
+			attributes, err := api.getPermissionAttributesFromRequest(req)
+
+			Convey("Then it should return nil attributes and no error", func() {
+				So(err, ShouldBeNil)
+				So(attributes, ShouldBeNil)
 			})
 		})
 	})

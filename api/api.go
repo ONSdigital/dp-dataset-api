@@ -492,6 +492,10 @@ func setJSONContentType(w http.ResponseWriter) {
 }
 
 func (api DatasetAPI) getPermissionAttributesFromRequest(req *http.Request) (map[string]string, error) {
+	if !api.enablePrivateEndpoints {
+		return nil, nil
+	}
+
 	vars := mux.Vars(req)
 
 	datasetID := vars["dataset_id"]
