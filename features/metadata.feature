@@ -793,6 +793,10 @@ Feature: Dataset API - metadata
     Scenario: GET metadata for non-existent dataset returns 404
         When I GET "/datasets/non-existent-dataset/editions/2023/versions/1/metadata"
         Then the HTTP status code should be "404"
+        And I should receive the following response:
+            """
+            dataset not found
+            """
 
     Scenario: GET metadata for non-existent edition returns 404
         Given I have these datasets:
@@ -806,6 +810,10 @@ Feature: Dataset API - metadata
             """
         When I GET "/datasets/population-estimates/editions/non-existent-edition/versions/1/metadata"
         Then the HTTP status code should be "404"
+        And I should receive the following response:
+            """
+            edition not found
+            """
 
     Scenario: GET metadata for non-existent version returns 404
         Given I have these datasets:
@@ -834,6 +842,10 @@ Feature: Dataset API - metadata
             """
         When I GET "/datasets/population-estimates/editions/2023/versions/999/metadata"
         Then the HTTP status code should be "404"
+        And I should receive the following response:
+            """
+            version not found
+            """
 
     Scenario: GET metadata for Cantabular flexible table dataset
         Given I have these datasets:

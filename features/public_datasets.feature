@@ -1,11 +1,19 @@
 Feature: Dataset API
 
-    Scenario: GET /datasets
-        Given I have these datasets:
+    Scenario: GET /datasets excludes unpublished datasets
+        Given I have realistic datasets:
             """
             [
                 {
-                    "id": "population-estimates"
+                    "current": {"id": "population-estimates", "state": "published"},
+                    "next": {"id": "population-estimates", "state": "published"}
+                },
+                {
+                    "current": {"id": "income-by-age", "state": "published"},
+                    "next": {"id": "income-by-age", "state": "published"}
+                },
+                {
+                    "next": {"id": "cpih01", "state": "created"}
                 }
             ]
             """
@@ -13,28 +21,36 @@ Feature: Dataset API
         Then I should receive the following JSON response with status "200":
             """
             {
-                "count":1,
+                "count":2,
                 "items": [
                     {
                         "id": "population-estimates",
-                        "last_updated":"0001-01-01T00:00:00Z"
+                        "last_updated":"0001-01-01T00:00:00Z",
+                        "state": "published"
+                    },
+                    {
+                        "id": "income-by-age",
+                        "last_updated":"0001-01-01T00:00:00Z",
+                        "state": "published"
                     }
                 ],
                 "limit":20, 
                 "offset":0, 
-                "total_count":1
+                "total_count":2
             }
             """
 
-    Scenario: GET a specific dataset
+    Scenario: GET a published dataset returns 200
         Given I have these datasets:
             """
             [
                 {
-                    "id": "population-estimates"
+                    "id": "population-estimates",
+                    "state": "published"
                 },
                 {
-                    "id": "income-by-age"
+                    "id": "income-by-age",
+                    "state": "published"
                 }
             ]
             """
@@ -43,9 +59,28 @@ Feature: Dataset API
             """
             {
                 "id": "income-by-age",
-                "last_updated":"0001-01-01T00:00:00Z"
+                "last_updated":"0001-01-01T00:00:00Z",
+                "state": "published"
             }
             """
+
+    Scenario: GET an unpublished dataset returns 404
+        Given I have these datasets:
+            """
+            [
+                {
+                    "id": "population-estimates",
+                    "state": "created"
+                }
+            ]
+            """
+        When I GET "/datasets/population-estimates"
+        Then the HTTP status code should be "404"
+        And I should receive the following response:
+            """
+            dataset not found
+            """
+
 
     Scenario: Adding topic and survey fields to a dataset
         Given I have these datasets:

@@ -50,6 +50,16 @@ Feature: Dataset API
                     }
                 },
                 {
+                    "id": "test-edition-3",
+                    "edition": "unpublished-edition",
+                    "state": "associated",
+                    "links": {
+                        "dataset": {
+                            "id": "population-estimates"
+                        }
+                    }
+                },
+                {
                     "id": "hellov2",
                     "edition": "hellov2",
                     "state": "published",
@@ -485,29 +495,45 @@ Feature: Dataset API
             }
             """
 
+  Scenario: GET versions for unpublished dataset returns not found error
+    When I GET "/datasets/test-cantabular-dataset-1/editions/hello/versions"
+    Then the HTTP status code should be "404"
+    And I should receive the following response:
+        """
+        dataset not found
+        """
+
   Scenario: GET versions for unknown dataset returns not found error
     When I GET "/datasets/unknown-dataset/editions/hello/versions"
     Then the HTTP status code should be "404"
     And I should receive the following response:
-            """
-            dataset not found
-            """
+        """
+        dataset not found
+        """
 
-  Scenario: GET versions for unknown edition returns not found error
-    When I GET "/datasets/population-estimates/editions/unknown/versions"
+  Scenario: GET versions for unpublished edition returns not found error
+    When I GET "/datasets/population-estimates/editions/unpublished-edition/versions"
     Then the HTTP status code should be "404"
     And I should receive the following response:
-            """
-            edition not found
-            """
+        """
+        edition not found
+        """
+
+  Scenario: Get versions for unknown edition returns not found error
+    When I GET "/datasets/population-estimates/editions/unknown-edition/versions"
+    Then the HTTP status code should be "404"
+    And I should receive the following response:
+        """
+        edition not found
+        """
 
   Scenario: GET versions for edition with no versions returns not found error
     When I GET "/datasets/population-estimates/editions/edition-with-no-versions/versions"
     Then the HTTP status code should be "404"
     And I should receive the following response:
-            """
-            version not found
-            """
+        """
+        version not found
+        """
 
   Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} in public mode returns the version
     And URL rewriting is enabled

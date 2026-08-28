@@ -32,7 +32,13 @@ Feature: Static versions GET /versions
                     "next": {
                         "id": "test-created-dataset",
                         "state": "created",
-                        "type": "static"
+                        "type": "static",
+                        "links": {
+                            "latest_version": {
+                                "id": "1",
+                                "href": "/datasets/test-created-dataset/editions/test-edition-static/versions/1"
+                            }
+                        }
                     },
                     "current": null
                 }
@@ -306,9 +312,42 @@ Feature: Static versions GET /versions
         Then the HTTP status code should be "200"
         And the total number of audit events should be 0
 
+    Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} for an unpublished dataset returns 404
+        When I GET "/datasets/test-created-dataset/editions/test-edition-static/versions/1"
+        Then I should receive the following JSON response with status "404":
+            """
+            {
+                "errors": [
+                    {
+                        "code": "dataset not found",
+                        "description": "dataset not found"
+                    }
+                ]
+            }
+            """
+
+    Scenario: GET /datasets/{id}/editions/{edition}/versions/{version} for an unpublished edition returns 404
+        When I GET "/datasets/test-static/editions/test-edition-unpublished/versions/1"
+        Then the HTTP status code should be "404"
+        Then I should receive the following JSON response with status "404":
+            """
+            {
+                "errors": [
+                    {
+                        "code": "edition not found",
+                        "description": "edition not found"
+                    }
+                ]
+            }
+            """
+
     Scenario: Get dataset with created state returns 404 in web mode
         When I GET "/datasets/test-created-dataset"
         Then the HTTP status code should be "404"
+        And I should receive the following response:
+            """
+            dataset not found
+            """
 
     Scenario: Get dataset with created state returns dataset in private mode
         When private endpoints are enabled

@@ -189,6 +189,10 @@ Scenario: GET metadata for an unpublished static dataset
         """
     When I GET "/datasets/static-dataset/editions/time-series/versions/1/metadata"
     Then the HTTP status code should be "404"
+    And I should receive the following response:
+        """
+        dataset not found
+        """
 
 Scenario: GET metadata for Cantabular flexible table dataset
     Given I have these datasets:
@@ -327,7 +331,7 @@ Scenario: GET metadata for Cantabular flexible table dataset
         }
         """
 
-Scenario: GET metadata for an unpublished Cantabular flexible table dataset
+Scenario: GET metadata for a published Cantabular flexible table dataset
     Given I have these datasets:
         """
         [
@@ -464,7 +468,7 @@ Scenario: GET metadata for an unpublished Cantabular flexible table dataset
             }
         """
 
-Scenario: GET metadata for a Cantabular flexible table dataset
+Scenario: GET metadata for an unpublished Cantabular flexible table dataset
     Given I have these datasets:
         """
         [
@@ -550,3 +554,110 @@ Scenario: GET metadata for a Cantabular flexible table dataset
         """
     When I GET "/datasets/cantabular-flexible-table/editions/2023/versions/1/metadata"
     Then the HTTP status code should be "404"
+    And I should receive the following response:
+        """
+        dataset not found
+        """
+
+Scenario: GET metadata for an unpublished dataset returns 404
+    Given I have these datasets:
+        """
+        [
+            {
+                "id": "unpublished-dataset",
+                "state": "created"
+            }
+        ]
+        """
+    When I GET "/datasets/unpublished-dataset/editions/2023/versions/1/metadata"
+    Then the HTTP status code should be "404"
+    And I should receive the following response:
+        """
+        dataset not found
+        """
+    
+Scenario: GET metadata for an unpublished edition returns 404
+    Given I have these datasets:
+        """
+        [
+            {
+                "id": "population-estimates",
+                "state": "published"
+            }
+        ]
+        """
+    And I have these editions:
+        """
+        [
+            {
+                "id": "unpublished-edition",
+                "edition": "2023",
+                "state": "associated",
+                "links": {
+                    "dataset": {
+                        "id": "population-estimates"
+                    }
+                }
+            }
+        ]
+        """
+    When I GET "/datasets/population-estimates/editions/2023/versions/1/metadata"
+    Then the HTTP status code should be "404"
+    And I should receive the following response:
+        """
+        edition not found
+        """
+    
+Scenario: GET metadata for an unpublished version returns 404
+    Given I have these datasets:
+        """
+        [
+            {
+                "id": "population-estimates",
+                "state": "published"
+            }
+        ]
+        """
+    And I have these editions:
+        """
+        [
+            {
+                "id": "test-edition-1",
+                "edition": "2023",
+                "state": "published",
+                "links": {
+                    "dataset": {
+                        "id": "population-estimates"
+                    }
+                }
+            }
+        ]
+        """
+    And I have these versions:
+        """
+        [
+            {
+                "id": "unpublished-version",
+                "version": 1,
+                "state": "created",
+                "release_date": "2023-01-01T00:00:00.000Z",
+                "links": {
+                    "dataset": {
+                        "id": "population-estimates"
+                    },
+                    "edition": {
+                        "id": "test-edition-1"
+                    },
+                    "self": {
+                        "href": "/datasets/population-estimates/editions/2023/versions/1"
+                    }
+                }
+            }
+        ]
+        """
+    When I GET "/datasets/population-estimates/editions/2023/versions/1/metadata"
+    Then the HTTP status code should be "404"
+    And I should receive the following response:
+        """
+        version not found
+        """
