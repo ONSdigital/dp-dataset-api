@@ -822,7 +822,7 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
-				return &models.DatasetUpdate{ID: "123", Current: &models.Dataset{ID: "123"}, Next: &models.Dataset{ID: "123"}}, nil
+				return &models.DatasetUpdate{ID: "123", Current: &models.Dataset{ID: "123", State: models.PublishedState}, Next: &models.Dataset{ID: "123", State: models.CreatedState}}, nil
 			},
 		}
 
@@ -830,7 +830,7 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 	})
 
 	Convey("When a web mode request gets a dataset, is_migration is not returned", t, func() {
@@ -840,8 +840,8 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{
 					ID:      "123",
-					Current: &models.Dataset{ID: "123", IsMigration: boolPtr(true)},
-					Next:    &models.Dataset{ID: "123", IsMigration: boolPtr(true)},
+					Current: &models.Dataset{ID: "123", IsMigration: new(true), State: models.PublishedState},
+					Next:    &models.Dataset{ID: "123", IsMigration: new(true), State: models.CreatedState},
 				}, nil
 			},
 		}
@@ -861,8 +861,8 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{
 					ID:      "123",
-					Current: &models.Dataset{ID: "123", IsMigration: boolPtr(true)},
-					Next:    &models.Dataset{ID: "123", IsMigration: boolPtr(true)},
+					Current: &models.Dataset{ID: "123", IsMigration: new(true), State: models.PublishedState},
+					Next:    &models.Dataset{ID: "123", IsMigration: new(true), State: models.CreatedState},
 				}, nil
 			},
 		}
@@ -913,7 +913,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 	})
 
 	Convey("When there is no dataset document return status 404", t, func() {

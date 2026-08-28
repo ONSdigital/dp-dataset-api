@@ -173,6 +173,11 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 			return nil, err
 		}
 
+		// Restrict access to unpublished datasets when private endpoints are disabled (web mode)
+		if !api.enablePrivateEndpoints && (dataset.Current == nil || dataset.Current.State != models.PublishedState) {
+			return nil, errs.ErrDatasetNotFound
+		}
+
 		var datasetType string
 		var authorised bool
 
