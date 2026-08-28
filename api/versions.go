@@ -72,14 +72,11 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 			return nil, 0, attrsErr
 		}
 
-		// Check if dataset exists
-		dataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
+		datasetType, err := api.dataStore.Backend.GetDatasetType(ctx, datasetID, api.enablePrivateEndpoints)
 		if err != nil {
-			log.Error(ctx, "failed to retrieve dataset details", err, logData)
+			log.Error(ctx, "failed to retrieve dataset type", err, logData)
 			return nil, 0, err
 		}
-
-		datasetType := dataset.Next.Type
 
 		var authorised bool
 		if datasetType == models.Static.String() {
@@ -208,14 +205,15 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 			return nil, attrsErr
 		}
 
-		isStatic, err := api.dataStore.Backend.IsStaticDataset(ctx, datasetID)
+		datasetType, err := api.dataStore.Backend.GetDatasetType(ctx, datasetID, api.enablePrivateEndpoints)
 		if err != nil {
+			log.Error(ctx, "getVersion endpoint: unable to find dataset type", err, logData)
 			return nil, err
 		}
 
 		version := &models.Version{}
 
-		if isStatic {
+		if datasetType == models.Static.String() {
 			authorised = api.checkUserPermission(r, logData, datasetEditionVersionReadPermission, attrs)
 
 			if authorised {
