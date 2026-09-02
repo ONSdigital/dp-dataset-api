@@ -389,7 +389,7 @@ Feature: Get static version in publishing mode
       }
       """
 
-  Scenario: GET /datasets/{id}/editions/{edition}/versions returns 200 for an authorised viewer via previous series and previous editions
+  Scenario: GET /datasets/{id}/editions/{edition}/version/1 returns 200 for an authorised viewer via previous series and previous editions
     Given private endpoints are enabled
     And I have these datasets:
             """
@@ -429,5 +429,5 @@ Feature: Get static version in publishing mode
             """
     And I am a JWT user with email "viewer1@ons.gov.uk" and group "role-viewer-allowed"
     And I have viewer access to the dataset edition "test-series-b/2022"
-    When I GET "/datasets/test-series-c/editions/2024/versions"
+    When I GET "/datasets/test-series-c/editions/2024/versions/1"
     Then the HTTP status code should be "200"
