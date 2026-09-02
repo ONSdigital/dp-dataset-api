@@ -79,7 +79,7 @@ test: test-go test-python
 
 .PHONY: test-component
 test-component:
-	ENABLE_PRIVATE_ENDPOINTS=true cd features/compose; docker-compose up --abort-on-container-exit
+	cd features/compose; docker-compose up --abort-on-container-exit
 
 .PHONY: nomis
 nomis:
