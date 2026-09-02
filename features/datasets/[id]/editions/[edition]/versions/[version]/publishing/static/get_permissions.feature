@@ -1,0 +1,91 @@
+Feature: Get a version using different permissions
+
+  Background:
+    Given private endpoints are enabled
+    And I have these datasets:
+      """
+      [
+        {
+          "id": "test-dataset",
+          "state": "published",
+          "type": "static"
+        }
+      ]
+      """
+    And I have these static versions:
+      """
+      [
+        {
+          "id": "version-001",
+          "version": 1,
+          "edition": "2021",
+          "state": "published",
+          "type": "static",
+          "links": {
+            "dataset": {
+              "id": "test-dataset"
+            },
+            "edition": {
+              "id": "2021",
+              "href": "/datasets/test-dataset/editions/2021"
+            },
+            "self": {
+              "href": "/datasets/test-dataset/editions/2021/versions/1"
+            }
+          }
+        },
+        {
+          "id": "version-002",
+          "version": 2,
+          "edition": "2021",
+          "state": "associated",
+          "type": "static",
+          "links": {
+            "dataset": {
+              "id": "test-dataset"
+            },
+            "edition": {
+              "id": "2021",
+              "href": "/datasets/test-dataset/editions/2021"
+            },
+            "self": {
+              "href": "/datasets/test-dataset/editions/2021/versions/2"
+            }
+          }
+        }
+      ]
+      """
+
+  Scenario: Get a version as an authorised viewer
+    Given I am a JWT user with email "viewer1@ons.gov.uk" and group "role-viewer-allowed"
+    And I have viewer access to the dataset edition "test-dataset/2021"
+    When I GET "/datasets/test-dataset/editions/2021/versions/2"
+    Then I should receive the following JSON response with status "200":
+      """
+      {
+        "edition": "2021",
+        "id": "version-002",
+        "last_updated": "2021-01-01T00:00:01Z",
+        "links": {
+          "dataset": {
+            "id": "test-dataset"
+          },
+          "edition": {
+            "href": "/datasets/test-dataset/editions/2021",
+            "id": "2021"
+          },
+          "self": {
+            "href": "/datasets/test-dataset/editions/2021/versions/2"
+          }
+        },
+        "state": "associated",
+        "type": "static",
+        "version": 2
+      }
+      """
+
+  Scenario: Get a version as an unauthorised viewer
+    Given I am a JWT user with email "viewer1@ons.gov.uk" and group "role-viewer-allowed"
+    And I don't have viewer access to the dataset edition "test-dataset/2021"
+    When I GET "/datasets/test-dataset/editions/2021/versions/1"
+    Then the HTTP status code should be "403"

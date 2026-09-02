@@ -1,0 +1,156 @@
+Feature: Get a list of dimensions
+
+  Background:
+    Given I have these datasets:
+      """
+      [
+        {
+          "id": "population-estimates",
+          "state": "published"
+        }
+      ]
+      """
+    And I have these editions:
+      """
+      [
+        {
+          "id": "population-estimates",
+          "edition": "hello",
+          "state": "published",
+          "links": {
+            "dataset": {
+              "id": "population-estimates"
+            }
+          }
+        }
+      ]
+      """
+    And I have these versions:
+      """
+      [
+        {
+          "id": "test-item-1",
+          "version": 1,
+          "state": "published",
+          "links": {
+            "dataset": {
+              "id": "population-estimates"
+            },
+            "self": {
+              "href": "/datasets/population-estimates/editions/hello/versions/1"
+            }
+          },
+          "edition": "hello"
+        },
+        {
+          "id": "test-item-2",
+          "version": 2,
+          "state": "associated",
+          "links": {
+            "dataset": {
+              "id": "population-estimates"
+            },
+            "self": {
+              "href": "/datasets/population-estimates/editions/hello/versions/2"
+            }
+          },
+          "edition": "hello"
+        },
+        {
+          "id": "test-item-3",
+          "version": 3,
+          "state": "associated",
+          "links": {
+            "dataset": {
+              "id": "population-estimates"
+            },
+            "self": {
+              "href": "/datasets/population-estimates/editions/hello/versions/3"
+            }
+          },
+          "edition": "hello"
+        }
+      ]
+      """
+    And I have these dimensions:
+      """
+      [
+        {
+          "instance_id": "test-item-1",
+          "dimension": "geography",
+          "option": "K02000001"
+        },
+        {
+          "instance_id": "test-item-1",
+          "dimension": "geography",
+          "option": "K02000002"
+        }
+      ]
+      """
+
+  Scenario: List dimensions with URL rewriting enabled
+    Given URL rewriting is enabled
+    And I set the "X-Forwarded-Host" header to "api.example.com"
+    And I set the "X-Forwarded-Path-Prefix" header to "v1"
+    When I GET "/datasets/population-estimates/editions/hello/versions/1/dimensions"
+    Then I should receive the following JSON response with status "200":
+      """
+      {
+        "count": 1,
+        "items": [
+          {
+            "name": "geography",
+            "links": {
+              "code_list": {
+              },
+              "options": {
+                "href": "https://api.example.com/v1/datasets/population-estimates/editions/hello/versions/dimensions/geography/options",
+                "id": "geography"
+              },
+              "version": {
+                "href": "https://api.example.com/v1/datasets/population-estimates/editions/hello/versions/"
+              }
+            }
+          }
+        ],
+        "limit": 20,
+        "offset": 0,
+        "total_count": 1
+      }
+      """
+
+  Scenario: List dimensions
+    When I GET "/datasets/population-estimates/editions/hello/versions/1/dimensions"
+    Then I should receive the following JSON response with status "200":
+      """
+      {
+        "count": 1,
+        "items": [
+          {
+            "name": "geography",
+            "links": {
+              "code_list": {
+              },
+              "options": {
+                "href": "http://localhost:22000/datasets/population-estimates/editions/hello/versions//dimensions/geography/options",
+                "id": "geography"
+              },
+              "version": {
+                "href": "http://localhost:22000/datasets/population-estimates/editions/hello/versions/"
+              }
+            }
+          }
+        ],
+        "limit": 20,
+        "offset": 0,
+        "total_count": 1
+      }
+      """
+
+  Scenario: List dimensions for a version that does not exist
+    When I GET "/datasets/population-estimates/editions/hello/versions/2/dimensions"
+    Then the HTTP status code should be "404"
+    And I should receive the following response:
+      """
+            version not found
+      """

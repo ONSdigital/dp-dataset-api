@@ -1,0 +1,911 @@
+Feature: Create a version
+
+  Background:
+    Given private endpoints are enabled
+    And I have these datasets:
+      """
+      [
+        {
+          "id": "static-dataset-1",
+          "title": "static dataset with published version",
+          "state": "published",
+          "type": "static",
+          "links": {
+            "latest_version": {
+              "href": "/datasets/static-dataset-1/editions/2024/versions/1",
+              "id": "1"
+            }
+          }
+        }
+      ]
+      """
+    And I have these static versions:
+      """
+      [
+        {
+          "id": "static-version-published",
+          "edition": "2024",
+          "edition_title": "2024 Edition",
+          "links": {
+            "dataset": {
+              "id": "static-dataset-1"
+            },
+            "edition": {
+              "href": "/datasets/static-dataset-1/editions/2024",
+              "id": "2024"
+            },
+            "version": {
+              "href": "/datasets/static-dataset-1/editions/2024/versions/1",
+              "id": "1"
+            },
+            "self": {
+              "href": "/datasets/static-dataset-1/editions/2024/versions/1"
+            }
+          },
+          "version": 1,
+          "release_date": "2024-01-01T09:00:00.000Z",
+          "state": "published",
+          "type": "static",
+          "distributions": [
+            {
+              "title": "Published Dataset CSV",
+              "format": "csv",
+              "media_type": "text/csv",
+              "download_url": "/uuid/filename.csv",
+              "byte_size": 150000
+            }
+          ]
+        },
+        {
+          "id": "static-version-unpublished",
+          "edition": "2025",
+          "edition_title": "2025 Edition",
+          "links": {
+            "dataset": {
+              "id": "static-dataset-1"
+            },
+            "edition": {
+              "href": "/datasets/static-dataset-1/editions/2025",
+              "id": "2025"
+            },
+            "version": {
+              "href": "/datasets/static-dataset-1/editions/2025/versions/2",
+              "id": "2025"
+            },
+            "self": {
+              "href": "/datasets/static-dataset-1/editions/2025/versions/2"
+            }
+          },
+          "version": 2,
+          "release_date": "2025-01-01T09:00:00.000Z",
+          "state": "associated",
+          "type": "static",
+          "distributions": [
+            {
+              "title": "Unpublished Dataset CSV",
+              "format": "csv",
+              "media_type": "text/csv",
+              "download_url": "/uuid/filename.csv",
+              "byte_size": 150000
+            }
+          ]
+        }
+      ]
+      """
+
+  Scenario: Create a version
+    Given I am an admin user
+    When I POST "/datasets/static-dataset-1/editions/2024/versions/2"
+      """
+      {
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "edition_title": "2024",
+        "distributions": [
+          {
+            "title": "Full Dataset CSV",
+            "format": "csv",
+            "media_type": "text/csv",
+            "download_url": "/downloads/files/static-dataset-1/2024/2/filename.csv",
+            "byte_size": 100
+          }
+        ],
+        "type": "static"
+      }
+      """
+    Then I should receive the following JSON response with status "201":
+      """
+      {
+        "dataset_id": "static-dataset-1",
+        "distributions": [
+          {
+            "byte_size": 100,
+            "download_url": "/downloads/files/static-dataset-1/2024/2/filename.csv",
+            "format": "csv",
+            "media_type": "text/csv",
+            "title": "Full Dataset CSV"
+          }
+        ],
+        "links": {
+          "dataset": {
+            "href": "http://localhost:22000/datasets/static-dataset-1",
+            "id": "static-dataset-1"
+          },
+          "edition": {
+            "href": "http://localhost:22000/datasets/static-dataset-1/editions/2024",
+            "id": "2024"
+          },
+          "self": {
+            "href": "http://localhost:22000/datasets/static-dataset-1/editions/2024/versions/2"
+          }
+        },
+        "edition": "2024",
+        "edition_title": "2024",
+        "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "state": "associated",
+        "type": "static",
+        "version": 2
+      }
+      """
+    And the response header "ETag" should not be empty
+    And the total number of audit events should be 1
+    And the number of events with action "CREATE" and resource "/datasets/static-dataset-1/editions/2024/versions/2" should be 1
+
+  Scenario: Create a version as a publisher
+    And I am a publisher user
+    When I POST "/datasets/static-dataset-1/editions/2024/versions/2"
+      """
+      {
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "edition_title": "2024",
+        "distributions": [
+          {
+            "title": "Full Dataset CSV",
+            "format": "csv",
+            "media_type": "text/csv",
+            "download_url": "/uuid/filename.csv",
+            "byte_size": 100
+          }
+        ],
+        "type": "static"
+      }
+      """
+    Then I should receive the following JSON response with status "201":
+      """
+      {
+        "dataset_id": "static-dataset-1",
+        "distributions": [
+          {
+            "byte_size": 100,
+            "download_url": "/uuid/filename.csv",
+            "format": "csv",
+            "media_type": "text/csv",
+            "title": "Full Dataset CSV"
+          }
+        ],
+        "links": {
+          "dataset": {
+            "href": "http://localhost:22000/datasets/static-dataset-1",
+            "id": "static-dataset-1"
+          },
+          "edition": {
+            "href": "http://localhost:22000/datasets/static-dataset-1/editions/2024",
+            "id": "2024"
+          },
+          "self": {
+            "href": "http://localhost:22000/datasets/static-dataset-1/editions/2024/versions/2"
+          }
+        },
+        "edition": "2024",
+        "edition_title": "2024",
+        "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "state": "associated",
+        "type": "static",
+        "version": 2
+      }
+      """
+    And the response header "ETag" should not be empty
+    And the total number of audit events should be 1
+    And the number of events with action "CREATE" and resource "/datasets/static-dataset-1/editions/2024/versions/2" should be 1
+
+  Scenario: Create a version without authorisation
+    When I POST "/datasets/static-dataset-1/editions/2024/versions/2"
+      """
+      {
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "edition_title": "2024",
+        "distributions": [
+          {
+            "title": "Full Dataset CSV",
+            "format": "csv",
+            "media_type": "text/csv",
+            "download_url": "/uuid/filename.csv",
+            "byte_size": 100
+          }
+        ],
+        "type": "static"
+      }
+      """
+    Then the HTTP status code should be "401"
+
+  Scenario: Create a version using a dataset that doesn't exist
+    Given I am an admin user
+    When I POST "/datasets/missing/editions/2024/versions/2"
+      """
+      {
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "edition_title": "2024",
+        "distributions": [
+          {
+            "title": "Full Dataset CSV",
+            "format": "csv",
+            "media_type": "text/csv",
+            "download_url": "/uuid/filename.csv",
+            "byte_size": 100
+          }
+        ],
+        "type": "static"
+      }
+      """
+    Then I should receive the following JSON response with status "404":
+      """
+      {
+        "errors": [
+          {
+            "code": "ErrDatasetNotFound",
+            "description": "dataset not found"
+          }
+        ]
+      }
+      """
+
+  Scenario: Create a version when edition doesn't exist
+    Given I am an admin user
+    When I POST "/datasets/static-dataset-1/editions/new-edition/versions/1"
+      """
+      {
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "edition_title": "New Edition Title",
+        "distributions": [
+          {
+            "title": "Full Dataset CSV",
+            "format": "csv",
+            "media_type": "text/csv",
+            "download_url": "/uuid/filename.csv",
+            "byte_size": 100
+          }
+        ],
+        "type": "static"
+      }
+      """
+    Then I should receive the following JSON response with status "201":
+      """
+      {
+        "dataset_id": "static-dataset-1",
+        "distributions": [
+          {
+            "byte_size": 100,
+            "download_url": "/uuid/filename.csv",
+            "format": "csv",
+            "media_type": "text/csv",
+            "title": "Full Dataset CSV"
+          }
+        ],
+        "edition": "new-edition",
+        "edition_title": "New Edition Title",
+        "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
+        "links": {
+          "dataset": {
+            "href": "http://localhost:22000/datasets/static-dataset-1",
+            "id": "static-dataset-1"
+          },
+          "edition": {
+            "href": "http://localhost:22000/datasets/static-dataset-1/editions/new-edition",
+            "id": "new-edition"
+          },
+          "self": {
+            "href": "http://localhost:22000/datasets/static-dataset-1/editions/new-edition/versions/1"
+          }
+        },
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "state": "associated",
+        "type": "static",
+        "version": 1
+      }
+      """
+    And the response header "ETag" should not be empty
+    And the total number of audit events should be 1
+    And the number of events with action "CREATE" and resource "/datasets/static-dataset-1/editions/new-edition/versions/1" should be 1
+
+  Scenario: Create a version that already exists
+    Given I am an admin user
+    When I POST "/datasets/static-dataset-1/editions/2024/versions/1"
+      """
+      {
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "edition_title": "2024",
+        "distributions": [
+          {
+            "title": "Full Dataset CSV",
+            "format": "csv",
+            "media_type": "text/csv",
+            "download_url": "/uuid/filename.csv",
+            "byte_size": 100
+          }
+        ],
+        "type": "static"
+      }
+      """
+    Then I should receive the following JSON response with status "409":
+      """
+      {
+        "errors": [
+          {
+            "code": "ErrVersionAlreadyExists",
+            "description": "version already exists"
+          }
+        ]
+      }
+      """
+
+  Scenario: Create a version with an invalid version number
+    Given I am an admin user
+    When I POST "/datasets/static-dataset-1/editions/2024/versions/invalid"
+      """
+      {
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "edition_title": "2024",
+        "distributions": [
+          {
+            "title": "Full Dataset CSV",
+            "format": "csv",
+            "media_type": "text/csv",
+            "download_url": "/uuid/filename.csv",
+            "byte_size": 100
+          }
+        ],
+        "type": "static"
+      }
+      """
+    Then I should receive the following JSON response with status "400":
+      """
+      {
+        "errors": [
+          {
+            "code": "ErrInvalidQueryParameter",
+            "description": "invalid query parameter: version"
+          }
+        ]
+      }
+      """
+
+  Scenario: Create a version with a type that isn't static
+    Given I am an admin user
+    When I POST "/datasets/static-dataset-1/editions/2024/versions/2"
+      """
+      {
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "edition_title": "2024",
+        "distributions": [
+          {
+            "title": "Full Dataset CSV",
+            "format": "csv",
+            "media_type": "text/csv",
+            "download_url": "/uuid/filename.csv",
+            "byte_size": 100
+          }
+        ],
+        "type": "not valid"
+      }
+      """
+    Then I should receive the following JSON response with status "400":
+      """
+      {
+        "errors": [
+          {
+            "code": "InvalidType",
+            "description": "version type should be static"
+          }
+        ]
+      }
+      """
+
+  Scenario: Create a version with all mandatory fields missing
+    Given I am an admin user
+    When I POST "/datasets/missing/editions/2024/versions/2"
+      """
+      {
+        "type": "static"
+      }
+      """
+    Then I should receive the following JSON response with status "400":
+      """
+      {
+        "errors": [
+          {
+            "code": "ErrMissingParameters",
+            "description": "missing properties in JSON: release_date"
+          },
+          {
+            "code": "ErrMissingParameters",
+            "description": "missing properties in JSON: distributions"
+          },
+          {
+            "code": "ErrMissingParameters",
+            "description": "missing properties in JSON: edition_title"
+          }
+        ]
+      }
+      """
+
+  Scenario: Create a version without providing media_type
+    Given I am an admin user
+    When I POST "/datasets/static-dataset-1/editions/2024/versions/3"
+      """
+      {
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "edition_title": "2024",
+        "type": "static",
+        "distributions": [
+          {
+            "title": "CSV Dataset",
+            "format": "csv",
+            "download_url": "/uuid/filename.csv",
+            "byte_size": 999
+          }
+        ]
+      }
+      """
+    Then I should receive the following JSON response with status "201":
+      """
+      {
+        "dataset_id": "static-dataset-1",
+        "distributions": [
+          {
+            "byte_size": 999,
+            "download_url": "/uuid/filename.csv",
+            "format": "csv",
+            "media_type": "text/csv",
+            "title": "CSV Dataset"
+          }
+        ],
+        "edition": "2024",
+        "edition_title": "2024",
+        "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
+        "links": {
+          "dataset": {
+            "href": "http://localhost:22000/datasets/static-dataset-1",
+            "id": "static-dataset-1"
+          },
+          "edition": {
+            "href": "http://localhost:22000/datasets/static-dataset-1/editions/2024",
+            "id": "2024"
+          },
+          "self": {
+            "href": "http://localhost:22000/datasets/static-dataset-1/editions/2024/versions/3"
+          }
+        },
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "state": "associated",
+        "type": "static",
+        "version": 3
+      }
+      """
+    And the total number of audit events should be 1
+    And the number of events with action "CREATE" and resource "/datasets/static-dataset-1/editions/2024/versions/3" should be 1
+
+  Scenario: Create a version with missing distribution format
+    Given I am an admin user
+    When I POST "/datasets/static-dataset-1/editions/2024/versions/3"
+      """
+      {
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "edition_title": "2024",
+        "type": "static",
+        "distributions": [
+          {
+            "title": "CSV Without Format",
+            "download_url": "/uuid/filename.csv",
+            "byte_size": 123
+          }
+        ]
+      }
+      """
+    Then I should receive the following JSON response with status "400":
+      """
+      {
+        "errors": [
+          {
+            "code": "ErrMissingParameters",
+            "description": "distributions[0].format field is missing"
+          }
+        ]
+      }
+      """
+
+  Scenario: Create a version with invalid distribution format
+    Given I am an admin user
+    When I POST "/datasets/static-dataset-1/editions/2024/versions/3"
+      """
+      {
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "edition_title": "2024",
+        "type": "static",
+        "distributions": [
+          {
+            "title": "CSV Invalid Format",
+            "download_url": "/uuid/filename.csv",
+            "byte_size": 999,
+            "format": "INVALID"
+          }
+        ]
+      }
+      """
+    Then I should receive the following JSON response with status "400":
+      """
+      {
+        "errors": [
+          {
+            "code": "ErrMissingParameters",
+            "description": "distributions[0].format field is invalid"
+          }
+        ]
+      }
+      """
+
+  Scenario: Create a version with spaces in the edition ID
+    Given I am an admin user
+    When I POST "/datasets/static-dataset-test/editions/edition%201/versions/2"
+      """
+      {
+        "distributions": [
+          {
+            "title": "Full Dataset (CSV)",
+            "download_url": "https://download.ons.gov.uk/my-dataset-download.csv",
+            "byte_size": 4300000,
+            "format": "csv"
+          },
+          {
+            "title": "Full Dataset (CSV)",
+            "download_url": "https://download.ons.gov.uk/my-dataset-download.csv",
+            "byte_size": 4300000,
+            "format": "csv"
+          },
+          {
+            "title": "Full Dataset (CSV)",
+            "download_url": "https://download.ons.gov.uk/my-dataset-download.csv",
+            "byte_size": 4300000,
+            "format": "sdmx"
+          }
+        ],
+        "quality_designation": "accredited-official",
+        "release_date": "2025-03-06T14:49:23.354Z",
+        "type": "static",
+        "edition_title": "edition title of this editionss 5",
+        "usage_notes": [
+          {
+            "title": "This dataset",
+            "note": "Please use it wisely"
+          }
+        ]
+      }
+      """
+
+    Then the HTTP status code should be "400"
+    And I should receive the following JSON response:
+      """
+      {
+        "errors": [
+          {
+            "code": "ErrSpacesNotAllowed",
+            "description": "spaces are not allowed in the ID field"
+          }
+        ]
+      }
+      """
+
+  Scenario: Create a version with is_latest=true updates the dataset latest_version link
+    Given I am an admin user
+    When I POST "/datasets/static-dataset-1/editions/2024/versions/2?is_latest=true"
+      """
+      {
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "edition_title": "2024",
+        "distributions": [
+          {
+            "title": "Full Dataset CSV",
+            "format": "csv",
+            "media_type": "text/csv",
+            "download_url": "/uuid/filename.csv",
+            "byte_size": 100
+          }
+        ],
+        "type": "static"
+      }
+      """
+    Then I should receive the following JSON response with status "201":
+      """
+      {
+        "dataset_id": "static-dataset-1",
+        "distributions": [
+          {
+            "byte_size": 100,
+            "download_url": "/uuid/filename.csv",
+            "format": "csv",
+            "media_type": "text/csv",
+            "title": "Full Dataset CSV"
+          }
+        ],
+        "edition": "2024",
+        "edition_title": "2024",
+        "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
+        "links": {
+          "dataset": {
+            "href": "http://localhost:22000/datasets/static-dataset-1",
+            "id": "static-dataset-1"
+          },
+          "edition": {
+            "href": "http://localhost:22000/datasets/static-dataset-1/editions/2024",
+            "id": "2024"
+          },
+          "self": {
+            "href": "http://localhost:22000/datasets/static-dataset-1/editions/2024/versions/2"
+          }
+        },
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "state": "associated",
+        "type": "static",
+        "version": 2
+      }
+      """
+    And the dataset "static-dataset-1" should have latest_version href "/datasets/static-dataset-1/editions/2024/versions/2"
+
+  Scenario: Create a version with is_latest=false does not update the dataset latest_version link
+    Given I am an admin user
+    When I POST "/datasets/static-dataset-1/editions/2024/versions/2?is_latest=false"
+      """
+      {
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "edition_title": "2024",
+        "distributions": [
+          {
+            "title": "Full Dataset CSV",
+            "format": "csv",
+            "media_type": "text/csv",
+            "download_url": "/uuid/filename.csv",
+            "byte_size": 100
+          }
+        ],
+        "type": "static"
+      }
+      """
+    Then I should receive the following JSON response with status "201":
+      """
+      {
+        "dataset_id": "static-dataset-1",
+        "distributions": [
+          {
+            "byte_size": 100,
+            "download_url": "/uuid/filename.csv",
+            "format": "csv",
+            "media_type": "text/csv",
+            "title": "Full Dataset CSV"
+          }
+        ],
+        "edition": "2024",
+        "edition_title": "2024",
+        "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
+        "links": {
+          "dataset": {
+            "href": "http://localhost:22000/datasets/static-dataset-1",
+            "id": "static-dataset-1"
+          },
+          "edition": {
+            "href": "http://localhost:22000/datasets/static-dataset-1/editions/2024",
+            "id": "2024"
+          },
+          "self": {
+            "href": "http://localhost:22000/datasets/static-dataset-1/editions/2024/versions/2"
+          }
+        },
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "state": "associated",
+        "type": "static",
+        "version": 2
+      }
+      """
+    And the dataset "static-dataset-1" should have latest_version href "/datasets/static-dataset-1/editions/2024/versions/1"
+
+  Scenario: Create a version with an invalid is_latest value
+    Given I am an admin user
+    When I POST "/datasets/static-dataset-1/editions/2024/versions/2?is_latest=notabool"
+      """
+      {
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "edition_title": "2024",
+        "distributions": [
+          {
+            "title": "Full Dataset CSV",
+            "format": "csv",
+            "media_type": "text/csv",
+            "download_url": "/uuid/filename.csv",
+            "byte_size": 100
+          }
+        ],
+        "type": "static"
+      }
+      """
+    Then I should receive the following JSON response with status "400":
+      """
+      {
+        "errors": [
+          {
+            "code": "ErrInvalidQueryParameter",
+            "description": "invalid query parameter: is_latest"
+          }
+        ]
+      }
+      """
+
+  Scenario: Create a version with is_migration set to true
+    Given I am an admin user
+    When I POST "/datasets/static-dataset-1/editions/2024/versions/2"
+      """
+      {
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "edition_title": "2024",
+        "type": "static",
+        "is_migration": true,
+        "distributions": [
+          {
+            "title": "Full Dataset CSV",
+            "format": "csv",
+            "download_url": "/uuid/filename.csv",
+            "byte_size": 100
+          }
+        ]
+      }
+      """
+    Then I should receive the following JSON response with status "201":
+      """
+      {
+        "dataset_id": "static-dataset-1",
+        "distributions": [
+          {
+            "byte_size": 100,
+            "download_url": "/uuid/filename.csv",
+            "format": "csv",
+            "media_type": "text/csv",
+            "title": "Full Dataset CSV"
+          }
+        ],
+        "edition": "2024",
+        "edition_title": "2024",
+        "is_migration": true,
+        "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
+        "links": {
+          "dataset": {
+            "href": "http://localhost:22000/datasets/static-dataset-1",
+            "id": "static-dataset-1"
+          },
+          "edition": {
+            "href": "http://localhost:22000/datasets/static-dataset-1/editions/2024",
+            "id": "2024"
+          },
+          "self": {
+            "href": "http://localhost:22000/datasets/static-dataset-1/editions/2024/versions/2"
+          }
+        },
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "state": "associated",
+        "type": "static",
+        "version": 2
+      }
+      """
+
+  Scenario: Create a version for a dataset with topics returns a web_page link
+    Given I am an admin user
+    And I have these datasets:
+      """
+      [
+        {
+          "id": "static-dataset-with-topics",
+          "title": "Static dataset with topics",
+          "state": "published",
+          "type": "static",
+          "topics": [
+            "economy-topic-id"
+          ]
+        }
+      ]
+      """
+    When I POST "/datasets/static-dataset-with-topics/editions/2024/versions/1"
+      """
+      {
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "edition_title": "2024",
+        "distributions": [
+          {
+            "title": "Full Dataset CSV",
+            "format": "csv",
+            "download_url": "/uuid/filename.csv",
+            "byte_size": 100
+          }
+        ],
+        "type": "static"
+      }
+      """
+    Then I should receive the following JSON response with status "201":
+      """
+      {
+        "dataset_id": "static-dataset-with-topics",
+        "distributions": [
+          {
+            "byte_size": 100,
+            "download_url": "/uuid/filename.csv",
+            "format": "csv",
+            "media_type": "text/csv",
+            "title": "Full Dataset CSV"
+          }
+        ],
+        "edition": "2024",
+        "edition_title": "2024",
+        "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
+        "links": {
+          "dataset": {
+            "href": "http://localhost:22000/datasets/static-dataset-with-topics",
+            "id": "static-dataset-with-topics"
+          },
+          "edition": {
+            "href": "http://localhost:22000/datasets/static-dataset-with-topics/editions/2024",
+            "id": "2024"
+          },
+          "self": {
+            "href": "http://localhost:22000/datasets/static-dataset-with-topics/editions/2024/versions/1"
+          },
+          "web_page": {
+            "href": "economy/datasets/static-dataset-with-topics/editions/2024/versions/1"
+          }
+        },
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "state": "associated",
+        "type": "static",
+        "version": 1
+      }
+      """
+    And the response header "ETag" should not be empty
+
+  Scenario: Create a version with an unknown topic ID
+    Given I am an admin user
+    And I have these datasets:
+      """
+      [
+        {
+          "id": "static-dataset-unknown-topic",
+          "title": "Static dataset with unknown topic",
+          "state": "published",
+          "type": "static",
+          "topics": [
+            "unknown-topic-id"
+          ]
+        }
+      ]
+      """
+    When I POST "/datasets/static-dataset-unknown-topic/editions/2024/versions/1"
+      """
+      {
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "edition_title": "2024",
+        "distributions": [
+          {
+            "title": "Full Dataset CSV",
+            "format": "csv",
+            "download_url": "/uuid/filename.csv",
+            "byte_size": 100
+          }
+        ],
+        "type": "static"
+      }
+      """
+    Then the HTTP status code should be "500"
