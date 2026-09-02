@@ -571,7 +571,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusOK)
 
 		So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 		So(len(auditServiceMock.RecordMetadataAuditEventCalls()), ShouldEqual, 1)
@@ -649,7 +649,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusOK)
 
 		So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.CheckEditionExistsStaticCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionStaticCalls()), ShouldEqual, 1)
 		So(len(auditServiceMock.RecordMetadataAuditEventCalls()), ShouldEqual, 1)
@@ -734,7 +734,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		So(*metaData.IsMigration, ShouldBeTrue)
 
 		So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.CheckEditionExistsStaticCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionStaticCalls()), ShouldEqual, 1)
 		So(len(auditServiceMock.RecordMetadataAuditEventCalls()), ShouldEqual, 1)
@@ -788,7 +788,7 @@ func TestGetMetadataReturnsOk(t *testing.T) {
 		So(metaData.IsMigration, ShouldBeNil)
 
 		So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.CheckEditionExistsStaticCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionStaticCalls()), ShouldEqual, 1)
 	})
@@ -826,7 +826,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 
 		So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 	})
 
 	Convey("When the dataset document cannot be found return status not found", t, func() {
@@ -859,7 +859,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
 
 		So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 	})
 
 	Convey("When the edition document cannot be found for version return status not found", t, func() {
@@ -897,7 +897,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
 
 		So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 	})
 
@@ -937,7 +937,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
 
 		So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 	})
@@ -979,7 +979,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		assertInternalServerErr(w)
 
 		So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
 	})
@@ -1091,7 +1091,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
 
 		So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.CheckEditionExistsStaticCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetVersionStaticCalls()), ShouldEqual, 1)
 	})
@@ -1135,7 +1135,7 @@ func TestGetMetadataReturnsError(t *testing.T) {
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
 
 		So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.CheckEditionExistsStaticCalls()), ShouldEqual, 1)
 	})
 }
@@ -1263,7 +1263,7 @@ func TestGetMetadataRecordsAuditEvent(t *testing.T) {
 			})
 
 			Convey("And the relevant calls have been made", func() {
-				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.CheckEditionExistsStaticCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetVersionStaticCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
@@ -1334,7 +1334,7 @@ func TestGetMetadataDoesNotRecordAuditEventForUnauthorisedUser(t *testing.T) {
 			})
 
 			Convey("And the relevant calls have been made", func() {
-				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 				So(len(mockedDataStore.CheckEditionExistsStaticCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetVersionStaticCalls()), ShouldEqual, 1)
 				So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)

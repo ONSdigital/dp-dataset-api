@@ -508,9 +508,7 @@ func (api DatasetAPI) getPermissionAttributesFromRequest(req *http.Request) (map
 	logData := log.Data{"dataset_id": datasetID, "edition": edition}
 
 	if edition == "" {
-		currentAttributes := map[string]string{
-			"dataset_edition": datasetID,
-		}
+		currentAttributes := map[string]string{"dataset_edition": datasetID}
 
 		dataset, err := api.dataStore.Backend.GetDataset(req.Context(), datasetID)
 		if err != nil {
@@ -518,41 +516,45 @@ func (api DatasetAPI) getPermissionAttributesFromRequest(req *http.Request) (map
 			return currentAttributes, nil
 		}
 
-		if dataset.Next == nil {
-			return currentAttributes, nil
-		}
-
-		for _, prevSeriesID := range dataset.Next.PreviousSeriesId {
-			previousAttributes := map[string]string{
-				"dataset_edition": prevSeriesID,
-			}
-			if api.checkUserPermission(req, logData, datasetReadPermission, previousAttributes) {
-				return previousAttributes, nil
+		if dataset.Next != nil {
+			for _, prevSeriesID := range dataset.Next.PreviousSeriesId {
+				previousAttributes := map[string]string{"dataset_edition": prevSeriesID}
+				if api.checkUserPermission(req, logData, datasetReadPermission, previousAttributes) {
+					return previousAttributes, nil
+				}
 			}
 		}
 
 		return currentAttributes, nil
 	}
 
-	versions, _, err := api.dataStore.Backend.GetVersionsStaticByEditionNoLimit(req.Context(), datasetID, edition, "")
+	dataset, err := api.dataStore.Backend.GetDataset(req.Context(), datasetID)
 	if err != nil {
-		log.Error(req.Context(), "failed to get versions for dataset edition", err, logData)
+		log.Error(req.Context(), "failed to get dataset to check previous series and edition ids", err, logData)
 	}
 
-	for i := range versions {
-		for _, prevEdition := range versions[i].PreviousEditionId {
-			previousAttributes := map[string]string{
-				"dataset_edition": datasetID + "/" + prevEdition,
-			}
-			if api.checkUserPermission(req, logData, datasetEditionVersionReadPermission, previousAttributes) {
-				return previousAttributes, nil
+	versions, _, err := api.dataStore.Backend.GetVersionsStaticByEditionNoLimit(req.Context(), datasetID, edition, "")
+	if err != nil {
+		log.Error(req.Context(), "failed to get versions to check previous series and edition ids", err, logData)
+	}
+
+	allSeriesIDs := []string{datasetID}
+	if dataset != nil && dataset.Next != nil {
+		allSeriesIDs = append(allSeriesIDs, dataset.Next.PreviousSeriesId...)
+	}
+
+	for _, seriesID := range allSeriesIDs {
+		for _, version := range versions {
+			for _, prevEdition := range version.PreviousEditionId {
+				previousAttributes := map[string]string{"dataset_edition": seriesID + "/" + prevEdition}
+				if api.checkUserPermission(req, logData, datasetEditionVersionReadPermission, previousAttributes) {
+					return previousAttributes, nil
+				}
 			}
 		}
 	}
 
-	return map[string]string{
-		"dataset_edition": datasetID + "/" + edition,
-	}, nil
+	return map[string]string{"dataset_edition": datasetID + "/" + edition}, nil
 }
 
 func fetchAccessTokenFromHeader(req *http.Request) string {
