@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	cloudflareMocks "github.com/ONSdigital/dp-dataset-api/cloudflare/mocks"
 
@@ -157,9 +158,20 @@ func (c *DatasetComponent) theInstanceInTheDatabaseForIDShouldBe(id string, body
 		return fmt.Errorf("failed to get instance from collection: %w", err)
 	}
 
+	// LastUpdated is set to "now" so cannot be known in advance.
+	got.LastUpdated = time.Time{}
+
+	// UniqueTimestamp is generated and ommitted in the JSON so cannot be known in advance.
+	got.UniqueTimestamp = primitive.Timestamp{}
+
+	// ETag is generated and ommitted in the JSON so cannot be known in advance.
+	if expected.ETag == "" {
+		expected.ETag = got.ETag
+	}
+
 	assert.Equal(&c.ErrorFeature, expected, got)
 
-	return nil
+	return c.ErrorFeature.StepError()
 }
 
 func (c *DatasetComponent) theVersionInTheDatabaseForIDShouldBe(id string, body *godog.DocString) error {
