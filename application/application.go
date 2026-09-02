@@ -883,7 +883,7 @@ func PublishDataset(ctx context.Context, smDS *StateMachineDatasetAPI,
 		searchContentUpdatedEvent := map[string]interface{}{
 			"content_type":     "dataset_landing_page",
 			"dataset_id":       versionDetails.datasetID,
-			"edition":          versionUpdate.Edition,
+			"edition":          versionUpdate.EditionTitle, // Intentionally using EditionTitle instead of Edition so EditionTitle is displayed in search.
 			"meta_description": currentDataset.Next.Description,
 			"release_date":     versionUpdate.ReleaseDate,
 			"summary":          currentDataset.Next.Description,
