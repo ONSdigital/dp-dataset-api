@@ -388,3 +388,46 @@ Feature: Get static version in publishing mode
         ]
       }
       """
+
+  Scenario: GET /datasets/{id}/editions/{edition}/versions returns 200 for an authorised viewer via previous series and previous editions
+    Given private endpoints are enabled
+    And I have these datasets:
+            """
+            [
+                {
+                    "id": "test-series-c",
+                    "state": "published",
+                    "type": "static",
+                    "previous_series_id": ["test-series-a", "test-series-b"]
+                }
+            ]
+            """
+    And I have these static versions:
+            """
+            [
+                {
+                    "id": "version-003",
+                    "version": 3,
+                    "edition": "2024",
+                    "state": "associated",
+                    "type": "static",
+                    "previous_edition_id": ["2021", "2022"],
+                    "links": {
+                        "dataset": {
+                            "id": "test-series-c"
+                        },
+                        "edition": {
+                            "id": "2024",
+                            "href": "/datasets/test-series-c/editions/2024"
+                        },
+                        "self": {
+                            "href": "/datasets/test-series-c/editions/2024/versions/3"
+                        }
+                    }
+                }
+            ]
+            """
+    And I am a JWT user with email "viewer1@ons.gov.uk" and group "role-viewer-allowed"
+    And I have viewer access to the dataset edition "test-series-b/2022"
+    When I GET "/datasets/test-series-c/editions/2024/versions"
+    Then the HTTP status code should be "200"
