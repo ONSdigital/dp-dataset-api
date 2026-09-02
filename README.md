@@ -139,6 +139,20 @@ Notes:
 
 :warning: to connect to a remote Neptune environment on MacOSX using Go 1.18 or higher you must set `NEPTUNE_TLS_SKIP_VERIFY` to true. See our [Neptune guide](https://github.com/ONSdigital/dp/blob/main/guides/NEPTUNE.md) for more details.
 
+### Testing
+
+Both unit and component tests use [testcontainers](https://golang.testcontainers.org/) and require a running
+Docker daemon.
+
+#### Unit tests
+
+There are both Go and Python unit tests. Run them together with `make test`, or individually with
+`make test-go` or `make test-python`.
+
+#### Component tests
+
+BDD component tests live in [features/](features/README.md), which also documents how to run a subset of them.
+
 ### Contributing
 
 See [CONTRIBUTING](CONTRIBUTING.md) for details.
