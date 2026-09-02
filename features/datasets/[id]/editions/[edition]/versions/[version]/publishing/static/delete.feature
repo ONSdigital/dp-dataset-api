@@ -146,7 +146,7 @@ Feature: Delete static version in publishing mode
     And the total number of audit events should be 1
     And the number of events with action "DELETE" and resource "/datasets/static-dataset-test/editions/2024/versions/1" should be 1
 
-  Scenario: Delete a version as a publisher
+  Scenario: Delete a version as a publisher user
     Given I am a publisher user
     And the "ENABLE_DETACH_DATASET" feature flag is "false"
     And the "ENABLE_DELETE_STATIC_VERSION" feature flag is "true"
@@ -180,7 +180,7 @@ Feature: Delete static version in publishing mode
             a published version cannot be deleted
       """
 
-  Scenario: Delete a version using a dataset ID that does not exist
+  Scenario: Delete a version for a dataset that does not exist
     Given I am an admin user
     And the "ENABLE_DETACH_DATASET" feature flag is "false"
     And the "ENABLE_DELETE_STATIC_VERSION" feature flag is "true"
@@ -191,7 +191,7 @@ Feature: Delete static version in publishing mode
             dataset not found
       """
 
-  Scenario: Delete a version using an edition that does not exist
+  Scenario: Delete a version for an edition that does not exist
     Given I am an admin user
     And the "ENABLE_DETACH_DATASET" feature flag is "false"
     And the "ENABLE_DELETE_STATIC_VERSION" feature flag is "true"

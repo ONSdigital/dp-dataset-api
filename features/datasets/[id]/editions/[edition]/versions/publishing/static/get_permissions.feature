@@ -56,7 +56,7 @@ Feature: List static versions in publishing mode (permissions)
       ]
       """
 
-  Scenario: Get versions as an authorised viewer
+  Scenario: List versions as an authorised viewer
     Given I am a JWT user with email "viewer1@ons.gov.uk" and group "role-viewer-allowed"
     And I have viewer access to the dataset edition "test-dataset/2021"
     When I GET "/datasets/test-dataset/editions/2021/versions"
@@ -114,7 +114,7 @@ Feature: List static versions in publishing mode (permissions)
       }
       """
 
-  Scenario: Get versions as an unauthorised viewer
+  Scenario: List versions as an unauthorised viewer
     Given I am a JWT user with email "viewer1@ons.gov.uk" and group "role-viewer-allowed"
     And I don't have viewer access to the dataset edition "test-dataset/2021"
     When I GET "/datasets/test-dataset/editions/2021/versions"

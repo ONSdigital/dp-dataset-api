@@ -157,7 +157,7 @@ Feature: List static versions in publishing mode
       ]
       """
 
-  Scenario: Get versions
+  Scenario: List versions
     When I GET "/datasets/test-static/editions/test-edition-static-approved/versions"
     Then I should receive the following JSON response with status "200":
       """
@@ -209,7 +209,7 @@ Feature: List static versions in publishing mode
       }
       """
 
-  Scenario: Get versions when URL rewriting is enabled
+  Scenario: List versions when URL rewriting is enabled
     Given URL rewriting is enabled
     And I set the "X-Forwarded-Host" header to "api.example.com"
     And I set the "X-Forwarded-Path-Prefix" header to "v1"

@@ -30,7 +30,7 @@ Feature: Delete version in publishing mode
     When I DELETE "/datasets/non-static-dataset-no-versions/editions/2025/versions/1"
     Then the HTTP status code should be "401"
 
-  Scenario: Delete a version when ENABLE_DETACH_DATASET is disabled and ENABLE_DELETE_STATIC_VERSION is enabled
+  Scenario: Delete a version when detach is disabled but static version deletion is enabled
     Given I am an admin user
     And the "ENABLE_DETACH_DATASET" feature flag is "false"
     And the "ENABLE_DELETE_STATIC_VERSION" feature flag is "true"

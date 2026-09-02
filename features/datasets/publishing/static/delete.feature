@@ -127,7 +127,7 @@ Feature: Delete static dataset in publishing mode
     And the total number of audit events should be 1
     And the number of events with action "DELETE" and resource "/datasets/static-dataset-test" should be 1
 
-  Scenario: Delete a dataset with unpublished versions as a publisher
+  Scenario: Delete a dataset with unpublished versions as a publisher user
     Given I am a publisher user
     When I DELETE "/datasets/static-dataset-test"
     Then the HTTP status code should be "204"

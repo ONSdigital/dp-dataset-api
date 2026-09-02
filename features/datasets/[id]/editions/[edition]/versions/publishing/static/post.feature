@@ -87,7 +87,7 @@ Feature: Create static version in publishing mode
     And the total number of audit events should be 1
     And the number of events with action "CREATE" and resource "/datasets/static-dataset-test/editions/2024/versions/1" should be 1
 
-  Scenario: Create a version as a publisher
+  Scenario: Create a version as a publisher user
     Given I am a publisher user
     When I POST "/datasets/static-dataset-test/editions/2024/versions"
       """

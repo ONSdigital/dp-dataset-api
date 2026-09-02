@@ -133,7 +133,7 @@ Feature: Update instance in publishing mode
       }
       """
 
-  Scenario: Update an instance with quality statement fields as a publisher
+  Scenario: Update an instance with quality statement fields as a publisher user
     Given I am a publisher user
     When I PUT "/instances/test-item-5"
       """

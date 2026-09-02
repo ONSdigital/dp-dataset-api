@@ -16,7 +16,7 @@ Feature: List datasets with pagination in web mode
       ]
       """
 
-  Scenario: Get a list of datasets with offset set to 1
+  Scenario: List datasets with offset set to 1
     When I GET "/datasets?offset=1"
     Then I should receive the following JSON response with status "200":
       """
@@ -38,7 +38,7 @@ Feature: List datasets with pagination in web mode
       }
       """
 
-  Scenario: Get a list of datasets with limit set to 1
+  Scenario: List datasets with limit set to 1
     When I GET "/datasets?offset=0&limit=1"
     Then I should receive the following JSON response with status "200":
       """
@@ -56,7 +56,7 @@ Feature: List datasets with pagination in web mode
       }
       """
 
-  Scenario: Get a list of datasets with offset and limit set to 1
+  Scenario: List datasets with offset and limit set to 1
     When I GET "/datasets?offset=1&limit=1"
     Then I should receive the following JSON response with status "200":
       """
@@ -74,7 +74,7 @@ Feature: List datasets with pagination in web mode
       }
       """
 
-  Scenario: Get a list of datasets with limit set to 0
+  Scenario: List datasets with limit set to 0
     When I GET "/datasets?limit=0"
     Then I should receive the following JSON response with status "200":
       """
@@ -87,7 +87,7 @@ Feature: List datasets with pagination in web mode
       }
       """
 
-  Scenario: Get a list of datasets with offset greater than existing number of datasets
+  Scenario: List datasets with offset greater than existing number of datasets
     When I GET "/datasets?offset=4&limit=1"
     Then I should receive the following JSON response with status "200":
       """
@@ -100,7 +100,7 @@ Feature: List datasets with pagination in web mode
       }
       """
 
-  Scenario: Get a list of datasets with limit set to greater than maximum limit
+  Scenario: List datasets with limit set to greater than maximum limit
     When I GET "/datasets?offset=4&limit=1001"
     Then the HTTP status code should be "400"
     And I should receive the following response:
@@ -108,7 +108,7 @@ Feature: List datasets with pagination in web mode
       invalid query parameter
       """
 
-  Scenario: Get a list of datasets with offset set to minus value
+  Scenario: List datasets with offset set to minus value
     When I GET "/datasets?offset=-1"
     Then the HTTP status code should be "400"
     And I should receive the following response:
@@ -116,7 +116,7 @@ Feature: List datasets with pagination in web mode
       invalid query parameter
       """
 
-  Scenario: Get a list of datasets with limit set to minus value
+  Scenario: List datasets with limit set to minus value
     When I GET "/datasets?limit=-1"
     Then the HTTP status code should be "400"
     And I should receive the following response:
@@ -124,7 +124,7 @@ Feature: List datasets with pagination in web mode
       invalid query parameter
       """
 
-  Scenario: Get a list of datasets when there are no datasets
+  Scenario: List datasets when there are no datasets
     Given there are no datasets
     When I GET "/datasets?offset=1&limit=1"
     Then I should receive the following JSON response with status "200":

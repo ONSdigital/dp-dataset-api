@@ -197,7 +197,7 @@ Feature: List versions in web mode
       ]
       """
 
-  Scenario: Get versions with URL rewriting enabled
+  Scenario: List versions with URL rewriting enabled
     Given URL rewriting is enabled
     And I set the "X-Forwarded-Host" header to "api.example.com"
     And I set the "X-Forwarded-Path-Prefix" header to "v1"
@@ -247,7 +247,7 @@ Feature: List versions in web mode
       }
       """
 
-  Scenario: Get versions
+  Scenario: List versions
     When I GET "/datasets/population-estimates/editions/hello/versions"
     Then I should receive the following JSON response with status "200":
       """
@@ -294,7 +294,7 @@ Feature: List versions in web mode
       }
       """
 
-  Scenario: Get versions for unpublished dataset
+  Scenario: List versions for unpublished dataset
     When I GET "/datasets/test-cantabular-dataset-1/editions/hello/versions"
     Then the HTTP status code should be "404"
     And I should receive the following response:
@@ -302,7 +302,7 @@ Feature: List versions in web mode
       dataset not found
       """
 
-  Scenario: Get versions for a dataset that does not exist
+  Scenario: List versions for a dataset that does not exist
     When I GET "/datasets/unknown-dataset/editions/hello/versions"
     Then the HTTP status code should be "404"
     And I should receive the following response:
@@ -310,7 +310,7 @@ Feature: List versions in web mode
       dataset not found
       """
 
-  Scenario: Get versions for unpublished edition
+  Scenario: List versions for unpublished edition
     When I GET "/datasets/population-estimates/editions/unpublished-edition/versions"
     Then the HTTP status code should be "404"
     And I should receive the following response:
@@ -318,7 +318,7 @@ Feature: List versions in web mode
       edition not found
       """
 
-  Scenario: Get versions for an edition that does not exist
+  Scenario: List versions for an edition that does not exist
     When I GET "/datasets/population-estimates/editions/unknown-edition/versions"
     Then the HTTP status code should be "404"
     And I should receive the following response:
@@ -326,7 +326,7 @@ Feature: List versions in web mode
       edition not found
       """
 
-  Scenario: Get versions for an edition with no versions
+  Scenario: List versions for an edition with no versions
     When I GET "/datasets/population-estimates/editions/edition-with-no-versions/versions"
     Then the HTTP status code should be "404"
     And I should receive the following response:

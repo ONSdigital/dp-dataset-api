@@ -198,7 +198,7 @@ Feature: List versions in publishing mode
       ]
       """
 
-  Scenario: Get versions with URL rewriting enabled
+  Scenario: List versions with URL rewriting enabled
     Given URL rewriting is enabled
     And I set the "X-Forwarded-Host" header to "api.example.com"
     And I set the "X-Forwarded-Path-Prefix" header to "v1"
@@ -265,7 +265,7 @@ Feature: List versions in publishing mode
       }
       """
 
-  Scenario: Get versions with URL rewriting enabled as a publisher
+  Scenario: List versions with URL rewriting enabled as a publisher user
     Given URL rewriting is enabled
     And I set the "X-Forwarded-Host" header to "api.example.com"
     And I set the "X-Forwarded-Path-Prefix" header to "v1"
@@ -332,7 +332,7 @@ Feature: List versions in publishing mode
       }
       """
 
-  Scenario: Get versions
+  Scenario: List versions
     Given I am an admin user
     When I GET "/datasets/population-estimates/editions/hello/versions"
     Then I should receive the following JSON response with status "200":

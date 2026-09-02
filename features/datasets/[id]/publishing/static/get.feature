@@ -16,7 +16,7 @@ Feature: Get static dataset in publishing mode
       ]
       """
 
-  Scenario: Get a dataset as a viewer with permissions
+  Scenario: Get a dataset as an authorised viewer
     Given I am a JWT user with email "viewer1@ons.gov.uk" and group "role-viewer-allowed"
     And I have viewer access to the dataset "unpublished-static-dataset"
     When I GET "/datasets/unpublished-static-dataset"
@@ -36,7 +36,7 @@ Feature: Get static dataset in publishing mode
     And the total number of audit events should be 1
     And the number of events with action "READ" and resource "/datasets/unpublished-static-dataset" should be 1
 
-  Scenario: Get a dataset as a viewer with no permissions
+  Scenario: Get a dataset as an unauthorised viewer
     Given I am a JWT user with email "viewer2@ons.gov.uk" and group "role-viewer-denied"
     When I GET "/datasets/unpublished-static-dataset"
     Then the HTTP status code should be "403"
@@ -50,7 +50,7 @@ Feature: Get static dataset in publishing mode
       dataset not found
       """
 
-  Scenario: Get a dataset as a viewer with permissions using a previous series id
+  Scenario: Get a dataset as an authorised viewer using a previous series id
     Given I am a JWT user with email "viewer3@ons.gov.uk" and group "role-viewer-allowed"
     And I have realistic datasets:
       """
@@ -74,7 +74,7 @@ Feature: Get static dataset in publishing mode
     And the total number of audit events should be 1
     And the number of events with action "READ" and resource "/datasets/static-series-b" should be 1
 
-  Scenario: Get a dataset as a viewer with no permissions using a previous series id
+  Scenario: Get a dataset as an unauthorised viewer using a previous series id
     Given I am a JWT user with email "viewer4@ons.gov.uk" and group "role-viewer-allowed"
     And I have realistic datasets:
       """

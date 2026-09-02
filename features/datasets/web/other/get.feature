@@ -1,6 +1,6 @@
 Feature: List datasets in web mode
 
-  Scenario: Get a list of datasets
+  Scenario: List datasets
     Given I have realistic datasets:
       """
       [
@@ -55,7 +55,7 @@ Feature: List datasets in web mode
       }
       """
 
-  Scenario: Get a list of datasets containing redacted fields
+  Scenario: List datasets containing redacted fields
     Given I have these datasets:
       """
       [
@@ -85,7 +85,7 @@ Feature: List datasets in web mode
       }
       """
 
-  Scenario: Get a list of datasets containing redacted fields with URL rewriting enabled
+  Scenario: List datasets containing redacted fields with URL rewriting enabled
     Given URL rewriting is enabled
     And I have these datasets:
       """

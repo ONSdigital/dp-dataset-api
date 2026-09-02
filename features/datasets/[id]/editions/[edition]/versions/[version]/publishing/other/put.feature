@@ -329,7 +329,7 @@ Feature: Update version in publishing mode
       }
       """
 
-  Scenario: Update a published version of a Cantabular dataset as a publisher
+  Scenario: Update a published version of a Cantabular dataset as a publisher user
     Given I am a publisher user
     And I have a real kafka container with topic "cantabular-export-start"
     And these versions need to be published:

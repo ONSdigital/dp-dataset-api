@@ -242,7 +242,7 @@ Feature: List dataset editions in publishing mode
       }
       """
 
-  Scenario: List dataset editions as a publisher
+  Scenario: List dataset editions as a publisher user
     Given I am a publisher user
     When I GET "/dataset-editions"
     Then I should receive the following JSON response with status "200":

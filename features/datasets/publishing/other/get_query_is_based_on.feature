@@ -90,6 +90,6 @@ Feature: Query datasets by is_based_on in publishing mode
     When I GET "/datasets?is_based_on="
     Then the HTTP status code should be "400"
 
-  Scenario: Query datasets using an "is_based_on" value that does not exist
+  Scenario: Query datasets by an "is_based_on" value that does not exist
     When I GET "/datasets?is_based_on=not-exists"
     Then the HTTP status code should be "404"

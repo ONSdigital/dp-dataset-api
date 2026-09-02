@@ -142,7 +142,7 @@ Feature: Update version metadata in publishing mode
     And the total number of audit events should be 1
     And the number of events with action "UPDATE" and resource "/datasets/population-estimates/editions/hello/versions/1/metadata" should be 1
 
-  Scenario: Update metadata using an etag as a publisher
+  Scenario: Update metadata using an etag as a publisher user
     When I set the "If-Match" header to "etag-test-item-1"
     And I am a publisher user
     And I PUT "/datasets/population-estimates/editions/hello/versions/1/metadata"

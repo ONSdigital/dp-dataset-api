@@ -1,6 +1,6 @@
 Feature: List editions in web mode
 
-  Scenario: Get a list of editions
+  Scenario: List editions
     Given I have these datasets:
       """
       [
@@ -48,7 +48,7 @@ Feature: List editions in web mode
       }
       """
 
-  Scenario: Get a list of editions with URL rewriting enabled
+  Scenario: List editions with URL rewriting enabled
     Given I have these datasets:
       """
       [
@@ -97,7 +97,7 @@ Feature: List editions in web mode
       }
       """
 
-  Scenario: Get a list of editions containing only published editions
+  Scenario: List editions containing only published editions
     Given I have these datasets:
       """
       [
@@ -175,7 +175,7 @@ Feature: List editions in web mode
       }
       """
 
-  Scenario: Get a list of editions for an unpublished dataset
+  Scenario: List editions for an unpublished dataset
     Given I have these datasets:
       """
       [

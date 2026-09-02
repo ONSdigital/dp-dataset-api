@@ -1,6 +1,6 @@
 Feature: List editions with pagination in web mode
 
-  Scenario: Get a list of editions with offset set to 1
+  Scenario: List editions with offset set to 1
     Given I have these datasets:
       """
       [
@@ -58,7 +58,7 @@ Feature: List editions with pagination in web mode
       }
       """
 
-  Scenario: Get a list of editions with limit set to 1
+  Scenario: List editions with limit set to 1
     Given I have these datasets:
       """
       [

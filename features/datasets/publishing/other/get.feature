@@ -3,7 +3,7 @@ Feature: List datasets in publishing mode
   Background:
     Given private endpoints are enabled
 
-  Scenario: Get a list of datasets
+  Scenario: List datasets
     Given I am an admin user
     And I have these datasets:
       """
@@ -37,7 +37,7 @@ Feature: List datasets in publishing mode
       }
       """
 
-  Scenario: Get a list of datasets as a publisher
+  Scenario: List datasets as a publisher user
     Given I am a publisher user
     And I have these datasets:
       """
@@ -71,7 +71,7 @@ Feature: List datasets in publishing mode
       }
       """
 
-  Scenario: Get a list of datasets with topics included
+  Scenario: List datasets with topics included
     Given I am an admin user
     And I have these datasets:
       """
@@ -117,7 +117,7 @@ Feature: List datasets in publishing mode
       }
       """
 
-  Scenario: Get a list of datasets containing is_migration
+  Scenario: List datasets containing is_migration
     Given I am an admin user
     And I have these datasets:
       """

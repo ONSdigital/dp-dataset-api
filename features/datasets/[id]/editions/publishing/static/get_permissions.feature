@@ -101,7 +101,7 @@ Feature: List static editions in publishing mode (permissions)
       ]
       """
 
-  Scenario: Get a list of editions as an admin
+  Scenario: List editions as an admin user
     Given I am an admin user
     When I GET "/datasets/population-estimates/editions"
     Then I should receive the following JSON response with status "200":
@@ -189,7 +189,7 @@ Feature: List static editions in publishing mode (permissions)
       }
       """
 
-  Scenario: Get a list of editions as an admin with limit and offset
+  Scenario: List editions as an admin user with limit and offset
     Given I am an admin user
     When I GET "/datasets/population-estimates/editions?limit=1&offset=1"
     Then I should receive the following JSON response with status "200":
@@ -252,7 +252,7 @@ Feature: List static editions in publishing mode (permissions)
       }
       """
 
-  Scenario: Get a list of editions as an authorised viewer
+  Scenario: List editions as an authorised viewer
     Given I am a JWT user with email "viewer1@ons.gov.uk" and group "role-viewer-allowed"
     And I have viewer access to the dataset "population-estimates"
     When I GET "/datasets/population-estimates/editions"
@@ -341,7 +341,7 @@ Feature: List static editions in publishing mode (permissions)
       }
       """
 
-  Scenario: Get a list of editions as an unauthorised viewer
+  Scenario: List editions as an unauthorised viewer
     Given I am a JWT user with email "viewer1@ons.gov.uk" and group "role-viewer-allowed"
     And I don't have viewer access to the dataset "population-estimates"
     When I GET "/datasets/population-estimates/editions"

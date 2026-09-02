@@ -116,7 +116,7 @@ Feature: List static editions in web mode
       ]
       """
 
-  Scenario: Get a list of editions
+  Scenario: List editions
     When I GET "/datasets/static-dataset/editions"
     Then I should receive the following JSON response with status "200":
       """
@@ -195,7 +195,7 @@ Feature: List static editions in web mode
       """
     And the total number of audit events should be 0
 
-  Scenario: Get a list of editions with limit and offset
+  Scenario: List editions with limit and offset
     When I GET "/datasets/static-dataset/editions?limit=1&offset=1"
     Then I should receive the following JSON response with status "200":
       """
