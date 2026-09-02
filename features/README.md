@@ -1,6 +1,10 @@
 # Component tests
 
-This directory contains [Godog](https://github.com/cucumber/godog) (Cucumber style) component tests. Each `.feature` file tests one HTTP endpoint against a running instance of the Dataset API using real Mongo/Kafka containers.
+This directory contains [Godog](https://github.com/cucumber/godog) (Cucumber style) BDD component tests. Each `.feature` file tests one HTTP endpoint against a running instance of the Dataset API using real Mongo/Kafka containers.
+
+## Prerequisites
+
+Component tests are run using [testcontainers](https://golang.testcontainers.org/) via the [dp-component-test](https://github.com/ONSdigital/dp-component-test#using-testcontainers) library, which requires a running Docker daemon.
 
 ## Folder structure
 
@@ -21,7 +25,7 @@ features/
 ```
 
 To find the tests for an endpoint: start from the resource name, then narrow by mode (`web`/`publishing`) and
-dataset type if relevant. For example, tests for `PUT /datasets/{id}` on a static dataset are found in
+dataset type if relevant. For example, tests for `PUT /datasets/{id}` on a static dataset live in
 `features/datasets/[id]/publishing/static/put.feature`.
 
 ## Naming conventions
