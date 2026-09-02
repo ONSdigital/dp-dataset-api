@@ -1,4 +1,4 @@
-Feature: Delete a dataset
+Feature: Delete static dataset in publishing mode
 
   Background:
     Given private endpoints are enabled

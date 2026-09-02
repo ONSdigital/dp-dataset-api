@@ -1,4 +1,4 @@
-Feature: Sorting datasets using the "sort_order" parameter
+Feature: Query static datasets by sort_order in web mode
 
   Background:
     Given I have these datasets:

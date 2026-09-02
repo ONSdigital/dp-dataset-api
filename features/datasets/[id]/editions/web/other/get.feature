@@ -1,4 +1,4 @@
-Feature: Get a list of editions
+Feature: List editions in web mode
 
   Scenario: Get a list of editions
     Given I have these datasets:

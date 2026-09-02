@@ -1,4 +1,4 @@
-Feature: Get a version
+Feature: Get version in web mode
 
   Background: we have a dataset which has an edition with a variety of versions
     Given I have these datasets:

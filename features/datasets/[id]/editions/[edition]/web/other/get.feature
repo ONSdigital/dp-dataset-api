@@ -1,4 +1,4 @@
-Feature: Get an edition
+Feature: Get edition in web mode
 
   Scenario: Get an edition
     Given I have these datasets:

@@ -1,4 +1,4 @@
-Feature: Get metadata
+Feature: Get static version metadata in web mode
 
   Scenario: Get metadata for a published dataset
     Given I have a static dataset with version:

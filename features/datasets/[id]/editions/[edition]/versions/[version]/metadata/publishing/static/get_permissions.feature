@@ -1,4 +1,4 @@
-Feature: Get metadata with different permissions
+Feature: Get static version metadata in publishing mode (permissions)
 
   Background:
     Given private endpoints are enabled

@@ -1,4 +1,4 @@
-Feature: Update version state
+Feature: Update static version state in publishing mode
 
   Background:
     Given private endpoints are enabled

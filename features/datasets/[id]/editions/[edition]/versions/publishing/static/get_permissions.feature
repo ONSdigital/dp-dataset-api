@@ -1,4 +1,4 @@
-Feature: Get a list of versions using different permissions
+Feature: List static versions in publishing mode (permissions)
 
   Background:
     Given private endpoints are enabled

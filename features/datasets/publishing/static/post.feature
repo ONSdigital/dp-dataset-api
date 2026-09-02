@@ -1,4 +1,4 @@
-Feature: Create a new dataset
+Feature: Create static dataset in publishing mode
 
   Background:
     Given private endpoints are enabled

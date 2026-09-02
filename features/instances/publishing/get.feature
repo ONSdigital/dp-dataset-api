@@ -1,4 +1,4 @@
-Feature: List and query instances
+Feature: List instances in publishing mode
 
   Background:
     Given private endpoints are enabled

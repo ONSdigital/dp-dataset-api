@@ -1,4 +1,4 @@
-Feature: Get a list of versions
+Feature: List versions in web mode
 
   Background:
     Given I have these datasets:

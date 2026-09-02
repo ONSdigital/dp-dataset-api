@@ -1,4 +1,4 @@
-Feature: Get an edition using different permissions
+Feature: Get static edition in publishing mode (permissions)
 
   Background:
     Given private endpoints are enabled

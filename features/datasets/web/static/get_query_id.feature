@@ -1,4 +1,4 @@
-Feature: Query datasets by ID
+Feature: Query static datasets by id in web mode
 
   Background:
     Given I have these datasets:

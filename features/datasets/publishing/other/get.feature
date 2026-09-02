@@ -1,4 +1,4 @@
-Feature: Get a list of datasets
+Feature: List datasets in publishing mode
 
   Background:
     Given private endpoints are enabled

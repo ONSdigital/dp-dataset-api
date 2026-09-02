@@ -1,4 +1,4 @@
-Feature: Get a dataset
+Feature: Get dataset in web mode
 
   Background:
     Given I have these datasets:

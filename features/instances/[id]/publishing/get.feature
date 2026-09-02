@@ -1,4 +1,4 @@
-Feature: Get an instance
+Feature: Get instance in publishing mode
 
   Background:
     Given private endpoints are enabled

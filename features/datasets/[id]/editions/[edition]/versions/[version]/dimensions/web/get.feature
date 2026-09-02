@@ -1,4 +1,4 @@
-Feature: Get a list of dimensions
+Feature: List version dimensions in web mode
 
   Background:
     Given I have these datasets:

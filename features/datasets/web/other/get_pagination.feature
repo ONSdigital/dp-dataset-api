@@ -1,4 +1,4 @@
-Feature: Get a list of datasets using pagination
+Feature: List datasets with pagination in web mode
 
   Background:
     Given I have these datasets:

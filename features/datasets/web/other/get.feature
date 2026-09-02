@@ -1,4 +1,4 @@
-Feature: Get a list of datasets
+Feature: List datasets in web mode
 
   Scenario: Get a list of datasets
     Given I have realistic datasets:

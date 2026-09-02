@@ -1,4 +1,4 @@
-Feature: Get a list of dimensions
+Feature: List version dimensions in publishing mode
 
   Background:
     Given private endpoints are enabled

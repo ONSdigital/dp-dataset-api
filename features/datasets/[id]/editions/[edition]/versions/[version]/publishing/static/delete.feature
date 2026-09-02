@@ -1,4 +1,4 @@
-Feature: Delete a version
+Feature: Delete static version in publishing mode
 
   Background:
     Given private endpoints are enabled

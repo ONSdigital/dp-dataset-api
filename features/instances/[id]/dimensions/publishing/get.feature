@@ -1,4 +1,4 @@
-Feature: List instance dimensions
+Feature: List instance dimensions in publishing mode
 
   Background:
     Given private endpoints are enabled

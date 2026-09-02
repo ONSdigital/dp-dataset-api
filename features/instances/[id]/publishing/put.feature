@@ -1,4 +1,4 @@
-Feature: Updating an instance
+Feature: Update instance in publishing mode
 
   Background:
     Given private endpoints are enabled

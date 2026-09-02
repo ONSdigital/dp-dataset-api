@@ -1,4 +1,4 @@
-Feature: Get list of options for a dimension of an instance
+Feature: List version dimension options in publishing mode
 
   Background:
     Given private endpoints are enabled

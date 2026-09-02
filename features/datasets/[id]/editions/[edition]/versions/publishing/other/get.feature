@@ -1,4 +1,4 @@
-Feature: Get a list of versions
+Feature: List versions in publishing mode
 
   Background:
     Given private endpoints are enabled

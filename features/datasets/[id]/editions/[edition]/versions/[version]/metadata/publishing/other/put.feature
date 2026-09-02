@@ -1,4 +1,4 @@
-Feature: Update metadata
+Feature: Update version metadata in publishing mode
 
   Background:
     Given private endpoints are enabled

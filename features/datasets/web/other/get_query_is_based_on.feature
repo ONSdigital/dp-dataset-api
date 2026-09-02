@@ -1,4 +1,4 @@
-Feature: Query datasets by the "is_based_on" field
+Feature: Query datasets by is_based_on in web mode
   Background:
     Given I have these "public" datasets:
       """

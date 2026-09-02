@@ -1,4 +1,4 @@
-Feature: Get an edition
+Feature: Get static edition in web mode
 
   Background:
     Given I have these datasets:

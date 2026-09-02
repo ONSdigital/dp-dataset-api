@@ -1,4 +1,4 @@
-Feature: Get metadata
+Feature: Get version metadata in publishing mode
 
   Background:
     Given private endpoints are enabled

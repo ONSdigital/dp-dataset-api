@@ -1,4 +1,4 @@
-Feature: Get a version
+Feature: Get static version in web mode
 
   Background:
     Given I have realistic datasets:

@@ -1,4 +1,4 @@
-Feature: Get metadata
+Feature: Get version metadata in web mode
 
   Scenario: Get metadata for a Cantabular flexible table dataset
     Given I have these datasets:

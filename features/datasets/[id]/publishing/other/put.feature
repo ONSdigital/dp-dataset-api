@@ -1,4 +1,4 @@
-Feature: Update a dataset
+Feature: Update dataset in publishing mode
 
   Background:
     Given private endpoints are enabled

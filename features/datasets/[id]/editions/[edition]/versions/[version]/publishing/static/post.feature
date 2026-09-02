@@ -1,4 +1,4 @@
-Feature: Create a version
+Feature: Create static version with specified ID in publishing mode
 
   Background:
     Given private endpoints are enabled

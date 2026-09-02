@@ -1,4 +1,4 @@
-Feature: Update a dataset
+Feature: Update dataset in web mode (not allowed)
 
   Scenario: Update a dataset
     Given I have these datasets:

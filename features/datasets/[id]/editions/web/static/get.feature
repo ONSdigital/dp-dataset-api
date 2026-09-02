@@ -1,4 +1,4 @@
-Feature: Get a list of editions
+Feature: List static editions in web mode
 
   Background:
     Given I have these datasets:

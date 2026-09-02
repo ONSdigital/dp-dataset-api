@@ -1,4 +1,4 @@
-Feature: List dataset editions
+Feature: List dataset editions in publishing mode
 
   Background:
     Given private endpoints are enabled

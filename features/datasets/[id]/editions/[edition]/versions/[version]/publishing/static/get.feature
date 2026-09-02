@@ -1,4 +1,4 @@
-Feature: Get a version
+Feature: Get static version in publishing mode
 
   Background:
     Given private endpoints are enabled

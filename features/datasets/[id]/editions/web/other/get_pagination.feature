@@ -1,4 +1,4 @@
-Feature: Get a list of editions
+Feature: List editions with pagination in web mode
 
   Scenario: Get a list of editions with offset set to 1
     Given I have these datasets:
