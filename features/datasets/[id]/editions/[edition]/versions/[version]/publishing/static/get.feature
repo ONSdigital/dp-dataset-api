@@ -15,7 +15,11 @@ Feature: Get static version in publishing mode
                 "id": "1",
                 "href": "/datasets/test-static/editions/test-edition-static/versions/1"
               }
-            }
+            },
+            "previous_series_id": [
+              "test-series-a",
+              "test-series-b"
+            ]
           },
           "current": {
             "id": "test-static",
@@ -390,44 +394,46 @@ Feature: Get static version in publishing mode
       """
 
   Scenario: GET /datasets/{id}/editions/{edition}/version/1 returns 200 for an authorised viewer via previous series and previous editions
-    Given private endpoints are enabled
-    And I have these datasets:
-            """
-            [
-                {
-                    "id": "test-series-c",
-                    "state": "published",
-                    "type": "static",
-                    "previous_series_id": ["test-series-a", "test-series-b"]
-                }
-            ]
-            """
-    And I have these static versions:
-            """
-            [
-                {
-                    "id": "version-003",
-                    "version": 3,
-                    "edition": "2024",
-                    "state": "associated",
-                    "type": "static",
-                    "previous_edition_id": ["2021", "2022"],
-                    "links": {
-                        "dataset": {
-                            "id": "test-series-c"
-                        },
-                        "edition": {
-                            "id": "2024",
-                            "href": "/datasets/test-series-c/editions/2024"
-                        },
-                        "self": {
-                            "href": "/datasets/test-series-c/editions/2024/versions/3"
-                        }
-                    }
-                }
-            ]
-            """
-    And I am a JWT user with email "viewer1@ons.gov.uk" and group "role-viewer-allowed"
-    And I have viewer access to the dataset edition "test-series-b/2022"
-    When I GET "/datasets/test-series-c/editions/2024/versions/1"
-    Then the HTTP status code should be "200"
+    Given I am a JWT user with email "viewer1@ons.gov.uk" and group "role-viewer-allowed"
+    And I have viewer access to the dataset edition "test-series-a/approved-old-edition-2"
+    When I GET "/datasets/test-static/editions/test-edition-static-approved/versions/1"
+    Then I should receive the following JSON response with status "200":
+      """
+      {
+        "id": "test-static-version-approved",
+        "last_updated": "2021-01-01T00:00:01Z",
+        "version": 1,
+        "edition": "test-edition-static-approved",
+        "edition_title": "Test Edition Static Approved Title",
+        "links": {
+          "dataset": {
+            "id": "test-static"
+          },
+          "edition": {
+            "href": "/datasets/test-static/editions/test-edition-static-approved",
+            "id": "test-edition-static-approved"
+          },
+          "self": {
+            "href": "/datasets/test-static/editions/test-edition-static-approved/versions/1"
+          },
+          "web_page": {
+            "href": "/economy/datasets/test-static/editions/test-edition-static-approved/versions/1"
+          }
+        },
+        "state": "approved",
+        "type": "static",
+        "previous_edition_id": [
+          "approved-old-edition-1",
+          "approved-old-edition-2"
+        ],
+        "distributions": [
+          {
+            "title": "Distribution 1",
+            "format": "csv",
+            "media_type": "text/csv",
+            "download_url": "/uuid/filename.csv",
+            "byte_size": 100000
+          }
+        ]
+      }
+      """
