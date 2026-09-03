@@ -393,7 +393,7 @@ Feature: Get static version in publishing mode
       }
       """
 
-  Scenario: GET /datasets/{id}/editions/{edition}/version/1 returns 200 for an authorised viewer via previous series and previous editions
+  Scenario: Get a version using a previous series and previous edition ID as an authorised viewer
     Given I am a JWT user with email "viewer1@ons.gov.uk" and group "role-viewer-allowed"
     And I have viewer access to the dataset edition "test-series-a/approved-old-edition-2"
     When I GET "/datasets/test-static/editions/test-edition-static-approved/versions/1"
