@@ -113,6 +113,14 @@ func (d *PublishCheck) Check(handle func(http.ResponseWriter, *http.Request), ac
 							}
 						}
 
+						if versionDoc.Downloads.ZIP != nil && versionDoc.Downloads.ZIP.Public != "" {
+							newVersion.Downloads.ZIP = &models.DownloadObject{
+								Public: versionDoc.Downloads.ZIP.Public,
+								Size:   versionDoc.Downloads.ZIP.Size,
+								HRef:   versionDoc.Downloads.ZIP.HRef,
+							}
+						}
+
 						var b []byte
 						b, err = json.Marshal(newVersion)
 						if err != nil {

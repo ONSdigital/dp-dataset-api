@@ -28,6 +28,7 @@ var DistributionMediaTypeMap = map[models.DistributionFormat]models.Distribution
 	models.DistributionFormatXLSX:     models.DistributionMediaTypeXLSX,
 	models.DistributionFormatCSDB:     models.DistributionMediaTypeCSDB,
 	models.DistributionFormatCSVWMeta: models.DistributionMediaTypeCSVWMeta,
+	models.DistributionFormatZIP:      models.DistributionMediaTypeZIP,
 }
 
 // ValidatePositiveInt obtains the positive int value of query var defined by the provided varKey

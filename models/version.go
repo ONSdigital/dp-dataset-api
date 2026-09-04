@@ -79,6 +79,7 @@ type DownloadList struct {
 	CSV  *DownloadObject `bson:"csv,omitempty" json:"csv,omitempty"`
 	TXT  *DownloadObject `bson:"txt,omitempty" json:"txt,omitempty"`
 	CSVW *DownloadObject `bson:"csvw,omitempty" json:"csvw,omitempty"`
+	ZIP  *DownloadObject `bson:"zip,omitempty" json:"zip,omitempty"`
 }
 
 // DownloadObject represents information on the downloadable file
@@ -99,6 +100,7 @@ func (dl *DownloadList) ExtensionsMapping() map[*DownloadObject]string {
 		dl.TXT:  "txt",
 		dl.XLS:  "xls",
 		dl.XLSX: "xlsx",
+		dl.ZIP:  "zip",
 	}
 }
 
@@ -286,6 +288,7 @@ const (
 	DistributionFormatXLSX     DistributionFormat = "xlsx"
 	DistributionFormatCSDB     DistributionFormat = "csdb"
 	DistributionFormatCSVWMeta DistributionFormat = "csvw-metadata"
+	DistributionFormatZIP      DistributionFormat = "zip"
 )
 
 // IsValid validates that the DistributionFormat is a valid enum value
@@ -337,13 +340,14 @@ const (
 	DistributionMediaTypeXLSX     DistributionMediaType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 	DistributionMediaTypeCSDB     DistributionMediaType = "text/plain"
 	DistributionMediaTypeCSVWMeta DistributionMediaType = "application/ld+json"
+	DistributionMediaTypeZIP      DistributionMediaType = "application/zip"
 )
 
 // IsValid validates that the DistributionMediaType is a valid enum value
 func (mt *DistributionMediaType) IsValid() bool {
 	switch *mt {
 	case DistributionMediaTypeCSV, DistributionMediaTypeSDMX, DistributionMediaTypeXLS,
-		DistributionMediaTypeXLSX, DistributionMediaTypeCSDB, DistributionMediaTypeCSVWMeta:
+		DistributionMediaTypeXLSX, DistributionMediaTypeCSDB, DistributionMediaTypeCSVWMeta, DistributionMediaTypeZIP:
 		return true
 	default:
 		return false
@@ -533,6 +537,18 @@ func ValidateVersion(version *Version) error {
 			}
 			if _, err := strconv.Atoi(version.Downloads.TXT.Size); err != nil {
 				invalidFields = append(invalidFields, "Downloads.TXT.Size not a number")
+			}
+		}
+
+		if version.Downloads.ZIP != nil {
+			if version.Downloads.ZIP.HRef == "" {
+				missingFields = append(missingFields, "Downloads.ZIP.HRef")
+			}
+			if version.Downloads.ZIP.Size == "" {
+				missingFields = append(missingFields, "Downloads.ZIP.Size")
+			}
+			if _, err := strconv.Atoi(version.Downloads.ZIP.Size); err != nil {
+				invalidFields = append(invalidFields, "Downloads.ZIP.Size not a number")
 			}
 		}
 	}
