@@ -542,11 +542,13 @@ func (api DatasetAPI) getPermissionAttributesFromRequest(req *http.Request) (map
 	if dataset != nil && dataset.Next != nil {
 		allSeriesIDs = append(allSeriesIDs, dataset.Next.PreviousSeriesId...)
 	}
-
 	for _, seriesID := range allSeriesIDs {
 		for _, version := range versions {
-			for _, prevEdition := range version.PreviousEditionId {
-				previousAttributes := map[string]string{"dataset_edition": seriesID + "/" + prevEdition}
+			allEditionIDs := append([]string{edition}, version.PreviousEditionId...)
+			for _, prevEdition := range allEditionIDs {
+				previousAttributes := map[string]string{
+					"dataset_edition": seriesID + "/" + prevEdition,
+				}
 				if api.checkUserPermission(req, logData, datasetEditionVersionReadPermission, previousAttributes) {
 					return previousAttributes, nil
 				}
