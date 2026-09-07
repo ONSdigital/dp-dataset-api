@@ -414,9 +414,6 @@ func populateDownloads(versionDownloads, currentVersionDownloads *models.Downloa
 			versionDownloads.TXT = currentVersionDownloads.TXT
 		}
 
-		if versionDownloads.ZIP == nil && currentVersionDownloads != nil {
-			versionDownloads.ZIP = currentVersionDownloads.ZIP
-		}
 	}
 	return versionDownloads
 }
