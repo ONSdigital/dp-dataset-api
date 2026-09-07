@@ -295,7 +295,7 @@ const (
 func (f *DistributionFormat) IsValid() bool {
 	switch *f {
 	case DistributionFormatCSV, DistributionFormatSDMX, DistributionFormatXLS,
-		DistributionFormatXLSX, DistributionFormatCSDB, DistributionFormatCSVWMeta:
+		DistributionFormatXLSX, DistributionFormatCSDB, DistributionFormatCSVWMeta, DistributionFormatZIP:
 		return true
 	default:
 		return false
