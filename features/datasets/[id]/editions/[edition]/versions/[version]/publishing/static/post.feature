@@ -804,6 +804,62 @@ Feature: Create static version with specified ID in publishing mode
       }
       """
 
+  Scenario: Create a version with is_migration set to true with a ZIP distribution
+    Given I am an admin user
+    When I POST "/datasets/static-dataset-1/editions/2024zip/versions/2"
+      """
+      {
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "edition_title": "2024zip",
+        "type": "static",
+        "is_migration": true,
+        "distributions": [
+          {
+            "title": "Migrated ZIP File",
+            "format": "zip",
+            "download_url": "/uuid/filename.zip",
+            "byte_size": 100
+          }
+        ]
+      }
+      """
+    Then I should receive the following JSON response with status "201":
+      """
+      {
+        "dataset_id": "static-dataset-1",
+        "distributions": [
+          {
+            "byte_size": 100,
+            "download_url": "/uuid/filename.zip",
+            "format": "zip",
+            "media_type": "application/zip",
+            "title": "Migrated ZIP File"
+          }
+        ],
+        "edition": "2024zip",
+        "edition_title": "2024zip",
+        "is_migration": true,
+        "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
+        "links": {
+          "dataset": {
+            "href": "http://localhost:22000/datasets/static-dataset-1",
+            "id": "static-dataset-1"
+          },
+          "edition": {
+            "href": "http://localhost:22000/datasets/static-dataset-1/editions/2024zip",
+            "id": "2024zip"
+          },
+          "self": {
+            "href": "http://localhost:22000/datasets/static-dataset-1/editions/2024zip/versions/2"
+          }
+        },
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "state": "associated",
+        "type": "static",
+        "version": 2
+      }
+      """
+
   Scenario: Create a version for a dataset with topics returns a web_page link
     Given I am an admin user
     And I have these datasets:
