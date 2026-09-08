@@ -27,6 +27,7 @@ func TestValidateDistributionsFromRequestBody(t *testing.T) {
 				{"format": "sdmx"},
 				{"format": "csdb"},
 				{"format": "csvw-metadata"}
+				{"format": "zip"}
 			]}`)
 			err := ValidateDistributionsFromRequestBody(bodyBytes)
 
@@ -166,6 +167,7 @@ func TestPopulateDistributions(t *testing.T) {
 					{Format: "xlsx", DownloadURL: "http://example.com/data.xlsx"},
 					{Format: "csdb", DownloadURL: "http://example.com/data.csdb"},
 					{Format: "csvw-metadata", DownloadURL: "http://example.com/data.json"},
+					{Format: "zip", DownloadURL: "http://example.com/data.zip"},
 				},
 			}
 
@@ -179,6 +181,7 @@ func TestPopulateDistributions(t *testing.T) {
 				So((*version.Distributions)[3].MediaType, ShouldEqual, models.DistributionMediaTypeXLSX)
 				So((*version.Distributions)[4].MediaType, ShouldEqual, models.DistributionMediaTypeCSDB)
 				So((*version.Distributions)[5].MediaType, ShouldEqual, models.DistributionMediaTypeCSVWMeta)
+				So((*version.Distributions)[6].MediaType, ShouldEqual, models.DistributionMediaTypeZIP)
 			})
 		})
 
