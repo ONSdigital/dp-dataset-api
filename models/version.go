@@ -79,7 +79,7 @@ type DownloadList struct {
 	CSV  *DownloadObject `bson:"csv,omitempty" json:"csv,omitempty"`
 	TXT  *DownloadObject `bson:"txt,omitempty" json:"txt,omitempty"`
 	CSVW *DownloadObject `bson:"csvw,omitempty" json:"csvw,omitempty"`
-	//ZIP  *DownloadObject `bson:"zip,omitempty" json:"zip,omitempty"`
+	// ZIP  *DownloadObject `bson:"zip,omitempty" json:"zip,omitempty"`
 }
 
 // DownloadObject represents information on the downloadable file
@@ -100,7 +100,7 @@ func (dl *DownloadList) ExtensionsMapping() map[*DownloadObject]string {
 		dl.TXT:  "txt",
 		dl.XLS:  "xls",
 		dl.XLSX: "xlsx",
-		//dl.ZIP:  "zip",
+		// dl.ZIP:  "zip",
 	}
 }
 
@@ -539,7 +539,6 @@ func ValidateVersion(version *Version) error {
 				invalidFields = append(invalidFields, "Downloads.TXT.Size not a number")
 			}
 		}
-
 	}
 
 	if missingFields != nil {

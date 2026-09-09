@@ -206,14 +206,6 @@ func CreateMetaDataDoc(datasetDoc *Dataset, versionDoc *Version, urlBuilder *url
 				Public:  versionDoc.Downloads.XLSX.Public,
 			}
 		}
-		//if versionDoc.Downloads.ZIP != nil {
-		//	metaDataDoc.Downloads.ZIP = &DownloadObject{
-		//		HRef:    versionDoc.Downloads.ZIP.HRef,
-		//		Size:    versionDoc.Downloads.ZIP.Size,
-		//		Private: versionDoc.Downloads.ZIP.Private,
-		//		Public:  versionDoc.Downloads.ZIP.Public,
-		//	}
-		//}
 	}
 
 	return metaDataDoc
@@ -292,14 +284,6 @@ func CreateCantabularMetaDataDoc(d *Dataset, v *Version) *Metadata {
 				Public:  v.Downloads.XLSX.Public,
 			}
 		}
-		//if v.Downloads.ZIP != nil {
-		//	m.Downloads.ZIP = &DownloadObject{
-		//		HRef:    v.Downloads.ZIP.HRef,
-		//		Size:    v.Downloads.ZIP.Size,
-		//		Private: v.Downloads.ZIP.Private,
-		//		Public:  v.Downloads.ZIP.Public,
-		//	}
-		//}
 	}
 
 	return m

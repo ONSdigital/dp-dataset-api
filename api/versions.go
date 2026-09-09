@@ -873,7 +873,6 @@ func populateNewVersionDoc(currentVersion, originalVersion *models.Version) (*mo
 		if version.Downloads.TXT == nil && currentVersion.Downloads != nil {
 			version.Downloads.TXT = currentVersion.Downloads.TXT
 		}
-
 	}
 
 	if version.UsageNotes == nil {
