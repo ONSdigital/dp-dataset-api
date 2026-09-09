@@ -286,13 +286,14 @@ const (
 	DistributionFormatXLSX     DistributionFormat = "xlsx"
 	DistributionFormatCSDB     DistributionFormat = "csdb"
 	DistributionFormatCSVWMeta DistributionFormat = "csvw-metadata"
+	DistributionFormatZIP      DistributionFormat = "zip"
 )
 
 // IsValid validates that the DistributionFormat is a valid enum value
 func (f *DistributionFormat) IsValid() bool {
 	switch *f {
 	case DistributionFormatCSV, DistributionFormatSDMX, DistributionFormatXLS,
-		DistributionFormatXLSX, DistributionFormatCSDB, DistributionFormatCSVWMeta:
+		DistributionFormatXLSX, DistributionFormatCSDB, DistributionFormatCSVWMeta, DistributionFormatZIP:
 		return true
 	default:
 		return false
@@ -337,13 +338,14 @@ const (
 	DistributionMediaTypeXLSX     DistributionMediaType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 	DistributionMediaTypeCSDB     DistributionMediaType = "text/plain"
 	DistributionMediaTypeCSVWMeta DistributionMediaType = "application/ld+json"
+	DistributionMediaTypeZIP      DistributionMediaType = "application/zip"
 )
 
 // IsValid validates that the DistributionMediaType is a valid enum value
 func (mt *DistributionMediaType) IsValid() bool {
 	switch *mt {
 	case DistributionMediaTypeCSV, DistributionMediaTypeSDMX, DistributionMediaTypeXLS,
-		DistributionMediaTypeXLSX, DistributionMediaTypeCSDB, DistributionMediaTypeCSVWMeta:
+		DistributionMediaTypeXLSX, DistributionMediaTypeCSDB, DistributionMediaTypeCSVWMeta, DistributionMediaTypeZIP:
 		return true
 	default:
 		return false

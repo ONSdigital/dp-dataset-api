@@ -5938,6 +5938,13 @@ func TestRewriteDistributions_Success(t *testing.T) {
 					DownloadURL: "/cpih01/time-series/1/filename.xls",
 					ByteSize:    30000,
 				},
+				{
+					Title:       "Distribution 4",
+					Format:      "ZIP",
+					MediaType:   "application/zip",
+					DownloadURL: "/cpih01/time-series/1/filename.zip",
+					ByteSize:    40000,
+				},
 			}
 
 			distributions, err := RewriteDistributions(ctx, distributions, downloadServiceURL)
@@ -5947,6 +5954,7 @@ func TestRewriteDistributions_Success(t *testing.T) {
 				So((*distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv")
 				So((*distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx")
 				So((*distributions)[2].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xls")
+				So((*distributions)[3].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.zip")
 			})
 		})
 
@@ -5973,6 +5981,13 @@ func TestRewriteDistributions_Success(t *testing.T) {
 					DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xls",
 					ByteSize:    30000,
 				},
+				{
+					Title:       "Distribution 4",
+					Format:      "ZIP",
+					MediaType:   "application/zip",
+					DownloadURL: "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.zip",
+					ByteSize:    40000,
+				},
 			}
 
 			distributions, err := RewriteDistributions(ctx, distributions, downloadServiceURL)
@@ -5982,6 +5997,7 @@ func TestRewriteDistributions_Success(t *testing.T) {
 				So((*distributions)[0].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.csv")
 				So((*distributions)[1].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xlsx")
 				So((*distributions)[2].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.xls")
+				So((*distributions)[3].DownloadURL, ShouldEqual, "http://localhost:23600/downloads/files/cpih01/time-series/1/filename.zip")
 			})
 		})
 
