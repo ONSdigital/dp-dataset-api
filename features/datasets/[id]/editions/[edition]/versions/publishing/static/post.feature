@@ -28,6 +28,19 @@ Feature: Create static version in publishing mode
           },
           "state": "associated",
           "type": "static"
+        },
+        {
+          "id": "migrated-dataset-test",
+          "title": "Migrated static dataset",
+          "links": {
+            "self": {
+              "href": "http://localhost:22000/datasets/migrated-dataset-test",
+              "id": "migrated-test-dataset"
+            }
+          },
+          "state": "created",
+          "type": "static",
+          "is_migration": true
         }
       ]
       """
@@ -609,3 +622,74 @@ Feature: Create static version in publishing mode
       }
       """
     Then the HTTP status code should be "500"
+
+  Scenario: Create a version on a non-migrated dataset with ZIP distribution should fail
+    Given I am an admin user
+    When I POST "/datasets/static-dataset-test/editions/2025/versions"
+      """
+      {
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "edition_title": "2025",
+        "type": "static",
+        "distributions": [
+          {
+            "title": "Dataset Archive",
+            "format": "zip",
+            "media_type": "application/zip",
+            "download_url": "/uuid/dataset.zip",
+            "byte_size": 500000
+          }
+        ]
+      }
+      """
+    Then the HTTP status code should be "400"
+    And I should receive the following JSON response:
+      """
+      {
+        "errors": [
+          {
+            "code": "ErrMissingParameters",
+            "description": "distributions[0] zip format can only be used for migrated datasets"
+          }
+        ]
+      }
+      """
+
+  Scenario: Create a version on a migrated dataset with ZIP distribution should succeed
+    Given I am an admin user
+    When I POST "/datasets/migrated-dataset-test/editions/2025/versions"
+      """
+      {
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "edition_title": "2025",
+        "is_migration": true,
+        "type": "static",
+        "distributions": [
+          {
+            "title": "Dataset Archive",
+            "format": "zip",
+            "media_type": "application/zip",
+            "download_url": "/uuid/dataset.zip",
+            "byte_size": 500000
+          }
+        ]
+      }
+      """
+    Then the HTTP status code should be "201"
+    And I should receive a JSON response containing:
+      """
+      {
+        "dataset_id": "migrated-dataset-test",
+        "distributions": [
+          {
+            "byte_size": 500000,
+            "download_url": "/uuid/dataset.zip",
+            "format": "zip",
+            "media_type": "application/zip",
+            "title": "Dataset Archive"
+          }
+        ]
+      }
+      """
+    And the total number of audit events should be 1
+    And the number of events with action "CREATE" and resource "/datasets/migrated-dataset-test/editions/2025/versions/1" should be 1

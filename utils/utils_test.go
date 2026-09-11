@@ -19,7 +19,7 @@ func TestValidateDistributionsFromRequestBody(t *testing.T) {
 			})
 		})
 
-		Convey("When distributions contain all supported format types", func() {
+		Convey("When distributions contain all supported format types for non migrated dataset", func() {
 			bodyBytes := []byte(`{"distributions": [
 				{"format": "csv"},
 				{"format": "xls"},
@@ -27,7 +27,6 @@ func TestValidateDistributionsFromRequestBody(t *testing.T) {
 				{"format": "sdmx"},
 				{"format": "csdb"},
 				{"format": "csvw-metadata"}
-				{"format": "zip"}
 			]}`)
 			err := ValidateDistributionsFromRequestBody(bodyBytes)
 
@@ -136,6 +135,44 @@ func TestValidateDistributionsFromRequestBody(t *testing.T) {
 			Convey("Then an error should be returned for the second distribution", func() {
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldContainSubstring, "distributions[1].format field is missing")
+			})
+		})
+
+		Convey("When is_migration is true and format is zip", func() {
+			bodyBytes := []byte(`{"is_migration": true, "distributions": [{"format": "zip"}]}`)
+			err := ValidateDistributionsFromRequestBody(bodyBytes)
+
+			Convey("Then no error should be returned", func() {
+				So(err, ShouldBeNil)
+			})
+		})
+
+		Convey("When is_migration is false and format is zip", func() {
+			bodyBytes := []byte(`{"is_migration": false, "distributions": [{"format": "zip"}]}`)
+			err := ValidateDistributionsFromRequestBody(bodyBytes)
+
+			Convey("Then an error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "distributions[0] zip format can only be used for migrated datasets")
+			})
+		})
+
+		Convey("When is_migration is missing and format is zip", func() {
+			bodyBytes := []byte(`{"distributions": [{"format": "zip"}]}`)
+			err := ValidateDistributionsFromRequestBody(bodyBytes)
+
+			Convey("Then an error should be returned", func() {
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldContainSubstring, "distributions[0] zip format can only be used for migrated datasets")
+			})
+		})
+
+		Convey("When is_migration is true and format is csv", func() {
+			bodyBytes := []byte(`{"is_migration": true, "distributions": [{"format": "csv"}]}`)
+			err := ValidateDistributionsFromRequestBody(bodyBytes)
+
+			Convey("Then no error should be returned", func() {
+				So(err, ShouldBeNil)
 			})
 		})
 	})

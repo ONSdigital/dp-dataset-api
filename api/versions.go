@@ -925,6 +925,8 @@ func getVersionAPIErrStatusCode(err error) int {
 		status = http.StatusBadRequest
 	case strings.Contains(err.Error(), "format field is invalid"):
 		status = http.StatusBadRequest
+	case strings.Contains(err.Error(), "zip format can only be used for migrated datasets"):
+		status = http.StatusBadRequest
 	case errs.NotAllowedMap[err]:
 		status = http.StatusMethodNotAllowed
 	default:

@@ -1019,3 +1019,131 @@ Feature: Update static version in publishing mode
         "type": "static"
       }
       """
+
+  Scenario: Update a migrated version with ZIP distribution should succeed
+    Given I have a static dataset with version:
+      """
+      {
+        "dataset": {
+          "id": "migrated-dataset-zip-update",
+          "title": "Migrated Dataset ZIP Update",
+          "state": "associated",
+          "type": "static",
+          "is_migration": true
+        },
+        "version": {
+          "id": "migrated-version-zip-update",
+          "edition": "zip-update",
+          "edition_title": "2025 Edition",
+          "links": {
+            "dataset": {
+              "id": "migrated-dataset-zip-update"
+            },
+            "edition": {
+              "href": "/datasets/migrated-dataset-zip-update/editions/zip-update",
+              "id": "zip-update"
+            },
+            "self": {
+              "href": "/datasets/migrated-dataset-zip-update/editions/zip-update/versions/1"
+            }
+          },
+          "version": 1,
+          "release_date": "2025-01-01T09:00:00.000Z",
+          "state": "associated",
+          "type": "static",
+          "is_migration": true,
+          "distributions": [
+            {
+              "title": "csv",
+              "format": "csv",
+              "media_type": "text/csv",
+              "download_url": "/uuid/filename.csv",
+              "byte_size": 125000
+            }
+          ]
+        }
+      }
+      """
+    And I am an admin user
+    When I PUT "/datasets/migrated-dataset-zip-update/editions/zip-update/versions/1"
+      """
+      {
+        "is_migration": true,
+        "distributions": [
+          {
+            "title": "Dataset Archive",
+            "format": "zip",
+            "media_type": "application/zip",
+            "download_url": "/uuid/dataset.zip",
+            "byte_size": 500000
+          }
+        ],
+        "type": "static"
+      }
+      """
+    Then the HTTP status code should be "200"
+
+  Scenario: Update a non-migrated version with ZIP distribution should fail
+    Given I have a static dataset with version:
+      """
+      {
+        "dataset": {
+          "id": "dataset-zip-update",
+          "title": "Dataset ZIP Update",
+          "state": "associated",
+          "type": "static"
+        },
+        "version": {
+          "id": "dataset-zip-update",
+          "edition": "dataset-zip-update",
+          "edition_title": "2025 Edition",
+          "links": {
+            "dataset": {
+              "id": "dataset-zip-update"
+            },
+            "edition": {
+              "href": "/datasets/dataset-zip-update/editions/dataset-zip-update",
+              "id": "dataset-zip-update"
+            },
+            "self": {
+              "href": "/datasets/dataset-zip-update/editions/dataset-zip-update/versions/1"
+            }
+          },
+          "version": 1,
+          "release_date": "2025-01-01T09:00:00.000Z",
+          "state": "associated",
+          "type": "static",
+          "is_migration": true,
+          "distributions": [
+            {
+              "title": "csv",
+              "format": "csv",
+              "media_type": "text/csv",
+              "download_url": "/uuid/filename.csv",
+              "byte_size": 125000
+            }
+          ]
+        }
+      }
+      """
+    And I am an admin user
+    When I PUT "/datasets/dataset-zip-update/editions/dataset-zip-update/versions/1"
+      """
+      {
+        "distributions": [
+          {
+            "title": "Dataset Archive",
+            "format": "zip",
+            "media_type": "application/zip",
+            "download_url": "/uuid2/dataset.zip",
+            "byte_size": 500000
+          }
+        ],
+        "type": "static"
+      }
+      """
+    Then the HTTP status code should be "400"
+    And I should receive the following response:
+      """
+      distributions[0].format zip format can only be used for migrated datasets
+      """

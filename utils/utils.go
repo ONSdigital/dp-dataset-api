@@ -158,6 +158,14 @@ func ValidateDistributionsFromRequestBody(bodyBytes []byte) error {
 		if _, valid := DistributionMediaTypeMap[models.DistributionFormat(formatStr)]; !valid {
 			return fmt.Errorf("distributions[%d].format field is invalid", i)
 		}
+
+		if formatStr == "zip" {
+			isMigrationValue, ok := rawData["is_migration"]
+			isMigration, isMigrationBool := isMigrationValue.(bool)
+			if !ok || !isMigrationBool || !isMigration {
+				return fmt.Errorf("distributions[%d].format zip format can only be used for migrated datasets", i)
+			}
+		}
 	}
 
 	return nil
