@@ -153,7 +153,7 @@ func TestValidateDistributionsFromRequestBody(t *testing.T) {
 
 			Convey("Then an error should be returned", func() {
 				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "distributions[0] zip format can only be used for migrated datasets")
+				So(err.Error(), ShouldContainSubstring, "distributions[0].format zip format can only be used for migrated datasets")
 			})
 		})
 
@@ -163,7 +163,7 @@ func TestValidateDistributionsFromRequestBody(t *testing.T) {
 
 			Convey("Then an error should be returned", func() {
 				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldContainSubstring, "distributions[0] zip format can only be used for migrated datasets")
+				So(err.Error(), ShouldContainSubstring, "distributions[0].format zip format can only be used for migrated datasets")
 			})
 		})
 

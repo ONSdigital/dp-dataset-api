@@ -649,7 +649,7 @@ Feature: Create static version in publishing mode
         "errors": [
           {
             "code": "ErrMissingParameters",
-            "description": "distributions[0] zip format can only be used for migrated datasets"
+            "description": "distributions[0].format zip format can only be used for migrated datasets"
           }
         ]
       }
