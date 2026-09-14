@@ -18,7 +18,7 @@ const (
 	ErrInvalidTypeError          = "InvalidType"
 	ErrEditionAlreadyExists      = "ErrEditionAlreadyExists"
 	ErrEditionTitleAlreadyExists = "ErrEditionTitleAlreadyExists"
-	ErrNoSpacesAllowedError      = "ErrSpacesNotAllowed"
+	ErrInvalidID                 = "ErrInvalidID"
 	ErrTopicAPIFailure           = "ErrTopicAPIFailure"
 )
 
