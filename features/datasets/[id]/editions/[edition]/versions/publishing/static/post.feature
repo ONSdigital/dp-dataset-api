@@ -444,8 +444,8 @@ Feature: Create static version in publishing mode
       {
         "errors": [
           {
-            "code": "ErrSpacesNotAllowed",
-            "description": "spaces are not allowed in the ID field"
+            "code": "ErrInvalidID",
+            "description": "id must only contain letters, numbers, and dashes"
           }
         ]
       }
@@ -675,8 +675,7 @@ Feature: Create static version in publishing mode
         ]
       }
       """
-    Then the HTTP status code should be "201"
-    And I should receive a JSON response containing:
+    Then I should receive the following JSON response with status "201":
       """
       {
         "dataset_id": "migrated-dataset-test",
@@ -688,7 +687,28 @@ Feature: Create static version in publishing mode
             "media_type": "application/zip",
             "title": "Dataset Archive"
           }
-        ]
+        ],
+        "edition": "2025",
+        "edition_title": "2025",
+        "is_migration": true,
+        "last_updated": "{{DYNAMIC_RECENT_TIMESTAMP}}",
+        "links": {
+          "dataset": {
+            "href": "http://localhost:22000/datasets/migrated-dataset-test",
+            "id": "migrated-dataset-test"
+          },
+          "edition": {
+            "href": "http://localhost:22000/datasets/migrated-dataset-test/editions/2025",
+            "id": "2025"
+          },
+          "self": {
+            "href": "http://localhost:22000/datasets/migrated-dataset-test/editions/2025/versions/1"
+          }
+        },
+        "release_date": "2024-12-01T09:00:00.000Z",
+        "state": "associated",
+        "type": "static",
+        "version": 1
       }
       """
     And the total number of audit events should be 1
