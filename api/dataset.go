@@ -29,7 +29,7 @@ var (
 		errs.ErrTypeMismatch:               true,
 		errs.ErrDatasetTypeInvalid:         true,
 		errs.ErrInvalidQueryParameter:      true,
-		errs.ErrSpacesNotAllowedInID:       true,
+		errs.ErrInvalidID:                  true,
 	}
 
 	// errors that should return a 403 status
@@ -437,8 +437,8 @@ func (api *DatasetAPI) addDatasetNew(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if dataset.Type == models.Static.String() {
-		if err := utils.ValidateIDNoSpaces(datasetID); err != nil {
-			log.Error(ctx, "addDatasetNew endpoint: dataset ID contains spaces", err, logData)
+		if err := utils.ValidateIDFormat(datasetID); err != nil {
+			log.Error(ctx, "addDatasetNew endpoint: dataset ID has invalid format", err, logData)
 			handleDatasetAPIErr(ctx, err, w, logData)
 			return
 		}
@@ -584,8 +584,8 @@ func (api *DatasetAPI) putDataset(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if dataset.Type == models.Static.String() {
-			if err := utils.ValidateIDNoSpaces(dataset.ID); err != nil {
-				log.Error(ctx, "putDataset endpoint: dataset ID in request body contains spaces", err, data)
+			if err := utils.ValidateIDFormat(dataset.ID); err != nil {
+				log.Error(ctx, "putDataset endpoint: dataset ID in request body has invalid format", err, data)
 				return nil, err
 			}
 

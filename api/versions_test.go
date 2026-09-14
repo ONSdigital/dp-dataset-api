@@ -1147,7 +1147,7 @@ func TestPutVersionForbidden(t *testing.T) {
 
 		Convey("Then it returns 400 and update is not attempted", func() {
 			So(w.Code, ShouldEqual, http.StatusBadRequest)
-			So(w.Body.String(), ShouldContainSubstring, errs.ErrSpacesNotAllowedInID.Error())
+			So(w.Body.String(), ShouldContainSubstring, errs.ErrInvalidID.Error())
 
 			So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
 			So(len(mockedDataStore.AcquireInstanceLockCalls()), ShouldEqual, 0)

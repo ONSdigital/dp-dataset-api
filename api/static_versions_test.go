@@ -1378,7 +1378,7 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrSpacesNotAllowedInID.Error())
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInvalidID.Error())
 
 		So(authorisationMock.ParseCalls(), ShouldHaveLength, 1)
 	})
@@ -1430,7 +1430,7 @@ func TestAddDatasetVersionCondensed_Failure(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusBadRequest)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrSpacesNotAllowedInID.Error())
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInvalidID.Error())
 
 		So(authorisationMock.ParseCalls(), ShouldHaveLength, 1)
 	})
@@ -2400,8 +2400,8 @@ func TestCreateVersion_Failure(t *testing.T) {
 
 		So(success, ShouldBeNil)
 		So(errResp.Status, ShouldEqual, http.StatusBadRequest)
-		So(errResp.Errors[0].Code, ShouldEqual, models.ErrNoSpacesAllowedError)
-		So(errResp.Errors[0].Description, ShouldEqual, errs.ErrSpacesNotAllowedInID.Error())
+		So(errResp.Errors[0].Code, ShouldEqual, models.ErrInvalidID)
+		So(errResp.Errors[0].Description, ShouldEqual, errs.ErrInvalidID.Error())
 	})
 
 	Convey("When the JSON body contains an edition with spaces for static type", t, func() {
@@ -2440,8 +2440,8 @@ func TestCreateVersion_Failure(t *testing.T) {
 
 		So(success, ShouldBeNil)
 		So(errResp.Status, ShouldEqual, http.StatusBadRequest)
-		So(errResp.Errors[0].Code, ShouldEqual, models.ErrNoSpacesAllowedError)
-		So(errResp.Errors[0].Description, ShouldEqual, errs.ErrSpacesNotAllowedInID.Error())
+		So(errResp.Errors[0].Code, ShouldEqual, models.ErrInvalidID)
+		So(errResp.Errors[0].Description, ShouldEqual, errs.ErrInvalidID.Error())
 	})
 
 	Convey("When the JSON body contains a dataset_id with spaces for static type", t, func() {
@@ -2480,8 +2480,8 @@ func TestCreateVersion_Failure(t *testing.T) {
 
 		So(success, ShouldBeNil)
 		So(errResp.Status, ShouldEqual, http.StatusBadRequest)
-		So(errResp.Errors[0].Code, ShouldEqual, models.ErrNoSpacesAllowedError)
-		So(errResp.Errors[0].Description, ShouldEqual, errs.ErrSpacesNotAllowedInID.Error())
+		So(errResp.Errors[0].Code, ShouldEqual, models.ErrInvalidID)
+		So(errResp.Errors[0].Description, ShouldEqual, errs.ErrInvalidID.Error())
 	})
 
 	Convey("When is_latest is not a valid boolean", t, func() {
