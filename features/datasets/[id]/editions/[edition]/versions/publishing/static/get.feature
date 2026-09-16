@@ -263,3 +263,107 @@ Feature: List static versions in publishing mode
         "total_count": 1
       }
       """
+
+  Scenario: List versions using an edition ID that has since changed
+    When I GET "/datasets/test-static/editions/approved-old-edition-1/versions"
+    Then I should receive the following JSON response with status "200":
+      """
+      {
+        "count": 1,
+        "items": [
+          {
+            "dataset_id": "test-static",
+            "id": "test-static-version-approved",
+            "last_updated": "2021-01-01T00:00:01Z",
+            "type": "static",
+            "version": 1,
+            "state": "approved",
+            "links": {
+              "dataset": {
+                "id": "test-static"
+              },
+              "edition": {
+                "href": "/datasets/test-static/editions/test-edition-static-approved",
+                "id": "test-edition-static-approved"
+              },
+              "self": {
+                "href": "/datasets/test-static/editions/test-edition-static-approved/versions/1"
+              },
+              "web_page": {
+                "href": "/economy/datasets/test-static/editions/test-edition-static-approved/versions/1"
+              }
+            },
+            "edition": "test-edition-static-approved",
+            "edition_title": "Test Edition Static Approved Title",
+            "previous_edition_id": [
+              "approved-old-edition-1",
+              "approved-old-edition-2"
+            ],
+            "distributions": [
+              {
+                "title": "Distribution 1",
+                "format": "csv",
+                "media_type": "text/csv",
+                "download_url": "/uuid/filename.csv",
+                "byte_size": 100000
+              }
+            ]
+          }
+        ],
+        "limit": 20,
+        "offset": 0,
+        "total_count": 1
+      }
+      """
+  
+  Scenario: List versions using an older edition ID that is not the most recent rename
+    When I GET "/datasets/test-static/editions/approved-old-edition-2/versions"
+    Then I should receive the following JSON response with status "200":
+      """
+      {
+        "count": 1,
+        "items": [
+          {
+            "dataset_id": "test-static",
+            "id": "test-static-version-approved",
+            "last_updated": "2021-01-01T00:00:01Z",
+            "type": "static",
+            "version": 1,
+            "state": "approved",
+            "links": {
+              "dataset": {
+                "id": "test-static"
+              },
+              "edition": {
+                "href": "/datasets/test-static/editions/test-edition-static-approved",
+                "id": "test-edition-static-approved"
+              },
+              "self": {
+                "href": "/datasets/test-static/editions/test-edition-static-approved/versions/1"
+              },
+              "web_page": {
+                "href": "/economy/datasets/test-static/editions/test-edition-static-approved/versions/1"
+              }
+            },
+            "edition": "test-edition-static-approved",
+            "edition_title": "Test Edition Static Approved Title",
+            "previous_edition_id": [
+              "approved-old-edition-1",
+              "approved-old-edition-2"
+            ],
+            "distributions": [
+              {
+                "title": "Distribution 1",
+                "format": "csv",
+                "media_type": "text/csv",
+                "download_url": "/uuid/filename.csv",
+                "byte_size": 100000
+              }
+            ]
+          }
+        ],
+        "limit": 20,
+        "offset": 0,
+        "total_count": 1
+      }
+      """
