@@ -5946,3 +5946,159 @@ func TestPutVersionSavesPreviousEditionID(t *testing.T) {
 		So(len(mockedDataStore.UpdateVersionStaticCalls()), ShouldEqual, 1)
 	})
 }
+
+func TestGetVersionsPreviousEditionID(t *testing.T) {
+	t.Parallel()
+
+	newRequest := func() *http.Request {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/old-edition/versions", http.NoBody)
+		r.Header.Set("Authorization", "Bearer "+testAuthToken)
+		return mux.SetURLVars(r, map[string]string{"dataset_id": "123-456", "edition": "old-edition"})
+	}
+
+	newDataStore := func() *storetest.StorerMock {
+		return &storetest.StorerMock{
+			GetDatasetFunc: func(ctx context.Context, id string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{ID: id, Next: &models.Dataset{ID: id}}, nil
+			},
+			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID, edition, state string) ([]*models.Version, int, error) {
+				return nil, 0, nil
+			},
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				return models.Static.String(), nil
+			},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return errs.ErrEditionNotFound
+			},
+		}
+	}
+
+	Convey("Given an authorised request for a static edition ID that has since changed", t, func() {
+		r := newRequest()
+		w := httptest.NewRecorder()
+
+		results := []models.Version{
+			{
+				Edition:           "new-edition",
+				State:             models.AssociatedState,
+				PreviousEditionId: []string{"old-edition"},
+			},
+		}
+
+		mockedDataStore := newDataStore()
+		mockedDataStore.GetVersionsStaticByPreviousEditionIDFunc = func(context.Context, string, string, string, int, int) ([]models.Version, int, error) {
+			return results, 1, nil
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
+
+		Convey("When getVersions is called", func() {
+			list, totalCount, err := api.getVersions(w, r, 20, 0)
+
+			Convey("Then the versions are found via the previous edition ID", func() {
+				So(err, ShouldBeNil)
+				So(w.Code, ShouldEqual, http.StatusOK)
+				So(list, ShouldResemble, results)
+				So(totalCount, ShouldEqual, 1)
+			})
+
+			Convey("And the fallback was called with the requested edition, offset and limit", func() {
+				So(len(mockedDataStore.GetVersionsStaticCalls()), ShouldEqual, 0)
+				So(len(mockedDataStore.GetVersionsStaticByPreviousEditionIDCalls()), ShouldEqual, 1)
+
+				call := mockedDataStore.GetVersionsStaticByPreviousEditionIDCalls()[0]
+				So(call.DatasetID, ShouldEqual, "123-456")
+				So(call.PreviousEditionID, ShouldEqual, "old-edition")
+				So(call.State, ShouldEqual, "")
+				So(call.Offset, ShouldEqual, 0)
+				So(call.Limit, ShouldEqual, 20)
+			})
+		})
+	})
+
+	Convey("Given an authorised request where the edition ID matches neither a current nor a previous edition", t, func() {
+		r := newRequest()
+		w := httptest.NewRecorder()
+
+		mockedDataStore := newDataStore()
+		mockedDataStore.GetVersionsStaticByPreviousEditionIDFunc = func(context.Context, string, string, string, int, int) ([]models.Version, int, error) {
+			return nil, 0, errs.ErrVersionNotFound
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
+
+		Convey("When getVersions is called", func() {
+			_, _, err := api.getVersions(w, r, 20, 0)
+
+			Convey("Then the original edition not found error is returned", func() {
+				So(err, ShouldEqual, errs.ErrEditionNotFound)
+				So(w.Code, ShouldEqual, http.StatusNotFound)
+				So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
+				So(len(mockedDataStore.GetVersionsStaticByPreviousEditionIDCalls()), ShouldEqual, 1)
+			})
+		})
+	})
+
+	Convey("Given an unauthorised request for a static edition ID that has since changed", t, func() {
+		r := newRequest()
+		w := httptest.NewRecorder()
+
+		mockedDataStore := newDataStore()
+		mockedDataStore.GetVersionsStaticByPreviousEditionIDFunc = func(context.Context, string, string, string, int, int) ([]models.Version, int, error) {
+			return []models.Version{{Edition: "new-edition", State: models.AssociatedState}}, 1, nil
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			RequireWithAttributesFunc: func(permission string, handlerFunc http.HandlerFunc, getAttributes authorisation.GetAttributesFromRequest) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return nil, errors.New("no token provided")
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
+
+		Convey("When getVersions is called", func() {
+			_, _, err := api.getVersions(w, r, 20, 0)
+
+			Convey("Then it returns not found without falling back to previous edition IDs", func() {
+				So(err, ShouldEqual, errs.ErrEditionNotFound)
+				So(w.Code, ShouldEqual, http.StatusNotFound)
+				So(len(mockedDataStore.GetVersionsStaticByPreviousEditionIDCalls()), ShouldEqual, 0)
+			})
+
+			Convey("And the edition existence check was restricted to published versions", func() {
+				So(len(mockedDataStore.CheckEditionExistsStaticCalls()), ShouldEqual, 1)
+				So(mockedDataStore.CheckEditionExistsStaticCalls()[0].State, ShouldEqual, models.PublishedState)
+			})
+		})
+	})
+}

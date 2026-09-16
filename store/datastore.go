@@ -49,6 +49,7 @@ type dataMongoDB interface {
 	GetVersionStatic(ctx context.Context, datasetID, editionID string, version int, state string) (*models.Version, error)
 	GetLatestVersionStatic(ctx context.Context, datasetID, editionID string, state string) (*models.Version, error)
 	GetVersionStaticByPreviousEditionID(ctx context.Context, datasetID, previousEditionID string, versionID int) (*models.Version, error)
+	GetVersionsStaticByPreviousEditionID(ctx context.Context, datasetID, previousEditionID, state string, offset, limit int) ([]models.Version, int, error)
 	GetUniqueDimensionAndOptions(ctx context.Context, ID, dimension string) ([]*string, int, error)
 	GetVersions(ctx context.Context, datasetID, editionID, state string, offset, limit int) ([]models.Version, int, error)
 	GetVersionsStatic(ctx context.Context, datasetID, edition, state string, offset, limit int) ([]models.Version, int, error)

@@ -141,6 +141,9 @@ var _ store.Storer = &StorerMock{}
 //			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
 //				panic("mock out the GetVersionsStaticByEditionNoLimit method")
 //			},
+//			GetVersionsStaticByPreviousEditionIDFunc: func(ctx context.Context, datasetID string, previousEditionID string, state string, offset int, limit int) ([]models.Version, int, error) {
+//				panic("mock out the GetVersionsStaticByPreviousEditionID method")
+//			},
 //			GetVersionsStaticNoLimitFunc: func(ctx context.Context, datasetID string, state string) ([]*models.Version, int, error) {
 //				panic("mock out the GetVersionsStaticNoLimit method")
 //			},
@@ -339,6 +342,9 @@ type StorerMock struct {
 
 	// GetVersionsStaticByEditionNoLimitFunc mocks the GetVersionsStaticByEditionNoLimit method.
 	GetVersionsStaticByEditionNoLimitFunc func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error)
+
+	// GetVersionsStaticByPreviousEditionIDFunc mocks the GetVersionsStaticByPreviousEditionID method.
+	GetVersionsStaticByPreviousEditionIDFunc func(ctx context.Context, datasetID string, previousEditionID string, state string, offset int, limit int) ([]models.Version, int, error)
 
 	// GetVersionsStaticNoLimitFunc mocks the GetVersionsStaticNoLimit method.
 	GetVersionsStaticNoLimitFunc func(ctx context.Context, datasetID string, state string) ([]*models.Version, int, error)
@@ -838,6 +844,21 @@ type StorerMock struct {
 			// State is the state argument value.
 			State string
 		}
+		// GetVersionsStaticByPreviousEditionID holds details about calls to the GetVersionsStaticByPreviousEditionID method.
+		GetVersionsStaticByPreviousEditionID []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// DatasetID is the datasetID argument value.
+			DatasetID string
+			// PreviousEditionID is the previousEditionID argument value.
+			PreviousEditionID string
+			// State is the state argument value.
+			State string
+			// Offset is the offset argument value.
+			Offset int
+			// Limit is the limit argument value.
+			Limit int
+		}
 		// GetVersionsStaticNoLimit holds details about calls to the GetVersionsStaticNoLimit method.
 		GetVersionsStaticNoLimit []struct {
 			// Ctx is the ctx argument value.
@@ -1077,70 +1098,71 @@ type StorerMock struct {
 			VersionDoc *models.Version
 		}
 	}
-	lockAcquireInstanceLock                 sync.RWMutex
-	lockAcquireVersionsLock                 sync.RWMutex
-	lockAddEventToInstance                  sync.RWMutex
-	lockAddInstance                         sync.RWMutex
-	lockAddVersionDetailsToInstance         sync.RWMutex
-	lockAddVersionStatic                    sync.RWMutex
-	lockCheckDatasetExists                  sync.RWMutex
-	lockCheckDatasetTitleExist              sync.RWMutex
-	lockCheckEditionExists                  sync.RWMutex
-	lockCheckEditionExistsStatic            sync.RWMutex
-	lockCheckEditionTitleExistsStatic       sync.RWMutex
-	lockCheckVersionExistsStatic            sync.RWMutex
-	lockCreateAuditEvent                    sync.RWMutex
-	lockDeleteDataset                       sync.RWMutex
-	lockDeleteEdition                       sync.RWMutex
-	lockDeleteStaticDatasetVersion          sync.RWMutex
-	lockGetAllStaticVersions                sync.RWMutex
-	lockGetDataset                          sync.RWMutex
-	lockGetDatasetType                      sync.RWMutex
-	lockGetDatasets                         sync.RWMutex
-	lockGetDatasetsByQueryParams            sync.RWMutex
-	lockGetDimensionOptions                 sync.RWMutex
-	lockGetDimensionOptionsFromIDs          sync.RWMutex
-	lockGetDimensions                       sync.RWMutex
-	lockGetDimensionsFromInstance           sync.RWMutex
-	lockGetEdition                          sync.RWMutex
-	lockGetEditions                         sync.RWMutex
-	lockGetEditionsStatic                   sync.RWMutex
-	lockGetInstance                         sync.RWMutex
-	lockGetInstances                        sync.RWMutex
-	lockGetLatestVersionStatic              sync.RWMutex
-	lockGetNextVersion                      sync.RWMutex
-	lockGetStaticVersionsByState            sync.RWMutex
-	lockGetUniqueDimensionAndOptions        sync.RWMutex
-	lockGetVersion                          sync.RWMutex
-	lockGetVersionStatic                    sync.RWMutex
-	lockGetVersionStaticByPreviousEditionID sync.RWMutex
-	lockGetVersions                         sync.RWMutex
-	lockGetVersionsStatic                   sync.RWMutex
-	lockGetVersionsStaticByEditionNoLimit   sync.RWMutex
-	lockGetVersionsStaticNoLimit            sync.RWMutex
-	lockIsStaticDataset                     sync.RWMutex
-	lockRemoveDatasetVersionAndEditionLinks sync.RWMutex
-	lockSetInstanceIsPublished              sync.RWMutex
-	lockUnlockInstance                      sync.RWMutex
-	lockUnlockVersions                      sync.RWMutex
-	lockUpdateBuildHierarchyTaskState       sync.RWMutex
-	lockUpdateBuildSearchTaskState          sync.RWMutex
-	lockUpdateDataset                       sync.RWMutex
-	lockUpdateDatasetWithAssociation        sync.RWMutex
-	lockUpdateDimensionsNodeIDAndOrder      sync.RWMutex
-	lockUpdateETagForOptions                sync.RWMutex
-	lockUpdateImportObservationsTaskState   sync.RWMutex
-	lockUpdateInstance                      sync.RWMutex
-	lockUpdateMetadata                      sync.RWMutex
-	lockUpdateObservationInserted           sync.RWMutex
-	lockUpdateStateStatic                   sync.RWMutex
-	lockUpdateVersion                       sync.RWMutex
-	lockUpdateVersionStatic                 sync.RWMutex
-	lockUpsertContact                       sync.RWMutex
-	lockUpsertDataset                       sync.RWMutex
-	lockUpsertDimensionsToInstance          sync.RWMutex
-	lockUpsertEdition                       sync.RWMutex
-	lockUpsertVersion                       sync.RWMutex
+	lockAcquireInstanceLock                  sync.RWMutex
+	lockAcquireVersionsLock                  sync.RWMutex
+	lockAddEventToInstance                   sync.RWMutex
+	lockAddInstance                          sync.RWMutex
+	lockAddVersionDetailsToInstance          sync.RWMutex
+	lockAddVersionStatic                     sync.RWMutex
+	lockCheckDatasetExists                   sync.RWMutex
+	lockCheckDatasetTitleExist               sync.RWMutex
+	lockCheckEditionExists                   sync.RWMutex
+	lockCheckEditionExistsStatic             sync.RWMutex
+	lockCheckEditionTitleExistsStatic        sync.RWMutex
+	lockCheckVersionExistsStatic             sync.RWMutex
+	lockCreateAuditEvent                     sync.RWMutex
+	lockDeleteDataset                        sync.RWMutex
+	lockDeleteEdition                        sync.RWMutex
+	lockDeleteStaticDatasetVersion           sync.RWMutex
+	lockGetAllStaticVersions                 sync.RWMutex
+	lockGetDataset                           sync.RWMutex
+	lockGetDatasetType                       sync.RWMutex
+	lockGetDatasets                          sync.RWMutex
+	lockGetDatasetsByQueryParams             sync.RWMutex
+	lockGetDimensionOptions                  sync.RWMutex
+	lockGetDimensionOptionsFromIDs           sync.RWMutex
+	lockGetDimensions                        sync.RWMutex
+	lockGetDimensionsFromInstance            sync.RWMutex
+	lockGetEdition                           sync.RWMutex
+	lockGetEditions                          sync.RWMutex
+	lockGetEditionsStatic                    sync.RWMutex
+	lockGetInstance                          sync.RWMutex
+	lockGetInstances                         sync.RWMutex
+	lockGetLatestVersionStatic               sync.RWMutex
+	lockGetNextVersion                       sync.RWMutex
+	lockGetStaticVersionsByState             sync.RWMutex
+	lockGetUniqueDimensionAndOptions         sync.RWMutex
+	lockGetVersion                           sync.RWMutex
+	lockGetVersionStatic                     sync.RWMutex
+	lockGetVersionStaticByPreviousEditionID  sync.RWMutex
+	lockGetVersions                          sync.RWMutex
+	lockGetVersionsStatic                    sync.RWMutex
+	lockGetVersionsStaticByEditionNoLimit    sync.RWMutex
+	lockGetVersionsStaticByPreviousEditionID sync.RWMutex
+	lockGetVersionsStaticNoLimit             sync.RWMutex
+	lockIsStaticDataset                      sync.RWMutex
+	lockRemoveDatasetVersionAndEditionLinks  sync.RWMutex
+	lockSetInstanceIsPublished               sync.RWMutex
+	lockUnlockInstance                       sync.RWMutex
+	lockUnlockVersions                       sync.RWMutex
+	lockUpdateBuildHierarchyTaskState        sync.RWMutex
+	lockUpdateBuildSearchTaskState           sync.RWMutex
+	lockUpdateDataset                        sync.RWMutex
+	lockUpdateDatasetWithAssociation         sync.RWMutex
+	lockUpdateDimensionsNodeIDAndOrder       sync.RWMutex
+	lockUpdateETagForOptions                 sync.RWMutex
+	lockUpdateImportObservationsTaskState    sync.RWMutex
+	lockUpdateInstance                       sync.RWMutex
+	lockUpdateMetadata                       sync.RWMutex
+	lockUpdateObservationInserted            sync.RWMutex
+	lockUpdateStateStatic                    sync.RWMutex
+	lockUpdateVersion                        sync.RWMutex
+	lockUpdateVersionStatic                  sync.RWMutex
+	lockUpsertContact                        sync.RWMutex
+	lockUpsertDataset                        sync.RWMutex
+	lockUpsertDimensionsToInstance           sync.RWMutex
+	lockUpsertEdition                        sync.RWMutex
+	lockUpsertVersion                        sync.RWMutex
 }
 
 // AcquireInstanceLock calls AcquireInstanceLockFunc.
@@ -2868,6 +2890,58 @@ func (mock *StorerMock) GetVersionsStaticByEditionNoLimitCalls() []struct {
 	mock.lockGetVersionsStaticByEditionNoLimit.RLock()
 	calls = mock.calls.GetVersionsStaticByEditionNoLimit
 	mock.lockGetVersionsStaticByEditionNoLimit.RUnlock()
+	return calls
+}
+
+// GetVersionsStaticByPreviousEditionID calls GetVersionsStaticByPreviousEditionIDFunc.
+func (mock *StorerMock) GetVersionsStaticByPreviousEditionID(ctx context.Context, datasetID string, previousEditionID string, state string, offset int, limit int) ([]models.Version, int, error) {
+	if mock.GetVersionsStaticByPreviousEditionIDFunc == nil {
+		panic("StorerMock.GetVersionsStaticByPreviousEditionIDFunc: method is nil but Storer.GetVersionsStaticByPreviousEditionID was just called")
+	}
+	callInfo := struct {
+		Ctx               context.Context
+		DatasetID         string
+		PreviousEditionID string
+		State             string
+		Offset            int
+		Limit             int
+	}{
+		Ctx:               ctx,
+		DatasetID:         datasetID,
+		PreviousEditionID: previousEditionID,
+		State:             state,
+		Offset:            offset,
+		Limit:             limit,
+	}
+	mock.lockGetVersionsStaticByPreviousEditionID.Lock()
+	mock.calls.GetVersionsStaticByPreviousEditionID = append(mock.calls.GetVersionsStaticByPreviousEditionID, callInfo)
+	mock.lockGetVersionsStaticByPreviousEditionID.Unlock()
+	return mock.GetVersionsStaticByPreviousEditionIDFunc(ctx, datasetID, previousEditionID, state, offset, limit)
+}
+
+// GetVersionsStaticByPreviousEditionIDCalls gets all the calls that were made to GetVersionsStaticByPreviousEditionID.
+// Check the length with:
+//
+//	len(mockedStorer.GetVersionsStaticByPreviousEditionIDCalls())
+func (mock *StorerMock) GetVersionsStaticByPreviousEditionIDCalls() []struct {
+	Ctx               context.Context
+	DatasetID         string
+	PreviousEditionID string
+	State             string
+	Offset            int
+	Limit             int
+} {
+	var calls []struct {
+		Ctx               context.Context
+		DatasetID         string
+		PreviousEditionID string
+		State             string
+		Offset            int
+		Limit             int
+	}
+	mock.lockGetVersionsStaticByPreviousEditionID.RLock()
+	calls = mock.calls.GetVersionsStaticByPreviousEditionID
+	mock.lockGetVersionsStaticByPreviousEditionID.RUnlock()
 	return calls
 }
 
