@@ -906,3 +906,17 @@ func (m *Mongo) IsStaticDataset(ctx context.Context, datasetID string) (bool, er
 
 	return isStatic, nil
 }
+
+// GetDatasetByPreviousSeriesID retrieves a dataset document by matching a previous series ID
+func (m *Mongo) GetDatasetByPreviousSeriesID(ctx context.Context, previousSeriesID string) (*models.DatasetUpdate, error) {
+	var dataset models.DatasetUpdate
+	err := m.Connection.Collection(m.ActualCollectionName(config.DatasetsCollection)).FindOne(ctx, bson.M{"next.previous_series_id": previousSeriesID}, &dataset)
+	if err != nil {
+		if errors.Is(err, mongodriver.ErrNoDocumentFound) {
+			return nil, errs.ErrDatasetNotFound
+		}
+		return nil, err
+	}
+
+	return &dataset, nil
+}
