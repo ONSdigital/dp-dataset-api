@@ -64,7 +64,10 @@ class DatasetEndpointTests(unittest.TestCase):
         headers = FakeHeaders()
         client.datasets.get_dataset("abc", headers=headers)
 
-        self.assertEqual(request_mock.call_args.kwargs["headers"], {"CollectionID": "collection-123", "IfMatch": "etag-1"})
+        self.assertEqual(
+            request_mock.call_args.kwargs["headers"],
+            {"CollectionID": "collection-123", "IfMatch": "etag-1"},
+        )
 
     def test_get_dataset_404_raises_not_found(self) -> None:
         session, _ = make_session(make_response(404, {"error": "not found"}))
