@@ -1,4 +1,8 @@
+import json
 import unittest
+from unittest.mock import Mock
+
+import requests
 
 from dis_dataset_api_sdk_python import (
     DatasetApiClientProtocol,
@@ -10,25 +14,20 @@ from dis_dataset_api_sdk_python.exceptions import ApiError, NotFoundError
 from dis_dataset_api_sdk_python.models import Dataset
 
 
-class FakeResponse:
-    def __init__(self, status_code: int, payload: dict | None = None) -> None:
-        self.status_code = status_code
-        self._payload = payload if payload is not None else {}
-        self.content = b"{}" if payload is not None else b""
-        self.text = str(self._payload)
-
-    def json(self) -> dict:
-        return self._payload
+def make_response(status_code: int, payload: dict | None = None) -> requests.Response:
+    response = requests.Response()
+    response.status_code = status_code
+    response._content = json.dumps(payload if payload is not None else {}).encode("utf-8")
+    response.headers["Content-Type"] = "application/json"
+    response.encoding = "utf-8"
+    return response
 
 
-class FakeSession:
-    def __init__(self, response: FakeResponse) -> None:
-        self.response = response
-        self.last_kwargs: dict = {}
-
-    def request(self, **kwargs):
-        self.last_kwargs = kwargs
-        return self.response
+def make_session(response: requests.Response) -> tuple[requests.Session, Mock]:
+    session = requests.Session()
+    request_mock = Mock(return_value=response)
+    session.request = request_mock  # type: ignore[assignment]
+    return session, request_mock
 
 
 class FakeHeaders:
@@ -50,7 +49,7 @@ class FakeHeaders:
 
 class DatasetEndpointTests(unittest.TestCase):
     def test_get_dataset_returns_pydantic_model(self) -> None:
-        session = FakeSession(FakeResponse(200, {"id": "abc", "title": "A dataset"}))
+        session, _ = make_session(make_response(200, {"id": "abc", "title": "A dataset"}))
         client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
 
         result = client.datasets.get_dataset("abc")
@@ -59,26 +58,23 @@ class DatasetEndpointTests(unittest.TestCase):
         self.assertEqual(result.id, "abc")
 
     def test_get_dataset_passes_header_mapping(self) -> None:
-        session = FakeSession(FakeResponse(200, {"id": "abc"}))
+        session, request_mock = make_session(make_response(200, {"id": "abc"}))
         client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
 
         headers = FakeHeaders()
         client.datasets.get_dataset("abc", headers=headers)
 
-        self.assertEqual(
-            session.last_kwargs["headers"],
-            {"CollectionID": "collection-123", "IfMatch": "etag-1"},
-        )
+        self.assertEqual(request_mock.call_args.kwargs["headers"], {"CollectionID": "collection-123", "IfMatch": "etag-1"})
 
     def test_get_dataset_404_raises_not_found(self) -> None:
-        session = FakeSession(FakeResponse(404, {"error": "not found"}))
+        session, _ = make_session(make_response(404, {"error": "not found"}))
         client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
 
         with self.assertRaises(NotFoundError):
             client.datasets.get_dataset("missing")
 
     def test_get_dataset_500_raises_api_error_with_status(self) -> None:
-        session = FakeSession(FakeResponse(500, {"error": "server error"}))
+        session, _ = make_session(make_response(500, {"error": "server error"}))
         client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
 
         with self.assertRaises(ApiError) as exc:
@@ -90,13 +86,13 @@ class DatasetEndpointTests(unittest.TestCase):
         self.assertIsInstance(FakeHeaders(), Headers)
 
     def test_datasets_conforms_to_protocol(self) -> None:
-        session = FakeSession(FakeResponse(200, {"id": "abc"}))
+        session, _ = make_session(make_response(200, {"id": "abc"}))
         client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
 
         self.assertIsInstance(client.datasets, DatasetsClientProtocol)
 
     def test_client_conforms_to_dataset_api_client_protocol(self) -> None:
-        session = FakeSession(FakeResponse(200, {"id": "abc"}))
+        session, _ = make_session(make_response(200, {"id": "abc"}))
         client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
 
         self.assertIsInstance(client, DatasetApiClientProtocol)

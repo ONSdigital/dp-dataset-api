@@ -10,7 +10,6 @@ from .exceptions import ApiError, AuthenticationError, NotFoundError, Validation
 from .protocols import (
     DatasetApiClientProtocol,
     DatasetsClientProtocol,
-    RequestSession,
 )
 
 
@@ -21,8 +20,11 @@ class DatasetApiClient:
         self,
         base_url: str,
         timeout: float = 10.0,
-        session: RequestSession | None = None,
+        session: requests.Session | None = None,
     ) -> None:
+        if session is not None and not isinstance(session, requests.Session):
+            raise TypeError("session must be an instance of requests.Session")
+
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.session = session or requests.Session()
@@ -80,6 +82,6 @@ class DatasetApiClient:
 def create_client(
     base_url: str,
     timeout: float = 10.0,
-    session: RequestSession | None = None,
+    session: requests.Session | None = None,
 ) -> DatasetApiClientProtocol:
     return DatasetApiClient(base_url=base_url, timeout=timeout, session=session)
