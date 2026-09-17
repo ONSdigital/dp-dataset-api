@@ -213,6 +213,9 @@ func TestWebSubnetVersionsEndpoint(t *testing.T) {
 				versionSearchState = state
 				return []models.Version{{ID: "124", State: models.PublishedState}}, 1, nil
 			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{ID: "1234", Next: &models.Dataset{ID: "1234"}}, nil
+			},
 		}
 
 		Convey("Calling the versions endpoint should allow only published items", func() {
@@ -237,6 +240,9 @@ func TestWebSubnetVersionEndpoint(t *testing.T) {
 		var versionSearchState, editionSearchState string
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{ID: "1234", Next: &models.Dataset{ID: "1234"}}, nil
+			},
 			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
 				return models.Filterable.String(), nil
 			},

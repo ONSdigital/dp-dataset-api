@@ -61,12 +61,17 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 	datasetID := vars["dataset_id"]
 	edition := vars["edition"]
 	logData := log.Data{"dataset_id": datasetID, "edition": edition}
-	var err error
 
 	list, totalCount, err := func() ([]models.Version, int, error) {
 		var results []models.Version
 		var totalCount int
 		var state string
+
+		datasetID, err := api.resolvePreviousSeriesID(ctx, datasetID, logData)
+		if err != nil {
+			return nil, 0, err
+		}
+
 		attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
 		if attrsErr != nil {
 			return nil, 0, attrsErr
@@ -192,6 +197,11 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 		versionID, err := models.ParseAndValidateVersionNumber(ctx, versionNumber)
 		if err != nil {
 			log.Error(ctx, "getVersion endpoint: invalid version", err, logData)
+			return nil, err
+		}
+
+		datasetID, err := api.resolvePreviousSeriesID(ctx, datasetID, logData)
+		if err != nil {
 			return nil, err
 		}
 
@@ -1092,4 +1102,36 @@ func (api *DatasetAPI) getStaticVersions(ctx context.Context, datasetID, edition
 	log.Info(ctx, "versions found using previous edition ID", logData)
 
 	return results, totalCount, nil
+}
+
+// resolvePreviousSeriesID returns the current dataset ID for the one requested. If the requested ID no
+// longer exists it falls back to matching a previous series ID
+func (api *DatasetAPI) resolvePreviousSeriesID(ctx context.Context, datasetID string, logData log.Data) (string, error) {
+	_, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
+	if err == nil {
+		return datasetID, nil
+	}
+
+	if !errors.Is(err, errs.ErrDatasetNotFound) {
+		log.Error(ctx, "failed to retrieve dataset", err, logData)
+		return "", err
+	}
+
+	log.Info(ctx, "dataset not found, checking for previous series IDs", logData)
+
+	dataset, err := api.dataStore.Backend.GetDatasetByPreviousSeriesID(ctx, datasetID)
+	if err != nil {
+		if errors.Is(err, errs.ErrDatasetNotFound) {
+			return "", errs.ErrDatasetNotFound
+		}
+		log.Error(ctx, "failed to retrieve dataset by previous series ID", err, logData)
+		return "", err
+	}
+
+	log.Info(ctx, "dataset found using previous series ID", log.Data{
+		"requested_dataset_id": datasetID,
+		"matched_dataset_id":   dataset.ID,
+	})
+
+	return dataset.ID, nil
 }

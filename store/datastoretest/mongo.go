@@ -79,6 +79,9 @@ var _ store.MongoDB = &MongoDBMock{}
 //			GetDatasetFunc: func(ctx context.Context, ID string) (*models.DatasetUpdate, error) {
 //				panic("mock out the GetDataset method")
 //			},
+//			GetDatasetByPreviousSeriesIDFunc: func(ctx context.Context, previousSeriesID string) (*models.DatasetUpdate, error) {
+//				panic("mock out the GetDatasetByPreviousSeriesID method")
+//			},
 //			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
 //				panic("mock out the GetDatasetType method")
 //			},
@@ -280,6 +283,9 @@ type MongoDBMock struct {
 
 	// GetDatasetFunc mocks the GetDataset method.
 	GetDatasetFunc func(ctx context.Context, ID string) (*models.DatasetUpdate, error)
+
+	// GetDatasetByPreviousSeriesIDFunc mocks the GetDatasetByPreviousSeriesID method.
+	GetDatasetByPreviousSeriesIDFunc func(ctx context.Context, previousSeriesID string) (*models.DatasetUpdate, error)
 
 	// GetDatasetTypeFunc mocks the GetDatasetType method.
 	GetDatasetTypeFunc func(ctx context.Context, datasetID string, authorised bool) (string, error)
@@ -581,6 +587,13 @@ type MongoDBMock struct {
 			Ctx context.Context
 			// ID is the ID argument value.
 			ID string
+		}
+		// GetDatasetByPreviousSeriesID holds details about calls to the GetDatasetByPreviousSeriesID method.
+		GetDatasetByPreviousSeriesID []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// PreviousSeriesID is the previousSeriesID argument value.
+			PreviousSeriesID string
 		}
 		// GetDatasetType holds details about calls to the GetDatasetType method.
 		GetDatasetType []struct {
@@ -1110,6 +1123,7 @@ type MongoDBMock struct {
 	lockDeleteStaticDatasetVersion           sync.RWMutex
 	lockGetAllStaticVersions                 sync.RWMutex
 	lockGetDataset                           sync.RWMutex
+	lockGetDatasetByPreviousSeriesID         sync.RWMutex
 	lockGetDatasetType                       sync.RWMutex
 	lockGetDatasets                          sync.RWMutex
 	lockGetDatasetsByQueryParams             sync.RWMutex
@@ -1895,6 +1909,42 @@ func (mock *MongoDBMock) GetDatasetCalls() []struct {
 	mock.lockGetDataset.RLock()
 	calls = mock.calls.GetDataset
 	mock.lockGetDataset.RUnlock()
+	return calls
+}
+
+// GetDatasetByPreviousSeriesID calls GetDatasetByPreviousSeriesIDFunc.
+func (mock *MongoDBMock) GetDatasetByPreviousSeriesID(ctx context.Context, previousSeriesID string) (*models.DatasetUpdate, error) {
+	if mock.GetDatasetByPreviousSeriesIDFunc == nil {
+		panic("MongoDBMock.GetDatasetByPreviousSeriesIDFunc: method is nil but MongoDB.GetDatasetByPreviousSeriesID was just called")
+	}
+	callInfo := struct {
+		Ctx              context.Context
+		PreviousSeriesID string
+	}{
+		Ctx:              ctx,
+		PreviousSeriesID: previousSeriesID,
+	}
+	mock.lockGetDatasetByPreviousSeriesID.Lock()
+	mock.calls.GetDatasetByPreviousSeriesID = append(mock.calls.GetDatasetByPreviousSeriesID, callInfo)
+	mock.lockGetDatasetByPreviousSeriesID.Unlock()
+	return mock.GetDatasetByPreviousSeriesIDFunc(ctx, previousSeriesID)
+}
+
+// GetDatasetByPreviousSeriesIDCalls gets all the calls that were made to GetDatasetByPreviousSeriesID.
+// Check the length with:
+//
+//	len(mockedMongoDB.GetDatasetByPreviousSeriesIDCalls())
+func (mock *MongoDBMock) GetDatasetByPreviousSeriesIDCalls() []struct {
+	Ctx              context.Context
+	PreviousSeriesID string
+} {
+	var calls []struct {
+		Ctx              context.Context
+		PreviousSeriesID string
+	}
+	mock.lockGetDatasetByPreviousSeriesID.RLock()
+	calls = mock.calls.GetDatasetByPreviousSeriesID
+	mock.lockGetDatasetByPreviousSeriesID.RUnlock()
 	return calls
 }
 
