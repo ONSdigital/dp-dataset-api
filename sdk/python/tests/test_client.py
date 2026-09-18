@@ -1,7 +1,6 @@
 import unittest
 
 import requests
-
 from dis_dataset_api_sdk_python import DatasetApiClientProtocol, create_client
 from dis_dataset_api_sdk_python.client import DatasetApiClient
 

@@ -3,7 +3,6 @@ import unittest
 from unittest.mock import Mock
 
 import requests
-
 from dis_dataset_api_sdk_python import (
     DatasetApiClientProtocol,
     DatasetsClientProtocol,
@@ -17,7 +16,9 @@ from dis_dataset_api_sdk_python.models import Dataset
 def make_response(status_code: int, payload: dict | None = None) -> requests.Response:
     response = requests.Response()
     response.status_code = status_code
-    response._content = json.dumps(payload if payload is not None else {}).encode("utf-8")
+    response._content = json.dumps(payload if payload is not None else {}).encode(
+        "utf-8"
+    )
     response.headers["Content-Type"] = "application/json"
     response.encoding = "utf-8"
     return response
@@ -49,7 +50,9 @@ class FakeHeaders:
 
 class DatasetEndpointTests(unittest.TestCase):
     def test_get_dataset_returns_pydantic_model(self) -> None:
-        session, _ = make_session(make_response(200, {"id": "abc", "title": "A dataset"}))
+        session, _ = make_session(
+            make_response(200, {"id": "abc", "title": "A dataset"})
+        )
         client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
 
         result = client.datasets.get_dataset("abc")
