@@ -5049,10 +5049,15 @@ func TestPutStateReturnsOk(t *testing.T) {
 			expectedPrefixes := []string{
 				"localhost:20000/economy/datasets/test-static-dataset",
 				"localhost:20000/economy/datasets/test-static-dataset/editions",
+				"localhost:20000/economy/datasets/test-static-dataset/editions/test-edition-1",
 				"localhost:20000/economy/datasets/test-static-dataset/editions/test-edition-1/versions",
+				"localhost:20000/economy/datasets/test-static-dataset/editions/test-edition-1/versions/1",
 				"localhost:23200/v1/datasets/test-static-dataset",
 				"localhost:23200/v1/datasets/test-static-dataset/editions",
+				"localhost:23200/v1/datasets/test-static-dataset/editions/test-edition-1",
 				"localhost:23200/v1/datasets/test-static-dataset/editions/test-edition-1/versions",
+				"localhost:23200/v1/datasets/test-static-dataset/editions/test-edition-1/versions/1",
+				"localhost:23200/v1/datasets/test-static-dataset/editions/test-edition-1/versions/1/metadata",
 			}
 
 			So(cloudflareMock.PurgeByPrefixesCalls()[0].Prefixes, ShouldResemble, expectedPrefixes)

@@ -22,10 +22,15 @@ func TestGeneratePurgePrefixes(t *testing.T) {
 				expectedPrefixes := []string{
 					"www.example.com/economy/datasets/dataset123",
 					"www.example.com/economy/datasets/dataset123/editions",
+					"www.example.com/economy/datasets/dataset123/editions/2025",
 					"www.example.com/economy/datasets/dataset123/editions/2025/versions",
+					"www.example.com/economy/datasets/dataset123/editions/2025/versions/1",
 					"api.example.com/datasets/dataset123",
 					"api.example.com/datasets/dataset123/editions",
+					"api.example.com/datasets/dataset123/editions/2025",
 					"api.example.com/datasets/dataset123/editions/2025/versions",
+					"api.example.com/datasets/dataset123/editions/2025/versions/1",
+					"api.example.com/datasets/dataset123/editions/2025/versions/1/metadata",
 				}
 				So(prefixes, ShouldResemble, expectedPrefixes)
 			})
