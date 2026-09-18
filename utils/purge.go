@@ -12,10 +12,15 @@ func GeneratePurgePrefixes(publicWebsiteURL, apiRouterPublicURL, topicSlug, data
 	return []string{
 		publicWebsiteURL + "/" + topicSlug + "/datasets/" + datasetID,
 		publicWebsiteURL + "/" + topicSlug + "/datasets/" + datasetID + "/editions",
+		publicWebsiteURL + "/" + topicSlug + "/datasets/" + datasetID + "/editions/" + edition,
 		publicWebsiteURL + "/" + topicSlug + "/datasets/" + datasetID + "/editions/" + edition + "/versions",
+		publicWebsiteURL + "/" + topicSlug + "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + version,
 		apiRouterPublicURL + "/datasets/" + datasetID,
 		apiRouterPublicURL + "/datasets/" + datasetID + "/editions",
+		apiRouterPublicURL + "/datasets/" + datasetID + "/editions/" + edition,
 		apiRouterPublicURL + "/datasets/" + datasetID + "/editions/" + edition + "/versions",
+		apiRouterPublicURL + "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + version,
+		apiRouterPublicURL + "/datasets/" + datasetID + "/editions/" + edition + "/versions/" + version + "/metadata",
 	}
 }
 
