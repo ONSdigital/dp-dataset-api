@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
+	"github.com/ONSdigital/dp-dataset-api/config"
 	"github.com/ONSdigital/dp-dataset-api/models"
 	. "github.com/smartystreets/goconvey/convey"
 	"go.mongodb.org/mongo-driver/bson"
@@ -553,6 +554,63 @@ func TestIsStaticDataset(t *testing.T) {
 			Convey("Then it returns false with an ErrDatasetNotFound error", func() {
 				So(err, ShouldEqual, errs.ErrDatasetNotFound)
 				So(isStatic, ShouldBeFalse)
+			})
+		})
+	})
+}
+
+func TestGetDatasetByPreviousSeriesID(t *testing.T) {
+	Convey("Given MongoDB is running with a dataset that has a previous series ID", t, func() {
+		ctx := context.Background()
+		mongoDB, err := getTestMongoDB(ctx, t)
+		So(err, ShouldBeNil)
+
+		err = mongoDB.Connection.DropDatabase(ctx)
+		So(err, ShouldBeNil)
+
+		dataset := &models.DatasetUpdate{
+			ID: "renamed-dataset",
+			Next: &models.Dataset{
+				ID:               "renamed-dataset",
+				Type:             models.Static.String(),
+				PreviousSeriesId: []string{"previous-series-id", "another-previous-series-id"},
+			},
+		}
+
+		_, err = mongoDB.Connection.Collection(mongoDB.ActualCollectionName(config.DatasetsCollection)).InsertOne(ctx, dataset)
+		So(err, ShouldBeNil)
+
+		Convey("When a matching previous series ID is provided", func() {
+			retrieved, err := mongoDB.GetDatasetByPreviousSeriesID(ctx, "previous-series-id")
+
+			Convey("Then the current dataset is returned", func() {
+				So(err, ShouldBeNil)
+				So(retrieved.ID, ShouldEqual, "renamed-dataset")
+			})
+		})
+
+		Convey("When a previous series ID that is not the first entry in the array is provided", func() {
+			retrieved, err := mongoDB.GetDatasetByPreviousSeriesID(ctx, "another-previous-series-id")
+
+			Convey("Then the dataset is still matched", func() {
+				So(err, ShouldBeNil)
+				So(retrieved.ID, ShouldEqual, "renamed-dataset")
+			})
+		})
+
+		Convey("When the current dataset ID is provided rather than a previous one", func() {
+			_, err := mongoDB.GetDatasetByPreviousSeriesID(ctx, "renamed-dataset")
+
+			Convey("Then a DatasetNotFound error is returned", func() {
+				So(err, ShouldEqual, errs.ErrDatasetNotFound)
+			})
+		})
+
+		Convey("When a non-matching previous series ID is provided", func() {
+			_, err := mongoDB.GetDatasetByPreviousSeriesID(ctx, nonExistentDatasetID)
+
+			Convey("Then a DatasetNotFound error is returned", func() {
+				So(err, ShouldEqual, errs.ErrDatasetNotFound)
 			})
 		})
 	})

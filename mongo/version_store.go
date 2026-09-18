@@ -469,3 +469,49 @@ func (m *Mongo) CheckEditionTitleExistsStatic(ctx context.Context, datasetID, ed
 
 	return nil
 }
+
+// GetVersionsStaticByPreviousEditionID retrieves all version documents for a dataset edition
+// by matching the previous edition ID, with pagination.
+func (m *Mongo) GetVersionsStaticByPreviousEditionID(ctx context.Context, datasetID, previousEditionID, state string, offset, limit int) ([]models.Version, int, error) {
+	selector := buildVersionsQueryByPreviousEditionID(datasetID, previousEditionID, state)
+
+	results := []models.Version{}
+	totalCount, err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Find(ctx, selector, &results,
+		mongodriver.Sort(bson.M{"last_updated": -1}),
+		mongodriver.Offset(offset),
+		mongodriver.Limit(limit))
+	if err != nil {
+		return results, 0, err
+	}
+
+	if totalCount < 1 {
+		return nil, 0, errs.ErrVersionNotFound
+	}
+
+	for i := 0; i < len(results); i++ {
+		results[i].Links.Self.HRef = results[i].Links.Version.HRef
+		results[i].DatasetID = datasetID
+	}
+
+	return results, totalCount, nil
+}
+
+func buildVersionsQueryByPreviousEditionID(datasetID, previousEditionID, state string) bson.M {
+	selector := bson.M{
+		"links.dataset.id":    datasetID,
+		"previous_edition_id": previousEditionID,
+	}
+
+	if state == "" {
+		selector["$or"] = []interface{}{
+			bson.M{"state": models.EditionConfirmedState},
+			bson.M{"state": models.AssociatedState},
+			bson.M{"state": models.ApprovedState},
+			bson.M{"state": models.PublishedState},
+		}
+	} else {
+		selector["state"] = state
+	}
+
+	return selector
+}

@@ -2,6 +2,8 @@ package mongo
 
 import (
 	"context"
+	"fmt"
+	"strconv"
 	"testing"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -500,6 +502,89 @@ func TestCheckEditionTitleExistsStatic(t *testing.T) {
 
 			Convey("Then it returns nil (no conflict across datasets)", func() {
 				So(err, ShouldBeNil)
+			})
+		})
+	})
+}
+
+func TestGetVersionsStaticByPreviousEditionID(t *testing.T) {
+	Convey("Given MongoDB is running with versions that have previous edition IDs", t, func() {
+		ctx := context.Background()
+		mongoDB, err := getTestMongoDB(ctx, t)
+		So(err, ShouldBeNil)
+
+		err = mongoDB.Connection.DropDatabase(ctx)
+		So(err, ShouldBeNil)
+
+		versionLinks := func(edition string, version int) *models.VersionLinks {
+			return &models.VersionLinks{
+				Dataset: &models.LinkObject{ID: staticDatasetID},
+				Edition: &models.LinkObject{ID: edition},
+				Self:    &models.LinkObject{},
+				Version: &models.LinkObject{
+					ID:   strconv.Itoa(version),
+					HRef: fmt.Sprintf("/datasets/%s/editions/%s/versions/%d", staticDatasetID, edition, version),
+				},
+			}
+		}
+
+		versions := []*models.Version{
+			{
+				ID:                "renamed-version-1",
+				Version:           1,
+				Edition:           "renamed-edition",
+				State:             models.PublishedState,
+				Links:             versionLinks("renamed-edition", 1),
+				PreviousEditionId: []string{"previous-edition-id", "another-previous-edition-id"},
+			},
+			{
+				ID:                "renamed-version-2",
+				Version:           2,
+				Edition:           "renamed-edition",
+				State:             models.AssociatedState,
+				Links:             versionLinks("renamed-edition", 2),
+				PreviousEditionId: []string{"previous-edition-id"},
+			},
+		}
+
+		for _, version := range versions {
+			_, err = mongoDB.Connection.Collection(mongoDB.ActualCollectionName(config.VersionsCollection)).InsertOne(ctx, version)
+			So(err, ShouldBeNil)
+		}
+
+		Convey("When a matching previous edition ID is provided", func() {
+			retrievedVersions, count, err := mongoDB.GetVersionsStaticByPreviousEditionID(ctx, staticDatasetID, "previous-edition-id", "", 0, 20)
+
+			Convey("Then both versions for the renamed edition are returned", func() {
+				So(err, ShouldBeNil)
+				So(count, ShouldEqual, 2)
+				So(retrievedVersions, ShouldHaveLength, 2)
+
+				for _, v := range retrievedVersions {
+					So(v.Edition, ShouldEqual, "renamed-edition")
+					So(v.DatasetID, ShouldEqual, staticDatasetID)
+					So(v.Links.Self.HRef, ShouldEqual, v.Links.Version.HRef)
+				}
+			})
+		})
+
+		Convey("When the current edition ID is provided rather than a previous one", func() {
+			retrievedVersions, count, err := mongoDB.GetVersionsStaticByPreviousEditionID(ctx, staticDatasetID, "renamed-edition", "", 0, 20)
+
+			Convey("Then no versions are matched", func() {
+				So(err, ShouldEqual, errs.ErrVersionNotFound)
+				So(count, ShouldEqual, 0)
+				So(retrievedVersions, ShouldBeNil)
+			})
+		})
+
+		Convey("When a non-matching previous edition ID is provided", func() {
+			retrievedVersions, count, err := mongoDB.GetVersionsStaticByPreviousEditionID(ctx, staticDatasetID, "non-existent-previous-edition-id", "", 0, 20)
+
+			Convey("Then a VersionNotFound error is returned", func() {
+				So(err, ShouldEqual, errs.ErrVersionNotFound)
+				So(count, ShouldEqual, 0)
+				So(retrievedVersions, ShouldBeNil)
 			})
 		})
 	})
