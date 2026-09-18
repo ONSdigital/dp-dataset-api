@@ -129,9 +129,9 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 	}
 	logAuthOption := log.Auth(identityType, authEntityData.EntityData.UserID)
 
-	if err := utils.ValidateIDNoSpaces(edition); err != nil {
-		log.Error(ctx, "addDatasetVersionCondensed endpoint: edition ID contains spaces", err, logData)
-		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, models.ErrNoSpacesAllowedError, err.Error()))
+	if err := utils.ValidateIDFormat(edition); err != nil {
+		log.Error(ctx, "addDatasetVersionCondensed endpoint: edition ID has invalid format", err, logData)
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, models.ErrInvalidID, err.Error()))
 	}
 
 	// Read body once and validate distributions before unmarshaling
@@ -154,23 +154,23 @@ func (api *DatasetAPI) addDatasetVersionCondensed(w http.ResponseWriter, r *http
 
 	// Validate dataset_id in body (if provided)
 	if versionRequest.DatasetID != "" {
-		if err := utils.ValidateIDNoSpaces(versionRequest.DatasetID); err != nil {
-			log.Error(ctx, "addDatasetVersionCondensed endpoint: dataset ID in request body contains spaces", err, logData)
+		if err := utils.ValidateIDFormat(versionRequest.DatasetID); err != nil {
+			log.Error(ctx, "addDatasetVersionCondensed endpoint: dataset ID in request body has invalid format", err, logData)
 			return nil, models.NewErrorResponse(
 				http.StatusBadRequest,
 				nil,
-				models.NewError(err, models.ErrNoSpacesAllowedError, err.Error()),
+				models.NewError(err, models.ErrInvalidID, err.Error()),
 			)
 		}
 	}
 	// Validate edition in body (if provided)
 	if versionRequest.Edition != "" {
-		if err := utils.ValidateIDNoSpaces(versionRequest.Edition); err != nil {
-			log.Error(ctx, "addDatasetVersionCondensed endpoint: edition ID in request body contains spaces", err, logData)
+		if err := utils.ValidateIDFormat(versionRequest.Edition); err != nil {
+			log.Error(ctx, "addDatasetVersionCondensed endpoint: edition ID in request body has invalid format", err, logData)
 			return nil, models.NewErrorResponse(
 				http.StatusBadRequest,
 				nil,
-				models.NewError(err, models.ErrNoSpacesAllowedError, err.Error()),
+				models.NewError(err, models.ErrInvalidID, err.Error()),
 			)
 		}
 	}
@@ -349,14 +349,14 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 	}
 	logAuthOption := log.Auth(identityType, authEntityData.EntityData.UserID)
 
-	if err := utils.ValidateIDNoSpaces(datasetID); err != nil {
-		log.Error(ctx, "createVersion endpoint: dataset ID contains spaces", err, logData)
-		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, models.ErrNoSpacesAllowedError, err.Error()))
+	if err := utils.ValidateIDFormat(datasetID); err != nil {
+		log.Error(ctx, "createVersion endpoint: dataset ID has invalid format", err, logData)
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, models.ErrInvalidID, err.Error()))
 	}
 
-	if err := utils.ValidateIDNoSpaces(edition); err != nil {
-		log.Error(ctx, "createVersion endpoint: edition ID contains spaces", err, logData)
-		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, models.ErrNoSpacesAllowedError, err.Error()))
+	if err := utils.ValidateIDFormat(edition); err != nil {
+		log.Error(ctx, "createVersion endpoint: edition ID has invalid format", err, logData)
+		return nil, models.NewErrorResponse(http.StatusBadRequest, nil, models.NewError(err, models.ErrInvalidID, err.Error()))
 	}
 
 	// Read body once and validate distributions before unmarshaling
@@ -378,21 +378,21 @@ func (api *DatasetAPI) createVersion(w http.ResponseWriter, r *http.Request) (*m
 	}
 
 	if newVersion.DatasetID != "" {
-		if err := utils.ValidateIDNoSpaces(newVersion.DatasetID); err != nil {
-			log.Error(ctx, "createVersion endpoint: dataset_id in request body contains spaces", err, logData)
+		if err := utils.ValidateIDFormat(newVersion.DatasetID); err != nil {
+			log.Error(ctx, "createVersion endpoint: dataset_id in request body has invalid format", err, logData)
 			return nil, models.NewErrorResponse(
 				http.StatusBadRequest, nil,
-				models.NewError(err, models.ErrNoSpacesAllowedError, err.Error()),
+				models.NewError(err, models.ErrInvalidID, err.Error()),
 			)
 		}
 	}
 
 	if newVersion.Edition != "" {
-		if err := utils.ValidateIDNoSpaces(newVersion.Edition); err != nil {
-			log.Error(ctx, "createVersion endpoint: edition in request body contains spaces", err, logData)
+		if err := utils.ValidateIDFormat(newVersion.Edition); err != nil {
+			log.Error(ctx, "createVersion endpoint: edition in request body has invalid format", err, logData)
 			return nil, models.NewErrorResponse(
 				http.StatusBadRequest, nil,
-				models.NewError(err, models.ErrNoSpacesAllowedError, err.Error()),
+				models.NewError(err, models.ErrInvalidID, err.Error()),
 			)
 		}
 	}

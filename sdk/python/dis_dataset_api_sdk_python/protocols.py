@@ -6,27 +6,6 @@ from typing import Any, Protocol, runtime_checkable
 from .models import Dataset
 
 
-class Response(Protocol):
-    status_code: int
-    text: str
-    content: bytes
-
-    def json(self) -> dict[str, Any]: ...
-
-
-class RequestSession(Protocol):
-    def request(
-        self,
-        *,
-        method: str,
-        url: str,
-        params: dict[str, Any] | None = None,
-        json: dict[str, Any] | None = None,
-        timeout: float,
-        headers: Mapping[str, str | bytes] | None = None,
-    ) -> Response: ...
-
-
 @runtime_checkable
 class Headers(Protocol):
     Authorization: str | None
@@ -59,10 +38,6 @@ class DatasetsClientProtocol(Protocol):
         headers: Headers | None = None,
     ) -> Dataset: ...
 
-
-@runtime_checkable
-class HealthCheckClient(Protocol):
-    def health(self) -> dict[str, Any]: ...
 
 
 @runtime_checkable

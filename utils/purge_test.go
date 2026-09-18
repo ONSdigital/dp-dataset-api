@@ -20,15 +20,51 @@ func TestGeneratePurgePrefixes(t *testing.T) {
 
 			Convey("Then the correct list of URL prefixes is returned", func() {
 				expectedPrefixes := []string{
-					"https://www.example.com/economy/datasets/dataset123",
-					"https://www.example.com/economy/datasets/dataset123/editions",
-					"https://www.example.com/economy/datasets/dataset123/editions/2025/versions",
-					"https://api.example.com/datasets/dataset123",
-					"https://api.example.com/datasets/dataset123/editions",
-					"https://api.example.com/datasets/dataset123/editions/2025/versions",
+					"www.example.com/economy/datasets/dataset123",
+					"www.example.com/economy/datasets/dataset123/editions",
+					"www.example.com/economy/datasets/dataset123/editions/2025/versions",
+					"api.example.com/datasets/dataset123",
+					"api.example.com/datasets/dataset123/editions",
+					"api.example.com/datasets/dataset123/editions/2025/versions",
 				}
 				So(prefixes, ShouldResemble, expectedPrefixes)
 			})
 		})
 	})
+}
+
+func TestRemoveSchemeFromURL(t *testing.T) {
+	tests := []struct {
+		name     string
+		rawURL   string
+		expected string
+	}{
+		{
+			name:     "removes https scheme",
+			rawURL:   "https://www.example.com",
+			expected: "www.example.com",
+		},
+		{
+			name:     "removes http scheme",
+			rawURL:   "http://www.example.com",
+			expected: "www.example.com",
+		},
+		{
+			name:     "preserves URL without scheme",
+			rawURL:   "www.example.com",
+			expected: "www.example.com",
+		},
+	}
+
+	for _, test := range tests {
+		Convey("Given a URL that "+test.name, t, func() {
+			Convey("When removeSchemeFromURL is called", func() {
+				result := removeSchemeFromURL(test.rawURL)
+
+				Convey("Then the expected URL is returned", func() {
+					So(result, ShouldEqual, test.expected)
+				})
+			})
+		})
+	}
 }

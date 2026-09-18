@@ -598,8 +598,8 @@ Feature: Create static version with specified ID in publishing mode
       {
         "errors": [
           {
-            "code": "ErrSpacesNotAllowed",
-            "description": "spaces are not allowed in the ID field"
+            "code": "ErrInvalidID",
+            "description": "id must only contain letters, numbers, and dashes"
           }
         ]
       }

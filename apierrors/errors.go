@@ -56,7 +56,7 @@ var (
 	ErrEditionAlreadyExists                    = errors.New("the edition already exists")
 	ErrEditionTitleAlreadyExists               = errors.New("the edition-title already exists")
 	ErrInvalidDatasetTypeForEditionUpdate      = errors.New("unable to update edition-id, invalid dataset type")
-	ErrSpacesNotAllowedInID                    = errors.New("spaces are not allowed in the ID field")
+	ErrInvalidID                               = errors.New("id must only contain letters, numbers, and dashes")
 	ErrCannotChangeIDForPublishedDataset       = errors.New("cannot change the dataset ID for a published dataset")
 	ErrCannotChangeDatasetIDForMigratedDataset = errors.New("cannot change the dataset ID for a migrated dataset")
 	ErrCannotChangeEditionIDForMigratedEdition = errors.New("cannot change the edition ID for a migrated edition")
@@ -99,7 +99,7 @@ var (
 		ErrInvalidVersion:                     true,
 		ErrInvalidDatasetTypeForEditionUpdate: true,
 		ErrInvalidParamCombination:            true,
-		ErrSpacesNotAllowedInID:               true,
+		ErrInvalidID:                          true,
 	}
 
 	ConflictRequestMap = map[error]bool{

@@ -315,5 +315,5 @@ Feature: Create static dataset in publishing mode
     Then the HTTP status code should be "400"
     And I should receive the following response:
       """
-      spaces are not allowed in the ID field
+      id must only contain letters, numbers, and dashes
       """

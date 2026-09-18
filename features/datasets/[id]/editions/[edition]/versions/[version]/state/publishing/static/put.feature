@@ -314,12 +314,12 @@ Feature: Update static version state in publishing mode
     And the total number of audit events should be 1
     And the number of events with action "UPDATE" and resource "/datasets/static-dataset-publish/editions/2025/versions/1/state" should be 1
     And the following URL prefixes are purged by cloudflare:
-      | http://localhost:20000/economy/datasets/static-dataset-publish                        |
-      | http://localhost:20000/economy/datasets/static-dataset-publish/editions               |
-      | http://localhost:20000/economy/datasets/static-dataset-publish/editions/2025/versions |
-      | http://localhost:23200/v1/datasets/static-dataset-publish                             |
-      | http://localhost:23200/v1/datasets/static-dataset-publish/editions                    |
-      | http://localhost:23200/v1/datasets/static-dataset-publish/editions/2025/versions      |
+      | localhost:20000/economy/datasets/static-dataset-publish                        |
+      | localhost:20000/economy/datasets/static-dataset-publish/editions               |
+      | localhost:20000/economy/datasets/static-dataset-publish/editions/2025/versions |
+      | localhost:23200/v1/datasets/static-dataset-publish                             |
+      | localhost:23200/v1/datasets/static-dataset-publish/editions                    |
+      | localhost:23200/v1/datasets/static-dataset-publish/editions/2025/versions      |
 
   Scenario: Update version state from associated to published
     When I PUT "/datasets/static-dataset-update/editions/2025/versions/1/state"

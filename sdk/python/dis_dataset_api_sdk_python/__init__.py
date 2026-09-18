@@ -5,7 +5,6 @@ from .protocols import (
     DatasetApiClientProtocol,
     DatasetsClientProtocol,
     Headers,
-    HealthCheckClient,
     RequestingClient,
 )
 
@@ -17,7 +16,6 @@ __all__ = [
     "DatasetApiClientProtocol",
     "DatasetsClientProtocol",
     "Headers",
-    "HealthCheckClient",
     "HttpHeaders",
     "NotFoundError",
     "RequestingClient",

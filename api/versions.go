@@ -42,7 +42,7 @@ var (
 		models.ErrVersionStateInvalid:                  true,
 		errs.ErrInvalidBody:                            true,
 		errs.ErrInvalidQueryParameter:                  true,
-		errs.ErrSpacesNotAllowedInID:                   true,
+		errs.ErrInvalidID:                              true,
 	}
 
 	// HTTP 500 responses with a specific message
@@ -417,16 +417,16 @@ func (api *DatasetAPI) putVersion(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if version.Edition != "" {
-			if err := utils.ValidateIDNoSpaces(version.Edition); err != nil {
-				log.Error(ctx, "putVersion endpoint: edition ID in request body contains spaces", err, data)
+			if err := utils.ValidateIDFormat(version.Edition); err != nil {
+				log.Error(ctx, "putVersion endpoint: edition ID in request body has invalid format", err, data)
 				handleVersionAPIErr(ctx, err, w, data)
 				return
 			}
 		}
 
 		if version.DatasetID != "" {
-			if err := utils.ValidateIDNoSpaces(version.DatasetID); err != nil {
-				log.Error(ctx, "putVersion endpoint: dataset ID in request body contains spaces", err, data)
+			if err := utils.ValidateIDFormat(version.DatasetID); err != nil {
+				log.Error(ctx, "putVersion endpoint: dataset ID in request body has invalid format", err, data)
 				handleVersionAPIErr(ctx, err, w, data)
 				return
 			}

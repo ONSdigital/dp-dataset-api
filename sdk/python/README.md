@@ -91,7 +91,7 @@ dataset = client.datasets.get_dataset(
 
 `HttpHeaders` omits `None` values automatically before sending the request.
 
-You can also set default headers on a shared `requests.Session`.
+This SDK is designed to be used with a shared `requests.Session`. Pass one into `create_client()` so your requests reuse connections and can share default headers.
 
 ```python
 import requests

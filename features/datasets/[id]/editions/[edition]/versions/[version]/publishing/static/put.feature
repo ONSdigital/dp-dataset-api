@@ -688,7 +688,7 @@ Feature: Update static version in publishing mode
     Then the HTTP status code should be "400"
     And I should receive the following response:
       """
-            spaces are not allowed in the ID field
+      id must only contain letters, numbers, and dashes
       """
 
   Scenario: Update a version's datasetID field to one containing spaces
@@ -704,7 +704,7 @@ Feature: Update static version in publishing mode
     Then the HTTP status code should be "400"
     And I should receive the following response:
       """
-            spaces are not allowed in the ID field
+      id must only contain letters, numbers, and dashes
       """
 
   Scenario: Update a version to include the is_migration field

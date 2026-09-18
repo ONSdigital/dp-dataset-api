@@ -1147,7 +1147,7 @@ func TestPutVersionForbidden(t *testing.T) {
 
 		Convey("Then it returns 400 and update is not attempted", func() {
 			So(w.Code, ShouldEqual, http.StatusBadRequest)
-			So(w.Body.String(), ShouldContainSubstring, errs.ErrSpacesNotAllowedInID.Error())
+			So(w.Body.String(), ShouldContainSubstring, errs.ErrInvalidID.Error())
 
 			So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 0)
 			So(len(mockedDataStore.AcquireInstanceLockCalls()), ShouldEqual, 0)
@@ -5047,12 +5047,12 @@ func TestPutStateReturnsOk(t *testing.T) {
 
 		Convey("And the correct URL's should have been purged", func() {
 			expectedPrefixes := []string{
-				"http://localhost:20000/economy/datasets/test-static-dataset",
-				"http://localhost:20000/economy/datasets/test-static-dataset/editions",
-				"http://localhost:20000/economy/datasets/test-static-dataset/editions/test-edition-1/versions",
-				"http://localhost:23200/v1/datasets/test-static-dataset",
-				"http://localhost:23200/v1/datasets/test-static-dataset/editions",
-				"http://localhost:23200/v1/datasets/test-static-dataset/editions/test-edition-1/versions",
+				"localhost:20000/economy/datasets/test-static-dataset",
+				"localhost:20000/economy/datasets/test-static-dataset/editions",
+				"localhost:20000/economy/datasets/test-static-dataset/editions/test-edition-1/versions",
+				"localhost:23200/v1/datasets/test-static-dataset",
+				"localhost:23200/v1/datasets/test-static-dataset/editions",
+				"localhost:23200/v1/datasets/test-static-dataset/editions/test-edition-1/versions",
 			}
 
 			So(cloudflareMock.PurgeByPrefixesCalls()[0].Prefixes, ShouldResemble, expectedPrefixes)
