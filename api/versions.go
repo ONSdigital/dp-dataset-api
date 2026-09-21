@@ -61,12 +61,17 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 	datasetID := vars["dataset_id"]
 	edition := vars["edition"]
 	logData := log.Data{"dataset_id": datasetID, "edition": edition}
-	var err error
 
 	list, totalCount, err := func() ([]models.Version, int, error) {
 		var results []models.Version
 		var totalCount int
 		var state string
+
+		datasetID, err := api.resolvePreviousSeriesID(ctx, datasetID, logData)
+		if err != nil {
+			return nil, 0, err
+		}
+
 		attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
 		if attrsErr != nil {
 			return nil, 0, attrsErr
@@ -88,28 +93,23 @@ func (api *DatasetAPI) getVersions(w http.ResponseWriter, r *http.Request, limit
 		if !authorised {
 			state = models.PublishedState
 		}
-		// Check if edition exists based on dataset type
-		if datasetType == models.Static.String() {
-			err = api.dataStore.Backend.CheckEditionExistsStatic(ctx, datasetID, edition, state)
-		} else {
-			err = api.dataStore.Backend.CheckEditionExists(ctx, datasetID, edition, state)
-		}
 
-		if err != nil {
-			log.Error(ctx, "failed to verify edition existence for dataset", err, logData)
-			return nil, 0, err
-		}
-
-		// Retrieve versions based on dataset type
 		if datasetType == models.Static.String() {
-			results, totalCount, err = api.dataStore.Backend.GetVersionsStatic(ctx, datasetID, edition, state, offset, limit)
+			results, totalCount, err = api.getStaticVersions(ctx, datasetID, edition, state, offset, limit, authorised, logData)
+			if err != nil {
+				return nil, 0, err
+			}
 		} else {
+			if err = api.dataStore.Backend.CheckEditionExists(ctx, datasetID, edition, state); err != nil {
+				log.Error(ctx, "failed to verify edition existence for dataset", err, logData)
+				return nil, 0, err
+			}
+
 			results, totalCount, err = api.dataStore.Backend.GetVersions(ctx, datasetID, edition, state, offset, limit)
-		}
-
-		if err != nil {
-			log.Error(ctx, "failed to retrieve versions for dataset edition", err, logData)
-			return nil, 0, err
+			if err != nil {
+				log.Error(ctx, "failed to retrieve versions for dataset edition", err, logData)
+				return nil, 0, err
+			}
 		}
 
 		var hasInvalidState bool
@@ -197,6 +197,11 @@ func (api *DatasetAPI) getVersion(w http.ResponseWriter, r *http.Request) (*mode
 		versionID, err := models.ParseAndValidateVersionNumber(ctx, versionNumber)
 		if err != nil {
 			log.Error(ctx, "getVersion endpoint: invalid version", err, logData)
+			return nil, err
+		}
+
+		datasetID, err := api.resolvePreviousSeriesID(ctx, datasetID, logData)
+		if err != nil {
 			return nil, err
 		}
 
@@ -1069,4 +1074,64 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 	setJSONContentType(w)
 	w.WriteHeader(http.StatusOK)
 	log.Info(ctx, "putState endpoint: request successful", logData)
+}
+
+// getStaticVersions retrieves the versions for a static dataset edition
+func (api *DatasetAPI) getStaticVersions(ctx context.Context, datasetID, edition, state string, offset, limit int, authorised bool, logData log.Data) ([]models.Version, int, error) {
+	err := api.dataStore.Backend.CheckEditionExistsStatic(ctx, datasetID, edition, state)
+	if err == nil {
+		return api.dataStore.Backend.GetVersionsStatic(ctx, datasetID, edition, state, offset, limit)
+	}
+
+	if !authorised || !errors.Is(err, errs.ErrEditionNotFound) {
+		log.Error(ctx, "failed to verify edition existence for dataset", err, logData)
+		return nil, 0, err
+	}
+
+	log.Info(ctx, "edition not found, checking for previous edition IDs", logData)
+
+	results, totalCount, err := api.dataStore.Backend.GetVersionsStaticByPreviousEditionID(ctx, datasetID, edition, state, offset, limit)
+	if err != nil {
+		if errors.Is(err, errs.ErrVersionNotFound) || errors.Is(err, errs.ErrVersionsNotFound) {
+			return nil, 0, errs.ErrEditionNotFound
+		}
+		log.Error(ctx, "failed to retrieve versions by previous edition ID", err, logData)
+		return nil, 0, err
+	}
+
+	log.Info(ctx, "versions found using previous edition ID", logData)
+
+	return results, totalCount, nil
+}
+
+// resolvePreviousSeriesID returns the current dataset ID for the one requested. If the requested ID no
+// longer exists it falls back to matching a previous series ID
+func (api *DatasetAPI) resolvePreviousSeriesID(ctx context.Context, datasetID string, logData log.Data) (string, error) {
+	_, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
+	if err == nil {
+		return datasetID, nil
+	}
+
+	if !errors.Is(err, errs.ErrDatasetNotFound) {
+		log.Error(ctx, "failed to retrieve dataset", err, logData)
+		return "", err
+	}
+
+	log.Info(ctx, "dataset not found, checking for previous series IDs", logData)
+
+	dataset, err := api.dataStore.Backend.GetDatasetByPreviousSeriesID(ctx, datasetID)
+	if err != nil {
+		if errors.Is(err, errs.ErrDatasetNotFound) {
+			return "", errs.ErrDatasetNotFound
+		}
+		log.Error(ctx, "failed to retrieve dataset by previous series ID", err, logData)
+		return "", err
+	}
+
+	log.Info(ctx, "dataset found using previous series ID", log.Data{
+		"requested_dataset_id": datasetID,
+		"matched_dataset_id":   dataset.ID,
+	})
+
+	return dataset.ID, nil
 }
