@@ -90,6 +90,7 @@ func TestBuildVersionsQuery(t *testing.T) {
 				bson.M{"state": "edition-confirmed"},
 				bson.M{"state": "associated"},
 				bson.M{"state": "approved"},
+				bson.M{"state": "publish_failed"},
 				bson.M{"state": "published"},
 			},
 		}
