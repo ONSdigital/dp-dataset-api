@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/models"
@@ -21,6 +22,18 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 	vars := mux.Vars(r)
 	datasetID := vars["dataset_id"]
 	logData := log.Data{"dataset_id": datasetID}
+
+	isPublished := r.URL.Query().Get("is_published")
+
+	if isPublished != "" {
+		logData["is_published"] = isPublished
+		_, err := strconv.ParseBool(isPublished)
+		if err != nil {
+			log.Error(ctx, "getEditions endpoint: invalid 'is_published' parameter", err, logData)
+			handleVersionAPIErr(ctx, errs.ErrInvalidQueryParameter, w, logData)
+			return nil, 0, errs.ErrInvalidQueryParameter
+		}
+	}
 
 	attrs, attrsErr := api.getPermissionAttributesFromRequest(r)
 	if attrsErr != nil {
@@ -46,14 +59,13 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 	if !authorised {
 		state = models.PublishedState
 	}
-
 	logData["state"] = state
 
 	var results []*models.EditionUpdate
 	var totalCount int
 
 	if datasetType == models.Static.String() {
-		results, totalCount, err = api.dataStore.Backend.GetEditionsStatic(ctx, datasetID, state, offset, limit)
+		results, totalCount, err = api.dataStore.Backend.GetEditionsStatic(ctx, datasetID, state, isPublished, offset, limit)
 		if err != nil {
 			log.Error(ctx, "getEditions endpoint: unable to find editions for dataset", err, logData)
 			if err == errs.ErrEditionsNotFound {
@@ -64,7 +76,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 			return nil, 0, err
 		}
 	} else {
-		results, totalCount, err = api.dataStore.Backend.GetEditions(ctx, datasetID, state, offset, limit, authorised)
+		results, totalCount, err = api.dataStore.Backend.GetEditions(ctx, datasetID, state, isPublished, offset, limit, authorised)
 		if err != nil {
 			log.Error(ctx, "getEditions endpoint: unable to find editions for dataset", err, logData)
 			if err == errs.ErrEditionNotFound {
