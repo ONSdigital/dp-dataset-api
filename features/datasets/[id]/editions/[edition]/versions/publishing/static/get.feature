@@ -157,6 +157,41 @@ Feature: List static versions in publishing mode
             "old-edition-1",
             "old-edition-2"
           ]
+        },
+        {
+          "id": "test-static-version-publish-failed",
+          "version": 1,
+          "edition": "test-edition-publish-failed",
+          "edition_title": "Test Edition Publish Failed Title",
+          "links": {
+            "dataset": {
+              "id": "test-static"
+            },
+            "edition": {
+              "href": "/datasets/test-static/editions/test-edition-publish-failed",
+              "id": "test-edition-publish-failed"
+            },
+            "self": {
+              "href": "/datasets/test-static/editions/test-edition-publish-failed/versions/1"
+            },
+            "web_page": {
+              "href": "/economy/datasets/test-static/editions/test-edition-publish-failed/versions/1"
+            }
+          },
+          "state": "publish_failed",
+          "type": "static",
+          "previous_edition_id": [
+            "publish-failed-old-edition-1"
+          ],
+          "distributions": [
+            {
+              "title": "Distribution 1",
+              "format": "csv",
+              "media_type": "text/csv",
+              "download_url": "/uuid/filename.csv",
+              "byte_size": 100000
+            }
+          ]
         }
       ]
       """
@@ -195,6 +230,108 @@ Feature: List static versions in publishing mode
             "previous_edition_id": [
               "approved-old-edition-1",
               "approved-old-edition-2"
+            ],
+            "distributions": [
+              {
+                "title": "Distribution 1",
+                "format": "csv",
+                "media_type": "text/csv",
+                "download_url": "/uuid/filename.csv",
+                "byte_size": 100000
+              }
+            ]
+          }
+        ],
+        "limit": 20,
+        "offset": 0,
+        "total_count": 1
+      }
+      """
+
+  Scenario: List versions includes publish failed versions
+    When I GET "/datasets/test-static/editions/test-edition-publish-failed/versions"
+    Then I should receive the following JSON response with status "200":
+      """
+      {
+        "count": 1,
+        "items": [
+          {
+            "dataset_id": "test-static",
+            "id": "test-static-version-publish-failed",
+            "last_updated": "2021-01-01T00:00:03Z",
+            "type": "static",
+            "version": 1,
+            "state": "publish_failed",
+            "links": {
+              "dataset": {
+                "id": "test-static"
+              },
+              "edition": {
+                "href": "/datasets/test-static/editions/test-edition-publish-failed",
+                "id": "test-edition-publish-failed"
+              },
+              "self": {
+                "href": "/datasets/test-static/editions/test-edition-publish-failed/versions/1"
+              },
+              "web_page": {
+                "href": "/economy/datasets/test-static/editions/test-edition-publish-failed/versions/1"
+              }
+            },
+            "edition": "test-edition-publish-failed",
+            "edition_title": "Test Edition Publish Failed Title",
+            "previous_edition_id": [
+              "publish-failed-old-edition-1"
+            ],
+            "distributions": [
+              {
+                "title": "Distribution 1",
+                "format": "csv",
+                "media_type": "text/csv",
+                "download_url": "/uuid/filename.csv",
+                "byte_size": 100000
+              }
+            ]
+          }
+        ],
+        "limit": 20,
+        "offset": 0,
+        "total_count": 1
+      }
+      """
+
+  Scenario: List versions includes publish failed versions using an edition ID that has since changed
+    When I GET "/datasets/test-static/editions/publish-failed-old-edition-1/versions"
+    Then I should receive the following JSON response with status "200":
+      """
+      {
+        "count": 1,
+        "items": [
+          {
+            "dataset_id": "test-static",
+            "id": "test-static-version-publish-failed",
+            "last_updated": "2021-01-01T00:00:03Z",
+            "type": "static",
+            "version": 1,
+            "state": "publish_failed",
+            "links": {
+              "dataset": {
+                "id": "test-static"
+              },
+              "edition": {
+                "href": "/datasets/test-static/editions/test-edition-publish-failed",
+                "id": "test-edition-publish-failed"
+              },
+              "self": {
+                "href": "/datasets/test-static/editions/test-edition-publish-failed/versions/1"
+              },
+              "web_page": {
+                "href": "/economy/datasets/test-static/editions/test-edition-publish-failed/versions/1"
+              }
+            },
+            "edition": "test-edition-publish-failed",
+            "edition_title": "Test Edition Publish Failed Title",
+            "previous_edition_id": [
+              "publish-failed-old-edition-1"
             ],
             "distributions": [
               {

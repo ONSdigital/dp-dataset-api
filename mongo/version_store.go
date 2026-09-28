@@ -528,6 +528,7 @@ func buildVersionsQueryByPreviousEditionID(datasetID, previousEditionID, state s
 			bson.M{"state": models.EditionConfirmedState},
 			bson.M{"state": models.AssociatedState},
 			bson.M{"state": models.ApprovedState},
+			bson.M{"state": models.PublishFailedState},
 			bson.M{"state": models.PublishedState},
 		}
 	} else {

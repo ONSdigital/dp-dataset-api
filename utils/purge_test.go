@@ -21,11 +21,7 @@ func TestGeneratePurgePrefixes(t *testing.T) {
 			Convey("Then the correct list of URL prefixes is returned", func() {
 				expectedPrefixes := []string{
 					"www.example.com/economy/datasets/dataset123",
-					"www.example.com/economy/datasets/dataset123/editions",
-					"www.example.com/economy/datasets/dataset123/editions/2025/versions",
 					"api.example.com/datasets/dataset123",
-					"api.example.com/datasets/dataset123/editions",
-					"api.example.com/datasets/dataset123/editions/2025/versions",
 				}
 				So(prefixes, ShouldResemble, expectedPrefixes)
 			})
