@@ -195,6 +195,7 @@ type Edition struct {
 	IsBasedOn          *IsBasedOn          `bson:"is_based_on,omitempty"         json:"is_based_on,omitempty"`
 	Type               string              `bson:"type,omitempty"                json:"type,omitempty"`
 	QualityDesignation QualityDesignation  `bson:"quality_designation,omitempty" json:"quality_designation,omitempty"`
+	RelatedContent     *[]GeneralDetails   `bson:"related_content,omitempty"     json:"related_content,omitempty"`
 }
 
 // DatasetEdition represents a dataset edition
