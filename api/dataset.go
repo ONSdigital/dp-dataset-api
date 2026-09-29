@@ -888,7 +888,7 @@ func (api *DatasetAPI) deleteDataset(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		} else {
-			editionDocs, _, err := api.dataStore.Backend.GetEditions(ctx, currentDataset.ID, "", 0, 0, true)
+			editionDocs, _, err := api.dataStore.Backend.GetEditions(ctx, currentDataset.ID, "", "", 0, 0, true)
 			if err != nil && err != errs.ErrEditionNotFound {
 				return fmt.Errorf("failed to get editions: %w", err)
 			}

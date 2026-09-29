@@ -189,6 +189,108 @@ Feature: List static editions in publishing mode (permissions)
       }
       """
 
+  Scenario: List editions as an admin user with published=true
+    Given I am an admin user
+    When I GET "/datasets/population-estimates/editions?published=true"
+    Then I should receive the following JSON response with status "200":
+      """
+      {
+        "count": 1,
+        "items": [
+          {
+            "current": {
+              "edition": "January",
+              "edition_title": "January Edition Title",
+              "links": {
+                "dataset": {
+                  "id": "population-estimates"
+                },
+                "latest_version": {
+                  "href": "/datasets/population-estimates/editions/January/versions/1",
+                  "id": "1"
+                },
+                "self": {
+                  "href": "/datasets/population-estimates/editions/January",
+                  "id": "January"
+                },
+                "versions": {
+                  "href": "/datasets/population-estimates/editions/January/versions"
+                }
+              },
+              "release_date": "2025-01-01T07:00:00.000Z",
+              "state": "published",
+              "version": 1
+            },
+            "next": {
+              "edition": "January",
+              "edition_title": "January Edition Title",
+              "links": {
+                "dataset": {
+                  "id": "population-estimates"
+                },
+                "latest_version": {
+                  "href": "/datasets/population-estimates/editions/January/versions/2",
+                  "id": "2"
+                },
+                "self": {
+                  "href": "/datasets/population-estimates/editions/January",
+                  "id": "January"
+                },
+                "versions": {
+                  "href": "/datasets/population-estimates/editions/January/versions"
+                }
+              },
+              "release_date": "2025-03-01T07:00:00.000Z",
+              "state": "associated",
+              "version": 2
+            }
+          }
+        ],
+        "limit": 20,
+        "offset": 0,
+        "total_count": 2
+      }
+      """
+
+  Scenario: List editions as an admin user with published=false
+  Given I am an admin user
+  When I GET "/datasets/population-estimates/editions?published=false"
+  Then I should receive the following JSON response with status "200":
+    """
+    {
+      "count": 1,
+      "items": [
+        {
+          "next": {
+            "edition": "February",
+            "edition_title": "February Edition Title",
+            "links": {
+              "dataset": {
+                "id": "population-estimates"
+              },
+              "latest_version": {
+                "href": "/datasets/population-estimates/editions/February/versions/1",
+                "id": "1"
+              },
+              "self": {
+                "href": "/datasets/population-estimates/editions/February",
+                "id": "February"
+              },
+              "versions": {
+                "href": "/datasets/population-estimates/editions/February/versions"
+              }
+            },
+            "release_date": "2025-02-01T07:00:00.000Z",
+            "state": "associated",
+            "version": 1
+          }
+        }
+      ],
+      "limit": 20,
+      "offset": 0,
+      "total_count": 2
+    }
+    """
   Scenario: List editions as an admin user with limit and offset
     Given I am an admin user
     When I GET "/datasets/population-estimates/editions?limit=1&offset=1"
