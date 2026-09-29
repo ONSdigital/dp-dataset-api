@@ -3,7 +3,6 @@ import unittest
 from unittest.mock import Mock
 
 import requests
-
 from dis_dataset_api_sdk_python import (
     DatasetApiClientProtocol,
     DatasetsClientProtocol,
