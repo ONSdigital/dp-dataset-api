@@ -341,7 +341,7 @@ func TestGetEditionsStatic(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(versions, ShouldNotBeEmpty)
 
-		Convey("When GetEditionsStatic is called with no state or is_published filter", func() {
+		Convey("When GetEditionsStatic is called with no state or published filter", func() {
 			retrievedEditions, count, err := mongoStore.GetEditionsStatic(ctx, staticDatasetID, "", "", 0, 20)
 
 			Convey("Then it returns the expected total number of unique editions", func() {
@@ -394,7 +394,7 @@ func TestGetEditionsStatic(t *testing.T) {
 			})
 		})
 
-		Convey("When GetEditionsStatic is called with the is_published query parameter set to `true`", func() {
+		Convey("When GetEditionsStatic is called with the `published` query parameter set to `true`", func() {
 			retrievedEditions, count, err := mongoStore.GetEditionsStatic(ctx, staticDatasetID, "", "true", 0, 20)
 
 			Convey("Then it only returns editions that have published versions", func() {
@@ -408,7 +408,7 @@ func TestGetEditionsStatic(t *testing.T) {
 			})
 		})
 
-		Convey("When GetEditionsStatic is called with the is_published query parameter set to `false`", func() {
+		Convey("When GetEditionsStatic is called with the `published` query parameter set to `false`", func() {
 			retrievedEditions, count, err := mongoStore.GetEditionsStatic(ctx, staticDatasetID, "", "false", 0, 20)
 
 			Convey("Then it only returns editions that have unpublished versions", func() {

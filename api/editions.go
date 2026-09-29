@@ -43,22 +43,23 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 		authorised = api.checkUserPermission(r, logData, datasetEditionVersionReadPermission, nil)
 	}
 
-	isPublished := r.URL.Query().Get("published")
-	if isPublished != "" {
-		logData["published"] = isPublished
-		_, err := strconv.ParseBool(isPublished)
-		if err != nil {
-			log.Error(ctx, "getEditions endpoint: invalid 'published' parameter", err, logData)
-			handleVersionAPIErr(ctx, errs.ErrInvalidQueryParameter, w, logData)
-			return nil, 0, errs.ErrInvalidQueryParameter
-		}
-	}
-
 	var state string
+	var isPublished string
+
 	if !authorised {
 		state = models.PublishedState
-		// Ignore `published` query param in web mode
 		isPublished = ""
+	} else {
+		isPublished = r.URL.Query().Get("published")
+		if isPublished != "" {
+			logData["published"] = isPublished
+			_, err := strconv.ParseBool(isPublished)
+			if err != nil {
+				log.Error(ctx, "getEditions endpoint: invalid 'published' parameter", err, logData)
+				handleVersionAPIErr(ctx, errs.ErrInvalidQueryParameter, w, logData)
+				return nil, 0, errs.ErrInvalidQueryParameter
+			}
+		}
 	}
 	logData["state"] = state
 

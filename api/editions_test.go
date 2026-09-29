@@ -179,8 +179,8 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 		So(err, ShouldEqual, nil)
 	})
 
-	Convey("get published editions when the dataset type is static and 'is_published' query param is true", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions?is_published=true", http.NoBody)
+	Convey("get published editions when the dataset type is static and 'published' query param is true", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions?published=true", http.NoBody)
 		r = mux.SetURLVars(r, map[string]string{"dataset_id": "123-456"})
 		w := httptest.NewRecorder()
 
@@ -253,8 +253,8 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 		So(err, ShouldEqual, nil)
 	})
 
-	Convey("get published editions when the dataset type is static and 'is_published' query param is false", t, func() {
-		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions?is_published=false", http.NoBody)
+	Convey("get published editions when the dataset type is static and 'published' query param is false", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions?published=false", http.NoBody)
 		r = mux.SetURLVars(r, map[string]string{"dataset_id": "123-456"})
 		w := httptest.NewRecorder()
 

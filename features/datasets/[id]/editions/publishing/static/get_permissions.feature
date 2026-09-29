@@ -189,9 +189,9 @@ Feature: List static editions in publishing mode (permissions)
       }
       """
 
-  Scenario: List editions as an admin user with is_published=true
+  Scenario: List editions as an admin user with published=true
     Given I am an admin user
-    When I GET "/datasets/population-estimates/editions?is_published=true"
+    When I GET "/datasets/population-estimates/editions?published=true"
     Then I should receive the following JSON response with status "200":
       """
       {
@@ -252,9 +252,9 @@ Feature: List static editions in publishing mode (permissions)
       }
       """
 
-  Scenario: List editions as an admin user with is_published=false
+  Scenario: List editions as an admin user with published=false
   Given I am an admin user
-  When I GET "/datasets/population-estimates/editions?is_published=false"
+  When I GET "/datasets/population-estimates/editions?published=false"
   Then I should receive the following JSON response with status "200":
     """
     {
