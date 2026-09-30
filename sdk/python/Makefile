@@ -1,10 +1,13 @@
-.PHONY: install test lint format typecheck audit
+.PHONY: install test test-cov lint format typecheck audit
 
 install:
 	poetry install
 
 test:
-	poetry run python -m unittest discover -s tests -v
+	poetry run pytest tests/ -v
+
+test-cov:
+	poetry run pytest tests/ -v --cov=dis_dataset_api_sdk_python --cov-report=term-missing
 
 lint:
 	poetry run ruff check .

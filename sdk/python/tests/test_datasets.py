@@ -1,55 +1,28 @@
-import json
-import unittest
-from unittest.mock import Mock
+"""Tests for datasets resource."""
+from __future__ import annotations
 
-import requests
+import pytest
 from dis_dataset_api_sdk_python import (
+    ApiError,
+    Dataset,
+    DatasetApiClient,
     DatasetApiClientProtocol,
     DatasetsClientProtocol,
     Headers,
+    NotFoundError,
 )
-from dis_dataset_api_sdk_python.client import DatasetApiClient
-from dis_dataset_api_sdk_python.exceptions import ApiError, NotFoundError
-from dis_dataset_api_sdk_python.models import Dataset
+from dis_dataset_api_sdk_python.models import (
+    DatasetEditionsList,
+    DatasetsList,
+    QueryParams,
+)
 
 
-def make_response(status_code: int, payload: dict | None = None) -> requests.Response:
-    response = requests.Response()
-    response.status_code = status_code
-    response._content = json.dumps(payload if payload is not None else {}).encode(
-        "utf-8"
-    )
-    response.headers["Content-Type"] = "application/json"
-    response.encoding = "utf-8"
-    return response
+class TestGetDataset:
+    """Tests for get_dataset() endpoint."""
 
-
-def make_session(response: requests.Response) -> tuple[requests.Session, Mock]:
-    session = requests.Session()
-    request_mock = Mock(return_value=response)
-    session.request = request_mock  # type: ignore[assignment]
-    return session, request_mock
-
-
-class FakeHeaders:
-    def __init__(
-        self,
-        authorization: str | None = None,
-        collection_id: str | None = None,
-        download_service_token: str | None = None,
-        if_match: str | None = None,
-    ) -> None:
-        self.Authorization = authorization
-        self.CollectionID = collection_id
-        self.DownloadServiceToken = download_service_token
-        self.IfMatch = if_match
-
-    def to_http_headers(self) -> dict[str, str]:
-        return {"CollectionID": "collection-123", "IfMatch": "etag-1"}
-
-
-class DatasetEndpointTests(unittest.TestCase):
-    def test_get_dataset_returns_pydantic_model(self) -> None:
+    def test_returns_pydantic_model(self, make_session, make_response):
+        """get_dataset() returns Dataset model."""
         session, _ = make_session(
             make_response(200, {"id": "abc", "title": "A dataset"})
         )
@@ -57,52 +30,195 @@ class DatasetEndpointTests(unittest.TestCase):
 
         result = client.datasets.get_dataset("abc")
 
-        self.assertIsInstance(result, Dataset)
-        self.assertEqual(result.id, "abc")
+        assert isinstance(result, Dataset)
+        assert result.id == "abc"
 
-    def test_get_dataset_passes_header_mapping(self) -> None:
+    def test_passes_header_mapping(self, make_session, make_response, fake_headers):
+        """get_dataset() passes header mapping to request."""
         session, request_mock = make_session(make_response(200, {"id": "abc"}))
         client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
 
-        headers = FakeHeaders()
+        headers = fake_headers()
         client.datasets.get_dataset("abc", headers=headers)
 
-        self.assertEqual(
-            request_mock.call_args.kwargs["headers"],
-            {"CollectionID": "collection-123", "IfMatch": "etag-1"},
-        )
+        assert request_mock.call_args.kwargs["headers"] == {
+            "CollectionID": "collection-123",
+            "IfMatch": "etag-1",
+        }
 
-    def test_get_dataset_404_raises_not_found(self) -> None:
+    def test_404_raises_not_found(self, make_session, make_response):
+        """get_dataset() raises NotFoundError on 404."""
         session, _ = make_session(make_response(404, {"error": "not found"}))
         client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
 
-        with self.assertRaises(NotFoundError):
+        with pytest.raises(NotFoundError):
             client.datasets.get_dataset("missing")
 
-    def test_get_dataset_500_raises_api_error_with_status(self) -> None:
+    def test_500_raises_api_error_with_status(self, make_session, make_response):
+        """get_dataset() raises ApiError with status on 500."""
         session, _ = make_session(make_response(500, {"error": "server error"}))
         client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
 
-        with self.assertRaises(ApiError) as exc:
+        with pytest.raises(ApiError) as exc_info:
             client.datasets.get_dataset("abc")
 
-        self.assertEqual(exc.exception.status_code, 500)
+        assert exc_info.value.status_code == 500
 
-    def test_fake_headers_conform_to_headers_protocol(self) -> None:
-        self.assertIsInstance(FakeHeaders(), Headers)
 
-    def test_datasets_conforms_to_protocol(self) -> None:
+class TestGetDatasetByPath:
+    """Tests for get_dataset_by_path() endpoint."""
+
+    def test_trims_slashes_and_returns_model(self, make_session, make_response, fake_headers):
+        """get_dataset_by_path() trims slashes and returns Dataset model."""
+        session, request_mock = make_session(
+            make_response(200, {"id": "abc", "title": "A dataset"})
+        )
+        client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
+
+        result = client.datasets.get_dataset_by_path(
+            "/economy/gross-domestic-product/",
+            headers=fake_headers(),
+        )
+
+        assert isinstance(result, Dataset)
+        assert result.id == "abc"
+        assert (
+            request_mock.call_args.kwargs["url"]
+            == "https://dp-dataset-api/economy/gross-domestic-product"
+        )
+        assert request_mock.call_args.kwargs["headers"] == {
+            "CollectionID": "collection-123",
+            "IfMatch": "etag-1",
+        }
+
+
+class TestGetDatasetEditions:
+    """Tests for get_dataset_editions() endpoint."""
+
+    def test_passes_query_params_and_returns_model(
+        self, make_session, make_response, fake_headers
+    ):
+        """get_dataset_editions() passes query params and returns model."""
+        session, request_mock = make_session(
+            make_response(
+                200,
+                {
+                    "items": [{"dataset_id": "abc", "edition": "2024"}],
+                    "count": 1,
+                    "offset": 5,
+                    "limit": 10,
+                    "total_count": 1,
+                },
+            )
+        )
+        client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
+
+        result, error = client.datasets.get_dataset_editions(
+            headers=fake_headers(),
+            query_params=QueryParams(limit=10, offset=5, state="published"),
+        )
+
+        assert error is None
+        assert isinstance(result, DatasetEditionsList)
+        assert result.count == 1
+        assert request_mock.call_args.kwargs["params"] == {
+            "limit": 10,
+            "offset": 5,
+            "state": "published",
+        }
+
+    def test_returns_validation_error_without_request(
+        self, make_session, make_response, fake_headers
+    ):
+        """get_dataset_editions() returns error without making request on validation error."""
+        session, request_mock = make_session(make_response(200, {}))
+        client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
+
+        result, error = client.datasets.get_dataset_editions(
+            headers=fake_headers(),
+            query_params=QueryParams(limit=-1),
+        )
+
+        assert error == "negative offsets or limits are not allowed"
+        assert isinstance(result, DatasetEditionsList)
+        assert result.items is None
+        request_mock.assert_not_called()
+
+
+class TestGetDatasets:
+    """Tests for get_datasets() endpoint."""
+
+    def test_passes_query_params_and_returns_model(
+        self, make_session, make_response, fake_headers
+    ):
+        """get_datasets() passes query params and returns model."""
+        session, request_mock = make_session(
+            make_response(
+                200,
+                {
+                    "items": [{"id": "abc"}],
+                    "count": 1,
+                    "offset": 2,
+                    "limit": 10,
+                    "total_count": 1,
+                },
+            )
+        )
+        client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
+
+        result, error = client.datasets.get_datasets(
+            headers=fake_headers(),
+            query_params=QueryParams(limit=10, offset=2, is_based_on="source-id"),
+        )
+
+        assert error is None
+        assert isinstance(result, DatasetsList)
+        assert result.total_count == 1
+        assert request_mock.call_args.kwargs["params"] == {
+            "offset": 2,
+            "limit": 10,
+            "is_based_on": "source-id",
+        }
+
+    def test_returns_validation_error_without_request(
+        self, make_session, make_response, fake_headers
+    ):
+        """get_datasets() returns error without making request on validation error."""
+        session, request_mock = make_session(make_response(200, {}))
+        client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
+
+        result, error = client.datasets.get_datasets(
+            headers=fake_headers(),
+            query_params=QueryParams(offset=-1),
+        )
+
+        assert error == "negative offsets or limits are not allowed"
+        assert isinstance(result, DatasetsList)
+        assert result.items == []
+        assert result.count == 0
+        assert result.offset == 0
+        assert result.limit == 0
+        assert result.total_count == 0
+        request_mock.assert_not_called()
+
+
+class TestDatasetsProtocol:
+    """Tests for protocol conformance."""
+
+    def test_fake_headers_conform_to_headers_protocol(self, fake_headers):
+        """FakeHeaders conforms to Headers protocol."""
+        assert isinstance(fake_headers(), Headers)
+
+    def test_datasets_conforms_to_protocol(self, make_session, make_response):
+        """client.datasets conforms to DatasetsClientProtocol."""
         session, _ = make_session(make_response(200, {"id": "abc"}))
         client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
 
-        self.assertIsInstance(client.datasets, DatasetsClientProtocol)
+        assert isinstance(client.datasets, DatasetsClientProtocol)
 
-    def test_client_conforms_to_dataset_api_client_protocol(self) -> None:
+    def test_client_conforms_to_dataset_api_client_protocol(self, make_session, make_response):
+        """DatasetApiClient conforms to DatasetApiClientProtocol."""
         session, _ = make_session(make_response(200, {"id": "abc"}))
         client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
 
-        self.assertIsInstance(client, DatasetApiClientProtocol)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert isinstance(client, DatasetApiClientProtocol)
