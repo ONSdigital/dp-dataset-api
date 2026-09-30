@@ -29,13 +29,15 @@ pip install "git+https://github.com/ONSdigital/dp-dataset-api.git@<release-tag>#
 from dis_dataset_api_sdk_python import (
     ApiError,
     AuthenticationError,
-    Dataset,
+    DatasetApiClient,
     DatasetApiClientProtocol,
-    HttpHeaders,
+    DatasetsClientProtocol,
+    EditionsClientProtocol,
     Headers,
+    HttpHeaders,
     NotFoundError,
-    RequestingClient,
     ValidationError,
+    VersionsClientProtocol,
     create_client,
 )
 ```
@@ -51,14 +53,9 @@ health = client.health()
 print(health)
 ```
 
-## Get Dataset
+## Working with datasets
 
-client = create_client(base_url="https://api.example.com", timeout=5.0)
-```
-
-## Get dataset
-
-The `datasets` resource provides access to dataset operations. Use `client.datasets.get_dataset()` to retrieve a validated Pydantic `Dataset` model.
+Use the `datasets` resource for dataset lookups.
 
 ```python
 from dis_dataset_api_sdk_python import create_client
@@ -70,6 +67,53 @@ print(dataset.id)
 print(dataset.title)
 print(dataset.model_dump())
 ```
+
+The dataset resource also exposes:
+
+- `client.datasets.get_dataset_by_path(...)`
+- `client.datasets.get_dataset_editions(...)`
+- `client.datasets.get_datasets(...)`
+
+## Working with editions
+
+Use the `editions` resource for edition lookups.
+
+```python
+from dis_dataset_api_sdk_python import create_client
+
+client = create_client(base_url="https://api.example.com")
+edition = client.editions.get_edition("my-dataset-id", "2024")
+
+print(edition.id)
+print(edition.edition)
+```
+
+The editions resource also exposes:
+
+- `client.editions.get_editions(...)`
+
+## Working with versions
+
+Use the `versions` resource for version lookups.
+
+```python
+from dis_dataset_api_sdk_python import create_client
+
+client = create_client(base_url="https://api.example.com")
+version = client.versions.get_version("my-dataset-id", "2024", "1")
+
+print(version.id)
+print(version.version)
+```
+
+The versions resource also exposes:
+
+- `client.versions.get_version_metadata(...)`
+- `client.versions.get_version_dimensions(...)`
+- `client.versions.get_version_dimension_options(...)`
+- `client.versions.get_versions(...)`
+- `client.versions.get_versions_in_batches(...)`
+- `client.versions.get_versions_in_batches_with_query_params(...)`
 
 ## Headers and authentication
 
@@ -83,8 +127,10 @@ client = create_client(base_url="https://api.example.com")
 dataset = client.datasets.get_dataset(
     "my-dataset-id",
     headers=HttpHeaders(
-        Authorization="Bearer YOUR_TOKEN",
-        CollectionID="my-collection-id",
+        authorization="Bearer YOUR_TOKEN",
+        collection_id="my-collection-id",
+        if_match="etag-1",
+        download_service_token="download-token",
     ),
 )
 ```
@@ -96,7 +142,7 @@ This SDK is designed to be used with a shared `requests.Session`. Pass one into 
 ```python
 import requests
 
-from dis_dataset_api_sdk_python import DatasetApiClient
+from dis_dataset_api_sdk_python import create_client
 
 session = requests.Session()
 session.headers.update({"Authorization": "Bearer YOUR_TOKEN"})
@@ -106,7 +152,6 @@ client = create_client(
     session=session,
 )
 ```
-
 
 ## Error handling
 
@@ -124,7 +169,7 @@ from dis_dataset_api_sdk_python import (
 client = create_client(base_url="https://api.example.com")
 
 try:
-    dataset = client.get_dataset("my-dataset-id")
+    dataset = client.datasets.get_dataset("my-dataset-id")
 except NotFoundError:
     print("Dataset does not exist")
 except AuthenticationError:
@@ -133,6 +178,14 @@ except ValidationError as exc:
     print(f"Validation failed: {exc}")
 except ApiError as exc:
     print(f"API failed: status={exc.status_code} message={exc}")
+```
+
+Some list-style methods return `(result, error)` instead of raising for parameter validation errors. For example:
+
+```python
+datasets, error = client.datasets.get_datasets(headers=HttpHeaders())
+if error is not None:
+    print(error)
 ```
 
 ## Development commands
