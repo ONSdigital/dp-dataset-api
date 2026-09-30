@@ -111,6 +111,13 @@ Feature: List static editions in web mode
               "byte_size": 100000
             }
           ],
+          "related_content": [
+            {
+              "title": "Related Content Title",
+              "description": "Related content description",
+              "href": "https://example.com/related-content"
+            }
+          ],
           "release_date": "2025-01-01T07:00:00.000Z"
         }
       ]
@@ -151,6 +158,13 @@ Feature: List static editions in web mode
                 "media_type": "text/csv",
                 "download_url": "/uuid/filename.csv",
                 "byte_size": 100000
+              }
+            ],
+            "related_content": [
+              {
+                "title": "Related Content Title",
+                "description": "Related content description",
+                "href": "https://example.com/related-content"
               }
             ],
             "release_date": "2025-01-01T07:00:00.000Z"
