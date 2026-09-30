@@ -5,7 +5,6 @@ from unittest.mock import Mock
 
 import pytest
 import requests
-
 from dis_dataset_api_sdk_python import (
     ApiError,
     AuthenticationError,
