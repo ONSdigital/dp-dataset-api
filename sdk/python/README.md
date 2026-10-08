@@ -79,7 +79,7 @@ Use the `datasets` resource for dataset lookups.
 ```python
 from dis_dataset_api_sdk_python import create_client
 
-client = create_client(base_url="https://api.example.com")
+client = create_client(base_url="http://localhost:22000")
 dataset = client.datasets.get_dataset("my-dataset-id")
 
 print(dataset.id)
@@ -100,7 +100,7 @@ Use the `editions` resource for edition lookups.
 ```python
 from dis_dataset_api_sdk_python import create_client
 
-client = create_client(base_url="https://api.example.com")
+client = create_client(base_url="http://localhost:22000")
 edition = client.editions.get_edition("my-dataset-id", "2024")
 
 print(edition.id)
@@ -118,7 +118,7 @@ Use the `versions` resource for version lookups.
 ```python
 from dis_dataset_api_sdk_python import create_client
 
-client = create_client(base_url="https://api.example.com")
+client = create_client(base_url="http://localhost:22000")
 version = client.versions.get_version("my-dataset-id", "2024", "1")
 
 print(version.id)
@@ -141,7 +141,7 @@ You can pass per-request headers using `HttpHeaders`.
 ```python
 from dis_dataset_api_sdk_python import HttpHeaders, create_client
 
-client = create_client(base_url="https://api.example.com")
+client = create_client(base_url="http://localhost:22000")
 
 dataset = client.datasets.get_dataset(
     "my-dataset-id",
@@ -167,7 +167,7 @@ session = requests.Session()
 session.headers.update({"Authorization": "Bearer YOUR_TOKEN"})
 
 client = create_client(
-    base_url="https://api.example.com",
+    base_url="http://localhost:22000",
     session=session,
 )
 ```
@@ -185,7 +185,7 @@ from dis_dataset_api_sdk_python import (
     create_client,
 )
 
-client = create_client(base_url="https://api.example.com")
+client = create_client(base_url="http://localhost:22000")
 
 try:
     dataset = client.datasets.get_dataset("my-dataset-id")
