@@ -42,6 +42,25 @@ from dis_dataset_api_sdk_python import (
 )
 ```
 
+## SDK Methods Reference
+
+| Method | HTTP Endpoint | Description |
+|--------|---------------|-------------|
+| `client.health()` | `GET /health` | Check API health status |
+| `client.datasets.get_dataset()` | `GET /datasets/{dataset_id}` | Get a specific dataset |
+| `client.datasets.get_dataset_by_path()` | `GET /{path}` | Get dataset by custom path |
+| `client.datasets.get_dataset_editions()` | `GET /dataset-editions` | Get all dataset editions with optional filters |
+| `client.datasets.get_datasets()` | `GET /datasets` | Get all datasets with optional filters |
+| `client.editions.get_edition()` | `GET /datasets/{dataset_id}/editions/{edition_id}` | Get a specific edition |
+| `client.editions.get_editions()` | `GET /datasets/{dataset_id}/editions` | Get all editions for a dataset |
+| `client.versions.get_version()` | `GET /datasets/{dataset_id}/editions/{edition_id}/versions/{version_id}` | Get a specific version |
+| `client.versions.get_version_metadata()` | `GET /datasets/{dataset_id}/editions/{edition_id}/versions/{version_id}/metadata` | Get version metadata |
+| `client.versions.get_version_dimensions()` | `GET /datasets/{dataset_id}/editions/{edition_id}/versions/{version_id}/dimensions` | Get version dimensions |
+| `client.versions.get_version_dimension_options()` | `GET /datasets/{dataset_id}/editions/{edition_id}/versions/{version_id}/dimensions/{dimension_id}/options` | Get dimension options for a version |
+| `client.versions.get_versions()` | `GET /datasets/{dataset_id}/editions/{edition_id}/versions` | Get all versions for an edition |
+| `client.versions.get_versions_in_batches()` | `GET /datasets/{dataset_id}/editions/{edition_id}/versions` | Fetch all versions in batches with concurrent requests |
+| `client.versions.get_versions_in_batches_with_query_params()` | `GET /datasets/{dataset_id}/editions/{edition_id}/versions` | Fetch versions in batches with pagination and concurrent requests |
+
 ## Quick Start
 
 ```python
@@ -191,9 +210,11 @@ if error is not None:
 ## Development commands
 
 ```bash
-make test
-make typecheck
-make lint
-make format
-make audit
+make install      # Install dependencies (main only)
+make install-dev  # Install dependencies (including dev)
+make format       # Format the code
+make lint         # Run linting checks
+make mypy         # Run type checking
+make test         # Run tests with coverage
+make audit        # Check for vulnerabilities
 ```
