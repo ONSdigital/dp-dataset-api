@@ -1,6 +1,7 @@
 #!/bin/bash -eux
 
 pushd dp-dataset-api
-  make lint-go
-  ruff check ./sdk/python
+  pip install poetry
+  make -C sdk/python install-dev
+  make lint
 popd
