@@ -38,6 +38,11 @@ func TestMapVersionToEdition(t *testing.T) {
 			Distributions:      &[]models.Distribution{{Title: "Test distribution"}},
 			QualityDesignation: "Test quality designation",
 			IsMigration:        &trueVal,
+			RelatedContent: &[]models.GeneralDetails{{
+				Title:       "Related Content Title",
+				Description: "Related content description",
+				HRef:        "https://example.com/related-content",
+			}},
 		}
 
 		Convey("When the version is mapped to an edition", func() {
@@ -62,6 +67,7 @@ func TestMapVersionToEdition(t *testing.T) {
 				So(edition.Distributions, ShouldResemble, version.Distributions)
 				So(edition.QualityDesignation, ShouldEqual, version.QualityDesignation)
 				So(edition.IsMigration, ShouldResemble, version.IsMigration)
+				So(edition.RelatedContent, ShouldResemble, version.RelatedContent)
 			})
 		})
 	})
@@ -97,6 +103,11 @@ func TestMapVersionsToEditions(t *testing.T) {
 			QualityDesignation: "Test quality designation",
 			State:              models.PublishedState,
 			IsMigration:        &trueVal,
+			RelatedContent: &[]models.GeneralDetails{{
+				Title:       "Test related content title",
+				Description: "Test related content description",
+				HRef:        "https://example.com/related-content",
+			}},
 		}
 
 		unpublishedVersion := &models.Version{
@@ -125,6 +136,11 @@ func TestMapVersionsToEditions(t *testing.T) {
 			QualityDesignation: "Test quality designation",
 			State:              models.AssociatedState,
 			IsMigration:        &falseVal,
+			RelatedContent: &[]models.GeneralDetails{{
+				Title:       "Test related content title",
+				Description: "Test related content description",
+				HRef:        "https://example.com/related-content",
+			}},
 		}
 
 		Convey("When both versions are available", func() {
@@ -150,6 +166,7 @@ func TestMapVersionsToEditions(t *testing.T) {
 				So(edition.Current.QualityDesignation, ShouldEqual, publishedVersion.QualityDesignation)
 				So(edition.Current.State, ShouldEqual, publishedVersion.State)
 				So(edition.Current.IsMigration, ShouldResemble, publishedVersion.IsMigration)
+				So(edition.Current.RelatedContent, ShouldResemble, publishedVersion.RelatedContent)
 			})
 
 			Convey("And the unpublished version should be mapped to the 'Next' field", func() {
@@ -171,6 +188,7 @@ func TestMapVersionsToEditions(t *testing.T) {
 				So(edition.Next.QualityDesignation, ShouldEqual, unpublishedVersion.QualityDesignation)
 				So(edition.Next.State, ShouldEqual, unpublishedVersion.State)
 				So(edition.Next.IsMigration, ShouldResemble, unpublishedVersion.IsMigration)
+				So(edition.Next.RelatedContent, ShouldResemble, unpublishedVersion.RelatedContent)
 			})
 		})
 
@@ -197,6 +215,7 @@ func TestMapVersionsToEditions(t *testing.T) {
 				So(edition.Current.QualityDesignation, ShouldEqual, publishedVersion.QualityDesignation)
 				So(edition.Current.State, ShouldEqual, publishedVersion.State)
 				So(edition.Current.IsMigration, ShouldResemble, publishedVersion.IsMigration)
+				So(edition.Current.RelatedContent, ShouldResemble, publishedVersion.RelatedContent)
 
 				So(edition.Next.DatasetID, ShouldEqual, publishedVersion.DatasetID)
 				So(edition.Next.Edition, ShouldEqual, publishedVersion.Edition)
@@ -216,6 +235,7 @@ func TestMapVersionsToEditions(t *testing.T) {
 				So(edition.Next.QualityDesignation, ShouldEqual, publishedVersion.QualityDesignation)
 				So(edition.Next.State, ShouldEqual, publishedVersion.State)
 				So(edition.Next.IsMigration, ShouldResemble, publishedVersion.IsMigration)
+				So(edition.Next.RelatedContent, ShouldResemble, publishedVersion.RelatedContent)
 			})
 		})
 
@@ -243,6 +263,7 @@ func TestMapVersionsToEditions(t *testing.T) {
 				So(edition.Next.QualityDesignation, ShouldEqual, unpublishedVersion.QualityDesignation)
 				So(edition.Next.State, ShouldEqual, unpublishedVersion.State)
 				So(edition.Next.IsMigration, ShouldResemble, unpublishedVersion.IsMigration)
+				So(edition.Next.RelatedContent, ShouldResemble, unpublishedVersion.RelatedContent)
 			})
 		})
 
