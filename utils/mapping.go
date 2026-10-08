@@ -37,6 +37,7 @@ func MapVersionToEdition(version *models.Version) *models.Edition {
 		Distributions:      version.Distributions,
 		QualityDesignation: version.QualityDesignation,
 		IsMigration:        version.IsMigration,
+		RelatedContent:     version.RelatedContent,
 	}
 
 	return edition
