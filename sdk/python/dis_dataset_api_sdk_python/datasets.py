@@ -90,7 +90,9 @@ class DatasetsAPI(DatasetsClientProtocol):
             try:
                 query_params.validate_params()
             except ValueError as e:
-                return DatasetsList(items=[], count=0, offset=0, limit=0, total_count=0), str(e)
+                return DatasetsList(
+                    items=[], count=0, offset=0, limit=0, total_count=0
+                ), str(e)
 
             query["offset"] = (
                 query_params.offset if query_params.offset is not None else 0

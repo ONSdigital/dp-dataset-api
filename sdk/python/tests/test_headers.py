@@ -1,4 +1,5 @@
 """Tests for HttpHeaders model and header handling."""
+
 from __future__ import annotations
 
 from dis_dataset_api_sdk_python import Dataset, DatasetApiClient, Headers, HttpHeaders
@@ -67,7 +68,9 @@ class TestHttpHeaders:
 class TestHttpHeadersIntegration:
     """Integration tests for HttpHeaders with endpoints."""
 
-    def test_dataset_endpoint_accepts_real_http_headers(self, make_session, make_response):
+    def test_dataset_endpoint_accepts_real_http_headers(
+        self, make_session, make_response
+    ):
         """Endpoints accept HttpHeaders and pass mapped headers correctly."""
         session, request_mock = make_session(
             make_response(
@@ -96,4 +99,3 @@ class TestHttpHeadersIntegration:
             "If-Match": "etag-1",
             "Authorization": "Bearer example-auth-token",
         }
-

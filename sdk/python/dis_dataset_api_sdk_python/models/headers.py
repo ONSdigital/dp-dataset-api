@@ -22,6 +22,3 @@ class HttpHeaders(BaseModel):
             headers["Authorization"] = self.authorization
 
         return headers
-
-
-

@@ -22,7 +22,6 @@ from .models import (
 
 @runtime_checkable
 class Headers(Protocol):
-
     def to_http_headers(self) -> Mapping[str, str | bytes]: ...
 
 

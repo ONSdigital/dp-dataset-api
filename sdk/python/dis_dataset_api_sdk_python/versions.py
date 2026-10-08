@@ -169,9 +169,7 @@ class VersionsAPI(VersionsClientProtocol):
                 f"request offset value greater than or equal to versions total count. versions total count: {total_count}, request offset value: {req_offset}",
             )
 
-        count = (
-            min(req_limit, total_count - req_offset)
-        )
+        count = min(req_limit, total_count - req_offset)
         result = VersionsList(
             items=[],
             count=count,

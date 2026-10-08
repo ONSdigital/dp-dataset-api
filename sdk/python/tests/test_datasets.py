@@ -1,7 +1,9 @@
 """Tests for datasets resource."""
+
 from __future__ import annotations
 
 import pytest
+
 from dis_dataset_api_sdk_python import (
     ApiError,
     Dataset,
@@ -68,7 +70,9 @@ class TestGetDataset:
 class TestGetDatasetByPath:
     """Tests for get_dataset_by_path() endpoint."""
 
-    def test_trims_slashes_and_returns_model(self, make_session, make_response, fake_headers):
+    def test_trims_slashes_and_returns_model(
+        self, make_session, make_response, fake_headers
+    ):
         """get_dataset_by_path() trims slashes and returns Dataset model."""
         session, request_mock = make_session(
             make_response(200, {"id": "abc", "title": "A dataset"})
@@ -216,7 +220,9 @@ class TestDatasetsProtocol:
 
         assert isinstance(client.datasets, DatasetsClientProtocol)
 
-    def test_client_conforms_to_dataset_api_client_protocol(self, make_session, make_response):
+    def test_client_conforms_to_dataset_api_client_protocol(
+        self, make_session, make_response
+    ):
         """DatasetApiClient conforms to DatasetApiClientProtocol."""
         session, _ = make_session(make_response(200, {"id": "abc"}))
         client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)

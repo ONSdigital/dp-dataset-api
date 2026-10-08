@@ -1,7 +1,9 @@
 """Tests for versions resource."""
+
 from __future__ import annotations
 
 import pytest
+
 from dis_dataset_api_sdk_python import (
     DatasetApiClient,
     DatasetApiClientProtocol,
@@ -24,7 +26,9 @@ from dis_dataset_api_sdk_python.models import (
 class TestGetVersion:
     """Tests for get_version() endpoint."""
 
-    def test_uses_next_document_when_authorized(self, make_session, make_response, fake_headers):
+    def test_uses_next_document_when_authorized(
+        self, make_session, make_response, fake_headers
+    ):
         """get_version() uses 'next' document when authorization header present."""
         session, request_mock = make_session(
             make_response(
@@ -88,7 +92,9 @@ class TestGetVersionMetadata:
 class TestGetVersions:
     """Tests for get_versions() endpoint."""
 
-    def test_passes_query_params_and_returns_model(self, make_session, make_response, fake_headers):
+    def test_passes_query_params_and_returns_model(
+        self, make_session, make_response, fake_headers
+    ):
         """get_versions() passes query params and returns model."""
         session, request_mock = make_session(
             make_response(
@@ -116,7 +122,9 @@ class TestGetVersions:
         assert result.count == 1
         assert request_mock.call_args.kwargs["params"] == {"limit": 10, "offset": 2}
 
-    def test_returns_validation_error_without_request(self, make_session, make_response, fake_headers):
+    def test_returns_validation_error_without_request(
+        self, make_session, make_response, fake_headers
+    ):
         """get_versions() returns error without making request on validation error."""
         session, request_mock = make_session(make_response(200, {}))
         client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
@@ -177,8 +185,14 @@ class TestGetVersionsInBatches:
         assert isinstance(result, VersionsList)
         assert [item.id for item in result.items] == ["1", "2"]
         assert result.count == 2
-        assert request_mock.call_args_list[0].kwargs["params"] == {"limit": 1, "offset": 0}
-        assert request_mock.call_args_list[1].kwargs["params"] == {"limit": 1, "offset": 1}
+        assert request_mock.call_args_list[0].kwargs["params"] == {
+            "limit": 1,
+            "offset": 0,
+        }
+        assert request_mock.call_args_list[1].kwargs["params"] == {
+            "limit": 1,
+            "offset": 1,
+        }
 
 
 class TestGetVersionsInBatchesWithQueryParams:
@@ -229,8 +243,14 @@ class TestGetVersionsInBatchesWithQueryParams:
         assert result.offset == 1
         assert result.limit == 4
         assert result.total_count == 6
-        assert request_mock.call_args_list[0].kwargs["params"] == {"limit": 2, "offset": 1}
-        assert request_mock.call_args_list[1].kwargs["params"] == {"limit": 2, "offset": 3}
+        assert request_mock.call_args_list[0].kwargs["params"] == {
+            "limit": 2,
+            "offset": 1,
+        }
+        assert request_mock.call_args_list[1].kwargs["params"] == {
+            "limit": 2,
+            "offset": 3,
+        }
 
     def test_returns_offset_error(self, make_session, make_response, fake_headers):
         """get_versions_in_batches_with_query_params() returns error for invalid offset."""
@@ -328,7 +348,9 @@ class TestGetVersionDimensions:
 class TestGetVersionDimensionOptions:
     """Tests for get_version_dimension_options() endpoint."""
 
-    def test_without_query_params_sends_no_params(self, make_session, make_response, fake_headers):
+    def test_without_query_params_sends_no_params(
+        self, make_session, make_response, fake_headers
+    ):
         """get_version_dimension_options() sends no params when query_params is None."""
         session, request_mock = make_session(make_response(200, {"items": []}))
         client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
@@ -458,7 +480,9 @@ class TestVersionsProtocol:
 
         assert isinstance(client.versions, VersionsClientProtocol)
 
-    def test_client_conforms_to_dataset_api_client_protocol(self, make_session, make_response):
+    def test_client_conforms_to_dataset_api_client_protocol(
+        self, make_session, make_response
+    ):
         """DatasetApiClient conforms to DatasetApiClientProtocol."""
         session, _ = make_session(make_response(200, {"id": "1"}))
         client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)

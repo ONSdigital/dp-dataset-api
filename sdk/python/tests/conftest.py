@@ -1,4 +1,5 @@
 """Shared pytest fixtures for all tests."""
+
 from __future__ import annotations
 
 import json
@@ -12,7 +13,9 @@ import requests
 def make_response():
     """Create a mock requests.Response with given status and payload."""
 
-    def _make_response(status_code: int, payload: dict | None = None) -> requests.Response:
+    def _make_response(
+        status_code: int, payload: dict | None = None
+    ) -> requests.Response:
         response = requests.Response()
         response.status_code = status_code
         response._content = json.dumps(payload if payload is not None else {}).encode(
@@ -67,4 +70,3 @@ def fake_headers():
             return headers
 
     return FakeHeaders
-

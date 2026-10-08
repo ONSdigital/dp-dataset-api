@@ -45,7 +45,9 @@ class EditionsAPI(EditionsClientProtocol):
             try:
                 query_params.validate_params()
             except ValueError as e:
-                return EditionsList(items=None, count=0, offset=0, limit=0, total_count=0), str(e)
+                return EditionsList(
+                    items=None, count=0, offset=0, limit=0, total_count=0
+                ), str(e)
 
             query["limit"] = query_params.limit if query_params.limit is not None else 0
             query["offset"] = (
@@ -60,7 +62,9 @@ class EditionsAPI(EditionsClientProtocol):
         )
         payload = response.json() if response.content else {}
 
-        if "Authorization" in request_headers and isinstance(payload.get("items"), list):
+        if "Authorization" in request_headers and isinstance(
+            payload.get("items"), list
+        ):
             payload["items"] = [
                 item["next"]
                 if isinstance(item, dict) and isinstance(item.get("next"), dict)

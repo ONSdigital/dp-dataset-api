@@ -1,4 +1,5 @@
 """Tests for editions resource."""
+
 from __future__ import annotations
 
 from dis_dataset_api_sdk_python import DatasetApiClient
@@ -12,7 +13,9 @@ from dis_dataset_api_sdk_python.models import (
 class TestGetEdition:
     """Tests for get_edition() endpoint."""
 
-    def test_uses_next_document_when_authorized(self, make_session, make_response, fake_headers):
+    def test_uses_next_document_when_authorized(
+        self, make_session, make_response, fake_headers
+    ):
         """get_edition() uses 'next' document when authorization header present."""
         session, request_mock = make_session(
             make_response(
@@ -47,7 +50,9 @@ class TestGetEdition:
 class TestGetEditions:
     """Tests for get_editions() endpoint."""
 
-    def test_passes_query_params_and_returns_model(self, make_session, make_response, fake_headers):
+    def test_passes_query_params_and_returns_model(
+        self, make_session, make_response, fake_headers
+    ):
         """get_editions() passes query params and returns model."""
         session, request_mock = make_session(
             make_response(
@@ -89,7 +94,9 @@ class TestGetEditions:
             "Authorization": "example-auth-token",
         }
 
-    def test_returns_validation_error_without_request(self, make_session, make_response, fake_headers):
+    def test_returns_validation_error_without_request(
+        self, make_session, make_response, fake_headers
+    ):
         """get_editions() returns error without making request on validation error."""
         session, request_mock = make_session(make_response(200, {}))
         client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
@@ -104,6 +111,3 @@ class TestGetEditions:
         assert isinstance(result, EditionsList)
         assert result.items is None
         request_mock.assert_not_called()
-
-
-

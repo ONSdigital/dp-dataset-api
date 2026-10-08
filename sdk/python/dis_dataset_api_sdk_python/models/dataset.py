@@ -91,7 +91,7 @@ class DatasetUpdate(BaseModel):
     current: Dataset | None = None
     next: Dataset | None = None
 
-model_config = ConfigDict(validate_by_name=True)
+    model_config = ConfigDict(validate_by_name=True)
 
 
 class DatasetsList(BaseModel):

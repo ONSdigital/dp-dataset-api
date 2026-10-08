@@ -1,10 +1,12 @@
 """Tests for the DatasetApiClient base client."""
+
 from __future__ import annotations
 
 from unittest.mock import Mock
 
 import pytest
 import requests
+
 from dis_dataset_api_sdk_python import (
     ApiError,
     AuthenticationError,
@@ -90,7 +92,9 @@ class TestClientErrors:
         with pytest.raises(ValidationError):
             client._request("GET", "/datasets")
 
-    def test_request_500_raises_api_error_with_status(self, make_session, make_response):
+    def test_request_500_raises_api_error_with_status(
+        self, make_session, make_response
+    ):
         """_request() raises ApiError with status_code on 500."""
         session = make_session(make_response(500, {"error": "server errored"}))[0]
         client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
@@ -100,7 +104,9 @@ class TestClientErrors:
 
         assert exc_info.value.status_code == 500
 
-    def test_request_502_raises_api_error_with_status(self, make_session, make_response):
+    def test_request_502_raises_api_error_with_status(
+        self, make_session, make_response
+    ):
         """_request() raises ApiError with status_code on 502."""
         session = make_session(make_response(502, {"error": "bad gateway"}))[0]
         client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
@@ -118,10 +124,14 @@ class TestClientErrors:
         with pytest.raises(ApiError):
             client._request("GET", "/datasets")
 
-    def test_request_connection_error_raises_api_error(self, make_session, make_response):
+    def test_request_connection_error_raises_api_error(
+        self, make_session, make_response
+    ):
         """_request() raises ApiError on connection error."""
         session = make_session(make_response(200, {}))[0]
-        session.request = Mock(side_effect=requests.ConnectionError("Connection failed"))
+        session.request = Mock(
+            side_effect=requests.ConnectionError("Connection failed")
+        )
         client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
 
         with pytest.raises(ApiError):
