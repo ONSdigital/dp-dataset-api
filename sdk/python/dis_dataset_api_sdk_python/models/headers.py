@@ -4,11 +4,21 @@ from pydantic import BaseModel
 
 
 class HttpHeaders(BaseModel):
-    CollectionID: str | None = None
-    DownloadServiceToken: str | None = None
-    IfMatch: str | None = None
-    Authorization: str | None = None
+    collection_id: str | None = None
+    download_service_token: str | None = None
+    if_match: str | None = None
+    authorization: str | None = None
 
     def to_http_headers(self) -> dict[str, str]:
-        raw = self.model_dump(exclude_none=True)
-        return {key: value for key, value in raw.items() if isinstance(value, str)}
+        headers: dict[str, str] = {}
+
+        if self.collection_id is not None:
+            headers["Collection-ID"] = self.collection_id
+        if self.download_service_token is not None:
+            headers["X-Download-Service-Token"] = self.download_service_token
+        if self.if_match is not None:
+            headers["If-Match"] = self.if_match
+        if self.authorization is not None:
+            headers["Authorization"] = self.authorization
+
+        return headers
