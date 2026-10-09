@@ -5149,6 +5149,9 @@ func TestPutStateReturnsError(t *testing.T) {
 			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID, editionID, state string) error {
 				return errs.ErrEditionNotFound
 			},
+			GetVersionStaticFunc: func(ctx context.Context, datasetID, editionID string, version int, state string) (*models.Version, error) {
+				return nil, errs.ErrVersionNotFound
+			},
 		}
 
 		authorisationMock := &authMock.MiddlewareMock{
@@ -5165,7 +5168,7 @@ func TestPutStateReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
 	})
 
 	Convey("When an error occurs, return internal server error", t, func() {
@@ -5200,8 +5203,8 @@ func TestPutStateReturnsError(t *testing.T) {
 
 		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusInternalServerError)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
+		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
 	})
 }
 
