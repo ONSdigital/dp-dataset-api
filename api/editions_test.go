@@ -152,7 +152,7 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
-			GetEditionsFunc: func(context.Context, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
+			GetEditionsFunc: func(context.Context, string, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
 				return results, 2, nil
 			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
@@ -176,6 +176,131 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 1)
 		So(list, ShouldResemble, []*models.Edition{publicResult})
 		So(totalCount, ShouldEqual, 2)
+		So(err, ShouldEqual, nil)
+	})
+
+	Convey("get published editions when the dataset type is static and 'published' query param is true", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions?published=true", http.NoBody)
+		r = mux.SetURLVars(r, map[string]string{"dataset_id": "123-456"})
+		w := httptest.NewRecorder()
+
+		editionsList := []*models.EditionUpdate{
+			{
+				Current: &models.Edition{
+					Edition:   "2023",
+					ID:        "",
+					DatasetID: "123",
+					Version:   2,
+					State:     models.PublishedState,
+				},
+				Next: &models.Edition{
+					Edition:   "2023",
+					ID:        "",
+					DatasetID: "123",
+					Version:   2,
+					State:     models.PublishedState,
+				},
+			},
+			{
+				Current: &models.Edition{
+					Edition:   "2024",
+					ID:        "",
+					DatasetID: "123",
+					Version:   1,
+					State:     models.PublishedState,
+				},
+				Next: &models.Edition{
+					Edition:   "2024",
+					ID:        "",
+					DatasetID: "123",
+					Version:   2,
+					State:     models.AssociatedState,
+				},
+			},
+		}
+
+		mockedDataStore := &storetest.StorerMock{
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return true, nil
+			},
+			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
+				return models.Static.String(), nil
+			},
+			GetEditionsStaticFunc: func(context.Context, string, string, string, int, int) ([]*models.EditionUpdate, int, error) {
+				return editionsList, 2, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{ID: "123-456", Next: &models.Dataset{ID: "123-456"}}, nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
+		list, totalCount, err := api.getEditions(w, r, 20, 0)
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetEditionsStaticCalls()), ShouldEqual, 1)
+		So(list, ShouldEqual, editionsList)
+		So(totalCount, ShouldEqual, 2)
+		So(err, ShouldEqual, nil)
+	})
+
+	Convey("get published editions when the dataset type is static and 'published' query param is false", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions?published=false", http.NoBody)
+		r = mux.SetURLVars(r, map[string]string{"dataset_id": "123-456"})
+		w := httptest.NewRecorder()
+
+		editionsList := []*models.EditionUpdate{
+			{
+				Next: &models.Edition{
+					Edition:   "2024",
+					ID:        "",
+					DatasetID: "123",
+					Version:   2,
+					State:     models.AssociatedState,
+				},
+			},
+		}
+
+		mockedDataStore := &storetest.StorerMock{
+			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {
+				return true, nil
+			},
+			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
+				return models.Static.String(), nil
+			},
+			GetEditionsStaticFunc: func(context.Context, string, string, string, int, int) ([]*models.EditionUpdate, int, error) {
+				return editionsList, 1, nil
+			},
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{ID: "123-456", Next: &models.Dataset{ID: "123-456"}}, nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
+		list, totalCount, err := api.getEditions(w, r, 20, 0)
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(len(mockedDataStore.GetEditionsCalls()), ShouldEqual, 0)
+		So(len(mockedDataStore.GetEditionsStaticCalls()), ShouldEqual, 1)
+		So(list, ShouldEqual, editionsList)
+		So(totalCount, ShouldEqual, 1)
 		So(err, ShouldEqual, nil)
 	})
 
@@ -272,7 +397,7 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
 				return models.Static.String(), nil
 			},
-			GetEditionsStaticFunc: func(context.Context, string, string, int, int) ([]*models.EditionUpdate, int, error) {
+			GetEditionsStaticFunc: func(context.Context, string, string, string, int, int) ([]*models.EditionUpdate, int, error) {
 				return editionsList, 1, nil
 			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
@@ -392,7 +517,7 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
 				return models.Static.String(), nil
 			},
-			GetEditionsStaticFunc: func(context.Context, string, string, int, int) ([]*models.EditionUpdate, int, error) {
+			GetEditionsStaticFunc: func(context.Context, string, string, string, int, int) ([]*models.EditionUpdate, int, error) {
 				return editionsList, 1, nil
 			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
@@ -496,7 +621,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
-			GetEditionsFunc: func(context.Context, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
+			GetEditionsFunc: func(context.Context, string, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
 				return nil, 0, errs.ErrEditionNotFound
 			},
 			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
@@ -534,7 +659,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
-			GetEditionsFunc: func(context.Context, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
+			GetEditionsFunc: func(context.Context, string, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
 				return nil, 0, errs.ErrEditionNotFound
 			},
 			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
@@ -575,7 +700,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
 				return models.Static.String(), nil
 			},
-			GetEditionsStaticFunc: func(context.Context, string, string, int, int) ([]*models.EditionUpdate, int, error) {
+			GetEditionsStaticFunc: func(context.Context, string, string, string, int, int) ([]*models.EditionUpdate, int, error) {
 				return nil, 0, errs.ErrEditionsNotFound
 			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
