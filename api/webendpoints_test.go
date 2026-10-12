@@ -125,7 +125,7 @@ func TestWebSubnetEditionsEndpoint(t *testing.T) {
 				datasetSearchState = state
 				return nil
 			},
-			GetEditionsFunc: func(_ context.Context, _, state string, _, _ int, _ bool) ([]*models.EditionUpdate, int, error) {
+			GetEditionsFunc: func(_ context.Context, _, state, _ string, _, _ int, _ bool) ([]*models.EditionUpdate, int, error) {
 				editionSearchState = state
 				return []*models.EditionUpdate{&edition}, 0, nil
 			},

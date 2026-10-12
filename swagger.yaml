@@ -510,6 +510,7 @@ paths:
         - $ref: "#/parameters/dataset_id"
         - $ref: "#/parameters/limit"
         - $ref: "#/parameters/offset"
+        - $ref: "#/parameters/published"
       security:
         - {}
         - Authorization: []

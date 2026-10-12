@@ -341,7 +341,10 @@ func (m *Mongo) GetAllStaticVersions(ctx context.Context, datasetID, state strin
 // GetEditionsStatic retrieves a paginated list of editions for a given dataset.
 // Editions are ordered by the release date of the oldest version for each edition.
 // Each Version record is mapped to an EditionUpdate with Current and Next set depending on the state.
-func (m *Mongo) GetEditionsStatic(ctx context.Context, datasetID, state string, offset, limit int) ([]*models.EditionUpdate, int, error) {
+// TODO: Refactor this to reduce the complexity
+//
+//nolint:gocyclo,gocognit // cognitive complexity 48 (> 40) is acceptable for now
+func (m *Mongo) GetEditionsStatic(ctx context.Context, datasetID, state, isPublished string, offset, limit int) ([]*models.EditionUpdate, int, error) {
 	selector := bson.M{"links.dataset.id": datasetID}
 	if state != "" {
 		selector["state"] = state
@@ -378,11 +381,9 @@ func (m *Mongo) GetEditionsStatic(ctx context.Context, datasetID, state string, 
 	var editionResults []struct {
 		EditionID string `bson:"edition_id"`
 	}
-
 	if err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Aggregate(ctx, pipeline, &editionResults); err != nil {
 		return nil, 0, err
 	}
-
 	sortedEditionIDs := make([]string, 0, len(editionResults))
 	for _, result := range editionResults {
 		sortedEditionIDs = append(sortedEditionIDs, result.EditionID)
@@ -416,7 +417,6 @@ func (m *Mongo) GetEditionsStatic(ctx context.Context, datasetID, state string, 
 		if err != nil && !errors.Is(err, errs.ErrVersionNotFound) {
 			return nil, 0, err
 		}
-
 		var unpublishedVersion *models.Version
 		if state != models.PublishedState {
 			unpublishedVersion, err = m.GetLatestVersionStatic(ctx, datasetID, editionID, "")
@@ -429,7 +429,28 @@ func (m *Mongo) GetEditionsStatic(ctx context.Context, datasetID, state string, 
 		if err != nil {
 			return nil, 0, err
 		}
-		editions = append(editions, edition)
+		if isPublished != "" {
+			IsPublishedBool, _ := strconv.ParseBool(strings.ToLower(isPublished))
+			if IsPublishedBool {
+				if edition.Current != nil && (edition.Current.State == models.PublishedState || edition.Next.State == models.PublishedState) {
+					editions = append(editions, edition)
+				} else if edition.Current == nil && edition.Next.State == models.PublishedState {
+					editions = append(editions, edition)
+				} else {
+					continue
+				}
+			} else {
+				if edition.Current == nil && edition.Next.State != models.PublishedState {
+					editions = append(editions, edition)
+				} else if edition.Current != nil && (edition.Current.State != models.PublishedState && edition.Next.State != models.PublishedState) {
+					editions = append(editions, edition)
+				} else {
+					continue
+				}
+			}
+		} else {
+			editions = append(editions, edition)
+		}
 	}
 
 	return editions, totalCount, nil
