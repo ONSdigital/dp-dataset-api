@@ -4877,18 +4877,15 @@ func TestPutStateReturnsOk(t *testing.T) {
 						"type": "static"
 					  }`
 
-		var versionModel models.Version
-
-		err := json.Unmarshal([]byte(jsonData), &versionModel)
-		So(err, ShouldBeNil)
-
-		versionModel.Links.Version = &models.LinkObject{
-			ID:   "1",
-			HRef: "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1",
-		}
-
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionStaticFunc: func(ctx context.Context, datasetID string, editionID string, version int, state string) (*models.Version, error) {
+				var versionModel models.Version
+				err := json.Unmarshal([]byte(jsonData), &versionModel)
+				So(err, ShouldBeNil)
+				versionModel.Links.Version = &models.LinkObject{
+					ID:   "1",
+					HRef: "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1",
+				}
 				return &versionModel, nil
 			},
 
@@ -4908,6 +4905,9 @@ func TestPutStateReturnsOk(t *testing.T) {
 			},
 
 			UpdateStateStaticFunc: func(ctx context.Context, currentVersion *models.Version, updatedState *models.StateUpdate, eTagSelector string) (*models.Version, error) {
+				var versionModel models.Version
+				err := json.Unmarshal([]byte(jsonData), &versionModel)
+				So(err, ShouldBeNil)
 				return &versionModel, nil
 			},
 
@@ -5022,7 +5022,7 @@ func TestPutStateReturnsOk(t *testing.T) {
 		}
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(mockedDataStore.GetVersionStaticCalls(), ShouldHaveLength, 2)
+		So(mockedDataStore.GetVersionStaticCalls(), ShouldHaveLength, 3)
 		So(mockedDataStore.UpdateStateStaticCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 1)
