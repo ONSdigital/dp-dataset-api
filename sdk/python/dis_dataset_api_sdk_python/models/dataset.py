@@ -82,6 +82,8 @@ class Dataset(BaseModel):
     previous_series_id: list[str] | None = None
     is_migration: bool | None = None
     is_based_on: IsBasedOn | None = None
+    collection_id: str | None = None
+    keywords: list[str] | None = None
 
     model_config = ConfigDict(validate_by_name=True)
 
