@@ -287,13 +287,16 @@ const (
 	DistributionFormatCSDB     DistributionFormat = "csdb"
 	DistributionFormatCSVWMeta DistributionFormat = "csvw-metadata"
 	DistributionFormatZIP      DistributionFormat = "zip"
+	DistributionFormatJSON     DistributionFormat = "json"
+	DistributionFormatXML      DistributionFormat = "xml"
 )
 
 // IsValid validates that the DistributionFormat is a valid enum value
 func (f *DistributionFormat) IsValid() bool {
 	switch *f {
 	case DistributionFormatCSV, DistributionFormatSDMX, DistributionFormatXLS,
-		DistributionFormatXLSX, DistributionFormatCSDB, DistributionFormatCSVWMeta, DistributionFormatZIP:
+		DistributionFormatXLSX, DistributionFormatCSDB, DistributionFormatCSVWMeta,
+		DistributionFormatZIP, DistributionFormatJSON, DistributionFormatXML:
 		return true
 	default:
 		return false
@@ -339,13 +342,16 @@ const (
 	DistributionMediaTypeCSDB     DistributionMediaType = "text/plain"
 	DistributionMediaTypeCSVWMeta DistributionMediaType = "application/ld+json"
 	DistributionMediaTypeZIP      DistributionMediaType = "application/zip"
+	DistributionMediaTypeJSON     DistributionMediaType = "application/json"
+	DistributionMediaTypeXML      DistributionMediaType = "application/xml"
 )
 
 // IsValid validates that the DistributionMediaType is a valid enum value
 func (mt *DistributionMediaType) IsValid() bool {
 	switch *mt {
 	case DistributionMediaTypeCSV, DistributionMediaTypeSDMX, DistributionMediaTypeXLS,
-		DistributionMediaTypeXLSX, DistributionMediaTypeCSDB, DistributionMediaTypeCSVWMeta, DistributionMediaTypeZIP:
+		DistributionMediaTypeXLSX, DistributionMediaTypeCSDB, DistributionMediaTypeCSVWMeta,
+		DistributionMediaTypeZIP, DistributionMediaTypeJSON, DistributionMediaTypeXML:
 		return true
 	default:
 		return false

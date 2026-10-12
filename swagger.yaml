@@ -2807,6 +2807,10 @@ definitions:
             * `xls`
             * `xlsx`
             * `csdb`
+            * `csvw-metadata`
+            * `zip` (for migrated datasets)
+            * `json`
+            * `xml`
         type: string
         enum:
           - csv
@@ -2814,6 +2818,10 @@ definitions:
           - xls
           - xlsx
           - csdb
+          - csvw-metadata
+          - zip
+          - json
+          - xml
       media_type:
         description: |
           The IANA media type for the download file referenced by `download_url`.
@@ -2824,6 +2832,10 @@ definitions:
             * `application/vnd.ms-excel`: Excel (XLS) files
             * `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`: Excel (XLSX) files
             * `text/plain`: Plain text (used for CSDB output structured text files)
+            * `application/ld+json`: CSVW metadata files
+            * `application/zip`: ZIP files
+            * `application/json`: JSON files
+            * `application/xml`: XML files
         type: string
         readOnly: true
         enum:
@@ -2832,6 +2844,10 @@ definitions:
           - application/vnd.ms-excel
           - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
           - text/plain
+          - application/ld+json
+          - application/zip
+          - application/json
+          - application/xml
   # Link objects
   DatasetLinks:
     description: "Navigational links related to the dataset resource to aid in API navigation."
