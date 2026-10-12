@@ -6,15 +6,21 @@ from typing import Any
 import requests
 
 from .datasets import DatasetsAPI
+from .editions import EditionsAPI
 from .exceptions import ApiError, AuthenticationError, NotFoundError, ValidationError
 from .protocols import (
     DatasetApiClientProtocol,
     DatasetsClientProtocol,
+    EditionsClientProtocol,
+    VersionsClientProtocol,
 )
+from .versions import VersionsAPI
 
 
 class DatasetApiClient:
     datasets: DatasetsClientProtocol
+    editions: EditionsClientProtocol
+    versions: VersionsClientProtocol
 
     def __init__(
         self,
@@ -29,10 +35,12 @@ class DatasetApiClient:
         self.timeout = timeout
         self.session = session or requests.Session()
         self.datasets = DatasetsAPI(self)
+        self.editions = EditionsAPI(self)
+        self.versions = VersionsAPI(self)
 
     def health(self) -> dict[str, Any]:
         """GET /health"""
-        return self._request("GET", "/health")
+        return self._request("GET", "/health").json()
 
     def _request(
         self,
@@ -42,7 +50,7 @@ class DatasetApiClient:
         params: dict[str, Any] | None = None,
         json: dict[str, Any] | None = None,
         headers: Mapping[str, str | bytes] | None = None,
-    ) -> dict[str, Any]:
+    ) -> requests.Response:
         url = f"{self.base_url}{path}"
 
         try:
@@ -59,24 +67,35 @@ class DatasetApiClient:
 
         if response.status_code in (401, 403):
             raise AuthenticationError(
-                "Authentication failed", status_code=response.status_code
-            )
-        if response.status_code == 404:
-            raise NotFoundError("Resource not found", status_code=response.status_code)
-        if response.status_code in (400, 422):
-            raise ValidationError(
-                response.text or "Validation error", status_code=response.status_code
-            )
-        if response.status_code >= 500:
-            raise ApiError("Server error", status_code=response.status_code)
-        if response.status_code >= 400:
-            raise ApiError(
-                response.text or "Request failed", status_code=response.status_code
+                response.text or "Authentication failed",
+                status_code=response.status_code,
             )
 
-        if not response.content:
-            return {}
-        return response.json()
+        if response.status_code == 404:
+            raise NotFoundError(
+                response.text or "Resource not found",
+                status_code=response.status_code,
+            )
+
+        if response.status_code in (400, 422):
+            raise ValidationError(
+                response.text or "Validation error",
+                status_code=response.status_code,
+            )
+
+        if response.status_code >= 500:
+            raise ApiError(
+                response.text or "Server error",
+                status_code=response.status_code,
+            )
+
+        if response.status_code >= 400:
+            raise ApiError(
+                response.text or "Request failed",
+                status_code=response.status_code,
+            )
+
+        return response
 
 
 def create_client(

@@ -153,6 +153,13 @@ There are both Go and Python unit tests. Run them together with `make test`, or 
 
 BDD component tests live in [features/](features/README.md), which also documents how to run a subset of them.
 
+### SDKs
+
+Client SDK documentation is available here:
+
+- [Go SDK](sdk/go/README.md)
+- [Python SDK](sdk/python/README.md)
+
 ### Contributing
 
 See [CONTRIBUTING](CONTRIBUTING.md) for details.

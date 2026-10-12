@@ -84,3 +84,21 @@ class Dataset(BaseModel):
     is_based_on: IsBasedOn | None = None
 
     model_config = ConfigDict(validate_by_name=True)
+
+
+class DatasetUpdate(BaseModel):
+    id: str | None = None
+    current: Dataset | None = None
+    next: Dataset | None = None
+
+    model_config = ConfigDict(validate_by_name=True)
+
+
+class DatasetsList(BaseModel):
+    items: list[DatasetUpdate]
+    count: int
+    offset: int
+    limit: int
+    total_count: int
+
+    model_config = ConfigDict(validate_by_name=True)
