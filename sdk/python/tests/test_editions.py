@@ -46,6 +46,45 @@ class TestGetEdition:
             "Authorization": "example-auth-token",
         }
 
+    def test_parses_optional_fields_when_authorized(
+        self, make_session, make_response, fake_headers
+    ):
+        """get_edition() parses optional Edition fields from the next document."""
+        session, _ = make_session(
+            make_response(
+                200,
+                {
+                    "next": {
+                        "edition": "2024",
+                        "dataset_id": "abc",
+                        "id": "edition-1",
+                        "state": "published",
+                        "is_migration": False,
+                        "type": "edition",
+                        "quality_designation": "official",
+                        "usage_notes": [{"title": "Note", "note": "Example"}],
+                    }
+                },
+            )
+        )
+        client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
+
+        result = client.editions.get_edition(
+            "abc",
+            "2024",
+            headers=fake_headers(authorization="example-auth-token"),
+        )
+        usage_notes = result.usage_notes
+
+        assert isinstance(result, Edition)
+        assert result.state == "published"
+        assert result.is_migration is False
+        assert result.type == "edition"
+        assert result.quality_designation is not None
+        assert result.quality_designation == "official"
+        assert usage_notes is not None
+        assert usage_notes[0].title == "Note"
+
 
 class TestGetEditions:
     """Tests for get_editions() endpoint."""
@@ -64,6 +103,8 @@ class TestGetEditions:
                                 "edition": "2024",
                                 "dataset_id": "abc",
                                 "id": "edition-1",
+                                "quality_designation": "official",
+                                "usage_notes": [{"title": "Note", "note": "Example"}],
                             }
                         }
                     ],
@@ -81,12 +122,16 @@ class TestGetEditions:
             headers=fake_headers(authorization="example-auth-token"),
             query_params=QueryParams(limit=10, offset=5),
         )
+        items = result.items
 
         assert error is None
         assert isinstance(result, EditionsList)
         assert result.count == 1
-        assert result.items is not None
-        assert result.items[0].edition == "2024"
+        assert items is not None
+        assert items[0].edition == "2024"
+        assert items[0].quality_designation == "official"
+        assert items[0].usage_notes is not None
+        assert items[0].usage_notes[0].note == "Example"
         assert request_mock.call_args.kwargs["params"] == {"limit": 10, "offset": 5}
         assert request_mock.call_args.kwargs["headers"] == {
             "CollectionID": "collection-123",

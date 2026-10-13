@@ -62,6 +62,51 @@ class TestGetVersion:
             "Authorization": "example-auth-token",
         }
 
+    def test_parses_optional_fields_when_authorized(
+        self, make_session, make_response, fake_headers
+    ):
+        """get_version() parses optional nested Version fields from the next document."""
+        session, _ = make_session(
+            make_response(
+                200,
+                {
+                    "next": {
+                        "id": "1",
+                        "dataset_id": "abc",
+                        "edition": "2024",
+                        "version": 1,
+                        "quality_designation": "official",
+                        "is_migration": False,
+                        "etag": "etag-123",
+                        "downloads": {
+                            "csv": {
+                                "href": "/download.csv",
+                                "public": "true",
+                                "size": "100",
+                            }
+                        },
+                    }
+                },
+            )
+        )
+        client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
+
+        result = client.versions.get_version(
+            "abc",
+            "2024",
+            "1",
+            headers=fake_headers(authorization="example-auth-token"),
+        )
+
+        assert isinstance(result, Version)
+        assert result.quality_designation is not None
+        assert result.quality_designation.value == "official"
+        assert result.is_migration is False
+        assert result.etag == "etag-123"
+        assert result.downloads is not None
+        assert result.downloads.csv is not None
+        assert result.downloads.csv.href == "/download.csv"
+
 
 class TestGetVersionMetadata:
     """Tests for get_version_metadata() endpoint."""
@@ -87,6 +132,50 @@ class TestGetVersionMetadata:
             request_mock.call_args.kwargs["url"]
             == "https://dp-dataset-api/datasets/abc/editions/2024/versions/1/metadata"
         )
+
+    def test_parses_extended_metadata_fields(
+        self, make_session, make_response, fake_headers
+    ):
+        """get_version_metadata() parses aliased and nested Metadata fields."""
+        session, _ = make_session(
+            make_response(
+                200,
+                {
+                    "edition": "2024",
+                    "version": 1,
+                    "id": "abc",
+                    "quality_designation": "official",
+                    "is_based_on": {
+                        "@type": "Dataset",
+                        "@id": "source-123",
+                    },
+                    "related_content": [
+                        {
+                            "title": "Related article",
+                            "description": "Related content description",
+                            "href": "/articles/1",
+                        }
+                    ],
+                },
+            )
+        )
+        client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
+
+        result = client.versions.get_version_metadata(
+            "abc",
+            "2024",
+            "1",
+            headers=fake_headers(),
+        )
+
+        assert isinstance(result, Metadata)
+        assert result.quality_designation is not None
+        assert result.quality_designation.value == "official"
+        assert result.is_based_on is not None
+        assert result.is_based_on.type == "Dataset"
+        assert result.is_based_on.id == "source-123"
+        assert result.related_content is not None
+        assert result.related_content[0].title == "Related article"
 
 
 class TestGetVersions:

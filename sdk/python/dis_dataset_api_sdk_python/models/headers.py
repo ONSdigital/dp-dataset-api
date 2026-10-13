@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class HttpHeaders(BaseModel):
@@ -22,3 +22,11 @@ class HttpHeaders(BaseModel):
             headers["Authorization"] = self.authorization
 
         return headers
+
+
+class ResponseHeaders(BaseModel):
+    """Response headers returned from HTTP responses."""
+
+    etag: str = ""
+
+    model_config = ConfigDict(validate_by_name=True)
