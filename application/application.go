@@ -524,10 +524,9 @@ func ApproveVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 			return err
 		}
 	}
-
-	_, err := UpdateVersionInfo(ctx, smDS, currentVersion, versionUpdate, versionDetails)
+	_, err := smDS.DataStore.Backend.UpdateStateStatic(ctx, currentVersion, &models.StateUpdate{State: models.ApprovedState}, "")
 	if err != nil {
-		log.Error(ctx, "State machine - Approving: UpdateVersionInfo : failed to update the version", err, data)
+		log.Error(ctx, "State machine - Approving: UpdateStateStatic : failed to update the version state", err, data)
 		return err
 	}
 

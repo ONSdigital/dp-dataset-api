@@ -3572,8 +3572,8 @@ func TestApproveVersionDistributionFilesCheck(t *testing.T) {
 	}
 
 	mockedDataStore := &storetest.StorerMock{
-		UpdateVersionStaticFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
-			return "", nil
+		UpdateStateStaticFunc: func(ctx context.Context, currentVersion *models.Version, updatedState *models.StateUpdate, eTagSelector string) (*models.Version, error) {
+			return &models.Version{State: updatedState.State, Type: models.Static.String()}, nil
 		},
 	}
 
@@ -3587,7 +3587,7 @@ func TestApproveVersionDistributionFilesCheck(t *testing.T) {
 		err := ApproveVersion(testContext, smDS, currentVersion, versionUpdate, versionDetails, "", authEntityData, "")
 
 		So(err, ShouldBeNil)
-		So(len(mockedDataStore.UpdateVersionStaticCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.UpdateStateStaticCalls()), ShouldEqual, 1)
 	})
 
 	Convey("When FilesAPIClient is set and all files exist, approve succeeds", t, func() {
