@@ -5022,7 +5022,7 @@ func TestPutStateReturnsOk(t *testing.T) {
 		}
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(mockedDataStore.GetVersionStaticCalls(), ShouldHaveLength, 3)
+		So(mockedDataStore.GetVersionStaticCalls(), ShouldHaveLength, 2)
 		So(mockedDataStore.UpdateStateStaticCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 1)
@@ -5168,7 +5168,7 @@ func TestPutStateReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
 	})
 
 	Convey("When an error occurs, return internal server error", t, func() {
@@ -5203,8 +5203,8 @@ func TestPutStateReturnsError(t *testing.T) {
 
 		api.Router.ServeHTTP(w, r)
 
-		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
+		So(w.Code, ShouldEqual, http.StatusInternalServerError)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 	})
 }
 
@@ -5589,8 +5589,8 @@ func TestPutStateApproveDistributionFilesCheck(t *testing.T) {
 			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
-			UpdateVersionStaticFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
-				return "", nil
+			UpdateStateStaticFunc: func(ctx context.Context, currentVersion *models.Version, updatedState *models.StateUpdate, eTagSelector string) (*models.Version, error) {
+				return &models.Version{State: updatedState.State, Type: models.Static.String()}, nil
 			},
 		}
 

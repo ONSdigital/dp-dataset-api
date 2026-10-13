@@ -1036,13 +1036,11 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create a version update with the target state
-	versionUpdate, err := api.dataStore.Backend.GetVersionStatic(ctx, datasetID, edition, versionID, "")
-	if err != nil {
-		log.Error(ctx, "putState endpoint: failed to get current version details", err, logData)
-		handleVersionAPIErr(ctx, errs.ErrVersionNotFound, w, logData)
-		return
+	versionUpdate := &models.Version{
+		ID:    strconv.Itoa(versionID),
+		State: stateUpdate.State,
+		Type:  models.Static.String(),
 	}
-	versionUpdate.State = stateUpdate.State
 
 	permissionEntity := sdk.EntityData{
 		UserID: authEntityData.EntityData.UserID,
