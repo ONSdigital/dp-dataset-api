@@ -35,6 +35,42 @@ class TestGetDataset:
         assert isinstance(result, Dataset)
         assert result.id == "abc"
 
+    def test_parses_extended_dataset_fields(self, make_session, make_response):
+        """get_dataset() returns a Dataset with extended fields parsed correctly."""
+        session, _ = make_session(
+            make_response(
+                200,
+                {
+                    "id": "abc",
+                    "title": "A dataset",
+                    "is_migration": False,
+                    "canonical_topic": "economy",
+                    "subtopics": ["inflation"],
+                    "topics": ["prices"],
+                    "previous_series_id": ["old-1"],
+                    "survey": "Business Survey",
+                    "is_based_on": {
+                        "@type": "Dataset",
+                        "@id": "source-123",
+                    },
+                },
+            )
+        )
+        client = DatasetApiClient(base_url="https://dp-dataset-api", session=session)
+
+        result = client.datasets.get_dataset("abc")
+
+        assert isinstance(result, Dataset)
+        assert result.is_migration is False
+        assert result.canonical_topic == "economy"
+        assert result.subtopics == ["inflation"]
+        assert result.topics == ["prices"]
+        assert result.previous_series_id == ["old-1"]
+        assert result.survey == "Business Survey"
+        assert result.is_based_on is not None
+        assert result.is_based_on.type == "Dataset"
+        assert result.is_based_on.id == "source-123"
+
     def test_passes_header_mapping(self, make_session, make_response, fake_headers):
         """get_dataset() passes header mapping to request."""
         session, request_mock = make_session(make_response(200, {"id": "abc"}))
@@ -107,7 +143,21 @@ class TestGetDatasetEditions:
             make_response(
                 200,
                 {
-                    "items": [{"dataset_id": "abc", "edition": "2024"}],
+                    "items": [
+                        {
+                            "dataset_id": "abc",
+                            "title": "A dataset",
+                            "description": "Dataset description",
+                            "edition": "2024",
+                            "edition_title": "2024 edition",
+                            "latest_version": {
+                                "href": "/datasets/abc/editions/2024/versions/1",
+                                "id": "1",
+                            },
+                            "release_date": "2024-01-01",
+                            "state": "published",
+                        }
+                    ],
                     "count": 1,
                     "offset": 5,
                     "limit": 10,
@@ -125,6 +175,12 @@ class TestGetDatasetEditions:
         assert error is None
         assert isinstance(result, DatasetEditionsList)
         assert result.count == 1
+        assert result.items is not None
+        assert result.items[0].title == "A dataset"
+        assert result.items[0].description == "Dataset description"
+        assert result.items[0].edition_title == "2024 edition"
+        assert result.items[0].state == "published"
+        assert result.items[0].latest_version.id == "1"
         assert request_mock.call_args.kwargs["params"] == {
             "limit": 10,
             "offset": 5,

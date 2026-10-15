@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -12,9 +13,81 @@ from .dataset import (
     LinkObject,
     Publisher,
 )
-from .edition import Alert, Distribution, UsageNote
 
 MAX_IDS = 200
+
+
+class Alert(BaseModel):
+    date: str | None = None
+    description: str | None = None
+    type: str | None = None
+
+    model_config = ConfigDict(validate_by_name=True)
+
+
+class UsageNote(BaseModel):
+    note: str | None = None
+    title: str | None = None
+
+    model_config = ConfigDict(validate_by_name=True)
+
+
+class Distribution(BaseModel):
+    title: str | None = None
+    format: DistributionFormat | None = None
+    media_type: DistributionMediaType | None = None
+    download_url: str | None = None
+    byte_size: int | None = None
+
+    model_config = ConfigDict(validate_by_name=True)
+
+
+class DistributionFormat(str, Enum):
+    csv = "csv"
+    sdmx = "sdmx"
+    xls = "xls"
+    xlsx = "xlsx"
+    csdb = "csdb"
+    csvw_metadata = "csvw-metadata"
+    zip = "zip"
+    json = "json"
+    xml = "xml"
+
+
+class DistributionMediaType(str, Enum):
+    csv = "text/csv"
+    sdmx = "application/vnd.sdmx.structurespecificdata+xml"
+    xls = "application/vnd.ms-excel"
+    xlsx = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    csdb = "text/plain"
+    csvw_metadata = "application/ld+json"
+    zip = "application/zip"
+
+
+class DownloadObject(BaseModel):
+    href: str | None = None
+    private: str | None = None
+    public: str | None = None
+    size: str | None = None
+
+    model_config = ConfigDict(validate_by_name=True)
+
+
+class DownloadList(BaseModel):
+    xls: DownloadObject | None = None
+    xlsx: DownloadObject | None = None
+    csv: DownloadObject | None = None
+    txt: DownloadObject | None = None
+    csvw: DownloadObject | None = None
+
+    model_config = ConfigDict(validate_by_name=True)
+
+
+class QualityDesignation(str, Enum):
+    accredited_official = "accredited-official"
+    official_in_development = "official-in-development"
+    official = "official"
+    no_accreditation = "no-accreditation"
 
 
 class QueryParams(BaseModel):
@@ -72,6 +145,7 @@ class Version(BaseModel):
     dataset_id: str | None = None
     dimensions: list[dict] | None = None
     distributions: list[Distribution] | None = None
+    downloads: DownloadList | None = None
     edition: str | None = None
     edition_title: str | None = None
     headers: list[str] | None = None
@@ -87,10 +161,11 @@ class Version(BaseModel):
     version: int | None = None
     type: str | None = None
     lowest_geography: str | None = None
-    quality_designation: str | None = None
+    quality_designation: QualityDesignation | None = None
     is_migration: bool | None = None
     previous_edition_id: list[str] | None = None
     related_content: list[GeneralDetails] | None = None
+    etag: str | None = None
 
     model_config = ConfigDict(validate_by_name=True)
 
@@ -157,13 +232,15 @@ class Metadata(BaseModel):
     csv_header: list[str] | None = None
     dataset_links: DatasetLinks | None = None
     description: str | None = None
+    dimensions: list[Dimension] | None = None
     distribution: list[str] | None = None
-    downloads: dict | None = None
+    distributions: list[Distribution] | None = None
+    downloads: DownloadList | None = None
     edition: str | None = None
     edition_title: str | None = None
-    headers: list[str] | None = None
     id: str | None = None
     is_based_on: IsBasedOn | None = None
+    is_migration: bool | None = None
     keywords: list[str] | None = None
     last_updated: datetime | None = None
     latest_changes: list[dict] | None = None
@@ -175,6 +252,7 @@ class Metadata(BaseModel):
     publications: list[GeneralDetails] | None = None
     publisher: Publisher | None = None
     qmi: GeneralDetails | None = None
+    quality_designation: QualityDesignation | None = None
     related_datasets: list[GeneralDetails] | None = None
     related_content: list[GeneralDetails] | None = None
     release_date: str | None = None
@@ -182,10 +260,12 @@ class Metadata(BaseModel):
     source: str | None = None
     state: str | None = None
     survey: str | None = None
+    subtopics: list[str] | None = None
     table_id: str | None = None
     table_population: str | None = None
     temporal: list[dict] | None = None
     theme: str | None = None
+    title: str | None = None
     topics: list[str] | None = None
     type: str | None = None
     unit_of_measure: str | None = None

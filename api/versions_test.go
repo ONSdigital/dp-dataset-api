@@ -4877,18 +4877,15 @@ func TestPutStateReturnsOk(t *testing.T) {
 						"type": "static"
 					  }`
 
-		var versionModel models.Version
-
-		err := json.Unmarshal([]byte(jsonData), &versionModel)
-		So(err, ShouldBeNil)
-
-		versionModel.Links.Version = &models.LinkObject{
-			ID:   "1",
-			HRef: "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1",
-		}
-
 		mockedDataStore := &storetest.StorerMock{
 			GetVersionStaticFunc: func(ctx context.Context, datasetID string, editionID string, version int, state string) (*models.Version, error) {
+				var versionModel models.Version
+				err := json.Unmarshal([]byte(jsonData), &versionModel)
+				So(err, ShouldBeNil)
+				versionModel.Links.Version = &models.LinkObject{
+					ID:   "1",
+					HRef: "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1",
+				}
 				return &versionModel, nil
 			},
 
@@ -4908,6 +4905,9 @@ func TestPutStateReturnsOk(t *testing.T) {
 			},
 
 			UpdateStateStaticFunc: func(ctx context.Context, currentVersion *models.Version, updatedState *models.StateUpdate, eTagSelector string) (*models.Version, error) {
+				var versionModel models.Version
+				err := json.Unmarshal([]byte(jsonData), &versionModel)
+				So(err, ShouldBeNil)
 				return &versionModel, nil
 			},
 
@@ -5148,6 +5148,9 @@ func TestPutStateReturnsError(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{
 			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID, editionID, state string) error {
 				return errs.ErrEditionNotFound
+			},
+			GetVersionStaticFunc: func(ctx context.Context, datasetID, editionID string, version int, state string) (*models.Version, error) {
+				return nil, errs.ErrVersionNotFound
 			},
 		}
 
@@ -5586,8 +5589,8 @@ func TestPutStateApproveDistributionFilesCheck(t *testing.T) {
 			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
 				return nil
 			},
-			UpdateVersionStaticFunc: func(context.Context, *models.Version, *models.Version, string) (string, error) {
-				return "", nil
+			UpdateStateStaticFunc: func(ctx context.Context, currentVersion *models.Version, updatedState *models.StateUpdate, eTagSelector string) (*models.Version, error) {
+				return &models.Version{State: updatedState.State, Type: models.Static.String()}, nil
 			},
 		}
 

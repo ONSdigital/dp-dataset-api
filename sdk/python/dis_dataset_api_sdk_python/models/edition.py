@@ -5,25 +5,15 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
 from .dataset import IsBasedOn, LinkObject
-
-
-class Alert(BaseModel):
-    model_config = ConfigDict(validate_by_name=True)
-
-
-class UsageNote(BaseModel):
-    model_config = ConfigDict(validate_by_name=True)
-
-
-class Distribution(BaseModel):
-    model_config = ConfigDict(validate_by_name=True)
+from .version import Alert, Distribution, QualityDesignation, UsageNote
 
 
 class EditionUpdateLinks(BaseModel):
-    model_config = ConfigDict(validate_by_name=True)
+    dataset: LinkObject | None = None
+    latest_version: LinkObject | None = None
+    self: LinkObject | None = None
+    versions: LinkObject | None = None
 
-
-class QualityDesignation(BaseModel):
     model_config = ConfigDict(validate_by_name=True)
 
 
@@ -64,7 +54,7 @@ class DatasetEdition(BaseModel):
 class DatasetEditionsList(BaseModel):
     """Response wrapper for dataset editions list."""
 
-    items: list[dict] | None = None
+    items: list[DatasetEdition] | None = None
     count: int | None = None
     offset: int | None = None
     limit: int | None = None
