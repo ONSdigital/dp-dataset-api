@@ -252,6 +252,11 @@ parameters:
     description: "A population type to search on to return datasets that are associated with that population type e.g. Usual-Residents.  This is applicable to Census 2021 datasets only."
     in: query
     type: string
+  is_published:
+    name: "is_published"
+    description: "A boolean value which indicates whether to include only published editions in the response"
+    in: query
+    type: boolean
   type:
     name: type
     required: false
@@ -510,7 +515,7 @@ paths:
         - $ref: "#/parameters/dataset_id"
         - $ref: "#/parameters/limit"
         - $ref: "#/parameters/offset"
-        - $ref: "#/parameters/published"
+        - $ref: "#/parameters/is_published"
       security:
         - {}
         - Authorization: []
