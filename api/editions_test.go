@@ -574,8 +574,8 @@ func TestGetEditionsReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When the dataset does not exist return status not found", t, func() {
@@ -585,6 +585,9 @@ func TestGetEditionsReturnsError(t *testing.T) {
 		mockedDataStore := &storetest.StorerMock{
 			// getPermissionAttributesFromRequest does not return datastore errors, so execution continues.
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return nil, errs.ErrDatasetNotFound
+			},
+			GetDatasetByPreviousSeriesIDFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
 			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
@@ -606,8 +609,9 @@ func TestGetEditionsReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.GetDatasetByPreviousSeriesIDCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When no editions exist against an existing dataset return status not found", t, func() {
@@ -833,7 +837,7 @@ func TestGetEditionReturnsOK(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetLatestVersionStaticCalls()), ShouldEqual, 0)
@@ -855,6 +859,9 @@ func TestGetEditionReturnsOK(t *testing.T) {
 			},
 			GetLatestVersionStaticFunc: func(context.Context, string, string, string) (*models.Version, error) {
 				return exampleStaticVersion, nil
+			},
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
 			},
 			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID string, edition string, state string) ([]*models.Version, int, error) {
 				return nil, 0, nil
@@ -880,8 +887,9 @@ func TestGetEditionReturnsOK(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusOK)
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.CheckEditionExistsStaticCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetLatestVersionStaticCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 0)
 		So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
@@ -920,9 +928,9 @@ func TestGetEditionReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When the dataset does not exist return status not found", t, func() {
@@ -931,6 +939,9 @@ func TestGetEditionReturnsError(t *testing.T) {
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return nil, errs.ErrDatasetNotFound
+			},
+			GetDatasetByPreviousSeriesIDFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
 			// getPermissionAttributesFromRequest does not return datastore errors, so execution continues.
@@ -956,9 +967,10 @@ func TestGetEditionReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.GetDatasetByPreviousSeriesIDCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
-		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 0)
 	})
 
 	Convey("When edition does not exist for a dataset return status not found", t, func() {
@@ -995,7 +1007,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
@@ -1005,6 +1017,9 @@ func TestGetEditionReturnsError(t *testing.T) {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456/editions/678", http.NoBody)
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{ID: "123-456"}, nil
+			},
 			GetDatasetTypeFunc: func(context.Context, string, bool) (string, error) {
 				return models.CantabularFlexibleTable.String(), nil
 			},
@@ -1018,6 +1033,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetEditionCalls()), ShouldEqual, 1)
 	})
@@ -1055,7 +1071,7 @@ func TestGetEditionReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
-		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
 		So(len(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 1)
 		So(len(mockedDataStore.GetLatestVersionStaticCalls()), ShouldEqual, 1)
@@ -1122,6 +1138,9 @@ func TestGetEditionRecordsAuditEvent(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{ID: "123-456"}, nil
 			},
@@ -1220,6 +1239,9 @@ func TestGetEditionRecordsAuditEventWithPublishedVersionOnly(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{ID: "123-456"}, nil
 			},
@@ -1403,6 +1425,9 @@ func TestGetEditionAuditEventLogsErrorButContinues(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{ID: "123-456"}, nil
 			},
@@ -1490,6 +1515,9 @@ func TestGetEditionReturnsIsMigration(t *testing.T) {
 		}
 
 		mockedDataStore := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{ID: "123-456"}, nil
 			},
@@ -1606,6 +1634,9 @@ func TestGetEditionReturnsIsMigration(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(context.Context, string, string, string) error {
+				return nil
+			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{ID: "123-456"}, nil
 			},
@@ -1646,6 +1677,263 @@ func TestGetEditionReturnsIsMigration(t *testing.T) {
 				err := json.Unmarshal(w.Body.Bytes(), &edition)
 				So(err, ShouldBeNil)
 				So(edition.IsMigration, ShouldBeNil)
+			})
+		})
+	})
+}
+
+func TestGetEditionsPreviousSeriesID(t *testing.T) {
+	t.Parallel()
+
+	renamedDataset := &models.DatasetUpdate{
+		ID:   "new-series",
+		Next: &models.Dataset{ID: "new-series", Type: models.Static.String(), PreviousSeriesId: []string{"old-series"}},
+	}
+
+	authorisationMock := func() *authMock.MiddlewareMock {
+		return &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+		}
+	}
+
+	Convey("Given a request for the editions of a series ID that has since changed", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/old-series/editions", http.NoBody)
+		r = mux.SetURLVars(r, map[string]string{"dataset_id": "old-series"})
+		w := httptest.NewRecorder()
+
+		editionsList := []*models.EditionUpdate{
+			{
+				Next: &models.Edition{
+					Edition:   "2024",
+					DatasetID: "new-series",
+					Version:   1,
+					State:     models.AssociatedState,
+				},
+			},
+		}
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(ctx context.Context, id string) (*models.DatasetUpdate, error) {
+				if id == "new-series" {
+					return renamedDataset, nil
+				}
+				return nil, errs.ErrDatasetNotFound
+			},
+			GetDatasetByPreviousSeriesIDFunc: func(ctx context.Context, previousSeriesID string) (*models.DatasetUpdate, error) {
+				if previousSeriesID == "old-series" {
+					return renamedDataset, nil
+				}
+				return nil, errs.ErrDatasetNotFound
+			},
+			GetDatasetTypeFunc: func(_ context.Context, _ string, _ bool) (string, error) {
+				return models.Static.String(), nil
+			},
+			GetEditionsStaticFunc: func(context.Context, string, string, string, int, int) ([]*models.EditionUpdate, int, error) {
+				return editionsList, 1, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock(), application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
+
+		Convey("When getEditions is called", func() {
+			list, totalCount, err := api.getEditions(w, r, 20, 0)
+
+			Convey("Then the editions of the renamed series are returned", func() {
+				So(err, ShouldBeNil)
+				So(w.Code, ShouldEqual, http.StatusOK)
+				So(list, ShouldResemble, editionsList)
+				So(totalCount, ShouldEqual, 1)
+			})
+
+			Convey("And the lookups use the current series ID", func() {
+				So(mockedDataStore.GetDatasetByPreviousSeriesIDCalls()[0].PreviousSeriesID, ShouldEqual, "old-series")
+				So(mockedDataStore.GetDatasetTypeCalls()[0].DatasetID, ShouldEqual, "new-series")
+				So(mockedDataStore.GetEditionsStaticCalls()[0].DatasetID, ShouldEqual, "new-series")
+			})
+		})
+	})
+
+	Convey("Given a request for a series ID that matches neither a current nor a previous series", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/unknown-series/editions", http.NoBody)
+		r = mux.SetURLVars(r, map[string]string{"dataset_id": "unknown-series"})
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return nil, errs.ErrDatasetNotFound
+			},
+			GetDatasetByPreviousSeriesIDFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return nil, errs.ErrDatasetNotFound
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock(), application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
+
+		Convey("When getEditions is called", func() {
+			_, _, err := api.getEditions(w, r, 20, 0)
+
+			Convey("Then a not found error is returned without further lookups", func() {
+				So(err, ShouldEqual, errs.ErrDatasetNotFound)
+				So(w.Code, ShouldEqual, http.StatusNotFound)
+				So(len(mockedDataStore.GetDatasetTypeCalls()), ShouldEqual, 0)
+			})
+		})
+	})
+}
+
+func TestGetEditionPreviousSeriesAndEditionID(t *testing.T) {
+	t.Parallel()
+
+	renamedDataset := &models.DatasetUpdate{
+		ID:   "new-series",
+		Next: &models.Dataset{ID: "new-series", Type: models.Static.String(), PreviousSeriesId: []string{"old-series"}},
+	}
+
+	currentVersion := &models.Version{
+		DatasetID:         "new-series",
+		Edition:           "new-edition",
+		ReleaseDate:       "1996-04-01",
+		Version:           1,
+		PreviousEditionId: []string{"old-edition"},
+		Links: &models.VersionLinks{
+			Dataset: &models.LinkObject{
+				HRef: "http://localhost:22000/datasets/new-series",
+				ID:   "new-series",
+			},
+			Self: &models.LinkObject{
+				HRef: "http://localhost:22000/datasets/new-series/editions/new-edition/versions/1",
+			},
+			Edition: &models.LinkObject{
+				HRef: "http://localhost:22000/datasets/new-series/editions/new-edition",
+				ID:   "new-edition",
+			},
+			Version: &models.LinkObject{
+				HRef: "http://localhost:22000/datasets/new-series/editions/new-edition/versions/1",
+				ID:   "1",
+			},
+		},
+		LastUpdated: time.Date(2025, 3, 11, 0, 0, 0, 0, time.UTC),
+		State:       models.AssociatedState,
+	}
+
+	newMockedDataStore := func() *storetest.StorerMock {
+		return &storetest.StorerMock{
+			GetDatasetFunc: func(ctx context.Context, id string) (*models.DatasetUpdate, error) {
+				if id == "new-series" {
+					return renamedDataset, nil
+				}
+				return nil, errs.ErrDatasetNotFound
+			},
+			GetDatasetByPreviousSeriesIDFunc: func(ctx context.Context, previousSeriesID string) (*models.DatasetUpdate, error) {
+				if previousSeriesID == "old-series" {
+					return renamedDataset, nil
+				}
+				return nil, errs.ErrDatasetNotFound
+			},
+			GetDatasetTypeFunc: func(context.Context, string, bool) (string, error) {
+				return models.Static.String(), nil
+			},
+			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID, editionID, state string) error {
+				if datasetID == "new-series" && editionID == "new-edition" {
+					return nil
+				}
+				return errs.ErrEditionNotFound
+			},
+			GetVersionsStaticByPreviousEditionIDFunc: func(ctx context.Context, datasetID, previousEditionID, state string, offset, limit int) ([]models.Version, int, error) {
+				if datasetID == "new-series" && previousEditionID == "old-edition" {
+					return []models.Version{*currentVersion}, 1, nil
+				}
+				return nil, 0, errs.ErrVersionNotFound
+			},
+			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID, edition, state string) ([]*models.Version, int, error) {
+				if datasetID == "new-series" && edition == "new-edition" {
+					return []*models.Version{currentVersion}, 1, nil
+				}
+				return nil, 0, errs.ErrVersionsNotFound
+			},
+			GetLatestVersionStaticFunc: func(ctx context.Context, datasetID, editionID, state string) (*models.Version, error) {
+				if datasetID == "new-series" && editionID == "new-edition" {
+					return currentVersion, nil
+				}
+				return nil, errs.ErrVersionNotFound
+			},
+		}
+	}
+
+	authorisationMock := func() *authMock.MiddlewareMock {
+		return &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "test-user-id"}, nil
+			},
+		}
+	}
+
+	Convey("Given an authorised request using a previous series ID and a previous edition ID", t, func() {
+		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/old-series/editions/old-edition", nil)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := newMockedDataStore()
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, versionDoc *models.Version) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock(), application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, &applicationMocks.StaticDatasetServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
+
+		Convey("When we call the GET edition endpoint", func() {
+			api.Router.ServeHTTP(w, r)
+
+			Convey("Then it returns a 200 OK", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+			})
+
+			Convey("And the latest versions are looked up using the current series and edition IDs", func() {
+				So(len(mockedDataStore.GetLatestVersionStaticCalls()), ShouldEqual, 2)
+				So(mockedDataStore.GetLatestVersionStaticCalls()[0].DatasetID, ShouldEqual, "new-series")
+				So(mockedDataStore.GetLatestVersionStaticCalls()[0].EditionID, ShouldEqual, "new-edition")
+				So(mockedDataStore.GetLatestVersionStaticCalls()[1].DatasetID, ShouldEqual, "new-series")
+				So(mockedDataStore.GetLatestVersionStaticCalls()[1].EditionID, ShouldEqual, "new-edition")
+			})
+
+			Convey("And the previous edition ID was used to find the current edition", func() {
+				So(mockedDataStore.GetVersionsStaticByPreviousEditionIDCalls()[0].DatasetID, ShouldEqual, "new-series")
+				So(mockedDataStore.GetVersionsStaticByPreviousEditionIDCalls()[0].PreviousEditionID, ShouldEqual, "old-edition")
+			})
+
+			Convey("And the audit event records the URL that was requested", func() {
+				So(len(auditServiceMock.RecordVersionAuditEventCalls()), ShouldEqual, 1)
+				So(auditServiceMock.RecordVersionAuditEventCalls()[0].Resource, ShouldEqual, "/datasets/old-series/editions/old-edition")
+			})
+		})
+	})
+
+	Convey("Given an authorised request for an edition ID that matches neither a current nor a previous edition", t, func() {
+		r := createRequestWithAuth("GET", "http://localhost:22000/datasets/new-series/editions/unknown-edition", nil)
+		w := httptest.NewRecorder()
+
+		mockedDataStore := newMockedDataStore()
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock(), application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
+
+		Convey("When we call the GET edition endpoint", func() {
+			api.Router.ServeHTTP(w, r)
+
+			Convey("Then it returns a 404 not found", func() {
+				So(w.Code, ShouldEqual, http.StatusNotFound)
+				So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
+			})
+
+			Convey("And no versions are looked up", func() {
+				So(len(mockedDataStore.GetLatestVersionStaticCalls()), ShouldEqual, 0)
 			})
 		})
 	})

@@ -817,6 +817,56 @@ func TestGetDatasetReturnsOK(t *testing.T) {
 		So(len(auditServiceMock.RecordDatasetAuditEventCalls()), ShouldEqual, 1)
 	})
 
+	Convey("When the requested dataset ID is a previous series ID return status 200 with the renamed dataset", t, func() {
+		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/old-123", http.NoBody)
+		w := httptest.NewRecorder()
+
+		renamedDataset := &models.DatasetUpdate{
+			ID:      "renamed-123",
+			Current: &models.Dataset{ID: "renamed-123"},
+			Next:    &models.Dataset{ID: "renamed-123", Type: models.Filterable.String(), PreviousSeriesId: []string{"old-123"}},
+		}
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(ctx context.Context, id string) (*models.DatasetUpdate, error) {
+				if id == "renamed-123" {
+					return renamedDataset, nil
+				}
+				return nil, errs.ErrDatasetNotFound
+			},
+			GetDatasetByPreviousSeriesIDFunc: func(ctx context.Context, previousSeriesID string) (*models.DatasetUpdate, error) {
+				if previousSeriesID == "old-123" {
+					return renamedDataset, nil
+				}
+				return nil, errs.ErrDatasetNotFound
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return &permissionsAPISDK.EntityData{UserID: "admin"}, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordDatasetAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, dataset *models.Dataset) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, &applicationMocks.StaticDatasetServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(w.Body.String(), ShouldContainSubstring, "renamed-123")
+		So(len(mockedDataStore.GetDatasetByPreviousSeriesIDCalls()), ShouldEqual, 2)
+		So(mockedDataStore.GetDatasetByPreviousSeriesIDCalls()[0].PreviousSeriesID, ShouldEqual, "old-123")
+		So(len(auditServiceMock.RecordDatasetAuditEventCalls()), ShouldEqual, 1)
+	})
+
 	Convey("When dataset document has a current sub document return 200 (web mode)", t, func() {
 		r := httptest.NewRequest("GET", "http://localhost:22000/datasets/123-456", http.NoBody)
 		w := httptest.NewRecorder()
@@ -924,6 +974,9 @@ func TestGetDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
+			GetDatasetByPreviousSeriesIDFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return nil, errs.ErrDatasetNotFound
+			},
 		}
 
 		authorisationMock := &authMock.MiddlewareMock{
@@ -940,6 +993,7 @@ func TestGetDatasetReturnsError(t *testing.T) {
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
 		So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 2)
+		So(len(mockedDataStore.GetDatasetByPreviousSeriesIDCalls()), ShouldEqual, 2)
 	})
 
 	Convey("When the AuditService returns an error when logging the audit event, return 500", t, func() {

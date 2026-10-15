@@ -251,6 +251,9 @@ func TestGetPermissionAttributesFromRequest(t *testing.T) {
 				GetDatasetFunc: func(ctx context.Context, id string) (*models.DatasetUpdate, error) {
 					return nil, errs.ErrDatasetNotFound
 				},
+				GetDatasetByPreviousSeriesIDFunc: func(ctx context.Context, previousSeriesID string) (*models.DatasetUpdate, error) {
+					return nil, errs.ErrDatasetNotFound
+				},
 			}
 			api := DatasetAPI{
 				dataStore:              store.DataStore{Backend: mockedDataStore},
@@ -307,8 +310,9 @@ func TestGetPermissionAttributesFromRequest(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(attributes, ShouldResemble, map[string]string{"dataset_edition": previousSeriesID})
 				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
-				So(len(permissionsChecker.HasPermissionCalls()), ShouldEqual, 1)
-				So(permissionsChecker.HasPermissionCalls()[0].Attributes, ShouldResemble, map[string]string{"dataset_edition": previousSeriesID})
+				So(len(permissionsChecker.HasPermissionCalls()), ShouldEqual, 2)
+				So(permissionsChecker.HasPermissionCalls()[0].Attributes, ShouldResemble, map[string]string{"dataset_edition": datasetID})
+				So(permissionsChecker.HasPermissionCalls()[1].Attributes, ShouldResemble, map[string]string{"dataset_edition": previousSeriesID})
 			})
 		})
 
@@ -349,7 +353,7 @@ func TestGetPermissionAttributesFromRequest(t *testing.T) {
 			Convey("Then it should fall back to the current dataset id", func() {
 				So(err, ShouldBeNil)
 				So(attributes, ShouldResemble, map[string]string{"dataset_edition": datasetID})
-				So(len(permissionsChecker.HasPermissionCalls()), ShouldEqual, 1)
+				So(len(permissionsChecker.HasPermissionCalls()), ShouldEqual, 2)
 			})
 		})
 
@@ -499,6 +503,123 @@ func TestGetPermissionAttributesFromRequest(t *testing.T) {
 			Convey("Then it should return nil attributes and no error", func() {
 				So(err, ShouldBeNil)
 				So(attributes, ShouldBeNil)
+			})
+		})
+	})
+}
+
+func TestGetPermissionAttributesFromRequestPreviousEditionID(t *testing.T) {
+	renamedDataset := &models.DatasetUpdate{
+		ID:   "new-series",
+		Next: &models.Dataset{ID: "new-series", Type: models.Static.String(), PreviousSeriesId: []string{"old-series"}},
+	}
+
+	newMockedDataStore := func() *storetest.StorerMock {
+		return &storetest.StorerMock{
+			GetDatasetFunc: func(ctx context.Context, id string) (*models.DatasetUpdate, error) {
+				if id == "new-series" {
+					return renamedDataset, nil
+				}
+				return nil, errs.ErrDatasetNotFound
+			},
+			GetDatasetByPreviousSeriesIDFunc: func(ctx context.Context, previousSeriesID string) (*models.DatasetUpdate, error) {
+				if previousSeriesID == "old-series" {
+					return renamedDataset, nil
+				}
+				return nil, errs.ErrDatasetNotFound
+			},
+			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID, editionID, state string) error {
+				if datasetID == "new-series" && editionID == "new-edition" {
+					return nil
+				}
+				return errs.ErrEditionNotFound
+			},
+			GetVersionsStaticByPreviousEditionIDFunc: func(ctx context.Context, datasetID, previousEditionID, state string, offset, limit int) ([]models.Version, int, error) {
+				if datasetID == "new-series" && previousEditionID == "old-edition" {
+					return []models.Version{{Edition: "new-edition", PreviousEditionId: []string{"old-edition"}}}, 1, nil
+				}
+				return nil, 0, errs.ErrVersionNotFound
+			},
+			GetVersionsStaticByEditionNoLimitFunc: func(ctx context.Context, datasetID, edition, state string) ([]*models.Version, int, error) {
+				if datasetID == "new-series" && edition == "new-edition" {
+					return []*models.Version{{Edition: "new-edition", PreviousEditionId: []string{"old-edition"}}}, 1, nil
+				}
+				return nil, 0, errs.ErrVersionsNotFound
+			},
+		}
+	}
+
+	newAPI := func(mockedDataStore *storetest.StorerMock, permittedAttribute string) (*DatasetAPI, *authMock.PermissionsCheckerMock) {
+		permissionsChecker := &authMock.PermissionsCheckerMock{
+			HasPermissionFunc: func(ctx context.Context, entityData permissionsAPISDK.EntityData, permission string, attributes map[string]string) (bool, error) {
+				return attributes["dataset_edition"] == permittedAttribute, nil
+			},
+		}
+		return &DatasetAPI{
+			dataStore:              store.DataStore{Backend: mockedDataStore},
+			enablePrivateEndpoints: true,
+			EnablePrePublishView:   true,
+			authMiddleware: &authMock.MiddlewareMock{
+				ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+					return testEntityData, nil
+				},
+			},
+			permissionsChecker: permissionsChecker,
+		}, permissionsChecker
+	}
+
+	newRequest := func(datasetID, edition string) *http.Request {
+		req := httptest.NewRequest(http.MethodGet, "/datasets/"+datasetID+"/editions/"+edition, http.NoBody)
+		req.Header.Set(dprequest.AuthHeaderKey, dprequest.BearerPrefix+"valid-token")
+		return mux.SetURLVars(req, map[string]string{"dataset_id": datasetID, "edition": edition})
+	}
+
+	Convey("Given the series and edition IDs have both changed since the viewer was given access", t, func() {
+		Convey("When the request uses the current series ID and the previous edition ID", func() {
+			mockedDataStore := newMockedDataStore()
+			api, _ := newAPI(mockedDataStore, "old-series/old-edition")
+
+			attributes, err := api.getPermissionAttributesFromRequest(newRequest("new-series", "old-edition"))
+
+			Convey("Then it returns the permitted previous series and edition", func() {
+				So(err, ShouldBeNil)
+				So(attributes, ShouldResemble, map[string]string{"dataset_edition": "old-series/old-edition"})
+			})
+
+			Convey("And the current edition is found from the previous edition ID", func() {
+				So(mockedDataStore.CheckEditionExistsStaticCalls()[0].EditionID, ShouldEqual, "old-edition")
+				So(mockedDataStore.GetVersionsStaticByPreviousEditionIDCalls()[0].PreviousEditionID, ShouldEqual, "old-edition")
+				So(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()[0].Edition, ShouldEqual, "new-edition")
+			})
+		})
+
+		Convey("When the request uses the previous series ID and the previous edition ID", func() {
+			mockedDataStore := newMockedDataStore()
+			api, _ := newAPI(mockedDataStore, "old-series/old-edition")
+
+			attributes, err := api.getPermissionAttributesFromRequest(newRequest("old-series", "old-edition"))
+
+			Convey("Then it returns the permitted previous series and edition", func() {
+				So(err, ShouldBeNil)
+				So(attributes, ShouldResemble, map[string]string{"dataset_edition": "old-series/old-edition"})
+			})
+
+			Convey("And the dataset is found from the previous series ID", func() {
+				So(mockedDataStore.GetDatasetByPreviousSeriesIDCalls()[0].PreviousSeriesID, ShouldEqual, "old-series")
+				So(mockedDataStore.GetVersionsStaticByEditionNoLimitCalls()[0].DatasetID, ShouldEqual, "new-series")
+			})
+		})
+
+		Convey("When the viewer does not have access to any current or previous series and edition", func() {
+			mockedDataStore := newMockedDataStore()
+			api, permissionsChecker := newAPI(mockedDataStore, "unrelated-series/unrelated-edition")
+
+			attributes, err := api.getPermissionAttributesFromRequest(newRequest("new-series", "old-edition"))
+
+			Convey("Then it falls back to the series and edition from the request", func() {
+				So(err, ShouldBeNil)
+				So(attributes, ShouldResemble, map[string]string{"dataset_edition": "new-series/old-edition"})
+				So(len(permissionsChecker.HasPermissionCalls()), ShouldBeGreaterThan, 0)
 			})
 		})
 	})

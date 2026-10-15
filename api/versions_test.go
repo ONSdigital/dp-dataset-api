@@ -6154,7 +6154,7 @@ func TestGetVersionsPreviousSeriesID(t *testing.T) {
 			})
 
 			Convey("And all subsequent lookups use the resolved dataset ID", func() {
-				So(len(mockedDataStore.GetDatasetByPreviousSeriesIDCalls()), ShouldEqual, 1)
+				So(len(mockedDataStore.GetDatasetByPreviousSeriesIDCalls()), ShouldEqual, 2)
 				So(mockedDataStore.GetDatasetByPreviousSeriesIDCalls()[0].PreviousSeriesID, ShouldEqual, "old-series")
 				So(mockedDataStore.GetDatasetTypeCalls()[0].DatasetID, ShouldEqual, "new-series")
 				So(mockedDataStore.GetVersionsStaticCalls()[0].DatasetID, ShouldEqual, "new-series")
