@@ -1135,3 +1135,71 @@ func (api *DatasetAPI) resolvePreviousSeriesID(ctx context.Context, datasetID st
 
 	return dataset.ID, nil
 }
+
+// getDatasetByIDOrPreviousSeriesID returns the dataset for the requested ID. If no dataset exists with that ID
+// it falls back to the dataset that lists the requested ID as a previous series ID
+func (api *DatasetAPI) getDatasetByIDOrPreviousSeriesID(ctx context.Context, datasetID string, logData log.Data) (*models.DatasetUpdate, error) {
+	dataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
+	if err == nil {
+		return dataset, nil
+	}
+
+	if !errors.Is(err, errs.ErrDatasetNotFound) {
+		return nil, err
+	}
+
+	log.Info(ctx, "dataset not found, checking for previous series IDs", logData)
+
+	dataset, err = api.dataStore.Backend.GetDatasetByPreviousSeriesID(ctx, datasetID)
+	if err != nil {
+		if errors.Is(err, errs.ErrDatasetNotFound) {
+			return nil, errs.ErrDatasetNotFound
+		}
+		log.Error(ctx, "failed to retrieve dataset by previous series ID", err, logData)
+		return nil, err
+	}
+
+	log.Info(ctx, "dataset found using previous series ID", log.Data{
+		"requested_dataset_id": datasetID,
+		"matched_dataset_id":   dataset.ID,
+	})
+
+	return dataset, nil
+}
+
+// resolvePreviousEditionID returns the current edition ID for the one requested. If the requested edition
+// no longer exists it falls back to matching a previous edition ID
+func (api *DatasetAPI) resolvePreviousEditionID(ctx context.Context, datasetID, edition string, logData log.Data) (string, error) {
+	err := api.dataStore.Backend.CheckEditionExistsStatic(ctx, datasetID, edition, "")
+	if err == nil {
+		return edition, nil
+	}
+
+	if !errors.Is(err, errs.ErrEditionNotFound) {
+		log.Error(ctx, "failed to check edition exists", err, logData)
+		return "", err
+	}
+
+	log.Info(ctx, "edition not found, checking for previous edition IDs", logData)
+
+	versions, _, err := api.dataStore.Backend.GetVersionsStaticByPreviousEditionID(ctx, datasetID, edition, "", 0, 1)
+	if err != nil {
+		if errors.Is(err, errs.ErrVersionNotFound) {
+			return "", errs.ErrEditionNotFound
+		}
+		log.Error(ctx, "failed to retrieve versions by previous edition ID", err, logData)
+		return "", err
+	}
+
+	if len(versions) == 0 {
+		return "", errs.ErrEditionNotFound
+	}
+
+	log.Info(ctx, "edition found using previous edition ID", log.Data{
+		"dataset_id":        datasetID,
+		"requested_edition": edition,
+		"matched_edition":   versions[0].Edition,
+	})
+
+	return versions[0].Edition, nil
+}

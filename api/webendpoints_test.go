@@ -157,6 +157,9 @@ func TestWebSubnetEditionEndpoint(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{ID: "1234"}, nil
+			},
 			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
 				if authorised {
 					datasetSearchState = models.SubmittedState

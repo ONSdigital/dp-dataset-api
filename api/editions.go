@@ -29,7 +29,15 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 		return nil, 0, attrsErr
 	}
 
-	datasetType, err := api.dataStore.Backend.GetDatasetType(ctx, datasetID, api.enablePrivateEndpoints)
+	// The requested dataset ID may be a previous series ID, so resolve it to the current dataset ID
+	currentDatasetID, err := api.resolvePreviousSeriesID(ctx, datasetID, logData)
+	if err != nil {
+		log.Error(ctx, "getEditions endpoint: failed to resolve dataset ID", err, logData)
+		handleVersionAPIErr(ctx, err, w, logData)
+		return nil, 0, err
+	}
+
+	datasetType, err := api.dataStore.Backend.GetDatasetType(ctx, currentDatasetID, api.enablePrivateEndpoints)
 	if err != nil {
 		log.Error(ctx, "getEditions endpoint: unable to find dataset type", err, logData)
 		handleVersionAPIErr(ctx, err, w, logData)
@@ -67,7 +75,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 	var totalCount int
 
 	if datasetType == models.Static.String() {
-		results, totalCount, err = api.dataStore.Backend.GetEditionsStatic(ctx, datasetID, state, isPublished, offset, limit)
+		results, totalCount, err = api.dataStore.Backend.GetEditionsStatic(ctx, currentDatasetID, state, isPublished, offset, limit)
 		if err != nil {
 			log.Error(ctx, "getEditions endpoint: unable to find editions for dataset", err, logData)
 			if err == errs.ErrEditionsNotFound {
@@ -78,7 +86,7 @@ func (api *DatasetAPI) getEditions(w http.ResponseWriter, r *http.Request, limit
 			return nil, 0, err
 		}
 	} else {
-		results, totalCount, err = api.dataStore.Backend.GetEditions(ctx, datasetID, state, isPublished, offset, limit, authorised)
+		results, totalCount, err = api.dataStore.Backend.GetEditions(ctx, currentDatasetID, state, isPublished, offset, limit, authorised)
 		if err != nil {
 			log.Error(ctx, "getEditions endpoint: unable to find editions for dataset", err, logData)
 			if err == errs.ErrEditionNotFound {
@@ -142,7 +150,13 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 			return nil, attrsErr
 		}
 
-		datasetType, err := api.dataStore.Backend.GetDatasetType(ctx, datasetID, api.enablePrivateEndpoints)
+		currentDatasetID, err := api.resolvePreviousSeriesID(ctx, datasetID, logData)
+		if err != nil {
+			log.Error(ctx, "getEdition endpoint: failed to resolve dataset ID", err, logData)
+			return nil, err
+		}
+
+		datasetType, err := api.dataStore.Backend.GetDatasetType(ctx, currentDatasetID, api.enablePrivateEndpoints)
 		if err != nil {
 			log.Error(ctx, "getEdition endpoint: unable to find dataset type", err, logData)
 			return nil, err
@@ -155,6 +169,15 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 			authorised = api.checkUserPermission(r, logData, datasetEditionVersionReadPermission, nil)
 		}
 
+		currentEditionID := editionID
+		if datasetType == models.Static.String() && authorised {
+			currentEditionID, err = api.resolvePreviousEditionID(ctx, currentDatasetID, editionID, logData)
+			if err != nil {
+				log.Error(ctx, "getEdition endpoint: failed to resolve edition ID", err, logData)
+				return nil, err
+			}
+		}
+
 		var state string
 		if !authorised {
 			state = models.PublishedState
@@ -165,14 +188,14 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 		var versionToAudit *models.Version
 
 		if datasetType == models.Static.String() {
-			publishedVersion, err := api.dataStore.Backend.GetLatestVersionStatic(ctx, datasetID, editionID, models.PublishedState)
+			publishedVersion, err := api.dataStore.Backend.GetLatestVersionStatic(ctx, currentDatasetID, currentEditionID, models.PublishedState)
 			if err != nil && err != errs.ErrVersionNotFound {
 				log.Error(ctx, "getEdition endpoint: unable to find latest published static version", err, logData)
 				return nil, err
 			}
 
 			if authorised {
-				unpublishedVersion, err = api.dataStore.Backend.GetLatestVersionStatic(ctx, datasetID, editionID, "")
+				unpublishedVersion, err = api.dataStore.Backend.GetLatestVersionStatic(ctx, currentDatasetID, currentEditionID, "")
 				if err != nil && err != errs.ErrVersionNotFound {
 					log.Error(ctx, "getEdition endpoint: unable to find latest unpublished static version", err, logData)
 					return nil, err
@@ -190,7 +213,7 @@ func (api *DatasetAPI) getEdition(w http.ResponseWriter, r *http.Request) {
 				versionToAudit = unpublishedVersion
 			}
 		} else {
-			edition, err = api.dataStore.Backend.GetEdition(ctx, datasetID, editionID, state)
+			edition, err = api.dataStore.Backend.GetEdition(ctx, currentDatasetID, editionID, state)
 			if err != nil {
 				log.Error(ctx, "getEdition endpoint: unable to find edition", err, logData)
 				return nil, err

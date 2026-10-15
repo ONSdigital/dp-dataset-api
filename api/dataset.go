@@ -167,7 +167,7 @@ func (api *DatasetAPI) getDataset(w http.ResponseWriter, r *http.Request) {
 			return nil, attrsErr
 		}
 
-		dataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
+		dataset, err := api.getDatasetByIDOrPreviousSeriesID(ctx, datasetID, logData)
 		if err != nil {
 			log.Error(ctx, "getDataset endpoint: dataStore.Backend.GetDataset returned an error", err, logData)
 			return nil, err
