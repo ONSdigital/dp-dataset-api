@@ -558,6 +558,7 @@ func EditionConfirmVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 	return nil
 }
 
+//nolint:gocognit,gocyclo // Tech debt: Refactor to reduce cognitive and cyclomatic complexity.
 func PublishVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 	currentVersion *models.Version, // Called Instances in Mongo
 	versionUpdate *models.Version, // Next version, that is the new version
@@ -567,7 +568,7 @@ func PublishVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 	accessToken string) error {
 	data := versionDetails.baseLogData()
 	isStatic := currentVersion.Type == models.Static.String()
-	log.Info(ctx, "putVersion endpoint (publishVersion): beginning transition to published", data)
+	log.Info(ctx, "PublishVersion: beginning transition to published", data)
 
 	versionUpdate, err := PublishVersionInfo(ctx, smDS, currentVersion, versionUpdate, versionDetails, authEntityData, accessToken)
 	if err != nil {
@@ -617,11 +618,41 @@ func PublishVersion(ctx context.Context, smDS *StateMachineDatasetAPI,
 		}
 	}
 
+	// Purge Cloudflare cache if enabled.
+	if smDS.CloudflareEnabled {
+		// Static datasets have a topic prefix in their website URLs.
+		topicSlug := ""
+		if isStatic && versionUpdate.Links != nil && versionUpdate.Links.WebPage != nil {
+			topicSlug = utils.GetFirstPathSegment(versionUpdate.Links.WebPage.HRef)
+		}
+
+		prefixes := utils.GeneratePurgePrefixes(smDS.UrlBuilder.GetPublicWebsiteURL().String(), smDS.UrlBuilder.GetAPIRouterPublicURL().String(), versionDetails.datasetID, topicSlug)
+		data["purge_prefixes"] = prefixes
+
+		// Call Cloudflare purge asynchronously to prevent delaying the publish process.
+		go func() {
+			cloudflareCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), smDS.CloudflareClient.GetTimeout())
+			defer cancel()
+
+			log.Info(cloudflareCtx, "PublishVersion: cloudflare purge by prefixes started", data)
+
+			errPurge := smDS.CloudflareClient.PurgeByPrefixes(cloudflareCtx, prefixes)
+			if errPurge != nil {
+				log.Error(cloudflareCtx, "PublishVersion: failed to purge cache by prefixes", errPurge, data)
+				// TODO: Consider implementing Slack alert for failed Cloudflare purge.
+			} else {
+				log.Info(cloudflareCtx, "PublishVersion: successfully purged cache by prefixes", data)
+			}
+		}()
+	} else {
+		log.Info(ctx, "PublishVersion: Cloudflare client disabled, skipping cache purge", data)
+	}
+
 	return nil
 }
 
-// PublishFailedVersion is the enter function for the publish-failed state.
-// It updates the version state to publish-failed.
+// PublishFailedVersion is the enter function for the publish_failed state.
+// It updates the version state to publish_failed.
 func PublishFailedVersion(ctx context.Context, smDS *StateMachineDatasetAPI, currentVersion *models.Version,
 	_ *models.Version,
 	_ VersionDetails,
@@ -722,7 +753,7 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 
 	versionNumber, err := models.ParseAndValidateVersionNumber(ctx, versionDetails.version)
 	if err != nil {
-		log.Error(ctx, "putVersion endpoint: invalid version request", err)
+		log.Error(ctx, "putVersion endpoint: invalid version request", err, logData)
 		return nil, err
 	}
 
@@ -734,45 +765,20 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 			if versionUpdate.Type == models.Static.String() {
 				err = smDS.publishDistributionFiles(ctx, currentVersion, accessToken)
 				if err != nil {
-					log.Error(ctx, "putState endpoint: failed to publish distribution files", err, log.Data{})
+					log.Error(ctx, "putState endpoint: failed to publish distribution files", err, logData)
 					return versionUpdate, err
 				}
 
 				updatedV, errVersion := smDS.DataStore.Backend.UpdateStateStatic(ctx, currentVersion, &models.StateUpdate{State: "published"}, eTag)
 				if errVersion != nil {
-					log.Error(ctx, "putVersion endpoint: UpdateVersionStatic returned an error", errVersion)
+					log.Error(ctx, "putVersion endpoint: UpdateVersionStatic returned an error", errVersion, logData)
 					return nil, errVersion
-				}
-
-				// Purge Cloudflare cache if enabled and version is being published
-				if smDS.CloudflareEnabled {
-					topicSlug := utils.GetFirstPathSegment(updatedV.Links.WebPage.HRef)
-					prefixes := utils.GeneratePurgePrefixes(smDS.UrlBuilder.GetPublicWebsiteURL().String(), smDS.UrlBuilder.GetAPIRouterPublicURL().String(), topicSlug, versionDetails.datasetID, versionDetails.edition, versionDetails.version)
-					logData["purge_prefixes"] = prefixes
-
-					// Call Cloudflare purge asynchronously to prevent delaying the endpoint response.
-					go func() {
-						cloudflareCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), smDS.CloudflareClient.GetTimeout())
-						defer cancel()
-
-						log.Info(cloudflareCtx, "putState endpoint: cloudflare purge by prefixes started", logData)
-
-						errPurge := smDS.CloudflareClient.PurgeByPrefixes(cloudflareCtx, prefixes)
-						if errPurge != nil {
-							log.Error(cloudflareCtx, "putState endpoint: failed to purge cache by prefixes", errPurge, logData)
-							// TODO: Consider implementing Slack alert for failed Cloudflare purge.
-						} else {
-							log.Info(cloudflareCtx, "putState endpoint: successfully purged cache by prefixes", logData)
-						}
-					}()
-				} else {
-					log.Info(ctx, "putState endpoint: Cloudflare client disabled, skipping cache purge", logData)
 				}
 
 				return updatedV, nil
 			} else {
 				if _, errVersion := smDS.DataStore.Backend.UpdateVersion(ctx, currentVersion, versionUpdate, eTag); errVersion != nil {
-					log.Error(ctx, "putVersion endpoint: UpdateVersion returned an error", err)
+					log.Error(ctx, "putVersion endpoint: UpdateVersion returned an error", errVersion, logData)
 					return nil, errVersion
 				}
 			}
@@ -787,20 +793,20 @@ func PublishVersionInfo(ctx context.Context, smDS *StateMachineDatasetAPI,
 				if versionUpdate.Type == models.Static.String() {
 					currentVersion, err = smDS.DataStore.Backend.GetVersionStatic(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
 					if err != nil {
-						log.Error(ctx, "putVersion endpoint: datastore.GetVersionStatic returned an error", err)
+						log.Error(ctx, "putVersion endpoint: datastore.GetVersionStatic returned an error", err, logData)
 						return nil, err
 					}
 				} else {
 					currentVersion, err = smDS.DataStore.Backend.GetVersion(ctx, versionDetails.datasetID, versionDetails.edition, versionNumber, "")
 					if err != nil {
-						log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err)
+						log.Error(ctx, "putVersion endpoint: datastore.GetVersion returned an error", err, logData)
 						return nil, err
 					}
 				}
 			}
 
 			if _, err := doUpdate(); err != nil {
-				log.Error(ctx, "putVersion endpoint: failed to update version document on 2nd attempt", err)
+				log.Error(ctx, "putVersion endpoint: failed to update version document on 2nd attempt", err, logData)
 				return nil, err
 			}
 		} else {

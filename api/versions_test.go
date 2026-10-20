@@ -2009,10 +2009,33 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 				},
 			}
 
-			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, &applicationMocks.StaticDatasetServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
+			purgedPrefixes := make(chan []string, 1)
+			cloudflareMock := &cloudflareMocks.ClienterMock{
+				PurgeByPrefixesFunc: func(ctx context.Context, prefixes []string) error {
+					purgedPrefixes <- prefixes
+					return nil
+				},
+				GetTimeoutFunc: func() time.Duration {
+					return 30 * time.Second
+				},
+			}
+
+			api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, cloudflareMock, auditServiceMock, &applicationMocks.StaticDatasetServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 			api.Router.ServeHTTP(w, r)
 
+			select {
+			case prefixes := <-purgedPrefixes:
+				So(prefixes, ShouldResemble, []string{
+					"localhost:20000/datasets/123",
+					"localhost:23200/v1/datasets/123",
+				})
+			case <-time.After(5 * time.Second):
+				t.Fatal("timed out waiting for Cloudflare purge")
+			}
+
 			So(w.Code, ShouldEqual, http.StatusOK)
+			So(cloudflareMock.GetTimeoutCalls(), ShouldHaveLength, 1)
+			So(cloudflareMock.PurgeByPrefixesCalls(), ShouldHaveLength, 1)
 			So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
 			So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 			So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
@@ -2165,7 +2188,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			b := `{"downloads": { "csv": { "public": "http://cmd-dev/test-site/cpih01", "size": "12", "href": "http://localhost:8080/cpih01"}}}`
 			r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
-			updateVersionDownloadTest(r)
+			updateVersionDownloadTest(t, r)
 
 			Convey("then the request body has been drained", func() {
 				_, err := r.Body.Read(make([]byte, 1))
@@ -2177,7 +2200,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 			b := `{"downloads": { "xls": { "public": "http://cmd-dev/test-site/cpih01", "size": "12", "href": "http://localhost:8080/cpih01"}}}`
 			r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123/editions/2017/versions/1", bytes.NewBufferString(b))
 
-			updateVersionDownloadTest(r)
+			updateVersionDownloadTest(t, r)
 
 			Convey("then the request body has been drained", func() {
 				_, err := r.Body.Read(make([]byte, 1))
@@ -2187,7 +2210,7 @@ func TestPutVersionReturnsSuccessfully(t *testing.T) {
 	})
 }
 
-func updateVersionDownloadTest(r *http.Request) {
+func updateVersionDownloadTest(t *testing.T, r *http.Request) {
 	w := httptest.NewRecorder()
 
 	generatorMock := &mocks.DownloadsGeneratorMock{
@@ -2278,10 +2301,33 @@ func updateVersionDownloadTest(r *http.Request) {
 		},
 	}
 
-	api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, auditServiceMock, &applicationMocks.StaticDatasetServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
+	purgedPrefixes := make(chan []string, 1)
+	cloudflareMock := &cloudflareMocks.ClienterMock{
+		PurgeByPrefixesFunc: func(ctx context.Context, prefixes []string) error {
+			purgedPrefixes <- prefixes
+			return nil
+		},
+		GetTimeoutFunc: func() time.Duration {
+			return 30 * time.Second
+		},
+	}
+
+	api := GetAPIWithCMDMocks(mockedDataStore, generatorMock, authorisationMock, application.SearchContentUpdatedProducer{}, cloudflareMock, auditServiceMock, &applicationMocks.StaticDatasetServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
 	api.Router.ServeHTTP(w, r)
 
+	select {
+	case prefixes := <-purgedPrefixes:
+		So(prefixes, ShouldResemble, []string{
+			"localhost:20000/datasets/123",
+			"localhost:23200/v1/datasets/123",
+		})
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for Cloudflare purge")
+	}
+
 	So(w.Code, ShouldEqual, http.StatusOK)
+	So(cloudflareMock.GetTimeoutCalls(), ShouldHaveLength, 1)
+	So(cloudflareMock.PurgeByPrefixesCalls(), ShouldHaveLength, 1)
 	So(len(mockedDataStore.CheckEditionExistsCalls()), ShouldEqual, 1)
 	So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 2)
 	So(len(mockedDataStore.UpdateVersionCalls()), ShouldEqual, 1)
