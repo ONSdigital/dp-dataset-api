@@ -235,6 +235,106 @@ Feature: Update version in publishing mode
       }
       """
 
+  Scenario: Publish a version of a CMD dataset
+    Given I am an admin user
+    And cloudflare is enabled
+    And I have these datasets:
+      """
+      [
+        {
+          "id": "test-filterable-dataset",
+          "type": "filterable",
+          "state": "associated",
+          "links": {}
+        }
+      ]
+      """
+    And I have these editions:
+      """
+      [
+        {
+          "id": "test-filterable-edition",
+          "edition": "2021",
+          "state": "edition-confirmed",
+          "links": {
+            "dataset": {
+              "id": "test-filterable-dataset"
+            },
+            "latest_version": {
+              "id": "1",
+              "href": "/datasets/test-filterable-dataset/editions/2021/versions/1"
+            }
+          }
+        }
+      ]
+      """
+    And I have these versions:
+      """
+      [
+        {
+          "id": "test-filterable-version",
+          "version": 1,
+          "state": "associated",
+          "type": "v4",
+          "edition": "2021",
+          "links": {
+            "dataset": {
+              "id": "test-filterable-dataset"
+            },
+            "self": {
+              "href": "/datasets/test-filterable-dataset/editions/2021/versions/1"
+            }
+          }
+        }
+      ]
+      """
+    And these versions need to be published:
+      """
+      [
+        {
+          "version_id": "test-filterable-version",
+          "version_number": "1"
+        }
+      ]
+      """
+    When I PUT "/datasets/test-filterable-dataset/editions/2021/versions/1"
+      """
+      {
+        "instance_id": "test-filterable-version",
+        "license": "ONS",
+        "release_date": "2017-04-04",
+        "state": "published",
+        "links": {
+          "version": {
+            "id": "1",
+            "href": "/datasets/test-filterable-dataset/editions/2021/versions/1"
+          }
+        }
+      }
+      """
+    Then I should receive the following JSON response with status "200":
+      """
+      {
+        "dataset_id": "test-filterable-dataset",
+        "id": "test-filterable-version",
+        "last_updated": "0001-01-01T00:00:00Z",
+        "links": {
+          "dataset": {
+            "id": "test-filterable-dataset"
+          },
+          "self": {
+            "href": "/datasets/test-filterable-dataset/editions/2021/versions/1"
+          }
+        },
+        "release_date": "2017-04-04",
+        "edition": "2021",
+        "state": "published"
+      }
+      """
+    And the following URL prefixes are purged by cloudflare:
+      | localhost:20000/datasets/test-filterable-dataset    |
+      | localhost:23200/v1/datasets/test-filterable-dataset |
+
   Scenario: Update a version of a Cantabular dataset
     Given I am an admin user
     And I have a real kafka container with topic "cantabular-export-start"
@@ -274,6 +374,7 @@ Feature: Update version in publishing mode
 
   Scenario: Update a published version of a Cantabular dataset
     Given I am an admin user
+    And cloudflare is enabled
     And I have a real kafka container with topic "cantabular-export-start"
     And these versions need to be published:
       """
@@ -328,9 +429,13 @@ Feature: Update version in publishing mode
         "state": "published"
       }
       """
+    And the following URL prefixes are purged by cloudflare:
+      | localhost:20000/datasets/test-cantabular-dataset-2    |
+      | localhost:23200/v1/datasets/test-cantabular-dataset-2 |
 
   Scenario: Update a published version of a Cantabular dataset as a publisher user
     Given I am a publisher user
+    And cloudflare is enabled
     And I have a real kafka container with topic "cantabular-export-start"
     And these versions need to be published:
       """
@@ -385,6 +490,9 @@ Feature: Update version in publishing mode
         "state": "published"
       }
       """
+    And the following URL prefixes are purged by cloudflare:
+      | localhost:20000/datasets/test-cantabular-dataset-2    |
+      | localhost:23200/v1/datasets/test-cantabular-dataset-2 |
 
   Scenario: Update the edition ID of a Cantabular dataset
     Given I am an admin user
@@ -399,7 +507,7 @@ Feature: Update version in publishing mode
     Then the HTTP status code should be "400"
     And I should receive the following response:
       """
-            unable to update edition-id, invalid dataset type
+      unable to update edition-id, invalid dataset type
       """
 
   Scenario: Update the edition ID of a filterable dataset
@@ -414,5 +522,5 @@ Feature: Update version in publishing mode
     Then the HTTP status code should be "400"
     And I should receive the following response:
       """
-            unable to update edition-id, invalid dataset type
+      unable to update edition-id, invalid dataset type
       """
