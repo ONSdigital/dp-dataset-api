@@ -406,6 +406,9 @@ func (svc *Service) initGraphDB(ctx context.Context) error {
 			SetInstanceIsPublishedFunc: func(context.Context, string) error {
 				return nil
 			},
+			AddVersionDetailsToInstanceFunc: func(ctx context.Context, instanceID string, datasetID string, edition string, version int) error {
+				return nil
+			},
 		}
 	} else {
 		svc.graphDB, svc.graphDBErrorConsumer, err = svc.serviceList.GetGraphDB(ctx)
