@@ -46,8 +46,8 @@ github.com/ONSdigital/dp-net v1.0.12/go.mod h1:2lvIKOlD4T3BjWQwjHhBUO2UNWDk82u/+
 github.com/ONSdigital/dp-net v1.2.0/go.mod h1:NinlaqcsPbIR+X7j5PXCl3UI5G2zCL041SDF6WIiiO4=
 github.com/ONSdigital/dp-net/v2 v2.22.0 h1:LY9C5x1+sfK9QyjNpB2G3TPvAtSuOFR9FRcXsR9twqs=
 github.com/ONSdigital/dp-net/v2 v2.22.0/go.mod h1:F6yL3jjuVwBLVMFIKgHF3zhMRbmZysAxBiu+aIAi3Z0=
-github.com/ONSdigital/dp-net/v3 v3.15.0 h1:Q0lGoeogoGrK8+e6WWPspuG8YuZ1PTgk7tefXN1C75c=
-github.com/ONSdigital/dp-net/v3 v3.15.0/go.mod h1:FyZAmEN07s8XsF96tU0Q8sFCapJe9NC3ZKqstXegZjg=
+github.com/ONSdigital/dp-net/v3 v3.17.0 h1:NH89PoL9xLBR0TmTu22Zr1wcB9+ppw9L8Ng34Sjlvpw=
+github.com/ONSdigital/dp-net/v3 v3.17.0/go.mod h1:8e+ARajx6g9XQb+v4/u9EB9ehPhy/7BsrO2a2pcMX9E=
 github.com/ONSdigital/dp-otel-go v0.0.9 h1:EOAokKSZmIbus001yHkqksfza7200zRs7JRw+5PX9Gw=
 github.com/ONSdigital/dp-otel-go v0.0.9/go.mod h1:Eb74zgPrTwTnqfaz8G2tx3vdLo1UBst2OJYNBGhiDKQ=
 github.com/ONSdigital/dp-permissions-api v1.10.1 h1:dOyPtS94CpBgS0Y1oZJy84UcKZOHkmDK+Zdg5OClEXs=

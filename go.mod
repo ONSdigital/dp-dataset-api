@@ -14,7 +14,7 @@ require (
 	github.com/ONSdigital/dp-kafka/v4 v4.3.0
 	github.com/ONSdigital/dp-mongodb/v3 v3.13.0
 	github.com/ONSdigital/dp-net/v2 v2.22.0
-	github.com/ONSdigital/dp-net/v3 v3.15.0
+	github.com/ONSdigital/dp-net/v3 v3.17.0
 	github.com/ONSdigital/dp-otel-go v0.0.9
 	github.com/ONSdigital/dp-permissions-api v1.10.1
 	github.com/ONSdigital/dp-topic-api v1.3.1
