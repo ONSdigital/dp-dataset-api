@@ -44,6 +44,7 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I have these datasets:$`, c.iHaveTheseDatasets)
 	ctx.Step(`^I have these "([^"]*)" datasets:$`, c.iHaveTheseConditionalDatasets)
 	ctx.Step(`^I have these editions:$`, c.iHaveTheseEditions)
+	ctx.Step(`^I have these realistic editions:$`, c.iHaveTheseRealisticEditions)
 	ctx.Step(`^I have these versions:$`, c.iHaveTheseVersions)
 	ctx.Step(`^I have these static versions:$`, c.iHaveTheseStaticVersions)
 	ctx.Step(`^these versions need to be published:$`, c.theseVersionsNeedToBePublished)
@@ -414,6 +415,22 @@ func (c *DatasetComponent) iHaveTheseEditions(editionsJSON *godog.DocString) err
 		}
 	}
 
+	return nil
+}
+
+func (c *DatasetComponent) iHaveTheseRealisticEditions(editionsJSON *godog.DocString) error {
+	var editions []models.EditionUpdate
+	if err := json.Unmarshal([]byte(editionsJSON.Content), &editions); err != nil {
+		return err
+	}
+
+	editionsCollection := c.MongoClient.ActualCollectionName(config.EditionsCollection)
+	for timeOffset := range editions {
+		edition := &editions[timeOffset]
+		if err := c.putDocumentInDatabase(edition, edition.ID, editionsCollection, timeOffset); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
