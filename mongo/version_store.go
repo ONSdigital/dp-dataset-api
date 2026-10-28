@@ -339,30 +339,49 @@ func (m *Mongo) GetAllStaticVersions(ctx context.Context, datasetID, state strin
 }
 
 // GetEditionsStatic retrieves a paginated list of editions for a given dataset.
-// Editions are ordered by the release date of the oldest version for each edition.
+// Editions are ordered by the release date of the oldest matching version for each edition.
 // Each Version record is mapped to an EditionUpdate with Current and Next set depending on the state.
 // TODO: Refactor this to reduce the complexity
 //
 //nolint:gocyclo,gocognit // cognitive complexity 48 (> 40) is acceptable for now
-func (m *Mongo) GetEditionsStatic(ctx context.Context, datasetID, state, isPublished string, offset, limit int) ([]*models.EditionUpdate, int, error) {
+func (m *Mongo) GetEditionsStatic(ctx context.Context, datasetID string, authorised bool, isPublished *bool, offset, limit int) ([]*models.EditionUpdate, int, error) {
 	selector := bson.M{"links.dataset.id": datasetID}
-	if state != "" {
-		selector["state"] = state
+	if !authorised || (isPublished != nil && *isPublished) {
+		selector["state"] = models.PublishedState
 	}
 
-	pipeline := []bson.M{
+	basePipeline := []bson.M{
 		{"$match": selector},
 		{"$group": bson.M{
 			"_id": "$edition",
 			"oldest_version_release_date": bson.M{
 				"$min": "$release_date",
 			},
-		}},
-		{"$sort": bson.D{
-			{Key: "oldest_version_release_date", Value: -1},
-			{Key: "_id", Value: 1},
+			"has_published": bson.M{
+				"$max": bson.M{
+					"$cond": bson.A{
+						bson.M{"$eq": bson.A{"$state", models.PublishedState}},
+						1,
+						0,
+					},
+				},
+			},
 		}},
 	}
+
+	if authorised && isPublished != nil && !*isPublished {
+		basePipeline = append(basePipeline, bson.M{
+			"$match": bson.M{"has_published": 0},
+		})
+	}
+
+	pipeline := append([]bson.M{}, basePipeline...)
+	pipeline = append(pipeline, bson.M{
+		"$sort": bson.D{
+			{Key: "oldest_version_release_date", Value: -1},
+			{Key: "_id", Value: 1},
+		},
+	})
 
 	if offset > 0 {
 		pipeline = append(pipeline, bson.M{"$skip": offset})
@@ -381,21 +400,20 @@ func (m *Mongo) GetEditionsStatic(ctx context.Context, datasetID, state, isPubli
 	var editionResults []struct {
 		EditionID string `bson:"edition_id"`
 	}
+
 	if err := m.Connection.Collection(m.ActualCollectionName(config.VersionsCollection)).Aggregate(ctx, pipeline, &editionResults); err != nil {
 		return nil, 0, err
 	}
+
 	sortedEditionIDs := make([]string, 0, len(editionResults))
 	for _, result := range editionResults {
 		sortedEditionIDs = append(sortedEditionIDs, result.EditionID)
 	}
 
-	countPipeline := []bson.M{
-		{"$match": selector},
-		{"$group": bson.M{
-			"_id": "$edition",
-		}},
-		{"$count": "total_count"},
-	}
+	countPipeline := append([]bson.M{}, basePipeline...)
+	countPipeline = append(countPipeline, bson.M{
+		"$count": "total_count",
+	})
 
 	var countResults []struct {
 		TotalCount int `bson:"total_count"`
@@ -417,40 +435,20 @@ func (m *Mongo) GetEditionsStatic(ctx context.Context, datasetID, state, isPubli
 		if err != nil && !errors.Is(err, errs.ErrVersionNotFound) {
 			return nil, 0, err
 		}
-		var unpublishedVersion *models.Version
-		if state != models.PublishedState {
-			unpublishedVersion, err = m.GetLatestVersionStatic(ctx, datasetID, editionID, "")
+
+		var latestVersion *models.Version
+		if authorised {
+			latestVersion, err = m.GetLatestVersionStatic(ctx, datasetID, editionID, "")
 			if err != nil && !errors.Is(err, errs.ErrVersionNotFound) {
 				return nil, 0, err
 			}
 		}
 
-		edition, err := utils.MapVersionsToEditionUpdate(publishedVersion, unpublishedVersion)
+		edition, err := utils.MapVersionsToEditionUpdate(publishedVersion, latestVersion)
 		if err != nil {
 			return nil, 0, err
 		}
-		if isPublished != "" {
-			IsPublishedBool, _ := strconv.ParseBool(strings.ToLower(isPublished))
-			if IsPublishedBool {
-				if edition.Current != nil && (edition.Current.State == models.PublishedState || edition.Next.State == models.PublishedState) {
-					editions = append(editions, edition)
-				} else if edition.Current == nil && edition.Next.State == models.PublishedState {
-					editions = append(editions, edition)
-				} else {
-					continue
-				}
-			} else {
-				if edition.Current == nil && edition.Next.State != models.PublishedState {
-					editions = append(editions, edition)
-				} else if edition.Current != nil && (edition.Current.State != models.PublishedState && edition.Next.State != models.PublishedState) {
-					editions = append(editions, edition)
-				} else {
-					continue
-				}
-			}
-		} else {
-			editions = append(editions, edition)
-		}
+		editions = append(editions, edition)
 	}
 
 	return editions, totalCount, nil

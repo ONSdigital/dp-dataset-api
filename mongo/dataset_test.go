@@ -21,37 +21,73 @@ var (
 
 func TestBuildEditionsQuery(t *testing.T) {
 	t.Parallel()
-	Convey("When no state was set and the request is authorised then the selector only queries by id", t, func() {
-		selector := buildEditionsQuery(id, "", true)
-		So(selector, ShouldNotBeNil)
-		So(selector, ShouldHaveLength, 1)
-		So(selector["next.links.dataset.id"], ShouldEqual, id)
-	})
 
-	Convey("When no state was set and the request is not authorised then the selector queries by id and current must exist", t, func() {
-		selector := buildEditionsQuery(id, "", false)
-		So(selector, ShouldNotBeNil)
-		So(selector, ShouldHaveLength, 2)
-		So(selector["next.links.dataset.id"], ShouldEqual, id)
-		So(selector["current"], ShouldResemble, bson.M{"$exists": true})
-	})
+	tests := []struct {
+		name        string
+		authorised  bool
+		isPublished *bool
+		expected    bson.M
+	}{
+		{
+			name:       "authorised with isPublished unset",
+			authorised: true,
+			expected: bson.M{
+				"next.links.dataset.id": id,
+			},
+		},
+		{
+			name:        "authorised with isPublished set to true",
+			authorised:  true,
+			isPublished: new(true),
+			expected: bson.M{
+				"next.links.dataset.id": id,
+				"current.state":         models.PublishedState,
+			},
+		},
+		{
+			name:        "authorised with isPublished set to false",
+			authorised:  true,
+			isPublished: new(false),
+			expected: bson.M{
+				"next.links.dataset.id": id,
+				"current.state": bson.M{
+					"$ne": models.PublishedState,
+				},
+			},
+		},
+		{
+			name: "unauthorised with isPublished unset",
+			expected: bson.M{
+				"next.links.dataset.id": id,
+				"current.state":         models.PublishedState,
+			},
+		},
+		{
+			name:        "unauthorised with isPublished set to true",
+			isPublished: new(true),
+			expected: bson.M{
+				"next.links.dataset.id": id,
+				"current.state":         models.PublishedState,
+			},
+		},
+		{
+			name:        "unauthorised with isPublished set to false",
+			isPublished: new(false),
+			expected: bson.M{
+				"next.links.dataset.id": id,
+				"current.state":         models.PublishedState,
+			},
+		},
+	}
 
-	Convey("When state was set to published and request is authorised then the selector queries by id and state", t, func() {
-		selector := buildEditionsQuery(id, state, true)
-		So(selector, ShouldNotBeNil)
-		So(selector, ShouldHaveLength, 2)
-		So(selector["next.links.dataset.id"], ShouldEqual, id)
-		So(selector["current.state"], ShouldEqual, state)
-	})
-
-	Convey("When state was set to published and request is not authorised then the selector queries by id, state and current must exist", t, func() {
-		selector := buildEditionsQuery(id, state, false)
-		So(selector, ShouldNotBeNil)
-		So(selector, ShouldHaveLength, 3)
-		So(selector["next.links.dataset.id"], ShouldEqual, id)
-		So(selector["current.state"], ShouldEqual, state)
-		So(selector["current"], ShouldResemble, bson.M{"$exists": true})
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			Convey(tt.name, t, func() {
+				selector := buildEditionsQuery(id, tt.authorised, tt.isPublished)
+				So(selector, ShouldResemble, tt.expected)
+			})
+		})
+	}
 }
 
 func TestBuildEditionQuery(t *testing.T) {

@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
-	"strings"
 	"time"
 
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
@@ -164,8 +162,8 @@ func (m *Mongo) CheckDatasetTitleExist(ctx context.Context, title string) (bool,
 }
 
 // GetEditions retrieves all edition documents for a dataset
-func (m *Mongo) GetEditions(ctx context.Context, id, state, isPublished string, offset, limit int, authorised bool) ([]*models.EditionUpdate, int, error) {
-	selector := buildEditionsQuery(id, state, authorised)
+func (m *Mongo) GetEditions(ctx context.Context, datasetID string, authorised bool, isPublished *bool, offset, limit int) ([]*models.EditionUpdate, int, error) {
+	selector := buildEditionsQuery(datasetID, authorised, isPublished)
 
 	// get total count and paginated values according to provided offset and limit
 	results := []*models.EditionUpdate{}
@@ -178,50 +176,30 @@ func (m *Mongo) GetEditions(ctx context.Context, id, state, isPublished string, 
 	if totalCount < 1 {
 		return nil, 0, errs.ErrEditionNotFound
 	}
-	filteredResults := make([]*models.EditionUpdate, 0, len(results))
-	if isPublished != "" {
-		isPublishedBool, _ := strconv.ParseBool((strings.ToLower(isPublished)))
-		if isPublishedBool {
-			for _, res := range results {
-				if res.Current != nil && (res.Next.State == models.PublishedState || res.Current.State == models.PublishedState) {
-					filteredResults = append(filteredResults, res)
-				} else if res.Current == nil && res.Next.State == models.PublishedState {
-					filteredResults = append(filteredResults, res)
-				} else {
-					continue
-				}
-			}
-		} else {
-			for _, res := range results {
-				if res.Current == nil && res.Next.State != models.PublishedState {
-					filteredResults = append(filteredResults, res)
-				} else if res.Current != nil && (res.Current.State != models.PublishedState && res.Next.State != models.PublishedState) {
-					filteredResults = append(filteredResults, res)
-				} else {
-					continue
-				}
-			}
-		}
-	} else {
-		return results, totalCount, nil
-	}
-	return filteredResults, totalCount, nil
+
+	return results, totalCount, nil
 }
 
-func buildEditionsQuery(id, state string, authorised bool) bson.M {
-	// all queries must get the dataset by id
+func buildEditionsQuery(datasetID string, authorised bool, isPublished *bool) bson.M {
 	selector := bson.M{
-		"next.links.dataset.id": id,
+		"next.links.dataset.id": datasetID,
 	}
 
-	// non-authorised queries require that the current edition must exist
 	if !authorised {
-		selector["current"] = bson.M{"$exists": true}
+		selector["current.state"] = models.PublishedState
+		return selector
 	}
 
-	// if state is required, then we need to query by state
-	if state != "" {
-		selector["current.state"] = state
+	if isPublished == nil {
+		return selector
+	}
+
+	if *isPublished {
+		selector["current.state"] = models.PublishedState
+	} else {
+		selector["current.state"] = bson.M{
+			"$ne": models.PublishedState,
+		}
 	}
 
 	return selector
