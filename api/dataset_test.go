@@ -3475,7 +3475,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
 			},
-			GetEditionsFunc: func(context.Context, string, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
+			GetEditionsFunc: func(context.Context, string, bool, *bool, int, int) ([]*models.EditionUpdate, int, error) {
 				return []*models.EditionUpdate{}, 0, nil
 			},
 			DeleteDatasetFunc: func(context.Context, string) error {
@@ -3517,7 +3517,7 @@ func TestDeleteDatasetReturnsSuccessfully(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
 			},
-			GetEditionsFunc: func(context.Context, string, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
+			GetEditionsFunc: func(context.Context, string, bool, *bool, int, int) ([]*models.EditionUpdate, int, error) {
 				return []*models.EditionUpdate{{}}, 0, nil
 			},
 			DeleteEditionFunc: func(context.Context, string) error {
@@ -3705,7 +3705,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
 			},
-			GetEditionsFunc: func(context.Context, string, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
+			GetEditionsFunc: func(context.Context, string, bool, *bool, int, int) ([]*models.EditionUpdate, int, error) {
 				return []*models.EditionUpdate{}, 0, nil
 			},
 			DeleteDatasetFunc: func(context.Context, string) error {
@@ -3743,7 +3743,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Current: &models.Dataset{State: models.PublishedState}}, nil
 			},
-			GetEditionsFunc: func(context.Context, string, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
+			GetEditionsFunc: func(context.Context, string, bool, *bool, int, int) ([]*models.EditionUpdate, int, error) {
 				return []*models.EditionUpdate{}, 0, nil
 			},
 			DeleteDatasetFunc: func(context.Context, string) error {
@@ -3779,7 +3779,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return &models.DatasetUpdate{Next: &models.Dataset{State: models.CreatedState}}, nil
 			},
-			GetEditionsFunc: func(context.Context, string, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
+			GetEditionsFunc: func(context.Context, string, bool, *bool, int, int) ([]*models.EditionUpdate, int, error) {
 				return []*models.EditionUpdate{}, 0, nil
 			},
 			DeleteDatasetFunc: func(context.Context, string) error {
@@ -3815,7 +3815,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return nil, errs.ErrDatasetNotFound
 			},
-			GetEditionsFunc: func(context.Context, string, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
+			GetEditionsFunc: func(context.Context, string, bool, *bool, int, int) ([]*models.EditionUpdate, int, error) {
 				return []*models.EditionUpdate{}, 0, nil
 			},
 			DeleteDatasetFunc: func(context.Context, string) error {
@@ -3851,7 +3851,7 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
 				return nil, errors.New("database is broken")
 			},
-			GetEditionsFunc: func(context.Context, string, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
+			GetEditionsFunc: func(context.Context, string, bool, *bool, int, int) ([]*models.EditionUpdate, int, error) {
 				return []*models.EditionUpdate{}, 0, nil
 			},
 			DeleteDatasetFunc: func(context.Context, string) error {

@@ -125,8 +125,12 @@ func TestWebSubnetEditionsEndpoint(t *testing.T) {
 				datasetSearchState = state
 				return nil
 			},
-			GetEditionsFunc: func(_ context.Context, _, state, _ string, _, _ int, _ bool) ([]*models.EditionUpdate, int, error) {
-				editionSearchState = state
+			GetEditionsFunc: func(_ context.Context, _ string, authorised bool, isPublished *bool, _ int, _ int) ([]*models.EditionUpdate, int, error) {
+				if authorised {
+					editionSearchState = models.SubmittedState
+				} else {
+					editionSearchState = models.PublishedState
+				}
 				return []*models.EditionUpdate{&edition}, 0, nil
 			},
 			IsStaticDatasetFunc: func(ctx context.Context, datasetID string) (bool, error) {

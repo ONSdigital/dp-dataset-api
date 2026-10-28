@@ -152,7 +152,7 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
-			GetEditionsFunc: func(context.Context, string, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
+			GetEditionsFunc: func(context.Context, string, bool, *bool, int, int) ([]*models.EditionUpdate, int, error) {
 				return results, 2, nil
 			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
@@ -226,7 +226,7 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
 				return models.Static.String(), nil
 			},
-			GetEditionsStaticFunc: func(context.Context, string, string, string, int, int) ([]*models.EditionUpdate, int, error) {
+			GetEditionsStaticFunc: func(context.Context, string, bool, *bool, int, int) ([]*models.EditionUpdate, int, error) {
 				return editionsList, 2, nil
 			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
@@ -277,7 +277,7 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
 				return models.Static.String(), nil
 			},
-			GetEditionsStaticFunc: func(context.Context, string, string, string, int, int) ([]*models.EditionUpdate, int, error) {
+			GetEditionsStaticFunc: func(context.Context, string, bool, *bool, int, int) ([]*models.EditionUpdate, int, error) {
 				return editionsList, 1, nil
 			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
@@ -397,7 +397,7 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
 				return models.Static.String(), nil
 			},
-			GetEditionsStaticFunc: func(context.Context, string, string, string, int, int) ([]*models.EditionUpdate, int, error) {
+			GetEditionsStaticFunc: func(context.Context, string, bool, *bool, int, int) ([]*models.EditionUpdate, int, error) {
 				return editionsList, 1, nil
 			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
@@ -517,7 +517,7 @@ func TestGetEditionsReturnsOK(t *testing.T) {
 			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
 				return models.Static.String(), nil
 			},
-			GetEditionsStaticFunc: func(context.Context, string, string, string, int, int) ([]*models.EditionUpdate, int, error) {
+			GetEditionsStaticFunc: func(context.Context, string, bool, *bool, int, int) ([]*models.EditionUpdate, int, error) {
 				return editionsList, 1, nil
 			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
@@ -625,7 +625,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
-			GetEditionsFunc: func(context.Context, string, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
+			GetEditionsFunc: func(context.Context, string, bool, *bool, int, int) ([]*models.EditionUpdate, int, error) {
 				return nil, 0, errs.ErrEditionNotFound
 			},
 			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
@@ -663,7 +663,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			CheckDatasetExistsFunc: func(context.Context, string, string) error {
 				return nil
 			},
-			GetEditionsFunc: func(context.Context, string, string, string, int, int, bool) ([]*models.EditionUpdate, int, error) {
+			GetEditionsFunc: func(context.Context, string, bool, *bool, int, int) ([]*models.EditionUpdate, int, error) {
 				return nil, 0, errs.ErrEditionNotFound
 			},
 			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
@@ -704,7 +704,7 @@ func TestGetEditionsReturnsError(t *testing.T) {
 			GetDatasetTypeFunc: func(_ context.Context, _ string, authorised bool) (string, error) {
 				return models.Static.String(), nil
 			},
-			GetEditionsStaticFunc: func(context.Context, string, string, string, int, int) ([]*models.EditionUpdate, int, error) {
+			GetEditionsStaticFunc: func(context.Context, string, bool, *bool, int, int) ([]*models.EditionUpdate, int, error) {
 				return nil, 0, errs.ErrEditionsNotFound
 			},
 			GetDatasetFunc: func(context.Context, string) (*models.DatasetUpdate, error) {
@@ -1733,7 +1733,7 @@ func TestGetEditionsPreviousSeriesID(t *testing.T) {
 			GetDatasetTypeFunc: func(_ context.Context, _ string, _ bool) (string, error) {
 				return models.Static.String(), nil
 			},
-			GetEditionsStaticFunc: func(context.Context, string, string, string, int, int) ([]*models.EditionUpdate, int, error) {
+			GetEditionsStaticFunc: func(context.Context, string, bool, *bool, int, int) ([]*models.EditionUpdate, int, error) {
 				return editionsList, 1, nil
 			},
 		}
