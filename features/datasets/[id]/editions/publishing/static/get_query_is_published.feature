@@ -433,3 +433,11 @@ Feature: List static editions in publishing mode
         "total_count": 1
       }
       """
+
+  Scenario: Reject an invalid is_published parameter
+    When I GET "/datasets/population-estimates/editions?is_published=invalid"
+    Then the HTTP status code should be "400"
+    And I should receive the following response:
+      """
+      invalid query parameter
+      """
