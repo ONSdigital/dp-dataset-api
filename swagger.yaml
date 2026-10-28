@@ -254,7 +254,8 @@ parameters:
     type: string
   is_published:
     name: "is_published"
-    description: "A boolean value which indicates whether to include only published editions in the response"
+    required: false
+    description: "An optional boolean value which indicates whether to include only published or only unpublished editions in the response"
     in: query
     type: boolean
   type:
