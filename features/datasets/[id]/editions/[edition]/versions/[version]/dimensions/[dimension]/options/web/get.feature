@@ -131,3 +131,27 @@ Feature: List version dimension options in web mode
         "total_count": 2
       }
       """
+
+  Scenario: List dimension options with a dimension containing a full stop returns 404
+    When I GET "/datasets/population-estimates/editions/hello/versions/1/dimensions/bad.dimension/options"
+    Then the HTTP status code should be "404"
+    And I should receive the following response:
+      """
+      404 page not found
+      """
+
+  Scenario: List dimension options with a dimension containing an encoded space returns 404
+    When I GET "/datasets/population-estimates/editions/hello/versions/1/dimensions/bad%20dimension/options"
+    Then the HTTP status code should be "404"
+    And I should receive the following response:
+      """
+      404 page not found
+      """
+
+  Scenario: List dimension options with a dimension containing encoded special characters returns 404
+    When I GET "/datasets/population-estimates/editions/hello/versions/1/dimensions/%3Ctest%3E/options"
+    Then the HTTP status code should be "404"
+    And I should receive the following response:
+      """
+      404 page not found
+      """

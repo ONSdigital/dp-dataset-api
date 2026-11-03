@@ -82,3 +82,27 @@ Feature: Get dataset in web mode
       """
             dataset not found
       """
+
+  Scenario: Get a dataset with an ID containing an underscore returns 404
+    When I GET "/datasets/published_dataset"
+    Then the HTTP status code should be "404"
+    And I should receive the following response:
+      """
+      404 page not found
+      """
+
+  Scenario: Get a dataset with an ID containing a full stop returns 404
+    When I GET "/datasets/published.dataset"
+    Then the HTTP status code should be "404"
+    And I should receive the following response:
+      """
+      404 page not found
+      """
+
+  Scenario: Get a dataset with an ID containing encoded special characters returns 404
+    When I GET "/datasets/%3Ctest%3E"
+    Then the HTTP status code should be "404"
+    And I should receive the following response:
+      """
+      404 page not found
+      """

@@ -6237,3 +6237,76 @@ func TestGetVersionsPreviousSeriesID(t *testing.T) {
 		})
 	})
 }
+
+func TestGetVersionsInvalidPathParametersReturnNotFound(t *testing.T) {
+	t.Parallel()
+
+	Convey("Given the dataset API is running in web mode", t, func() {
+		mockedDataStore := &storetest.StorerMock{}
+		api := GetWebAPIWithMocks(context.Background(), mockedDataStore, &mocks.DownloadsGeneratorMock{}, &authMock.MiddlewareMock{}, &authMock.PermissionsCheckerMock{}, &clientsidentity.Client{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
+
+		invalidPaths := []string{
+			"/datasets/bad_id/editions/678/versions",
+			"/datasets/bad.id/editions/678/versions",
+			"/datasets/bad%20id/editions/678/versions",
+			"/datasets/%3Ctest%3E/editions/678/versions",
+			"/datasets/123-456/editions/bad_edition/versions",
+			"/datasets/123-456/editions/bad.edition/versions",
+			"/datasets/123-456/editions/bad%20edition/versions",
+			"/datasets/123-456/editions/%3Ctest%3E/versions",
+		}
+
+		for _, path := range invalidPaths {
+			Convey("When a request is made to get versions with an invalid path parameter: "+path, func() {
+				r := httptest.NewRequest("GET", "http://localhost:22000"+path, http.NoBody)
+				w := httptest.NewRecorder()
+				api.Router.ServeHTTP(w, r)
+
+				Convey("Then a 404 is returned and the datastore is not called", func() {
+					So(w.Code, ShouldEqual, http.StatusNotFound)
+					So(mockedDataStore.GetDatasetCalls(), ShouldBeEmpty)
+					So(mockedDataStore.GetDatasetTypeCalls(), ShouldBeEmpty)
+					So(mockedDataStore.CheckEditionExistsCalls(), ShouldBeEmpty)
+					So(mockedDataStore.GetVersionsCalls(), ShouldBeEmpty)
+					So(mockedDataStore.GetVersionsStaticCalls(), ShouldBeEmpty)
+				})
+			})
+		}
+	})
+}
+
+func TestGetVersionInvalidPathParametersReturnNotFound(t *testing.T) {
+	t.Parallel()
+
+	Convey("Given the dataset API is running in web mode", t, func() {
+		mockedDataStore := &storetest.StorerMock{}
+		api := GetWebAPIWithMocks(context.Background(), mockedDataStore, &mocks.DownloadsGeneratorMock{}, &authMock.MiddlewareMock{}, &authMock.PermissionsCheckerMock{}, &clientsidentity.Client{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
+
+		invalidPaths := []string{
+			"/datasets/bad_id/editions/678/versions/1",
+			"/datasets/bad.id/editions/678/versions/1",
+			"/datasets/bad%20id/editions/678/versions/1",
+			"/datasets/%3Ctest%3E/editions/678/versions/1",
+			"/datasets/123-456/editions/bad_edition/versions/1",
+			"/datasets/123-456/editions/bad.edition/versions/1",
+			"/datasets/123-456/editions/bad%20edition/versions/1",
+			"/datasets/123-456/editions/%3Ctest%3E/versions/1",
+		}
+
+		for _, path := range invalidPaths {
+			Convey("When a request is made to get a version with an invalid path parameter: "+path, func() {
+				r := httptest.NewRequest("GET", "http://localhost:22000"+path, http.NoBody)
+				w := httptest.NewRecorder()
+				api.Router.ServeHTTP(w, r)
+
+				Convey("Then a 404 is returned and the datastore is not called", func() {
+					So(w.Code, ShouldEqual, http.StatusNotFound)
+					So(mockedDataStore.GetDatasetCalls(), ShouldBeEmpty)
+					So(mockedDataStore.GetDatasetTypeCalls(), ShouldBeEmpty)
+					So(mockedDataStore.CheckEditionExistsCalls(), ShouldBeEmpty)
+					So(mockedDataStore.GetVersionCalls(), ShouldBeEmpty)
+				})
+			})
+		}
+	})
+}

@@ -4047,3 +4047,24 @@ func TestDeleteDatasetReturnsError(t *testing.T) {
 		So(len(mockFilesAPIClient.DeleteFileCalls()), ShouldEqual, 1)
 	})
 }
+
+func TestGetDatasetInvalidIDReturnsNotFound(t *testing.T) {
+	t.Parallel()
+	Convey("Given the dataset API is running in web mode", t, func() {
+		mockedDataStore := &storetest.StorerMock{}
+		api := GetWebAPIWithMocks(context.Background(), mockedDataStore, &mocks.DownloadsGeneratorMock{}, &authMock.MiddlewareMock{}, &authMock.PermissionsCheckerMock{}, &clientsidentity.Client{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
+
+		for _, datasetID := range []string{"bad_id", "bad.id", "bad%20id", "%3Ctest%3E"} {
+			Convey("When a request is made to get a dataset with an invalid dataset ID of "+datasetID, func() {
+				r := httptest.NewRequest("GET", "http://localhost:22000/datasets/"+datasetID, http.NoBody)
+				w := httptest.NewRecorder()
+				api.Router.ServeHTTP(w, r)
+
+				Convey("Then a 404 is returned and the datastore is not called", func() {
+					So(w.Code, ShouldEqual, http.StatusNotFound)
+					So(mockedDataStore.GetDatasetCalls(), ShouldBeEmpty)
+				})
+			})
+		}
+	})
+}
