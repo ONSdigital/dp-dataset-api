@@ -4875,6 +4875,7 @@ func TestPutStateUnauthorised(t *testing.T) {
 }
 
 func TestPutStateReturnsOk(t *testing.T) {
+	t.Parallel()
 	Convey("When we make a valid request to the state endpoint", t, func() {
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1/state", bytes.NewBufferString(`{"state":"published"}`))
 		w := httptest.NewRecorder()
@@ -5072,13 +5073,615 @@ func TestPutStateReturnsOk(t *testing.T) {
 		So(mockedDataStore.UpdateStateStaticCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 1)
 		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 1)
-		So(mockedDataStore.CheckEditionExistsStaticCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.CheckEditionExistsStaticCalls(), ShouldHaveLength, 2)
 		So(mockFilesAPIClient.MarkFilePublishedCalls(), ShouldHaveLength, 1)
 		So(len(scuProducerMock.OutputCalls()), ShouldEqual, 1)
 		So(cloudflareMock.GetTimeoutCalls(), ShouldHaveLength, 1)
 		So(cloudflareMock.PurgeByPrefixesCalls(), ShouldHaveLength, 1)
 		So(auditServiceMock.RecordVersionAuditEventCalls(), ShouldHaveLength, 1)
 		So(auditServiceMock.RecordVersionAuditEventCalls()[0].Resource, ShouldEqual, "/datasets/test-static-dataset/editions/test-edition-1/versions/1/state")
+
+		Convey("And the correct URL's should have been purged", func() {
+			expectedPrefixes := []string{
+				"localhost:20000/economy/datasets/test-static-dataset",
+				"localhost:23200/v1/datasets/test-static-dataset",
+			}
+
+			So(cloudflareMock.PurgeByPrefixesCalls()[0].Prefixes, ShouldResemble, expectedPrefixes)
+		})
+	})
+
+	Convey("When we make a valid request to the state endpoint with a previous used dataset ID", t, func() {
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/previous-static-dataset/editions/test-edition-1/versions/1/state", bytes.NewBufferString(`{"state":"published"}`))
+		w := httptest.NewRecorder()
+
+		jsonData := `{
+			"edition": "test-edition-1",
+			"edition_title": "test-edition-1",
+			"links": {
+				"dataset": {
+					"href": "http://dp-dataset-api:22000/datasets/test-static-dataset",
+					"id": "test-static-dataset"
+				},
+				"edition": {
+					"href": "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1",
+					"id": "test-edition-1"
+				},
+				"self": {
+					"href": "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1"
+				},
+				"web_page": {
+					"href": "economy/datasets/test-static-dataset/editions/test-edition-1/versions/1"
+				}
+			},
+			"release_date": "2025-01-15",
+			"state": "approved",
+			"distributions": [
+				{
+					"title": "Full Dataset (CSV)",
+					"download_url": "test/test.csv",
+					"byte_size": 4300000,
+					"format": "csv",
+					"media_type": "text/csv"
+				}
+			],
+			"version": 1,
+			"type": "static"
+		}`
+
+		datasetUpdate := &models.DatasetUpdate{
+			ID: "test-static-dataset",
+			Next: &models.Dataset{
+				ID:    "test-static-dataset",
+				State: models.AssociatedState,
+				Type:  models.Static.String(),
+				Links: &models.DatasetLinks{
+					Editions: &models.LinkObject{HRef: "http://dp-dataset-api:22000/datasets/test-static-dataset/editions"},
+					Self:     &models.LinkObject{HRef: "http://dp-dataset-api:22000/datasets/test-static-dataset"},
+				},
+			},
+		}
+
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionStaticFunc: func(ctx context.Context, datasetID string, editionID string, version int, state string) (*models.Version, error) {
+				So(datasetID, ShouldEqual, "test-static-dataset")
+				So(editionID, ShouldEqual, "test-edition-1")
+				var versionModel models.Version
+				err := json.Unmarshal([]byte(jsonData), &versionModel)
+				So(err, ShouldBeNil)
+				versionModel.Links.Version = &models.LinkObject{
+					ID:   "1",
+					HRef: "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1",
+				}
+				return &versionModel, nil
+			},
+			AcquireVersionsLockFunc: func(context.Context, string) (string, error) {
+				return testLockID, nil
+			},
+			UnlockVersionsFunc: func(ctx context.Context, lockID string) {
+			},
+			CheckEditionExistsStaticFunc: func(ctx context.Context, id string, editionID string, state string) error {
+				So(editionID, ShouldEqual, "test-edition-1")
+				if id == "previous-static-dataset" {
+					return errs.ErrEditionNotFound
+				}
+				So(id, ShouldEqual, "test-static-dataset")
+				return nil
+			},
+			UpdateVersionStaticFunc: func(ctx context.Context, currentVersion *models.Version, versionUpdate *models.Version, eTagSelector string) (string, error) {
+				return "", nil
+			},
+			UpdateStateStaticFunc: func(ctx context.Context, currentVersion *models.Version, updatedState *models.StateUpdate, eTagSelector string) (*models.Version, error) {
+				So(currentVersion.Links.Dataset.ID, ShouldEqual, "test-static-dataset")
+				var versionModel models.Version
+				err := json.Unmarshal([]byte(jsonData), &versionModel)
+				So(err, ShouldBeNil)
+				return &versionModel, nil
+			},
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				So(datasetID, ShouldEqual, "test-static-dataset")
+				return models.Static.String(), nil
+			},
+			GetDatasetFunc: func(ctx context.Context, ID string) (*models.DatasetUpdate, error) {
+				if ID == "previous-static-dataset" {
+					return nil, errs.ErrDatasetNotFound
+				}
+				So(ID, ShouldEqual, "test-static-dataset")
+				return datasetUpdate, nil
+			},
+			GetDatasetByPreviousSeriesIDFunc: func(ctx context.Context, previousSeriesID string) (*models.DatasetUpdate, error) {
+				So(previousSeriesID, ShouldEqual, "previous-static-dataset")
+				return datasetUpdate, nil
+			},
+			UpsertDatasetFunc: func(ctx context.Context, ID string, datasetDoc *models.DatasetUpdate) error {
+				So(ID, ShouldEqual, "test-static-dataset")
+				return nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, version *models.Version) error {
+				return nil
+			},
+		}
+
+		outputCalled := make(chan bool, 1)
+		scuProducerMock := &mocks.KafkaProducerMock{
+			OutputFunc: func() chan kafka.BytesMessage {
+				outputCalled <- true
+				return make(chan kafka.BytesMessage, 1)
+			},
+		}
+		searchContentUpdated := application.SearchContentUpdatedProducer{Producer: scuProducerMock}
+
+		purgeByPrefixesCalled := make(chan bool, 1)
+		cloudflareMock := &cloudflareMocks.ClienterMock{
+			PurgeByPrefixesFunc: func(ctx context.Context, prefixes []string) error {
+				purgeByPrefixesCalled <- true
+				return nil
+			},
+			GetTimeoutFunc: func() time.Duration {
+				return 30 * time.Second
+			},
+		}
+
+		mockFilesAPIClient := filesAPISDKMocks.ClienterMock{
+			MarkFilePublishedFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, searchContentUpdated, cloudflareMock, auditServiceMock, &applicationMocks.StaticDatasetServiceMock{}, &topicAPISDKMocks.ClienterMock{}, &mockFilesAPIClient)
+		api.Router.ServeHTTP(w, r)
+
+		select {
+		case <-outputCalled:
+		case <-time.After(5 * time.Second):
+			t.Fatal("timed out waiting for kafka message to be sent")
+		}
+		select {
+		case <-purgeByPrefixesCalled:
+		case <-time.After(5 * time.Second):
+			t.Fatal("timed out waiting for Cloudflare purge")
+		}
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(mockedDataStore.GetVersionStaticCalls(), ShouldHaveLength, 2)
+		So(mockedDataStore.UpdateStateStaticCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 2)
+		So(mockedDataStore.GetDatasetCalls()[0].ID, ShouldEqual, "previous-static-dataset")
+		So(mockedDataStore.GetDatasetCalls()[1].ID, ShouldEqual, "test-static-dataset")
+		So(mockedDataStore.GetDatasetByPreviousSeriesIDCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.CheckEditionExistsStaticCalls(), ShouldHaveLength, 3)
+		So(mockedDataStore.CheckEditionExistsStaticCalls()[0].DatasetID, ShouldEqual, "previous-static-dataset")
+		So(mockedDataStore.CheckEditionExistsStaticCalls()[1].DatasetID, ShouldEqual, "test-static-dataset")
+		So(mockedDataStore.CheckEditionExistsStaticCalls()[2].DatasetID, ShouldEqual, "test-static-dataset")
+		So(mockedDataStore.GetVersionsStaticByPreviousEditionIDCalls(), ShouldHaveLength, 0)
+		So(mockFilesAPIClient.MarkFilePublishedCalls(), ShouldHaveLength, 1)
+		So(len(scuProducerMock.OutputCalls()), ShouldEqual, 1)
+		So(cloudflareMock.GetTimeoutCalls(), ShouldHaveLength, 1)
+		So(cloudflareMock.PurgeByPrefixesCalls(), ShouldHaveLength, 1)
+		So(auditServiceMock.RecordVersionAuditEventCalls(), ShouldHaveLength, 1)
+		So(auditServiceMock.RecordVersionAuditEventCalls()[0].Resource, ShouldEqual, "/datasets/previous-static-dataset/editions/test-edition-1/versions/1/state")
+
+		Convey("And the correct URL's should have been purged", func() {
+			expectedPrefixes := []string{
+				"localhost:20000/economy/datasets/test-static-dataset",
+				"localhost:23200/v1/datasets/test-static-dataset",
+			}
+
+			So(cloudflareMock.PurgeByPrefixesCalls()[0].Prefixes, ShouldResemble, expectedPrefixes)
+		})
+	})
+
+	Convey("When we make a valid request to the state endpoint with a previous used edition ID", t, func() {
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/test-static-dataset/editions/previous-edition-1/versions/1/state", bytes.NewBufferString(`{"state":"published"}`))
+		w := httptest.NewRecorder()
+
+		jsonData := `{
+			"edition": "test-edition-1",
+			"edition_title": "test-edition-1",
+			"links": {
+				"dataset": {
+					"href": "http://dp-dataset-api:22000/datasets/test-static-dataset",
+					"id": "test-static-dataset"
+				},
+				"edition": {
+					"href": "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1",
+					"id": "test-edition-1"
+				},
+				"self": {
+					"href": "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1"
+				},
+				"web_page": {
+					"href": "economy/datasets/test-static-dataset/editions/test-edition-1/versions/1"
+				}
+			},
+			"release_date": "2025-01-15",
+			"state": "approved",
+			"distributions": [
+				{
+					"title": "Full Dataset (CSV)",
+					"download_url": "test/test.csv",
+					"byte_size": 4300000,
+					"format": "csv",
+					"media_type": "text/csv"
+				}
+			],
+			"previous_edition_id": ["previous-edition-1"],
+			"version": 1,
+			"type": "static"
+		}`
+
+		datasetUpdate := &models.DatasetUpdate{
+			ID: "test-static-dataset",
+			Next: &models.Dataset{
+				ID:    "test-static-dataset",
+				State: models.AssociatedState,
+				Type:  models.Static.String(),
+				Links: &models.DatasetLinks{
+					Editions: &models.LinkObject{HRef: "http://dp-dataset-api:22000/datasets/test-static-dataset/editions"},
+					Self:     &models.LinkObject{HRef: "http://dp-dataset-api:22000/datasets/test-static-dataset"},
+				},
+			},
+		}
+
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionStaticFunc: func(ctx context.Context, datasetID string, editionID string, version int, state string) (*models.Version, error) {
+				So(datasetID, ShouldEqual, "test-static-dataset")
+				So(editionID, ShouldEqual, "test-edition-1")
+				var versionModel models.Version
+				err := json.Unmarshal([]byte(jsonData), &versionModel)
+				So(err, ShouldBeNil)
+				versionModel.Links.Version = &models.LinkObject{
+					ID:   "1",
+					HRef: "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1",
+				}
+				return &versionModel, nil
+			},
+			AcquireVersionsLockFunc: func(context.Context, string) (string, error) {
+				return testLockID, nil
+			},
+			UnlockVersionsFunc: func(ctx context.Context, lockID string) {
+			},
+			CheckEditionExistsStaticFunc: func(ctx context.Context, id string, editionID string, state string) error {
+				So(id, ShouldEqual, "test-static-dataset")
+				if editionID == "previous-edition-1" {
+					return errs.ErrEditionNotFound
+				}
+				So(editionID, ShouldEqual, "test-edition-1")
+				return nil
+			},
+			GetVersionsStaticByPreviousEditionIDFunc: func(ctx context.Context, datasetID, previousEditionID, state string, offset, limit int) ([]models.Version, int, error) {
+				So(datasetID, ShouldEqual, "test-static-dataset")
+				So(previousEditionID, ShouldEqual, "previous-edition-1")
+				So(state, ShouldBeEmpty)
+				So(offset, ShouldEqual, 0)
+				So(limit, ShouldEqual, 1)
+				var versionModel models.Version
+				err := json.Unmarshal([]byte(jsonData), &versionModel)
+				So(err, ShouldBeNil)
+				return []models.Version{versionModel}, 1, nil
+			},
+			UpdateVersionStaticFunc: func(ctx context.Context, currentVersion *models.Version, versionUpdate *models.Version, eTagSelector string) (string, error) {
+				return "", nil
+			},
+			UpdateStateStaticFunc: func(ctx context.Context, currentVersion *models.Version, updatedState *models.StateUpdate, eTagSelector string) (*models.Version, error) {
+				So(currentVersion.Links.Dataset.ID, ShouldEqual, "test-static-dataset")
+				So(currentVersion.Edition, ShouldEqual, "test-edition-1")
+				var versionModel models.Version
+				err := json.Unmarshal([]byte(jsonData), &versionModel)
+				So(err, ShouldBeNil)
+				return &versionModel, nil
+			},
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				So(datasetID, ShouldEqual, "test-static-dataset")
+				return models.Static.String(), nil
+			},
+			GetDatasetFunc: func(ctx context.Context, ID string) (*models.DatasetUpdate, error) {
+				So(ID, ShouldEqual, "test-static-dataset")
+				return datasetUpdate, nil
+			},
+			UpsertDatasetFunc: func(ctx context.Context, ID string, datasetDoc *models.DatasetUpdate) error {
+				So(ID, ShouldEqual, "test-static-dataset")
+				return nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, version *models.Version) error {
+				return nil
+			},
+		}
+
+		outputCalled := make(chan bool, 1)
+		scuProducerMock := &mocks.KafkaProducerMock{
+			OutputFunc: func() chan kafka.BytesMessage {
+				outputCalled <- true
+				return make(chan kafka.BytesMessage, 1)
+			},
+		}
+		searchContentUpdated := application.SearchContentUpdatedProducer{Producer: scuProducerMock}
+
+		purgeByPrefixesCalled := make(chan bool, 1)
+		cloudflareMock := &cloudflareMocks.ClienterMock{
+			PurgeByPrefixesFunc: func(ctx context.Context, prefixes []string) error {
+				purgeByPrefixesCalled <- true
+				return nil
+			},
+			GetTimeoutFunc: func() time.Duration {
+				return 30 * time.Second
+			},
+		}
+
+		mockFilesAPIClient := filesAPISDKMocks.ClienterMock{
+			MarkFilePublishedFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, searchContentUpdated, cloudflareMock, auditServiceMock, &applicationMocks.StaticDatasetServiceMock{}, &topicAPISDKMocks.ClienterMock{}, &mockFilesAPIClient)
+		api.Router.ServeHTTP(w, r)
+
+		select {
+		case <-outputCalled:
+		case <-time.After(5 * time.Second):
+			t.Fatal("timed out waiting for kafka message to be sent")
+		}
+		select {
+		case <-purgeByPrefixesCalled:
+		case <-time.After(5 * time.Second):
+			t.Fatal("timed out waiting for Cloudflare purge")
+		}
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(mockedDataStore.GetVersionStaticCalls(), ShouldHaveLength, 2)
+		So(mockedDataStore.UpdateStateStaticCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 2)
+		So(mockedDataStore.GetDatasetByPreviousSeriesIDCalls(), ShouldHaveLength, 0)
+		So(mockedDataStore.GetVersionsStaticByPreviousEditionIDCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.CheckEditionExistsStaticCalls(), ShouldHaveLength, 3)
+		So(mockedDataStore.CheckEditionExistsStaticCalls()[0].EditionID, ShouldEqual, "previous-edition-1")
+		So(mockedDataStore.CheckEditionExistsStaticCalls()[1].EditionID, ShouldEqual, "previous-edition-1")
+		So(mockedDataStore.CheckEditionExistsStaticCalls()[2].EditionID, ShouldEqual, "test-edition-1")
+		So(mockFilesAPIClient.MarkFilePublishedCalls(), ShouldHaveLength, 1)
+		So(len(scuProducerMock.OutputCalls()), ShouldEqual, 1)
+		So(cloudflareMock.GetTimeoutCalls(), ShouldHaveLength, 1)
+		So(cloudflareMock.PurgeByPrefixesCalls(), ShouldHaveLength, 1)
+		So(auditServiceMock.RecordVersionAuditEventCalls(), ShouldHaveLength, 1)
+		So(auditServiceMock.RecordVersionAuditEventCalls()[0].Resource, ShouldEqual, "/datasets/test-static-dataset/editions/previous-edition-1/versions/1/state")
+
+		Convey("And the correct URL's should have been purged", func() {
+			expectedPrefixes := []string{
+				"localhost:20000/economy/datasets/test-static-dataset",
+				"localhost:23200/v1/datasets/test-static-dataset",
+			}
+
+			So(cloudflareMock.PurgeByPrefixesCalls()[0].Prefixes, ShouldResemble, expectedPrefixes)
+		})
+	})
+
+	Convey("When we make a valid request to the state endpoint with a previous used dataset ID and edition ID", t, func() {
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/previous-static-dataset/editions/previous-edition-1/versions/1/state", bytes.NewBufferString(`{"state":"published"}`))
+		w := httptest.NewRecorder()
+
+		jsonData := `{
+			"edition": "test-edition-1",
+			"edition_title": "test-edition-1",
+			"links": {
+				"dataset": {
+					"href": "http://dp-dataset-api:22000/datasets/test-static-dataset",
+					"id": "test-static-dataset"
+				},
+				"edition": {
+					"href": "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1",
+					"id": "test-edition-1"
+				},
+				"self": {
+					"href": "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1"
+				},
+				"web_page": {
+					"href": "economy/datasets/test-static-dataset/editions/test-edition-1/versions/1"
+				}
+			},
+			"release_date": "2025-01-15",
+			"state": "approved",
+			"distributions": [
+				{
+					"title": "Full Dataset (CSV)",
+					"download_url": "test/test.csv",
+					"byte_size": 4300000,
+					"format": "csv",
+					"media_type": "text/csv"
+				}
+			],
+			"previous_edition_id": ["previous-edition-1"],
+			"version": 1,
+			"type": "static"
+		}`
+
+		datasetUpdate := &models.DatasetUpdate{
+			ID: "test-static-dataset",
+			Next: &models.Dataset{
+				ID:    "test-static-dataset",
+				State: models.AssociatedState,
+				Type:  models.Static.String(),
+				Links: &models.DatasetLinks{
+					Editions: &models.LinkObject{HRef: "http://dp-dataset-api:22000/datasets/test-static-dataset/editions"},
+					Self:     &models.LinkObject{HRef: "http://dp-dataset-api:22000/datasets/test-static-dataset"},
+				},
+			},
+		}
+
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionStaticFunc: func(ctx context.Context, datasetID string, editionID string, version int, state string) (*models.Version, error) {
+				So(datasetID, ShouldEqual, "test-static-dataset")
+				So(editionID, ShouldEqual, "test-edition-1")
+				var versionModel models.Version
+				err := json.Unmarshal([]byte(jsonData), &versionModel)
+				So(err, ShouldBeNil)
+				versionModel.Links.Version = &models.LinkObject{
+					ID:   "1",
+					HRef: "http://dp-dataset-api:22000/datasets/test-static-dataset/editions/test-edition-1/versions/1",
+				}
+				return &versionModel, nil
+			},
+			AcquireVersionsLockFunc: func(context.Context, string) (string, error) {
+				return testLockID, nil
+			},
+			UnlockVersionsFunc: func(ctx context.Context, lockID string) {
+			},
+			CheckEditionExistsStaticFunc: func(ctx context.Context, id string, editionID string, state string) error {
+				if id == "previous-static-dataset" {
+					return errs.ErrEditionNotFound
+				}
+				So(id, ShouldEqual, "test-static-dataset")
+				if editionID == "previous-edition-1" {
+					return errs.ErrEditionNotFound
+				}
+				So(editionID, ShouldEqual, "test-edition-1")
+				return nil
+			},
+			GetVersionsStaticByPreviousEditionIDFunc: func(ctx context.Context, datasetID, previousEditionID, state string, offset, limit int) ([]models.Version, int, error) {
+				So(datasetID, ShouldEqual, "test-static-dataset")
+				So(previousEditionID, ShouldEqual, "previous-edition-1")
+				So(state, ShouldBeEmpty)
+				So(offset, ShouldEqual, 0)
+				So(limit, ShouldEqual, 1)
+				var versionModel models.Version
+				err := json.Unmarshal([]byte(jsonData), &versionModel)
+				So(err, ShouldBeNil)
+				return []models.Version{versionModel}, 1, nil
+			},
+			UpdateVersionStaticFunc: func(ctx context.Context, currentVersion *models.Version, versionUpdate *models.Version, eTagSelector string) (string, error) {
+				return "", nil
+			},
+			UpdateStateStaticFunc: func(ctx context.Context, currentVersion *models.Version, updatedState *models.StateUpdate, eTagSelector string) (*models.Version, error) {
+				So(currentVersion.Links.Dataset.ID, ShouldEqual, "test-static-dataset")
+				So(currentVersion.Edition, ShouldEqual, "test-edition-1")
+				var versionModel models.Version
+				err := json.Unmarshal([]byte(jsonData), &versionModel)
+				So(err, ShouldBeNil)
+				return &versionModel, nil
+			},
+			GetDatasetTypeFunc: func(ctx context.Context, datasetID string, authorised bool) (string, error) {
+				So(datasetID, ShouldEqual, "test-static-dataset")
+				return models.Static.String(), nil
+			},
+			GetDatasetFunc: func(ctx context.Context, ID string) (*models.DatasetUpdate, error) {
+				if ID == "previous-static-dataset" {
+					return nil, errs.ErrDatasetNotFound
+				}
+				So(ID, ShouldEqual, "test-static-dataset")
+				return datasetUpdate, nil
+			},
+			GetDatasetByPreviousSeriesIDFunc: func(ctx context.Context, previousSeriesID string) (*models.DatasetUpdate, error) {
+				So(previousSeriesID, ShouldEqual, "previous-static-dataset")
+				return datasetUpdate, nil
+			},
+			UpsertDatasetFunc: func(ctx context.Context, ID string, datasetDoc *models.DatasetUpdate) error {
+				So(ID, ShouldEqual, "test-static-dataset")
+				return nil
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		auditServiceMock := &applicationMocks.AuditServiceMock{
+			RecordVersionAuditEventFunc: func(ctx context.Context, requestedBy models.RequestedBy, action models.Action, resource string, version *models.Version) error {
+				return nil
+			},
+		}
+
+		outputCalled := make(chan bool, 1)
+		scuProducerMock := &mocks.KafkaProducerMock{
+			OutputFunc: func() chan kafka.BytesMessage {
+				outputCalled <- true
+				return make(chan kafka.BytesMessage, 1)
+			},
+		}
+		searchContentUpdated := application.SearchContentUpdatedProducer{Producer: scuProducerMock}
+
+		purgeByPrefixesCalled := make(chan bool, 1)
+		cloudflareMock := &cloudflareMocks.ClienterMock{
+			PurgeByPrefixesFunc: func(ctx context.Context, prefixes []string) error {
+				purgeByPrefixesCalled <- true
+				return nil
+			},
+			GetTimeoutFunc: func() time.Duration {
+				return 30 * time.Second
+			},
+		}
+
+		mockFilesAPIClient := filesAPISDKMocks.ClienterMock{
+			MarkFilePublishedFunc: func(ctx context.Context, filePath string, headers filesAPISDK.Headers) error {
+				return nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, searchContentUpdated, cloudflareMock, auditServiceMock, &applicationMocks.StaticDatasetServiceMock{}, &topicAPISDKMocks.ClienterMock{}, &mockFilesAPIClient)
+		api.Router.ServeHTTP(w, r)
+
+		select {
+		case <-outputCalled:
+		case <-time.After(5 * time.Second):
+			t.Fatal("timed out waiting for kafka message to be sent")
+		}
+		select {
+		case <-purgeByPrefixesCalled:
+		case <-time.After(5 * time.Second):
+			t.Fatal("timed out waiting for Cloudflare purge")
+		}
+
+		So(w.Code, ShouldEqual, http.StatusOK)
+		So(mockedDataStore.GetVersionStaticCalls(), ShouldHaveLength, 2)
+		So(mockedDataStore.UpdateStateStaticCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetDatasetCalls(), ShouldHaveLength, 2)
+		So(mockedDataStore.GetDatasetCalls()[0].ID, ShouldEqual, "previous-static-dataset")
+		So(mockedDataStore.GetDatasetCalls()[1].ID, ShouldEqual, "test-static-dataset")
+		So(mockedDataStore.GetDatasetByPreviousSeriesIDCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.GetVersionsStaticByPreviousEditionIDCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.UpsertDatasetCalls(), ShouldHaveLength, 1)
+		So(mockedDataStore.CheckEditionExistsStaticCalls(), ShouldHaveLength, 3)
+		So(mockedDataStore.CheckEditionExistsStaticCalls()[0].DatasetID, ShouldEqual, "previous-static-dataset")
+		So(mockedDataStore.CheckEditionExistsStaticCalls()[0].EditionID, ShouldEqual, "previous-edition-1")
+		So(mockedDataStore.CheckEditionExistsStaticCalls()[1].DatasetID, ShouldEqual, "test-static-dataset")
+		So(mockedDataStore.CheckEditionExistsStaticCalls()[1].EditionID, ShouldEqual, "previous-edition-1")
+		So(mockedDataStore.CheckEditionExistsStaticCalls()[2].DatasetID, ShouldEqual, "test-static-dataset")
+		So(mockedDataStore.CheckEditionExistsStaticCalls()[2].EditionID, ShouldEqual, "test-edition-1")
+		So(mockFilesAPIClient.MarkFilePublishedCalls(), ShouldHaveLength, 1)
+		So(len(scuProducerMock.OutputCalls()), ShouldEqual, 1)
+		So(cloudflareMock.GetTimeoutCalls(), ShouldHaveLength, 1)
+		So(cloudflareMock.PurgeByPrefixesCalls(), ShouldHaveLength, 1)
+		So(auditServiceMock.RecordVersionAuditEventCalls(), ShouldHaveLength, 1)
+		So(auditServiceMock.RecordVersionAuditEventCalls()[0].Resource, ShouldEqual, "/datasets/previous-static-dataset/editions/previous-edition-1/versions/1/state")
 
 		Convey("And the correct URL's should have been purged", func() {
 			expectedPrefixes := []string{
@@ -5187,13 +5790,79 @@ func TestPutStateReturnsError(t *testing.T) {
 		So(len(mockedDataStore.UpdateStateStaticCalls()), ShouldEqual, 0)
 	})
 
-	Convey("When the version is not found, return a not found error", t, func() {
+	Convey("When the dataset is not found, return a not found error", t, func() {
 		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123-456/editions/678/versions/1/state", bytes.NewBufferString(`{"state":"published"}`))
 		w := httptest.NewRecorder()
 
 		mockedDataStore := &storetest.StorerMock{
 			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID, editionID, state string) error {
 				return errs.ErrEditionNotFound
+			},
+			GetDatasetFunc: func(ctx context.Context, ID string) (*models.DatasetUpdate, error) {
+				return nil, errs.ErrDatasetNotFound
+			},
+			GetDatasetByPreviousSeriesIDFunc: func(ctx context.Context, previousSeriesID string) (*models.DatasetUpdate, error) {
+				return nil, errs.ErrDatasetNotFound
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
+	})
+
+	Convey("When the edition is not found, return a not found error", t, func() {
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123-456/editions/678/versions/1/state", bytes.NewBufferString(`{"state":"published"}`))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID, editionID, state string) error {
+				return errs.ErrEditionNotFound
+			},
+			GetDatasetFunc: func(ctx context.Context, ID string) (*models.DatasetUpdate, error) {
+				return nil, nil
+			},
+			GetVersionsStaticByPreviousEditionIDFunc: func(ctx context.Context, datasetID, previousEditionID, state string, offset, limit int) ([]models.Version, int, error) {
+				return nil, 0, errs.ErrEditionNotFound
+			},
+		}
+
+		authorisationMock := &authMock.MiddlewareMock{
+			RequireFunc: func(permission string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+				return handlerFunc
+			},
+			ParseFunc: func(token string) (*permissionsAPISDK.EntityData, error) {
+				return testEntityData, nil
+			},
+		}
+
+		api := GetAPIWithCMDMocks(mockedDataStore, &mocks.DownloadsGeneratorMock{}, authorisationMock, application.SearchContentUpdatedProducer{}, &cloudflareMocks.ClienterMock{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{}, nil, &filesAPISDKMocks.ClienterMock{})
+
+		api.Router.ServeHTTP(w, r)
+
+		So(w.Code, ShouldEqual, http.StatusNotFound)
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
+	})
+
+	Convey("When the version is not found, return a not found error", t, func() {
+		r := createRequestWithAuth("PUT", "http://localhost:22000/datasets/123-456/editions/678/versions/1/state", bytes.NewBufferString(`{"state":"published"}`))
+		w := httptest.NewRecorder()
+
+		mockedDataStore := &storetest.StorerMock{
+			CheckEditionExistsStaticFunc: func(ctx context.Context, datasetID, editionID, state string) error {
+				return nil
 			},
 			GetVersionStaticFunc: func(ctx context.Context, datasetID, editionID string, version int, state string) (*models.Version, error) {
 				return nil, errs.ErrVersionNotFound
@@ -5214,7 +5883,7 @@ func TestPutStateReturnsError(t *testing.T) {
 		api.Router.ServeHTTP(w, r)
 
 		So(w.Code, ShouldEqual, http.StatusNotFound)
-		So(w.Body.String(), ShouldContainSubstring, errs.ErrEditionNotFound.Error())
+		So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
 	})
 
 	Convey("When an error occurs, return internal server error", t, func() {
@@ -5637,6 +6306,9 @@ func TestPutStateApproveDistributionFilesCheck(t *testing.T) {
 			},
 			UpdateStateStaticFunc: func(ctx context.Context, currentVersion *models.Version, updatedState *models.StateUpdate, eTagSelector string) (*models.Version, error) {
 				return &models.Version{State: updatedState.State, Type: models.Static.String()}, nil
+			},
+			CheckVersionExistsStaticFunc: func(ctx context.Context, datasetID string, editionID string, version int) (bool, error) {
+				return true, nil
 			},
 		}
 

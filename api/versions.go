@@ -1047,6 +1047,26 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 		Groups: authEntityData.EntityData.Groups,
 	}
 
+	editionExists := api.dataStore.Backend.CheckEditionExistsStatic(ctx, datasetID, edition, "")
+	if editionExists != nil {
+		resolvedDatasetID, err := api.resolvePreviousSeriesID(ctx, datasetID, logData)
+		if err != nil {
+			log.Error(ctx, "putState endpoint: failed to resolve previous series ID", err, logData)
+			handleVersionAPIErr(ctx, err, w, logData)
+			return
+		}
+
+		resolvedEdition, err := api.resolvePreviousEditionID(ctx, resolvedDatasetID, edition, logData)
+		if err != nil {
+			log.Error(ctx, "putState endpoint: failed to resolve previous edition ID", err, logData)
+			handleVersionAPIErr(ctx, err, w, logData)
+			return
+		}
+
+		vars["dataset_id"] = resolvedDatasetID
+		vars["edition"] = resolvedEdition
+	}
+
 	updatedVersion, err := api.smDatasetAPI.AmendVersion(r.Context(), vars, versionUpdate, &permissionEntity, fetchAccessTokenFromHeader(r))
 	if err != nil {
 		handleVersionAPIErr(ctx, err, w, logData)

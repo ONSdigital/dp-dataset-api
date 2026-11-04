@@ -10,7 +10,10 @@ Feature: Update static version state in publishing mode
           "id": "static-dataset-update",
           "title": "Static Dataset for Updates",
           "state": "associated",
-          "type": "static"
+          "type": "static",
+          "previous_series_id": [
+            "previous-static-dataset-update"
+          ]
         },
         "version": {
           "id": "static-version-update",
@@ -40,6 +43,9 @@ Feature: Update static version state in publishing mode
               "download_url": "/uuid/filename.csv",
               "byte_size": 125000
             }
+          ],
+          "previous_edition_id": [
+            "previous-2025"
           ]
         }
       }
@@ -314,8 +320,8 @@ Feature: Update static version state in publishing mode
     And the total number of audit events should be 1
     And the number of events with action "UPDATE" and resource "/datasets/static-dataset-publish/editions/2025/versions/1/state" should be 1
     And the following URL prefixes are purged by cloudflare:
-      | localhost:20000/economy/datasets/static-dataset-publish                        |
-      | localhost:23200/v1/datasets/static-dataset-publish                             |
+      | localhost:20000/economy/datasets/static-dataset-publish |
+      | localhost:23200/v1/datasets/static-dataset-publish      |
 
   Scenario: Update version state from associated to published
     When I PUT "/datasets/static-dataset-update/editions/2025/versions/1/state"
@@ -405,3 +411,34 @@ Feature: Update static version state in publishing mode
       }
       """
     Then the HTTP status code should be "401"
+
+
+  Scenario: Update version state using a previous dataset ID
+    When I PUT "/datasets/previous-static-dataset-update/editions/2025/versions/1/state"
+      """
+      {
+        "state": "approved"
+      }
+      """
+    Then the HTTP status code should be "200"
+    And the static version "static-version-update" should have state "approved"
+
+  Scenario: Update version state using a previous edition ID
+    When I PUT "/datasets/static-dataset-update/editions/previous-2025/versions/1/state"
+      """
+      {
+        "state": "approved"
+      }
+      """
+    Then the HTTP status code should be "200"
+    And the static version "static-version-update" should have state "approved"
+
+  Scenario: Update version state using a previous dataset ID and previous edition ID
+    When I PUT "/datasets/previous-static-dataset-update/editions/previous-2025/versions/1/state"
+      """
+      {
+        "state": "approved"
+      }
+      """
+    Then the HTTP status code should be "200"
+    And the static version "static-version-update" should have state "approved"
