@@ -1047,8 +1047,13 @@ func (api *DatasetAPI) putState(w http.ResponseWriter, r *http.Request) {
 		Groups: authEntityData.EntityData.Groups,
 	}
 
-	editionExists := api.dataStore.Backend.CheckEditionExistsStatic(ctx, datasetID, edition, "")
-	if editionExists != nil {
+	err = api.dataStore.Backend.CheckEditionExistsStatic(ctx, datasetID, edition, "")
+	if err != nil && !errors.Is(err, errs.ErrEditionNotFound) {
+		log.Error(ctx, "putState endpoint: failed to check edition exists", err, logData)
+		handleVersionAPIErr(ctx, err, w, logData)
+		return
+	}
+	if err != nil {
 		resolvedDatasetID, err := api.resolvePreviousSeriesID(ctx, datasetID, logData)
 		if err != nil {
 			log.Error(ctx, "putState endpoint: failed to resolve previous series ID", err, logData)
