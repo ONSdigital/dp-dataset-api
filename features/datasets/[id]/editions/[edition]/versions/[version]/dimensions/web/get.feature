@@ -154,3 +154,11 @@ Feature: List version dimensions in web mode
       """
             version not found
       """
+
+  Scenario: List dimensions with a dataset ID containing an underscore returns 404
+    When I GET "/datasets/population_estimates/editions/hello/versions/1/dimensions"
+    Then the HTTP status code should be "404"
+    And I should receive the following response:
+      """
+      404 page not found
+      """

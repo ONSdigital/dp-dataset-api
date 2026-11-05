@@ -7,6 +7,7 @@ import (
 	"sort"
 	"testing"
 
+	clientsidentity "github.com/ONSdigital/dp-api-clients-go/v2/identity"
 	authMock "github.com/ONSdigital/dp-authorisation/v2/authorisation/mock"
 	errs "github.com/ONSdigital/dp-dataset-api/apierrors"
 	"github.com/ONSdigital/dp-dataset-api/application"
@@ -588,5 +589,103 @@ func TestGetDimensionOptionsReturnsErrors(t *testing.T) {
 		So(w.Code, ShouldEqual, http.StatusInternalServerError)
 		So(w.Body.String(), ShouldContainSubstring, errs.ErrInternalServer.Error())
 		So(len(mockedDataStore.GetVersionCalls()), ShouldEqual, 1)
+	})
+}
+
+func TestGetDimensionsInvalidPathParametersReturnNotFound(t *testing.T) {
+	t.Parallel()
+
+	Convey("Given the dataset API is running in web mode", t, func() {
+		mockedDataStore := &storetest.StorerMock{}
+		api := GetWebAPIWithMocks(context.Background(), mockedDataStore, &mocks.DownloadsGeneratorMock{}, &authMock.MiddlewareMock{}, &authMock.PermissionsCheckerMock{}, &clientsidentity.Client{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
+
+		invalidPaths := []string{
+			"/datasets/bad_id/editions/2017/versions/1/dimensions",
+			"/datasets/bad.id/editions/2017/versions/1/dimensions",
+			"/datasets/bad%20id/editions/2017/versions/1/dimensions",
+			"/datasets/%3Ctest%3E/editions/2017/versions/1/dimensions",
+
+			"/datasets/123/editions/bad_edition/versions/1/dimensions",
+			"/datasets/123/editions/bad.edition/versions/1/dimensions",
+			"/datasets/123/editions/bad%20edition/versions/1/dimensions",
+			"/datasets/123/editions/%3Ctest%3E/versions/1/dimensions",
+		}
+
+		for _, path := range invalidPaths {
+			Convey("When a request is made to get dimensions with an invalid path parameter: "+path, func() {
+				r := httptest.NewRequest("GET", "http://localhost:22000"+path, http.NoBody)
+				w := httptest.NewRecorder()
+				api.Router.ServeHTTP(w, r)
+
+				Convey("Then a 404 is returned and the datastore is not called", func() {
+					So(w.Code, ShouldEqual, http.StatusNotFound)
+					So(mockedDataStore.GetVersionCalls(), ShouldBeEmpty)
+					So(mockedDataStore.GetDimensionsCalls(), ShouldBeEmpty)
+				})
+			})
+		}
+	})
+}
+
+func TestGetDimensionOptionsInvalidPathParametersReturnNotFound(t *testing.T) {
+	t.Parallel()
+
+	Convey("Given the dataset API is running in web mode", t, func() {
+		mockedDataStore := &storetest.StorerMock{}
+		api := GetWebAPIWithMocks(context.Background(), mockedDataStore, &mocks.DownloadsGeneratorMock{}, &authMock.MiddlewareMock{}, &authMock.PermissionsCheckerMock{}, &clientsidentity.Client{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
+
+		invalidPaths := []string{
+			"/datasets/bad_id/editions/2017/versions/1/dimensions/age/options",
+			"/datasets/bad.id/editions/2017/versions/1/dimensions/age/options",
+			"/datasets/bad%20id/editions/2017/versions/1/dimensions/age/options",
+			"/datasets/%3Ctest%3E/editions/2017/versions/1/dimensions/age/options",
+			"/datasets/123/editions/bad_edition/versions/1/dimensions/age/options",
+			"/datasets/123/editions/bad.edition/versions/1/dimensions/age/options",
+			"/datasets/123/editions/bad%20edition/versions/1/dimensions/age/options",
+			"/datasets/123/editions/%3Ctest%3E/versions/1/dimensions/age/options",
+			"/datasets/123/editions/2017/versions/1/dimensions/bad.dimension/options",
+			"/datasets/123/editions/2017/versions/1/dimensions/bad%20dimension/options",
+			"/datasets/123/editions/2017/versions/1/dimensions/%3Ctest%3E/options",
+		}
+
+		for _, path := range invalidPaths {
+			Convey("When a request is made to get dimension options with an invalid path parameter: "+path, func() {
+				r := httptest.NewRequest("GET", "http://localhost:22000"+path, http.NoBody)
+				w := httptest.NewRecorder()
+				api.Router.ServeHTTP(w, r)
+
+				Convey("Then a 404 is returned and the datastore is not called", func() {
+					So(w.Code, ShouldEqual, http.StatusNotFound)
+					So(mockedDataStore.GetVersionCalls(), ShouldBeEmpty)
+					So(mockedDataStore.GetDimensionOptionsCalls(), ShouldBeEmpty)
+					So(mockedDataStore.GetDimensionOptionsFromIDsCalls(), ShouldBeEmpty)
+				})
+			})
+		}
+	})
+}
+
+func TestGetDimensionOptionsDimensionWithUnderscoreReachesHandler(t *testing.T) {
+	t.Parallel()
+
+	Convey("Given the dataset API is running in web mode", t, func() {
+		mockedDataStore := &storetest.StorerMock{
+			GetVersionFunc: func(context.Context, string, string, int, string) (*models.Version, error) {
+				return nil, errs.ErrVersionNotFound
+			},
+		}
+		api := GetWebAPIWithMocks(context.Background(), mockedDataStore, &mocks.DownloadsGeneratorMock{}, &authMock.MiddlewareMock{}, &authMock.PermissionsCheckerMock{}, &clientsidentity.Client{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
+
+		Convey("When a request is made to get dimension options for a dimension containing an underscore", func() {
+			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/RM119/editions/2021/versions/1/dimensions/resident_age_6a/options", http.NoBody)
+			w := httptest.NewRecorder()
+			api.Router.ServeHTTP(w, r)
+
+			Convey("Then the request is not rejected by the router and reaches the handler", func() {
+				So(mockedDataStore.GetVersionCalls(), ShouldHaveLength, 1)
+				So(w.Code, ShouldEqual, http.StatusNotFound)
+				So(w.Body.String(), ShouldContainSubstring, errs.ErrVersionNotFound.Error())
+			})
+		})
 	})
 }

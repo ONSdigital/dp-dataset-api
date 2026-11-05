@@ -1412,3 +1412,40 @@ func TestGetMetadataAuditEventLogsErrorButContinues(t *testing.T) {
 		})
 	})
 }
+
+func TestGetMetadataInvalidPathParametersReturnNotFound(t *testing.T) {
+	t.Parallel()
+
+	Convey("Given the dataset API is running in web mode", t, func() {
+		mockedDataStore := &storetest.StorerMock{}
+		api := GetWebAPIWithMocks(context.Background(), mockedDataStore, &mocks.DownloadsGeneratorMock{}, &authMock.MiddlewareMock{}, &authMock.PermissionsCheckerMock{}, &identity.Client{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
+
+		invalidPaths := []string{
+			"/datasets/bad_id/editions/2017/versions/1/metadata",
+			"/datasets/bad.id/editions/2017/versions/1/metadata",
+			"/datasets/bad%20id/editions/2017/versions/1/metadata",
+			"/datasets/%3Ctest%3E/editions/2017/versions/1/metadata",
+			"/datasets/123/editions/bad_edition/versions/1/metadata",
+			"/datasets/123/editions/bad.edition/versions/1/metadata",
+			"/datasets/123/editions/bad%20edition/versions/1/metadata",
+			"/datasets/123/editions/%3Ctest%3E/versions/1/metadata",
+		}
+
+		for _, path := range invalidPaths {
+			Convey("When a request is made to get metadata with an invalid path parameter: "+path, func() {
+				r := httptest.NewRequest("GET", "http://localhost:22000"+path, http.NoBody)
+				w := httptest.NewRecorder()
+				api.Router.ServeHTTP(w, r)
+
+				Convey("Then a 404 is returned and the datastore is not called", func() {
+					So(w.Code, ShouldEqual, http.StatusNotFound)
+					So(mockedDataStore.GetDatasetCalls(), ShouldBeEmpty)
+					So(mockedDataStore.CheckEditionExistsCalls(), ShouldBeEmpty)
+					So(mockedDataStore.CheckEditionExistsStaticCalls(), ShouldBeEmpty)
+					So(mockedDataStore.GetVersionCalls(), ShouldBeEmpty)
+					So(mockedDataStore.GetVersionStaticCalls(), ShouldBeEmpty)
+				})
+			})
+		}
+	})
+}

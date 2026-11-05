@@ -158,14 +158,14 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 // enablePublicEndpoints register only the public GET endpoints.
 func (api *DatasetAPI) enablePublicEndpoints(paginator *pagination.Paginator) {
 	api.get("/datasets", paginator.Paginate(api.getDatasets))
-	api.get("/datasets/{dataset_id}", api.getDataset)
-	api.get("/datasets/{dataset_id}/editions", paginator.Paginate(api.getEditions))
-	api.get("/datasets/{dataset_id}/editions/{edition}", api.getEdition)
-	api.get("/datasets/{dataset_id}/editions/{edition}/versions", paginator.Paginate(api.getVersions))
-	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}", contextAndErrors(api.getVersion))
-	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/metadata", api.getMetadata)
-	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions", paginator.Paginate(api.getDimensions))
-	api.get("/datasets/{dataset_id}/editions/{edition}/versions/{version}/dimensions/{dimension}/options", paginator.Paginate(api.getDimensionOptions))
+	api.get("/datasets/{dataset_id:[A-Za-z0-9-]+}", api.getDataset)
+	api.get("/datasets/{dataset_id:[A-Za-z0-9-]+}/editions", paginator.Paginate(api.getEditions))
+	api.get("/datasets/{dataset_id:[A-Za-z0-9-]+}/editions/{edition:[A-Za-z0-9-]+}", api.getEdition)
+	api.get("/datasets/{dataset_id:[A-Za-z0-9-]+}/editions/{edition:[A-Za-z0-9-]+}/versions", paginator.Paginate(api.getVersions))
+	api.get("/datasets/{dataset_id:[A-Za-z0-9-]+}/editions/{edition:[A-Za-z0-9-]+}/versions/{version}", contextAndErrors(api.getVersion))
+	api.get("/datasets/{dataset_id:[A-Za-z0-9-]+}/editions/{edition:[A-Za-z0-9-]+}/versions/{version}/metadata", api.getMetadata)
+	api.get("/datasets/{dataset_id:[A-Za-z0-9-]+}/editions/{edition:[A-Za-z0-9-]+}/versions/{version}/dimensions", paginator.Paginate(api.getDimensions))
+	api.get("/datasets/{dataset_id:[A-Za-z0-9-]+}/editions/{edition:[A-Za-z0-9-]+}/versions/{version}/dimensions/{dimension:[A-Za-z0-9_-]+}/options", paginator.Paginate(api.getDimensionOptions))
 }
 
 func writeErrorResponse(w http.ResponseWriter, errorResponse *models.ErrorResponse) {

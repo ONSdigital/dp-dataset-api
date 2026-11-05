@@ -154,3 +154,27 @@ Feature: Get edition in web mode
       """
       edition not found
       """
+
+  Scenario: Get an edition with an edition ID containing an underscore returns 404
+    When I GET "/datasets/population-estimates/editions/time_series"
+    Then the HTTP status code should be "404"
+    And I should receive the following response:
+      """
+      404 page not found
+      """
+
+  Scenario: Get an edition with an edition ID containing a full stop returns 404
+    When I GET "/datasets/population-estimates/editions/time.series"
+    Then the HTTP status code should be "404"
+    And I should receive the following response:
+      """
+      404 page not found
+      """
+
+  Scenario: Get an edition with an edition ID containing encoded special characters returns 404
+    When I GET "/datasets/population-estimates/editions/%3Ctest%3E"
+    Then the HTTP status code should be "404"
+    And I should receive the following response:
+      """
+      404 page not found
+      """
