@@ -157,6 +157,8 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 
 // enablePublicEndpoints register only the public GET endpoints.
 func (api *DatasetAPI) enablePublicEndpoints(paginator *pagination.Paginator) {
+	api.Router.Use(publicCacheControlMiddleware)
+
 	api.get("/datasets", paginator.Paginate(api.getDatasets))
 	api.get("/datasets/{dataset_id:[A-Za-z0-9-]+}", api.getDataset)
 	api.get("/datasets/{dataset_id:[A-Za-z0-9-]+}/editions", paginator.Paginate(api.getEditions))
