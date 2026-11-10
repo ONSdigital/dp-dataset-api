@@ -50,6 +50,8 @@ func TestSpec(t *testing.T) {
 				So(cfg.DefaultLimit, ShouldEqual, 20)
 				So(cfg.DefaultOffset, ShouldEqual, 0)
 				So(cfg.MaxRequestOptions, ShouldEqual, 100)
+				So(cfg.CacheStaleWhileRevalidateSeconds, ShouldEqual, 0)
+				So(cfg.CacheStaleIfErrorSeconds, ShouldEqual, 30)
 				So(cfg.EnablePermissionsAuth, ShouldBeFalse)
 				So(cfg.EnableURLRewriting, ShouldBeFalse)
 				So(cfg.HealthCheckCriticalTimeout, ShouldEqual, 90*time.Second)

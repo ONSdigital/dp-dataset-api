@@ -65,55 +65,59 @@ type DownloadsGenerator interface {
 
 // DatasetAPI manages importing filters against a dataset
 type DatasetAPI struct {
-	Router                    *mux.Router
-	dataStore                 store.DataStore
-	urlBuilder                *url.Builder
-	enableURLRewriting        bool
-	host                      string
-	downloadServiceToken      string
-	EnablePrePublishView      bool
-	downloadGenerators        map[models.DatasetType]DownloadsGenerator
-	enablePrivateEndpoints    bool
-	enableDetachDataset       bool
-	enableDeleteStaticVersion bool
-	authMiddleware            auth.Middleware
-	instancePublishedChecker  *instance.PublishCheck
-	versionPublishedChecker   *PublishCheck
-	MaxRequestOptions         int
-	smDatasetAPI              *application.StateMachineDatasetAPI
-	auditService              application.AuditService
-	staticDatasetService      application.StaticDatasetService
-	filesAPIClient            filesAPISDK.Clienter
-	permissionsChecker        auth.PermissionsChecker
-	idClient                  *clientsidentity.Client
-	topicAPIClient            topicAPISDK.Clienter
+	Router                           *mux.Router
+	dataStore                        store.DataStore
+	urlBuilder                       *url.Builder
+	enableURLRewriting               bool
+	host                             string
+	downloadServiceToken             string
+	EnablePrePublishView             bool
+	downloadGenerators               map[models.DatasetType]DownloadsGenerator
+	enablePrivateEndpoints           bool
+	enableDetachDataset              bool
+	enableDeleteStaticVersion        bool
+	cacheStaleWhileRevalidateSeconds int
+	cacheStaleIfErrorSeconds         int
+	authMiddleware                   auth.Middleware
+	instancePublishedChecker         *instance.PublishCheck
+	versionPublishedChecker          *PublishCheck
+	MaxRequestOptions                int
+	smDatasetAPI                     *application.StateMachineDatasetAPI
+	auditService                     application.AuditService
+	staticDatasetService             application.StaticDatasetService
+	filesAPIClient                   filesAPISDK.Clienter
+	permissionsChecker               auth.PermissionsChecker
+	idClient                         *clientsidentity.Client
+	topicAPIClient                   topicAPISDK.Clienter
 }
 
 // Setup creates a new Dataset API instance and register the API routes based on the application configuration.
 func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, dataStore store.DataStore, urlBuilder *url.Builder, downloadGenerators map[models.DatasetType]DownloadsGenerator, authMiddleware auth.Middleware, enableURLRewriting bool, smDatasetAPI *application.StateMachineDatasetAPI, auditService application.AuditService, staticDatasetService application.StaticDatasetService, permissionsChecker auth.PermissionsChecker, idClient *clientsidentity.Client, filesAPIClient filesAPISDK.Clienter, topicAPIClient topicAPISDK.Clienter) *DatasetAPI {
 	api := &DatasetAPI{
-		dataStore:                 dataStore,
-		host:                      cfg.DatasetAPIURL,
-		downloadServiceToken:      cfg.DownloadServiceSecretKey,
-		EnablePrePublishView:      cfg.EnablePrivateEndpoints,
-		Router:                    router,
-		urlBuilder:                urlBuilder,
-		enableURLRewriting:        enableURLRewriting,
-		downloadGenerators:        downloadGenerators,
-		enablePrivateEndpoints:    cfg.EnablePrivateEndpoints,
-		enableDetachDataset:       cfg.EnableDetachDataset,
-		enableDeleteStaticVersion: cfg.EnableDeleteStaticVersion,
-		authMiddleware:            authMiddleware,
-		versionPublishedChecker:   nil,
-		instancePublishedChecker:  nil,
-		MaxRequestOptions:         cfg.MaxRequestOptions,
-		smDatasetAPI:              smDatasetAPI,
-		permissionsChecker:        permissionsChecker,
-		auditService:              auditService,
-		staticDatasetService:      staticDatasetService,
-		idClient:                  idClient,
-		filesAPIClient:            filesAPIClient,
-		topicAPIClient:            topicAPIClient,
+		dataStore:                        dataStore,
+		host:                             cfg.DatasetAPIURL,
+		downloadServiceToken:             cfg.DownloadServiceSecretKey,
+		EnablePrePublishView:             cfg.EnablePrivateEndpoints,
+		Router:                           router,
+		urlBuilder:                       urlBuilder,
+		enableURLRewriting:               enableURLRewriting,
+		downloadGenerators:               downloadGenerators,
+		enablePrivateEndpoints:           cfg.EnablePrivateEndpoints,
+		enableDetachDataset:              cfg.EnableDetachDataset,
+		enableDeleteStaticVersion:        cfg.EnableDeleteStaticVersion,
+		cacheStaleWhileRevalidateSeconds: cfg.CacheStaleWhileRevalidateSeconds,
+		cacheStaleIfErrorSeconds:         cfg.CacheStaleIfErrorSeconds,
+		authMiddleware:                   authMiddleware,
+		versionPublishedChecker:          nil,
+		instancePublishedChecker:         nil,
+		MaxRequestOptions:                cfg.MaxRequestOptions,
+		smDatasetAPI:                     smDatasetAPI,
+		permissionsChecker:               permissionsChecker,
+		auditService:                     auditService,
+		staticDatasetService:             staticDatasetService,
+		idClient:                         idClient,
+		filesAPIClient:                   filesAPIClient,
+		topicAPIClient:                   topicAPIClient,
 	}
 
 	paginator := pagination.NewPaginator(cfg.DefaultLimit, cfg.DefaultOffset, cfg.DefaultMaxLimit)
@@ -157,6 +161,8 @@ func Setup(ctx context.Context, cfg *config.Configuration, router *mux.Router, d
 
 // enablePublicEndpoints register only the public GET endpoints.
 func (api *DatasetAPI) enablePublicEndpoints(paginator *pagination.Paginator) {
+	api.Router.Use(publicCacheControlMiddleware(api.cacheStaleWhileRevalidateSeconds, api.cacheStaleIfErrorSeconds))
+
 	api.get("/datasets", paginator.Paginate(api.getDatasets))
 	api.get("/datasets/{dataset_id:[A-Za-z0-9-]+}", api.getDataset)
 	api.get("/datasets/{dataset_id:[A-Za-z0-9-]+}/editions", paginator.Paginate(api.getEditions))

@@ -54,6 +54,7 @@ Feature: List datasets in web mode
         "total_count": 2
       }
       """
+    And the response header "Cache-Control" should be "stale-while-revalidate=0, stale-if-error=30"
 
   Scenario: List datasets containing redacted fields
     Given I have these datasets:

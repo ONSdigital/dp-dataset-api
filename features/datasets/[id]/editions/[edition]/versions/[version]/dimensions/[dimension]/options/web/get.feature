@@ -131,6 +131,7 @@ Feature: List version dimension options in web mode
         "total_count": 2
       }
       """
+    And the response header "Cache-Control" should be "stale-while-revalidate=0, stale-if-error=30"
 
   Scenario: List dimension options with a dimension containing a full stop returns 404
     When I GET "/datasets/population-estimates/editions/hello/versions/1/dimensions/bad.dimension/options"

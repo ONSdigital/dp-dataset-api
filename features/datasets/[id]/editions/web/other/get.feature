@@ -47,6 +47,7 @@ Feature: List editions in web mode
         "total_count": 1
       }
       """
+    And the response header "Cache-Control" should be "stale-while-revalidate=0, stale-if-error=30"
 
   Scenario: List editions with URL rewriting enabled
     Given I have these datasets:

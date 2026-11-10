@@ -118,6 +118,7 @@ Feature: List version dimensions in web mode
         "total_count": 1
       }
       """
+    And the response header "Cache-Control" should be "stale-while-revalidate=0, stale-if-error=30"
 
   Scenario: List dimensions
     When I GET "/datasets/population-estimates/editions/hello/versions/1/dimensions"
