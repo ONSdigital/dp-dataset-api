@@ -1130,7 +1130,7 @@ func (api *DatasetAPI) getStaticVersions(ctx context.Context, datasetID, edition
 }
 
 // resolvePreviousSeriesID returns the current dataset ID for the one requested. If the requested ID no
-// longer exists it falls back to matching a previous series ID
+// longer exists it falls back to matching a previous series ID (publishing mode only)
 func (api *DatasetAPI) resolvePreviousSeriesID(ctx context.Context, datasetID string, logData log.Data) (string, error) {
 	_, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 	if err == nil {
@@ -1140,6 +1140,10 @@ func (api *DatasetAPI) resolvePreviousSeriesID(ctx context.Context, datasetID st
 	if !errors.Is(err, errs.ErrDatasetNotFound) {
 		log.Error(ctx, "failed to retrieve dataset", err, logData)
 		return "", err
+	}
+
+	if !api.enablePrivateEndpoints {
+		return "", errs.ErrDatasetNotFound
 	}
 
 	log.Info(ctx, "dataset not found, checking for previous series IDs", logData)
@@ -1162,7 +1166,7 @@ func (api *DatasetAPI) resolvePreviousSeriesID(ctx context.Context, datasetID st
 }
 
 // getDatasetByIDOrPreviousSeriesID returns the dataset for the requested ID. If no dataset exists with that ID
-// it falls back to the dataset that lists the requested ID as a previous series ID
+// it falls back to the dataset that lists the requested ID as a previous series ID (publishing mode only)
 func (api *DatasetAPI) getDatasetByIDOrPreviousSeriesID(ctx context.Context, datasetID string, logData log.Data) (*models.DatasetUpdate, error) {
 	dataset, err := api.dataStore.Backend.GetDataset(ctx, datasetID)
 	if err == nil {
@@ -1171,6 +1175,10 @@ func (api *DatasetAPI) getDatasetByIDOrPreviousSeriesID(ctx context.Context, dat
 
 	if !errors.Is(err, errs.ErrDatasetNotFound) {
 		return nil, err
+	}
+
+	if !api.enablePrivateEndpoints {
+		return nil, errs.ErrDatasetNotFound
 	}
 
 	log.Info(ctx, "dataset not found, checking for previous series IDs", logData)

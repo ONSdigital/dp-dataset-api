@@ -7,7 +7,10 @@ Feature: List static editions in web mode
         {
           "id": "static-dataset",
           "state": "published",
-          "type": "static"
+          "type": "static",
+          "previous_series_id": [
+            "old-static-dataset"
+          ]
         }
       ]
       """
@@ -255,3 +258,11 @@ Feature: List static editions in web mode
       }
       """
     And the total number of audit events should be 0
+
+  Scenario: List editions using a previous series ID returns 404
+    When I GET "/datasets/old-static-dataset/editions"
+    Then the HTTP status code should be "404"
+    And I should receive the following response:
+      """
+      dataset not found
+      """

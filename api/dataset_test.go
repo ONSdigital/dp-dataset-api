@@ -4068,3 +4068,54 @@ func TestGetDatasetInvalidIDReturnsNotFound(t *testing.T) {
 		}
 	})
 }
+
+func TestGetDatasetPreviousSeriesIDWebMode(t *testing.T) {
+	t.Parallel()
+
+	Convey("Given the dataset API is running in web mode and a dataset has been renamed", t, func() {
+		renamedDataset := &models.DatasetUpdate{
+			ID:      "new-series",
+			Current: &models.Dataset{ID: "new-series", State: models.PublishedState, PreviousSeriesId: []string{"old-series"}},
+			Next:    &models.Dataset{ID: "new-series", State: models.PublishedState, PreviousSeriesId: []string{"old-series"}},
+		}
+
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(ctx context.Context, id string) (*models.DatasetUpdate, error) {
+				if id == "new-series" {
+					return renamedDataset, nil
+				}
+				return nil, errs.ErrDatasetNotFound
+			},
+			GetDatasetByPreviousSeriesIDFunc: func(ctx context.Context, previousSeriesID string) (*models.DatasetUpdate, error) {
+				return renamedDataset, nil
+			},
+		}
+
+		api := GetWebAPIWithMocks(context.Background(), mockedDataStore, &mocks.DownloadsGeneratorMock{}, &authMock.MiddlewareMock{}, &authMock.PermissionsCheckerMock{}, &clientsidentity.Client{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
+
+		Convey("When a request is made to get the dataset using the previous series ID", func() {
+			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/old-series", http.NoBody)
+			w := httptest.NewRecorder()
+			api.Router.ServeHTTP(w, r)
+
+			Convey("Then a 404 is returned and previous series IDs are not checked", func() {
+				So(w.Code, ShouldEqual, http.StatusNotFound)
+				So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+				So(mockedDataStore.GetDatasetByPreviousSeriesIDCalls(), ShouldBeEmpty)
+			})
+		})
+
+		Convey("When a request is made to get the dataset using the current series ID", func() {
+			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/new-series", http.NoBody)
+			w := httptest.NewRecorder()
+			api.Router.ServeHTTP(w, r)
+
+			Convey("Then a 200 is returned with the dataset", func() {
+				So(w.Code, ShouldEqual, http.StatusOK)
+				So(w.Body.String(), ShouldContainSubstring, "new-series")
+				So(mockedDataStore.GetDatasetByPreviousSeriesIDCalls(), ShouldBeEmpty)
+			})
+		})
+	})
+}
