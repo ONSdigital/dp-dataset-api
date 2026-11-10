@@ -221,6 +221,7 @@ Feature: Get version in web mode
         "lowest_geography": "ltla"
       }
       """
+    And the response header "Cache-Control" should be "stale-while-revalidate=0, stale-if-error=30"
     And the response header "ETag" should be "etag-test-item-4"
 
   Scenario: Get a version

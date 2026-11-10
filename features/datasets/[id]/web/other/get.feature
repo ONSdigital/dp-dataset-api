@@ -32,6 +32,7 @@ Feature: Get dataset in web mode
         "title": "Published Dataset"
       }
       """
+    And the response header "Cache-Control" should be "stale-while-revalidate=0, stale-if-error=30"
 
   Scenario: Get a published dataset which has a previous series ID
     When I GET "/datasets/published-dataset-with-previous-series"

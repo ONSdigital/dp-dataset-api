@@ -145,6 +145,7 @@ Feature: Get version metadata in web mode
         "state": "published"
       }
       """
+    And the response header "Cache-Control" should be "stale-while-revalidate=0, stale-if-error=30"
 
   Scenario: Get metadata for a published Cantabular flexible table dataset
     Given I have these datasets:

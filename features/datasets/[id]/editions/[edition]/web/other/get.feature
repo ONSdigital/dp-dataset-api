@@ -39,6 +39,7 @@ Feature: Get edition in web mode
         }
       }
       """
+    And the response header "Cache-Control" should be "stale-while-revalidate=0, stale-if-error=30"
 
   Scenario: Get an edition with URL rewriting enabled
     Given I have these datasets:
