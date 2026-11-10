@@ -21,7 +21,7 @@ func TestPublicCacheControlMiddleware(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 
-			publicCacheControlMiddleware(handler).ServeHTTP(recorder, request)
+			publicCacheControlMiddleware(0, 30)(handler).ServeHTTP(recorder, request)
 
 			response := recorder.Result()
 			defer response.Body.Close()
@@ -39,12 +39,12 @@ func TestPublicCacheControlMiddleware(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 
-			publicCacheControlMiddleware(handler).ServeHTTP(recorder, request)
+			publicCacheControlMiddleware(60, 120)(handler).ServeHTTP(recorder, request)
 
 			response := recorder.Result()
 			defer response.Body.Close()
 
-			So(response.Header.Get("Cache-Control"), ShouldEqual, "stale-while-revalidate=0, stale-if-error=30")
+			So(response.Header.Get("Cache-Control"), ShouldEqual, "stale-while-revalidate=60, stale-if-error=120")
 			So(response.StatusCode, ShouldEqual, http.StatusNotFound)
 			So(recorder.Body.String(), ShouldEqual, "dataset not found")
 		})

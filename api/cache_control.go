@@ -1,17 +1,16 @@
 package api
 
-import "net/http"
-
-// Cache-Control header constants
-const (
-	staleWhileRevalidate = "stale-while-revalidate=0"
-	staleIfError         = "stale-if-error=30"
+import (
+	"fmt"
+	"net/http"
 )
 
 // publicCacheControlMiddleware sets the Cache-Control header for all public responses.
-func publicCacheControlMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Cache-Control", staleWhileRevalidate+", "+staleIfError)
-		next.ServeHTTP(w, r)
-	})
+func publicCacheControlMiddleware(staleWhileRevalidateSeconds, staleIfErrorSeconds int) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Cache-Control", fmt.Sprintf("stale-while-revalidate=%d, stale-if-error=%d", staleWhileRevalidateSeconds, staleIfErrorSeconds))
+			next.ServeHTTP(w, r)
+		})
+	}
 }
