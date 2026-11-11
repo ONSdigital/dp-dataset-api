@@ -7009,3 +7009,48 @@ func TestGetVersionInvalidPathParametersReturnNotFound(t *testing.T) {
 		}
 	})
 }
+
+func TestGetVersionsPreviousSeriesIDWebMode(t *testing.T) {
+	t.Parallel()
+
+	Convey("Given the dataset API is running in web mode and a dataset has been renamed", t, func() {
+		mockedDataStore := &storetest.StorerMock{
+			GetDatasetFunc: func(ctx context.Context, id string) (*models.DatasetUpdate, error) {
+				return nil, errs.ErrDatasetNotFound
+			},
+			GetDatasetByPreviousSeriesIDFunc: func(ctx context.Context, previousSeriesID string) (*models.DatasetUpdate, error) {
+				return &models.DatasetUpdate{ID: "new-series", Next: &models.Dataset{ID: "new-series", PreviousSeriesId: []string{"old-series"}}}, nil
+			},
+		}
+
+		api := GetWebAPIWithMocks(context.Background(), mockedDataStore, &mocks.DownloadsGeneratorMock{}, &authMock.MiddlewareMock{}, &authMock.PermissionsCheckerMock{}, &clientsidentity.Client{}, &applicationMocks.AuditServiceMock{}, &applicationMocks.StaticDatasetServiceMock{})
+
+		Convey("When a request is made to get versions using the previous series ID", func() {
+			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/old-series/editions/678/versions", http.NoBody)
+			w := httptest.NewRecorder()
+			api.Router.ServeHTTP(w, r)
+
+			Convey("Then a 404 is returned and previous series IDs are not checked", func() {
+				So(w.Code, ShouldEqual, http.StatusNotFound)
+				So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+				So(mockedDataStore.GetDatasetByPreviousSeriesIDCalls(), ShouldBeEmpty)
+				So(mockedDataStore.GetDatasetTypeCalls(), ShouldBeEmpty)
+			})
+		})
+
+		Convey("When a request is made to get a version using the previous series ID", func() {
+			r := httptest.NewRequest("GET", "http://localhost:22000/datasets/old-series/editions/678/versions/1", http.NoBody)
+			w := httptest.NewRecorder()
+			api.Router.ServeHTTP(w, r)
+
+			Convey("Then a 404 is returned and previous series IDs are not checked", func() {
+				So(w.Code, ShouldEqual, http.StatusNotFound)
+				So(w.Body.String(), ShouldContainSubstring, errs.ErrDatasetNotFound.Error())
+				So(len(mockedDataStore.GetDatasetCalls()), ShouldEqual, 1)
+				So(mockedDataStore.GetDatasetByPreviousSeriesIDCalls(), ShouldBeEmpty)
+				So(mockedDataStore.GetDatasetTypeCalls(), ShouldBeEmpty)
+			})
+		})
+	})
+}

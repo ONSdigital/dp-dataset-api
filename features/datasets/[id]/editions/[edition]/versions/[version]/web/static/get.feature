@@ -14,7 +14,10 @@ Feature: Get static version in web mode
                 "id": "1",
                 "href": "/datasets/test-static/editions/test-edition-static/versions/1"
               }
-            }
+            },
+            "previous_series_id": [
+              "old-test-static"
+            ]
           },
           "current": {
             "id": "test-static",
@@ -25,7 +28,10 @@ Feature: Get static version in web mode
                 "id": "1",
                 "href": "/datasets/test-static/editions/test-edition-published/versions/1"
               }
-            }
+            },
+            "previous_series_id": [
+              "old-test-static"
+            ]
           }
         },
         {
@@ -193,6 +199,20 @@ Feature: Get static version in web mode
     And I am not authenticated
     When I GET "/datasets/test-static/editions/old-edition-1/versions/1"
     Then the HTTP status code should be "404"
+
+  Scenario: Get a version using a previous series ID returns 404
+    When I GET "/datasets/old-test-static/editions/test-edition-published/versions/1"
+    Then I should receive the following JSON response with status "404":
+      """
+      {
+        "errors": [
+          {
+            "code": "dataset not found",
+            "description": "dataset not found"
+          }
+        ]
+      }
+      """
 
   Scenario: Get a version that contains redacted fields
     When I GET "/datasets/test-static/editions/test-edition-published/versions/1"

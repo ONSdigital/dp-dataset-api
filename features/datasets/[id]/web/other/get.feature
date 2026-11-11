@@ -46,6 +46,14 @@ Feature: Get dataset in web mode
       }
       """
 
+  Scenario: Get a dataset using a previous series ID returns 404
+    When I GET "/datasets/old-dataset-id"
+    Then the HTTP status code should be "404"
+    And I should receive the following response:
+      """
+      dataset not found
+      """
+
   Scenario: Get a dataset that does not exist
     When I GET "/datasets/non-existing-dataset"
     Then the HTTP status code should be "404"

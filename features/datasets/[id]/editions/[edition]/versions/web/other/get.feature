@@ -22,7 +22,10 @@ Feature: List versions in web mode
         },
         {
           "id": "population-estimates",
-          "state": "published"
+          "state": "published",
+          "previous_series_id": [
+            "old-population-estimates"
+          ]
         }
       ]
       """
@@ -305,6 +308,14 @@ Feature: List versions in web mode
 
   Scenario: List versions for a dataset that does not exist
     When I GET "/datasets/unknown-dataset/editions/hello/versions"
+    Then the HTTP status code should be "404"
+    And I should receive the following response:
+      """
+      dataset not found
+      """
+
+  Scenario: List versions using a previous series ID returns 404
+    When I GET "/datasets/old-population-estimates/editions/hello/versions"
     Then the HTTP status code should be "404"
     And I should receive the following response:
       """
