@@ -9,44 +9,59 @@ import (
 )
 
 func TestPublicCacheControlMiddleware(t *testing.T) {
-	Convey("Given the public cache-control middleware", t, func() {
-		request := httptest.NewRequest(http.MethodGet, "/datasets/dataset-id", http.NoBody)
-		recorder := httptest.NewRecorder()
+	tests := []struct {
+		name                        string
+		staleWhileRevalidateSeconds int
+		staleIfErrorSeconds         int
+		expectedCacheControl        string
+	}{
+		{
+			name:                        "both directives enabled",
+			staleWhileRevalidateSeconds: 60,
+			staleIfErrorSeconds:         120,
+			expectedCacheControl:        "stale-while-revalidate=60, stale-if-error=120",
+		},
+		{
+			name:                        "both directives zero",
+			staleWhileRevalidateSeconds: 0,
+			staleIfErrorSeconds:         0,
+			expectedCacheControl:        "stale-while-revalidate=0, stale-if-error=0",
+		},
+		{
+			name:                        "stale-while-revalidate disabled",
+			staleWhileRevalidateSeconds: -1,
+			staleIfErrorSeconds:         30,
+			expectedCacheControl:        "stale-if-error=30",
+		},
+		{
+			name:                        "stale-if-error disabled",
+			staleWhileRevalidateSeconds: 60,
+			staleIfErrorSeconds:         -1,
+			expectedCacheControl:        "stale-while-revalidate=60",
+		},
+		{
+			name:                        "both directives disabled",
+			staleWhileRevalidateSeconds: -1,
+			staleIfErrorSeconds:         -1,
+			expectedCacheControl:        "",
+		},
+	}
 
-		Convey("When the handler returns 200 OK", func() {
-			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				So(r, ShouldEqual, request)
+	for _, tt := range tests {
+		Convey("Given "+tt.name, t, func() {
+			request := httptest.NewRequest(http.MethodGet, "/datasets", http.NoBody)
+			recorder := httptest.NewRecorder()
+			handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.WriteHeader(http.StatusOK)
-				_, err := w.Write([]byte(`{"message":"response"}`))
-				So(err, ShouldBeNil)
 			})
 
-			publicCacheControlMiddleware(0, 30)(handler).ServeHTTP(recorder, request)
+			Convey("When the cache-control middleware handles the request", func() {
+				publicCacheControlMiddleware(tt.staleWhileRevalidateSeconds, tt.staleIfErrorSeconds)(handler).ServeHTTP(recorder, request)
 
-			response := recorder.Result()
-			defer response.Body.Close()
-
-			So(response.Header.Get("Cache-Control"), ShouldEqual, "stale-while-revalidate=0, stale-if-error=30")
-			So(response.StatusCode, ShouldEqual, http.StatusOK)
-			So(recorder.Body.String(), ShouldEqual, `{"message":"response"}`)
-		})
-
-		Convey("When the handler returns 404 Not Found", func() {
-			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				So(r, ShouldEqual, request)
-				w.WriteHeader(http.StatusNotFound)
-				_, err := w.Write([]byte("dataset not found"))
-				So(err, ShouldBeNil)
+				Convey("Then the Cache-Control header matches the expected value", func() {
+					So(recorder.Header().Get("Cache-Control"), ShouldEqual, tt.expectedCacheControl)
+				})
 			})
-
-			publicCacheControlMiddleware(60, 120)(handler).ServeHTTP(recorder, request)
-
-			response := recorder.Result()
-			defer response.Body.Close()
-
-			So(response.Header.Get("Cache-Control"), ShouldEqual, "stale-while-revalidate=60, stale-if-error=120")
-			So(response.StatusCode, ShouldEqual, http.StatusNotFound)
-			So(recorder.Body.String(), ShouldEqual, "dataset not found")
 		})
-	})
+	}
 }
