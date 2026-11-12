@@ -132,6 +132,8 @@ func (c *DatasetComponent) Reset() error {
 	c.Config.EnablePrivateEndpoints = false
 	c.Config.EnableURLRewriting = false
 	c.Config.CloudflareEnabled = false
+	c.Config.CacheStaleWhileRevalidateSeconds = -1
+	c.Config.CacheStaleIfErrorSeconds = -1
 	// Resets back to Mocked Kafka
 	c.setInitialiserMock()
 

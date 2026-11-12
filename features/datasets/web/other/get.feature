@@ -54,6 +54,63 @@ Feature: List datasets in web mode
         "total_count": 2
       }
       """
+
+  Scenario: List datasets with cache-control directives configured
+    Given stale-while-revalidate is set to 0 seconds
+    And stale-if-error is set to 30 seconds
+    And I have realistic datasets:
+      """
+      [
+        {
+          "current": {
+            "id": "population-estimates",
+            "state": "published"
+          },
+          "next": {
+            "id": "population-estimates",
+            "state": "published"
+          }
+        },
+        {
+          "current": {
+            "id": "income-by-age",
+            "state": "published"
+          },
+          "next": {
+            "id": "income-by-age",
+            "state": "published"
+          }
+        },
+        {
+          "next": {
+            "id": "cpih01",
+            "state": "created"
+          }
+        }
+      ]
+      """
+    When I GET "/datasets"
+    Then I should receive the following JSON response with status "200":
+      """
+      {
+        "count": 2,
+        "items": [
+          {
+            "id": "population-estimates",
+            "last_updated": "0001-01-01T00:00:00Z",
+            "state": "published"
+          },
+          {
+            "id": "income-by-age",
+            "last_updated": "0001-01-01T00:00:00Z",
+            "state": "published"
+          }
+        ],
+        "limit": 20,
+        "offset": 0,
+        "total_count": 2
+      }
+      """
     And the response header "Cache-Control" should be "stale-while-revalidate=0, stale-if-error=30"
 
   Scenario: List datasets containing redacted fields

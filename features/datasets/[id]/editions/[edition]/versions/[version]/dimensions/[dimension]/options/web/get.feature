@@ -131,6 +131,52 @@ Feature: List version dimension options in web mode
         "total_count": 2
       }
       """
+
+  Scenario: List dimension options with cache-control directives configured
+    Given stale-while-revalidate is set to 0 seconds
+    And stale-if-error is set to 30 seconds
+    When I GET "/datasets/population-estimates/editions/hello/versions/1/dimensions/geography/options"
+    Then I should receive the following JSON response with status "200":
+      """
+      {
+        "count": 2,
+        "items": [
+          {
+            "dimension": "geography",
+            "label": "",
+            "option": "K02000001",
+            "links": {
+              "code": {
+              },
+              "code_list": {
+              },
+              "version": {
+                "href": "http://localhost:22000/datasets/population-estimates/editions/hello/versions/1",
+                "id": "1"
+              }
+            }
+          },
+          {
+            "dimension": "geography",
+            "label": "",
+            "option": "K02000002",
+            "links": {
+              "code": {
+              },
+              "code_list": {
+              },
+              "version": {
+                "href": "http://localhost:22000/datasets/population-estimates/editions/hello/versions/1",
+                "id": "1"
+              }
+            }
+          }
+        ],
+        "limit": 20,
+        "offset": 0,
+        "total_count": 2
+      }
+      """
     And the response header "Cache-Control" should be "stale-while-revalidate=0, stale-if-error=30"
 
   Scenario: List dimension options with a dimension containing a full stop returns 404

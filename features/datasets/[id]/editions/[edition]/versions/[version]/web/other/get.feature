@@ -221,8 +221,32 @@ Feature: Get version in web mode
         "lowest_geography": "ltla"
       }
       """
-    And the response header "Cache-Control" should be "stale-while-revalidate=0, stale-if-error=30"
     And the response header "ETag" should be "etag-test-item-4"
+
+  Scenario: Get a version with cache-control directives configured
+    Given stale-while-revalidate is set to 0 seconds
+    And stale-if-error is set to 30 seconds
+    When I GET "/datasets/population-estimates/editions/hello/versions/4"
+    Then I should receive the following JSON response with status "200":
+      """
+      {
+        "id": "test-item-4",
+        "last_updated": "2021-01-01T00:00:03Z",
+        "version": 4,
+        "state": "published",
+        "links": {
+          "dataset": {
+            "id": "population-estimates"
+          },
+          "self": {
+            "href": "/datasets/population-estimates/editions/hello/versions/4"
+          }
+        },
+        "edition": "hello",
+        "lowest_geography": "ltla"
+      }
+      """
+    And the response header "Cache-Control" should be "stale-while-revalidate=0, stale-if-error=30"
 
   Scenario: Get a version
     When I GET "/datasets/population-estimates/editions/hello/versions/4"

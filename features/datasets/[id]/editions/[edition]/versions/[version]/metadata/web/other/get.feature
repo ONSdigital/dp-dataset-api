@@ -145,6 +145,154 @@ Feature: Get version metadata in web mode
         "state": "published"
       }
       """
+
+  Scenario: Get metadata with cache-control directives configured
+    Given stale-while-revalidate is set to 0 seconds
+    And stale-if-error is set to 30 seconds
+    And I have these datasets:
+      """
+      [
+        {
+          "id": "cantabular-flexible-table",
+          "title": "title",
+          "description": "description",
+          "state": "published",
+          "type": "cantabular_flexible_table",
+          "uri": "http://example.com/cantabular-flexible-table",
+          "is_based_on": {
+            "id": "cpih01",
+            "@type": "cantabular_flexible_table"
+          },
+          "links": {
+            "self": {
+              "href": "/datasets/cantabular-flexible-table",
+              "id": "cantabular-flexible-table"
+            }
+          }
+        }
+      ]
+      """
+    And I have these editions:
+      """
+      [
+        {
+          "id": "cantabular-edition-1",
+          "edition": "2023",
+          "state": "published",
+          "links": {
+            "dataset": {
+              "id": "cantabular-flexible-table"
+            }
+          }
+        }
+      ]
+      """
+    And I have these versions:
+      """
+      [
+        {
+          "id": "cantabular-version-1",
+          "version": 1,
+          "state": "published",
+          "release_date": "2023-01-01T00:00:00.000Z",
+          "dimensions": [
+            {
+              "name": "region",
+              "label": "region",
+              "description": "region"
+            },
+            {
+              "name": "age",
+              "label": "label",
+              "description": "description"
+            }
+          ],
+          "downloads": {
+            "csv": {
+              "href": "http://download-service/cantabular-data.csv",
+              "size": "5000"
+            }
+          },
+          "links": {
+            "dataset": {
+              "id": "cantabular-flexible-table"
+            },
+            "edition": {
+              "id": "2023"
+            },
+            "self": {
+              "href": "/datasets/cantabular-flexible-table/editions/2023/versions/1"
+            },
+            "version": {
+              "href": "/datasets/cantabular-flexible-table/editions/2023/versions/1",
+              "id": "1"
+            }
+          },
+          "edition": "2023"
+        }
+      ]
+      """
+    When I GET "/datasets/cantabular-flexible-table/editions/2023/versions/1/metadata"
+    Then I should receive the following JSON response with status "200":
+      """
+      {
+        "dataset_links": {
+          "self": {
+            "href": "/datasets/cantabular-flexible-table",
+            "id": "cantabular-flexible-table"
+          }
+        },
+        "description": "description",
+        "dimensions": [
+          {
+            "description": "region",
+            "label": "region",
+            "links": {
+              "code_list": {
+              },
+              "options": {
+              },
+              "version": {
+              }
+            },
+            "name": "region"
+          },
+          {
+            "description": "description",
+            "label": "label",
+            "links": {
+              "code_list": {
+              },
+              "options": {
+              },
+              "version": {
+              }
+            },
+            "name": "age"
+          }
+        ],
+        "distribution": [
+          "json",
+          "csv"
+        ],
+        "downloads": {
+          "csv": {
+            "href": "http://download-service/cantabular-data.csv",
+            "size": "5000"
+          }
+        },
+        "is_based_on": {
+          "@id": "",
+          "@type": "cantabular_flexible_table"
+        },
+        "last_updated": "0001-01-01T00:00:00Z",
+        "release_date": "2023-01-01T00:00:00.000Z",
+        "title": "title",
+        "uri": "http://example.com/cantabular-flexible-table",
+        "version": 1,
+        "state": "published"
+      }
+      """
     And the response header "Cache-Control" should be "stale-while-revalidate=0, stale-if-error=30"
 
   Scenario: Get metadata for a published Cantabular flexible table dataset

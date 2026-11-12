@@ -249,6 +249,55 @@ Feature: List versions in web mode
         "total_count": 2
       }
       """
+
+  Scenario: List versions with cache-control directives configured
+    Given stale-while-revalidate is set to 0 seconds
+    And stale-if-error is set to 30 seconds
+    When I GET "/datasets/population-estimates/editions/hello/versions"
+    Then I should receive the following JSON response with status "200":
+      """
+      {
+        "count": 2,
+        "items": [
+          {
+            "dataset_id": "population-estimates",
+            "id": "test-item-4",
+            "last_updated": "2021-01-01T00:00:03Z",
+            "version": 4,
+            "edition": "hello",
+            "state": "published",
+            "links": {
+              "dataset": {
+                "id": "population-estimates"
+              },
+              "self": {
+                "href": "/datasets/population-estimates/editions/hello/versions/4"
+              }
+            },
+            "lowest_geography": "ltla"
+          },
+          {
+            "dataset_id": "population-estimates",
+            "id": "test-item-1",
+            "last_updated": "2021-01-01T00:00:00Z",
+            "version": 1,
+            "edition": "hello",
+            "state": "published",
+            "links": {
+              "dataset": {
+                "id": "population-estimates"
+              },
+              "self": {
+                "href": "/datasets/population-estimates/editions/hello/versions/1"
+              }
+            }
+          }
+        ],
+        "limit": 20,
+        "offset": 0,
+        "total_count": 2
+      }
+      """
     And the response header "Cache-Control" should be "stale-while-revalidate=0, stale-if-error=30"
 
   Scenario: List versions

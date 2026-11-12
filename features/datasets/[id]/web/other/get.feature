@@ -32,6 +32,20 @@ Feature: Get dataset in web mode
         "title": "Published Dataset"
       }
       """
+
+  Scenario: Get a published dataset with cache-control directives configured
+    Given stale-while-revalidate is set to 0 seconds
+    And stale-if-error is set to 30 seconds
+    When I GET "/datasets/published-dataset"
+    Then I should receive the following JSON response with status "200":
+      """
+      {
+        "id": "published-dataset",
+        "last_updated": "{{DYNAMIC_TIMESTAMP}}",
+        "state": "published",
+        "title": "Published Dataset"
+      }
+      """
     And the response header "Cache-Control" should be "stale-while-revalidate=0, stale-if-error=30"
 
   Scenario: Get a published dataset which has a previous series ID

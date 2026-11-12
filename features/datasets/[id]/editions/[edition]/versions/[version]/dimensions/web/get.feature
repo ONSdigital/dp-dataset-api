@@ -118,6 +118,36 @@ Feature: List version dimensions in web mode
         "total_count": 1
       }
       """
+
+  Scenario: List dimensions with cache-control directives configured
+    Given stale-while-revalidate is set to 0 seconds
+    And stale-if-error is set to 30 seconds
+    When I GET "/datasets/population-estimates/editions/hello/versions/1/dimensions"
+    Then I should receive the following JSON response with status "200":
+      """
+      {
+        "count": 1,
+        "items": [
+          {
+            "name": "geography",
+            "links": {
+              "code_list": {
+              },
+              "options": {
+                "href": "http://localhost:22000/datasets/population-estimates/editions/hello/versions//dimensions/geography/options",
+                "id": "geography"
+              },
+              "version": {
+                "href": "http://localhost:22000/datasets/population-estimates/editions/hello/versions/"
+              }
+            }
+          }
+        ],
+        "limit": 20,
+        "offset": 0,
+        "total_count": 1
+      }
+      """
     And the response header "Cache-Control" should be "stale-while-revalidate=0, stale-if-error=30"
 
   Scenario: List dimensions

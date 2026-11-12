@@ -39,6 +39,48 @@ Feature: Get edition in web mode
         }
       }
       """
+
+  Scenario: Get an edition with cache-control directives configured
+    Given stale-while-revalidate is set to 0 seconds
+    And stale-if-error is set to 30 seconds
+    And I have these datasets:
+      """
+      [
+        {
+          "id": "population-estimates",
+          "state": "published"
+        }
+      ]
+      """
+    And I have these editions:
+      """
+      [
+        {
+          "id": "population-estimates",
+          "edition": "2019",
+          "state": "published",
+          "links": {
+            "dataset": {
+              "id": "population-estimates"
+            }
+          }
+        }
+      ]
+      """
+    When I GET "/datasets/population-estimates/editions/2019"
+    Then I should receive the following JSON response with status "200":
+      """
+      {
+        "id": "population-estimates",
+        "edition": "2019",
+        "state": "published",
+        "links": {
+          "dataset": {
+            "id": "population-estimates"
+          }
+        }
+      }
+      """
     And the response header "Cache-Control" should be "stale-while-revalidate=0, stale-if-error=30"
 
   Scenario: Get an edition with URL rewriting enabled

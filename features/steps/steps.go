@@ -36,6 +36,8 @@ func (c *DatasetComponent) RegisterSteps(ctx *godog.ScenarioContext) {
 
 	ctx.Step(`^private endpoints are enabled$`, c.privateEndpointsAreEnabled)
 	ctx.Step(`^URL rewriting is enabled$`, c.URLRewritingIsEnabled)
+	ctx.Step(`^stale-while-revalidate is set to (-?\d+) seconds$`, c.staleWhileRevalidateIsSet)
+	ctx.Step(`^stale-if-error is set to (-?\d+) seconds$`, c.staleIfErrorIsSet)
 	ctx.Step(`^the document in the database for id "([^"]*)" should be:$`, c.theDocumentInTheDatabaseForIDShouldBe)
 	ctx.Step(`^the instance in the database for id "([^"]*)" should be:$`, c.theInstanceInTheDatabaseForIDShouldBe)
 	ctx.Step(`^the version in the database for id "([^"]*)" should be:$`, c.theVersionInTheDatabaseForIDShouldBe)
@@ -116,6 +118,16 @@ func (c *DatasetComponent) privateEndpointsAreEnabled() error {
 
 func (c *DatasetComponent) URLRewritingIsEnabled() error {
 	c.Config.EnableURLRewriting = true
+	return nil
+}
+
+func (c *DatasetComponent) staleWhileRevalidateIsSet(seconds int) error {
+	c.Config.CacheStaleWhileRevalidateSeconds = seconds
+	return nil
+}
+
+func (c *DatasetComponent) staleIfErrorIsSet(seconds int) error {
+	c.Config.CacheStaleIfErrorSeconds = seconds
 	return nil
 }
 
